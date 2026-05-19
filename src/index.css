@@ -1,0 +1,136 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-on-background: #1b1c1c;
+  --color-on-secondary: #ffffff;
+  --color-primary: #003f87;
+  --color-surface-container-highest: #ffffff;
+  --color-outline: #727784;
+  --color-primary-fixed-dim: #acc7ff;
+  --color-on-surface: #1b1c1c;
+  --color-inverse-surface: #303031;
+  --color-surface-tint: #115cb9;
+  --color-inverse-on-surface: #f2f0f0;
+  --color-surface-container-high: #ffffff;
+  --color-on-primary-fixed: #001a40;
+  --color-on-error: #ffffff;
+  --color-on-tertiary-fixed: #131c27;
+  --color-surface-bright: #ffffff;
+  --color-on-primary-fixed-variant: #004491;
+  --color-tertiary-fixed: #d9e3f2;
+  --color-on-error-container: #93000a;
+  --color-outline-variant: #c2c6d4;
+  --color-on-secondary-container: #646468;
+  --color-surface: #ffffff;
+  --color-surface-dim: #ffffff;
+  --color-on-tertiary: #ffffff;
+  --color-surface-container: #ffffff;
+  --color-tertiary-container: #505a66;
+  --color-surface-variant: #ffffff;
+  --color-secondary-fixed: #e3e2e6;
+  --color-secondary-container: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-secondary-fixed: #1a1b1e;
+  --color-tertiary-fixed-dim: #bdc7d6;
+  --color-background: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-secondary-fixed-variant: #46474a;
+  --color-on-tertiary-fixed-variant: #3e4853;
+  --color-secondary: #5e5e62;
+  --color-on-surface-variant: #424752;
+  --color-tertiary: #39434e;
+  --color-primary-fixed: #d7e2ff;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #bbd0ff;
+  --color-surface-container-low: #f5f3f3;
+  --color-error: #ba1a1a;
+  --color-secondary-fixed-dim: #c7c6ca;
+  --color-inverse-primary: #acc7ff;
+  --color-primary-container: #0056b3;
+  --color-on-tertiary-container: #c7d1e0;
+
+  --radius-default: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  --spacing-container-max: 1200px;
+  --spacing-stack-lg: 24px;
+  --spacing-gutter: 24px;
+  --spacing-stack-md: 12px;
+  --spacing-stack-sm: 4px;
+  --spacing-base: 8px;
+  --spacing-margin-mobile: 16px;
+
+  --font-headline-lg-mobile: "Inter";
+  --font-body-md: "Inter";
+  --font-body-lg: "Inter";
+  --font-headline-lg: "Inter";
+  --font-label-md: "Inter";
+  --font-headline-md: "Inter";
+  --font-display-lg: "Inter";
+  --font-body-sm: "Inter";
+
+  --text-headline-lg-mobile: 24px;
+  --text-headline-lg-mobile--line-height: 32px;
+  --text-headline-lg-mobile--font-weight: 700;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 700;
+
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.05em;
+  --text-label-md--font-weight: 600;
+
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--font-weight: 600;
+
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 56px;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--font-weight: 400;
+}
+
+@utility hero-gradient {
+  background: linear-gradient(135deg, #001a40 0%, #003f87 50%, #0056b3 100%);
+}
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+html, body, #root {
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  @apply bg-surface font-body-md text-on-surface;
+}
