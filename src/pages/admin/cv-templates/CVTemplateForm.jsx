@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import adminService from '../../../services/adminService';
 
 const defaultLayouts = [
   {
@@ -110,6 +111,7 @@ const CVTemplateForm = () => {
   // Form states
   const [name, setName] = useState('');
   const [industry, setIndustry] = useState('');
+  const [careerGroups, setCareerGroups] = useState([]);
   const [isActive, setIsActive] = useState(true);
   const [selectedLayout, setSelectedLayout] = useState('left-col');
   const [defaultFont, setDefaultFont] = useState('Inter');
@@ -130,18 +132,35 @@ const CVTemplateForm = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Load Career Groups
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const res = await adminService.getCareerGroups();
+        if (res.success) setCareerGroups(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchGroups();
+  }, []);
+
   // Fill in form if in Edit Mode
   useEffect(() => {
     if (isEditMode && editingTemplate) {
       setName(editingTemplate.name || '');
-      setIndustry(editingTemplate.industry || '');
-      setIsActive(editingTemplate.isActive ?? true);
+      setIndustry(editingTemplate.careerGroupId?._id || editingTemplate.careerGroupId || '');
+      setIsActive(editingTemplate.status === 'ACTIVE' || editingTemplate.isActive);
       
-      const matchedLayout = defaultLayouts.find(l => l.name === editingTemplate.layout);
+      const matchedLayout = defaultLayouts.find(l => l.id === editingTemplate.templateCode);
       if (matchedLayout) setSelectedLayout(matchedLayout.id);
       
-      setDefaultFont(editingTemplate.font || 'Inter');
-      setPrimaryColor(editingTemplate.color || '#0056b3');
+      setDefaultFont(editingTemplate.layoutConfig?.defaultFontId || editingTemplate.font || 'Inter');
+      setPrimaryColor(editingTemplate.layoutConfig?.defaultColorId || editingTemplate.color || '#0056b3');
+      
+      if (editingTemplate.previewImageUrl) {
+        setPreviewUrl(editingTemplate.previewImageUrl);
+      }
     }
   }, [isEditMode, editingTemplate]);
 
@@ -205,7 +224,7 @@ const CVTemplateForm = () => {
   };
 
   // Submit Handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
       alert('Vui lòng nhập tên mẫu CV.');
@@ -216,20 +235,40 @@ const CVTemplateForm = () => {
       return;
     }
 
-    const payload = {
-      name,
-      industry,
-      isActive,
-      layout: defaultLayouts.find(l => l.id === selectedLayout)?.name || 'Một Cột Trái',
-      font: defaultFont,
-      color: primaryColor,
-      sections: Object.keys(checkedSections).filter(k => checkedSections[k]),
-      previewUrl
-    };
+    try {
+      const payload = {
+        name,
+        careerGroupId: industry,
+        status: isActive ? 'ACTIVE' : 'INACTIVE',
+        templateCode: selectedLayout,
+        layoutConfig: {
+          columns: selectedLayout === 'two-col-equal' ? 2 : 1,
+          defaultFontId: defaultFont, // Would map to ObjectId later
+          defaultColorId: primaryColor, // Would map to ObjectId later
+          defaultSectionCodes: Object.keys(checkedSections)
+            .filter(k => checkedSections[k])
+            .map(k => k.toUpperCase())
+        }
+      };
 
-    console.log('Saved CV Template config:', payload);
-    alert(isEditMode ? 'Cập nhật mẫu CV thành công!' : 'Tạo mới mẫu CV thành công!');
-    navigate('/admin/cv-templates');
+      let result;
+      if (isEditMode) {
+        result = await adminService.updateTemplate(id, payload);
+      } else {
+        result = await adminService.createTemplate(payload);
+      }
+
+      if (result.success) {
+        if (previewImage) {
+          await adminService.uploadTemplatePreview(result.data._id, previewImage);
+        }
+        alert(isEditMode ? 'Cập nhật mẫu CV thành công!' : 'Tạo mới mẫu CV thành công!');
+        navigate('/admin/cv-templates');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Đã xảy ra lỗi khi lưu mẫu CV.');
+    }
   };
 
   return (
@@ -302,10 +341,9 @@ const CVTemplateForm = () => {
                   className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none cursor-pointer"
                 >
                   <option value="">Chọn ngành nghề</option>
-                  <option value="Quản trị kinh doanh">Quản trị kinh doanh</option>
-                  <option value="Thiết kế">Thiết kế</option>
-                  <option value="Công nghệ thông tin">Công nghệ thông tin</option>
-                  <option value="Tài chính / Ngân hàng">Tài chính / Ngân hàng</option>
+                  {careerGroups.map(group => (
+                    <option key={group._id} value={group._id}>{group.name}</option>
+                  ))}
                 </select>
               </div>
 

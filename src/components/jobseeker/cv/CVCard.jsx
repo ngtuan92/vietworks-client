@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 
-
-export const CVCard = ({ title, date, isActive, image }) => {
+export const CVCard = ({ id, title, date, isActive, image }) => {
+  const navigate = useNavigate();
   return (
     <div className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="relative h-48 bg-surface-container overflow-hidden">
@@ -19,7 +20,10 @@ export const CVCard = ({ title, date, isActive, image }) => {
         <div className="flex justify-between items-start mb-base">
           <h3 className="font-headline-md text-headline-md text-on-surface">{title}</h3>
           <div className="flex gap-stack-sm">
-            <button className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors">
+            <button 
+              onClick={() => navigate(`/cv-builder/${id}`)}
+              className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
+            >
               <span className="material-symbols-outlined">edit</span>
             </button>
             <button className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors">
@@ -40,8 +44,12 @@ export const CVCard = ({ title, date, isActive, image }) => {
 };
 
 export const CVPlaceholderCard = () => {
+  const navigate = useNavigate();
   return (
-    <button className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group">
+    <button 
+      onClick={() => navigate('/cv-templates/gallery')}
+      className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group"
+    >
       <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
         <span className="material-symbols-outlined text-primary text-headline-lg">add</span>
       </div>
