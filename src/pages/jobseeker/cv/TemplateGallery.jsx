@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
 import cvService from '../../../services/cvService';
 import adminService from '../../../services/adminService';
 
@@ -47,8 +45,7 @@ const TemplateGallery = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface font-body-md flex flex-col">
-      <Navbar />
+    <div className="bg-surface font-body-md flex flex-col">
       <main className="flex-1 max-w-container-max mx-auto px-gutter py-stack-lg w-full">
         <div className="text-center mb-stack-xl">
           <h1 className="text-display-sm font-display text-on-surface mb-stack-sm">
@@ -133,7 +130,6 @@ const TemplateGallery = () => {
           )}
         </div>
       </main>
-      <Footer />
     </div>
   );
 };

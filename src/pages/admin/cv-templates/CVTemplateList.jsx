@@ -206,19 +206,29 @@ const CVTemplateList = () => {
                       {tpl.usersCount?.toLocaleString() || 0}
                     </td>
 
-                    {/* Status Badge */}
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => toggleStatus(tpl._id)}
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 ${
-                          tpl.status === 'ACTIVE'
-                            ? 'bg-[#ebf5ff] text-[#0056b3] hover:bg-[#d6ebff]'
-                            : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${tpl.status === 'ACTIVE' ? 'bg-[#0056b3]' : 'bg-[#6b7280]'}`}></span>
-                        {tpl.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động'}
-                      </button>
+                    {/* Status Toggle Switch */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => toggleStatus(tpl._id)}
+                          type="button"
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            tpl.status === 'ACTIVE' ? 'bg-[#0056b3]' : 'bg-gray-200'
+                          }`}
+                          title={tpl.status === 'ACTIVE' ? 'Đang hoạt động - Click để ngừng hoạt động' : 'Ngừng hoạt động - Click để hoạt động'}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              tpl.status === 'ACTIVE' ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                        <span className={`text-xs font-bold w-10 text-left ${
+                          tpl.status === 'ACTIVE' ? 'text-[#0056b3]' : 'text-gray-400'
+                        }`}>
+                          {tpl.status === 'ACTIVE' ? 'Bật' : 'Tắt'}
+                        </span>
+                      </div>
                     </td>
 
                     {/* Actions */}

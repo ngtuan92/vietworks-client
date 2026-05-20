@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
 const NotificationContext = createContext(null);
@@ -101,6 +101,26 @@ export const NotificationProvider = ({ children }) => {
         return 'bg-sky-50';
     }
   };
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+
+      warning(
+        'Phiên làm việc của bạn đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại để tiếp tục.',
+        'Yêu cầu đăng nhập',
+        () => {
+          window.location.href = '/login';
+        }
+      );
+    };
+
+    window.addEventListener('unauthorized_access', handleUnauthorized);
+    return () => {
+      window.removeEventListener('unauthorized_access', handleUnauthorized);
+    };
+  }, [warning]);
 
   return (
     <NotificationContext.Provider value={{ success, error, warning, info, confirm }}>

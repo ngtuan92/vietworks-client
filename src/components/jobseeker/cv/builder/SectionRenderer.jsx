@@ -149,6 +149,150 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
           </div>
         );
       }
+
+      if (layoutCode === 'two-col-equal') {
+        return (
+          <div className={`${marginClass} flex items-center justify-between gap-6 w-full`}>
+            <div className="text-left flex-1">
+              <EditableText 
+                tag="h1" 
+                className={`${nameSize} font-extrabold tracking-tight leading-none text-white block`} 
+                html={profile.name} 
+                onChange={v => updateItem(0, 'name', v)} 
+              />
+              <EditableText 
+                tag="h2" 
+                className={`${subHeadingSize} text-white/80 block mt-1 font-bold uppercase tracking-wider`} 
+                html={profile.title} 
+                onChange={v => updateItem(0, 'title', v)} 
+              />
+              <EditableText 
+                className={`${bodySize} text-white/70 mt-2 block`} 
+                html={profile.summary} 
+                onChange={v => updateItem(0, 'summary', v)} 
+              />
+            </div>
+            {style.avatarShape !== 'hidden' && (
+              <div className="relative group/avatar shrink-0">
+                <div 
+                  className={`w-16 h-16 bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner ${
+                    style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
+                  }`}
+                >
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
+                  )}
+                  <label className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                    <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="sr-only" 
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            updateItem(0, 'avatar', reader.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      if (layoutCode === 'full-width') {
+        return (
+          <div className={`${marginClass} flex flex-col items-center justify-center text-center w-full`}>
+            {style.avatarShape !== 'hidden' && (
+              <div className="relative group/avatar shrink-0 mb-4">
+                <div 
+                  className={`w-20 h-20 bg-gray-100 border flex items-center justify-center overflow-hidden relative shadow-inner ${
+                    style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
+                  }`}
+                  style={{ borderColor: `${style.themeColorId}20` }}
+                >
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[32px] text-gray-400">person</span>
+                  )}
+                  <label className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                    <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="sr-only" 
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            updateItem(0, 'avatar', reader.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+            <EditableText 
+              tag="h1" 
+              className={`${nameSize} font-extrabold tracking-tight leading-none block`} 
+              style={{ color: style.themeColorId }}
+              html={profile.name} 
+              onChange={v => updateItem(0, 'name', v)} 
+            />
+            <EditableText 
+              tag="h2" 
+              className={`${subHeadingSize} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`} 
+              html={profile.title} 
+              onChange={v => updateItem(0, 'title', v)} 
+            />
+            <EditableText 
+              className={`${bodySize} text-gray-600 mt-2 max-w-xl block`} 
+              html={profile.summary} 
+              onChange={v => updateItem(0, 'summary', v)} 
+            />
+          </div>
+        );
+      }
+
+      if (layoutCode === 'left-col') {
+        return (
+          <div className={`${marginClass} flex flex-col w-full text-left`}>
+            <EditableText 
+              tag="h1" 
+              className={`${nameSize} font-extrabold text-gray-800 tracking-tight leading-none block`} 
+              html={profile.name} 
+              onChange={v => updateItem(0, 'name', v)} 
+            />
+            <EditableText 
+              tag="h2" 
+              className={`${subHeadingSize} font-bold mt-2 uppercase tracking-widest block`} 
+              style={{ color: style.themeColorId }}
+              html={profile.title} 
+              onChange={v => updateItem(0, 'title', v)} 
+            />
+            <EditableText 
+              className={`${bodySize} text-gray-600 mt-3 block`} 
+              html={profile.summary} 
+              onChange={v => updateItem(0, 'summary', v)} 
+            />
+          </div>
+        );
+      }
+
       return (
         <div className={`${marginClass} flex ${isLeft ? 'flex-col gap-3 items-center text-center' : 'flex-col sm:flex-row gap-4 items-start'}`}>
           {style.avatarShape !== 'hidden' && layoutCode !== 'harvard-classic' && layoutCode !== 'harvard-gsas' && (
@@ -288,6 +432,21 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
               />
             </div>
           </div>
+        </div>
+      );
+
+    case 'OBJECTIVE':
+      const objective = items[0] || { summary: 'Nhập mục tiêu nghề nghiệp của bạn...' };
+      return (
+        <div className={marginClass}>
+          {layoutCode !== 'harvard-gsas' && <SectionHeader title="Mục Tiêu Nghề Nghiệp" />}
+          <EditableText 
+            className={`${bodySize} leading-relaxed`} 
+            style={{ color: textColor }}
+            html={objective.summary} 
+            onChange={v => updateItem(0, 'summary', v)} 
+            placeholder="Nhập mục tiêu nghề nghiệp..."
+          />
         </div>
       );
 

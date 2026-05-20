@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
+import { useNavigate } from 'react-router-dom';
 import CVWelcome from '../../../components/jobseeker/cv/CVWelcome';
 import CVFilter from '../../../components/jobseeker/cv/CVFilter';
 import { CVCard, CVPlaceholderCard } from '../../../components/jobseeker/cv/CVCard';
@@ -8,26 +7,56 @@ import ProfileStrength from '../../../components/jobseeker/cv/ProfileStrength';
 import CVExpertReview from '../../../components/jobseeker/cv/CVExpertReview';
 import CareerResources from '../../../components/jobseeker/cv/CareerResources';
 import cvService from '../../../services/cvService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const ManageCV = () => {
+  const navigate = useNavigate();
+  const { success, error, confirm } = useNotification();
   const [cvs, setCvs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCvs = async () => {
-      try {
-        const response = await cvService.getUserCvs();
-        if (response.success) {
-          setCvs(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch CVs:', error);
-      } finally {
-        setLoading(false);
+  const fetchCvs = async () => {
+    try {
+      const response = await cvService.getUserCvs();
+      if (response.success) {
+        setCvs(response.data);
       }
-    };
+    } catch (err) {
+      console.error('Failed to fetch CVs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCvs();
   }, []);
+
+  const handleDeleteCv = (id, title) => {
+    confirm(
+      `Bạn có chắc chắn muốn xóa CV "${title}" không? Hành động này không thể hoàn tác.`,
+      async () => {
+        try {
+          const res = await cvService.deleteCv(id);
+          if (res.success) {
+            setCvs(prev => prev.filter(cv => cv._id !== id));
+            success('Xóa CV thành công!');
+          } else {
+            error(res.message || 'Xóa CV thất bại!');
+          }
+        } catch (err) {
+          console.error('Delete CV failed:', err);
+          error('Đã xảy ra lỗi khi xóa CV!');
+        }
+      },
+      null,
+      'Xác nhận xóa'
+    );
+  };
+
+  const handleDownloadPdf = (id) => {
+    navigate(`/cv-builder/${id}?download=true`);
+  };
 
   return (
     <div className="min-h-screen bg-background font-body-md">
@@ -40,7 +69,7 @@ const ManageCV = () => {
           {/* CV List - Main Content */}
           <div className="lg:col-span-8 space-y-stack-lg">
             {/* Filter and Stats */}
-            <CVFilter />
+            <CVFilter totalCount={cvs.length} />
 
             {/* CV Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
@@ -55,6 +84,8 @@ const ManageCV = () => {
                     date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
                     isActive={cv.status === 'ACTIVE'}
                     image={cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
+                    onDelete={handleDeleteCv}
+                    onDownload={handleDownloadPdf}
                   />
                 ))
               )}

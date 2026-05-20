@@ -1020,8 +1020,8 @@ const CVTemplateForm = () => {
           () => navigate('/admin/cv-templates')
         );
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       error('Đã xảy ra lỗi khi lưu mẫu CV.');
     }
   };
@@ -1405,8 +1405,7 @@ const CVTemplateForm = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={!!previewUrl}
+                className={previewUrl ? "hidden" : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"}
               />
             </div>
           </div>

@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 
-export const CVCard = ({ id, title, date, isActive, image }) => {
+export const CVCard = ({ id, title, date, isActive, image, onDelete, onDownload }) => {
   const navigate = useNavigate();
   return (
     <div className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className="relative h-48 bg-surface-container overflow-hidden">
+      <div 
+        className="relative h-48 bg-surface-container overflow-hidden cursor-pointer"
+        onClick={() => navigate(`/cv-builder/${id}`)}
+      >
         <img 
           alt="CV Preview" 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
@@ -18,23 +21,42 @@ export const CVCard = ({ id, title, date, isActive, image }) => {
       </div>
       <div className="p-stack-md">
         <div className="flex justify-between items-start mb-base">
-          <h3 className="font-headline-md text-headline-md text-on-surface">{title}</h3>
+          <h3 
+            className="font-headline-md text-headline-md text-on-surface hover:text-primary cursor-pointer transition-colors"
+            onClick={() => navigate(`/cv-builder/${id}`)}
+          >
+            {title}
+          </h3>
           <div className="flex gap-stack-sm">
             <button 
               onClick={() => navigate(`/cv-builder/${id}`)}
               className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
+              title="Chỉnh sửa CV"
             >
               <span className="material-symbols-outlined">edit</span>
             </button>
-            <button className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors">
+            <button 
+              onClick={() => onDelete && onDelete(id, title)}
+              className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
+              title="Xóa CV"
+            >
               <span className="material-symbols-outlined">delete</span>
             </button>
           </div>
         </div>
         <p className="text-on-surface-variant font-body-sm mb-stack-md">Cập nhật: {date}</p>
         <div className="flex gap-stack-sm">
-          <button className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm">Xem trước</button>
-          <button className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors">
+          <button 
+            onClick={() => navigate(`/cv-builder/${id}`)}
+            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm"
+          >
+            Xem trước
+          </button>
+          <button 
+            onClick={() => onDownload && onDownload(id)}
+            className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+            title="Tải PDF"
+          >
             <span className="material-symbols-outlined">download</span>
           </button>
         </div>

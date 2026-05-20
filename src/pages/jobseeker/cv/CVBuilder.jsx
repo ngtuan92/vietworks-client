@@ -5,6 +5,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import cvService from '../../../services/cvService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 // Sortable Item wrapper
 import { SortableItem } from '../../../components/jobseeker/cv/builder/SortableItem';
@@ -17,6 +18,7 @@ const CVBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const cvRef = useRef(null);
+  const { error: showError } = useNotification();
 
   const [cvData, setCvData] = useState(null);
   const [sections, setSections] = useState([]);
@@ -55,9 +57,9 @@ const CVBuilder = () => {
             avatarShape: res.data.style?.avatarShape || 'circle'
           });
         }
-      } catch (error) {
-        console.error(error);
-        alert('Không thể tải dữ liệu CV');
+      } catch (err) {
+        console.error(err);
+        showError('Không thể tải dữ liệu CV');
         navigate('/manage-cv');
       } finally {
         setLoading(false);
@@ -65,6 +67,20 @@ const CVBuilder = () => {
     };
     fetchCv();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!loading && cvData && cvRef.current) {
+      const queryParams = new URLSearchParams(window.location.search);
+      if (queryParams.get('download') === 'true') {
+        const triggerExport = async () => {
+          await new Promise(resolve => setTimeout(resolve, 800));
+          await handleExportPDF();
+          navigate('/manage-cv');
+        };
+        triggerExport();
+      }
+    }
+  }, [loading, cvData, id, navigate]);
 
   // Handle Drag End
   const handleDragEnd = (event) => {
@@ -95,6 +111,24 @@ const CVBuilder = () => {
     const newStyle = { ...style, [key]: value };
     setStyle(newStyle);
     saveCvConfig(sections, newStyle);
+  };
+
+  const handleTemplateChange = async (newTemplate) => {
+    try {
+      setSaving(true);
+      const res = await cvService.updateCv(id, { templateId: newTemplate._id });
+      if (res.success) {
+        setCvData(prev => ({
+          ...prev,
+          templateId: newTemplate
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      showError('Không thể đổi mẫu thiết kế CV');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSectionContentUpdate = (sectionCode, newContent) => {
@@ -137,9 +171,9 @@ const CVBuilder = () => {
 
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${cvData?.title || 'CV'}.pdf`);
-    } catch (error) {
-      alert('Có lỗi khi xuất PDF');
-      console.error(error);
+    } catch (err) {
+      showError('Có lỗi khi xuất PDF');
+      console.error(err);
     } finally {
       setSaving(false);
     }
@@ -170,8 +204,19 @@ const CVBuilder = () => {
     'Fira Code': 'monospace'
   };
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const isAutoDownloading = queryParams.get('download') === 'true';
+
   return (
-    <div className="min-h-screen bg-[#f3f4f6] font-body-md flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50 font-body-md flex flex-col md:flex-row p-4 md:p-8 gap-6 max-w-7xl mx-auto w-full relative">
+      {/* Auto-downloading PDF Overlay */}
+      {isAutoDownloading && (
+        <div className="fixed inset-0 bg-[#f9fafb] z-[9999] flex flex-col items-center justify-center gap-4">
+          <div className="w-16 h-16 border-4 border-t-[#0056b3] border-gray-200 rounded-full animate-spin"></div>
+          <h2 className="text-xl font-bold text-gray-900 mt-2">Đang xuất bản file PDF của bạn...</h2>
+          <p className="text-sm text-gray-500">Quá trình này có thể mất vài giây để đảm bảo độ sắc nét cao nhất.</p>
+        </div>
+      )}
       {/* Sidebar Toolbar */}
       <BuilderToolbar
         style={style}
@@ -179,10 +224,15 @@ const CVBuilder = () => {
         onExport={handleExportPDF}
         isSaving={saving}
         navigateBack={() => navigate('/manage-cv')}
+        sections={sections}
+        setSections={setSections}
+        saveCvConfig={saveCvConfig}
+        currentTemplateId={cvData?.templateId?._id}
+        onTemplateChange={handleTemplateChange}
       />
 
       {/* Main Canvas Area */}
-      <div className="flex-1 overflow-auto p-4 md:p-8 flex justify-center h-screen relative">
+      <div className="flex-grow flex justify-center bg-transparent relative">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           {/* A4 Paper scale */}
           <div
@@ -203,6 +253,44 @@ const CVBuilder = () => {
                   style={{ backgroundColor: style.themeColorId }}
                   className="w-[35%] p-6 text-white flex flex-col gap-6"
                 >
+                  {/* Avatar in Left Sidebar */}
+                  {style.avatarShape !== 'hidden' && (
+                    <div className="px-5 pt-4 pb-2 text-center shrink-0">
+                      <div 
+                        className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner ${
+                          style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
+                        }`}
+                      >
+                        {profileSection?.items[0]?.avatar ? (
+                          <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+                        )}
+                        <label className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                          <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="sr-only" 
+                            onChange={async (e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  const updatedItems = [...(profileSection.items || [])];
+                                  if (!updatedItems[0]) updatedItems[0] = {};
+                                  updatedItems[0].avatar = reader.result;
+                                  handleSectionContentUpdate('PROFILE', updatedItems);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
                     {leftSections.map(sec => (
                       <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
@@ -316,11 +404,6 @@ const CVBuilder = () => {
               <div className="flex-1 p-8 bg-white flex flex-col gap-6 w-full h-full">
                 {/* Center Header Banner */}
                 <div className="flex flex-col items-center justify-center border-b pb-6" style={{ borderColor: `${style.themeColorId}20` }}>
-                  {style.avatarShape !== 'hidden' && profileSection?.items[0]?.avatar && (
-                    <div className={`w-20 h-20 mb-4 bg-gray-100 flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
-                      <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    </div>
-                  )}
                   {profileSection && (
                     <div className="text-center w-full">
                       <SortableItem id="PROFILE">
