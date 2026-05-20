@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import adminService from '../../../services/adminService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const CVTemplateList = () => {
   const navigate = useNavigate();
+  const { error } = useNotification();
   const [templates, setTemplates] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,8 +74,8 @@ const CVTemplateList = () => {
           tpl._id === id ? { ...tpl, status: res.data.status } : tpl
         ));
       }
-    } catch (error) {
-      alert('Thay đổi trạng thái thất bại!');
+    } catch (err) {
+      error('Thay đổi trạng thái thất bại!');
     }
   };
 

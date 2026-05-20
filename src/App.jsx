@@ -82,10 +82,13 @@ import AdminInvoices from './pages/admin/invoices/AdminInvoices';
 import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
 import CVTemplateForm from './pages/admin/cv-templates/CVTemplateForm';
 
+import { NotificationProvider } from './contexts/NotificationContext';
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <NotificationProvider>
+      <BrowserRouter>
+        <Routes>
         <Route path="/" element={<JobseekerLayout />}>
           <Route index element={<Home />} />
           <Route path="jobs" element={<Jobs />} />
@@ -188,7 +191,8 @@ function App() {
           <Route path="account" element={<AdminAccountSettings />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </NotificationProvider>
   );
 }
 

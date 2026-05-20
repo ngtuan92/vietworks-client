@@ -15,7 +15,7 @@ const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, plac
   );
 };
 
-export const renderSection = (section, style, onUpdate, columnContext) => {
+export const renderSection = (section, style, onUpdate, columnContext, layoutCode) => {
   const code = section.sectionCode;
   const items = section.items || [];
   
@@ -24,6 +24,19 @@ export const renderSection = (section, style, onUpdate, columnContext) => {
   const headingColor = isLeft ? '#ffffff' : style.themeColorId;
   const textColor = isLeft ? '#f3f4f6' : '#374151';
   const subtextColor = isLeft ? '#d1d5db' : '#6b7280';
+
+  const fSize = style.fontSize || 'medium';
+  
+  // Font sizes map (scaled down for realistic A4 print proportions)
+  const nameSize = fSize === 'small' ? 'text-[18px] font-bold' : fSize === 'large' ? 'text-[26px] font-bold' : 'text-[22px] font-bold';
+  const headingSize = fSize === 'small' ? 'text-[10.5px]' : fSize === 'large' ? 'text-[14.5px]' : 'text-[12.5px]';
+  const subHeadingSize = fSize === 'small' ? 'text-[9px]' : fSize === 'large' ? 'text-[13px]' : 'text-[11px]';
+  const bodySize = fSize === 'small' ? 'text-[8.5px]' : fSize === 'large' ? 'text-[12px]' : 'text-[10px]';
+  const iconSizeClass = fSize === 'small' ? 'text-[9px]' : fSize === 'large' ? 'text-[13px]' : 'text-[11px]';
+
+  const dens = style.density || 'normal';
+  const marginClass = dens === 'compact' ? 'mb-2' : dens === 'comfortable' ? 'mb-6' : 'mb-4';
+  const itemGapClass = dens === 'compact' ? 'space-y-1' : dens === 'comfortable' ? 'space-y-3.5' : 'space-y-2';
 
   const updateItem = (index, field, value) => {
     const newItems = [...items];
@@ -41,125 +54,372 @@ export const renderSection = (section, style, onUpdate, columnContext) => {
     onUpdate(code, newItems);
   };
 
-  const SectionHeader = ({ title }) => (
-    <div className="mb-4 relative group/header">
-      <h2 
-        className="text-lg font-black uppercase tracking-widest border-b-2 pb-1" 
-        style={{ color: headingColor, borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}40` }}
-      >
-        {title}
-      </h2>
-    </div>
-  );
+  const SectionHeader = ({ title }) => {
+    if (layoutCode === 'harvard-gsas') return null;
+    const tStyle = style.titleStyle || 'underline';
+    const borderCol = isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}40`;
+    
+    if (tStyle === 'underline') {
+      return (
+        <div className="mb-3">
+          <h2 
+            className={`${headingSize} font-black uppercase tracking-widest border-b-2 pb-1`}
+            style={{ color: headingColor, borderColor: borderCol }}
+          >
+            {title}
+          </h2>
+        </div>
+      );
+    }
+    if (tStyle === 'accent-bg') {
+      return (
+        <div className="mb-3">
+          <h2 
+            className={`${headingSize} font-black uppercase tracking-widest px-2 py-1 rounded`}
+            style={{ 
+              backgroundColor: isLeft ? 'rgba(255,255,255,0.15)' : style.themeColorId, 
+              color: '#ffffff' 
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+      );
+    }
+    if (tStyle === 'left-border') {
+      return (
+        <div className="mb-3">
+          <h2 
+            className={`${headingSize} font-black uppercase tracking-widest pl-2 border-l-4`}
+            style={{ 
+              color: headingColor, 
+              borderColor: isLeft ? '#ffffff' : style.themeColorId 
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+      );
+    }
+    // minimal
+    return (
+      <div className="mb-3">
+        <h2 
+          className={`${headingSize} font-black uppercase tracking-widest`}
+          style={{ color: headingColor }}
+        >
+          {title}
+        </h2>
+      </div>
+    );
+  };
 
   switch (code) {
     case 'PROFILE':
-      const profile = items[0] || { name: 'HỌ VÀ TÊN', title: 'VỊ TRÍ ỨNG TUYỂN', summary: 'Mục tiêu nghề nghiệp ngắn gọn' };
+      const profile = items[0] || { 
+        name: 'HỌ VÀ TÊN', 
+        title: 'VỊ TRÍ ỨNG TUYỂN', 
+        summary: 'Mục tiêu nghề nghiệp ngắn gọn',
+        avatar: ''
+      };
+      if (layoutCode === 'harvard-classic') {
+        return (
+          <div className={`${marginClass} flex flex-col gap-2 items-center text-center w-full`}>
+            <div className="w-full text-center">
+              <EditableText 
+                tag="h1" 
+                className={`${nameSize} font-black uppercase mb-1 tracking-tight`} 
+                style={{ color: headingColor }}
+                html={profile.name} 
+                onChange={v => updateItem(0, 'name', v)} 
+              />
+              <EditableText 
+                tag="h2" 
+                className={`${subHeadingSize} font-extrabold mb-2 uppercase tracking-wider text-gray-500`} 
+                html={profile.title} 
+                onChange={v => updateItem(0, 'title', v)} 
+              />
+              <EditableText 
+                className={`${bodySize} leading-relaxed max-w-2xl mx-auto`} 
+                style={{ color: textColor }}
+                html={profile.summary} 
+                onChange={v => updateItem(0, 'summary', v)} 
+              />
+            </div>
+          </div>
+        );
+      }
       return (
-        <div className="mb-6">
-          <EditableText 
-            tag="h1" 
-            className="text-3xl font-black uppercase mb-1" 
-            style={{ color: headingColor }}
-            html={profile.name} 
-            onChange={v => updateItem(0, 'name', v)} 
-          />
-          <EditableText 
-            tag="h2" 
-            className="text-lg font-bold mb-4 uppercase tracking-wider" 
-            style={{ color: isLeft ? 'rgba(255,255,255,0.8)' : style.themeColorId }}
-            html={profile.title} 
-            onChange={v => updateItem(0, 'title', v)} 
-          />
-          <EditableText 
-            className="text-sm leading-relaxed" 
-            style={{ color: textColor }}
-            html={profile.summary} 
-            onChange={v => updateItem(0, 'summary', v)} 
-          />
+        <div className={`${marginClass} flex ${isLeft ? 'flex-col gap-3 items-center text-center' : 'flex-col sm:flex-row gap-4 items-start'}`}>
+          {style.avatarShape !== 'hidden' && layoutCode !== 'harvard-classic' && layoutCode !== 'harvard-gsas' && (
+            <div className={`relative group/avatar shrink-0 ${isLeft ? 'mx-auto' : 'mx-auto sm:mx-0'}`}>
+              <div 
+                className={`w-16 h-16 bg-gray-200 border flex items-center justify-center overflow-hidden relative shadow-inner ${
+                  style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
+                }`}
+                style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}
+              >
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="material-symbols-outlined text-[32px]" style={{ color: isLeft ? '#ffffffaa' : '#9ca3af' }}>person</span>
+                )}
+                {/* Invisible file input trigger */}
+                <label className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                  <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="sr-only" 
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          updateItem(0, 'avatar', reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+          <div className={`flex-1 w-full ${isLeft ? 'text-center' : 'text-left'}`}>
+            <EditableText 
+              tag="h1" 
+              className={`${nameSize} font-black uppercase mb-1 tracking-tight`} 
+              style={{ color: headingColor }}
+              html={profile.name} 
+              onChange={v => updateItem(0, 'name', v)} 
+            />
+            <EditableText 
+              tag="h2" 
+              className={`${subHeadingSize} font-extrabold mb-2 uppercase tracking-wider`} 
+              style={{ color: isLeft ? 'rgba(255,255,255,0.85)' : style.themeColorId }}
+              html={profile.title} 
+              onChange={v => updateItem(0, 'title', v)} 
+            />
+            <EditableText 
+              className={`${bodySize} leading-relaxed`} 
+              style={{ color: textColor }}
+              html={profile.summary} 
+              onChange={v => updateItem(0, 'summary', v)} 
+            />
+          </div>
         </div>
       );
 
     case 'CONTACT':
       const contact = items[0] || { phone: '0123 456 789', email: 'email@example.com', address: 'Hà Nội, Việt Nam' };
+      if (layoutCode === 'harvard-classic') {
+        return (
+          <div className={marginClass}>
+            <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] font-medium font-sans">
+              {contact.address && (
+                <div className="flex items-center gap-1">
+                  <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>location_on</span>
+                  <EditableText 
+                    html={contact.address} 
+                    onChange={v => updateItem(0, 'address', v)} 
+                    placeholder="Địa chỉ"
+                    className="break-words"
+                  />
+                </div>
+              )}
+              {(contact.address && contact.phone) && <span className="text-gray-400">|</span>}
+              {contact.phone && (
+                <div className="flex items-center gap-1">
+                  <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>phone</span>
+                  <EditableText 
+                    html={contact.phone} 
+                    onChange={v => updateItem(0, 'phone', v)} 
+                    placeholder="Điện thoại"
+                    className="break-words"
+                  />
+                </div>
+              )}
+              {(contact.phone && contact.email) && <span className="text-gray-400">|</span>}
+              {contact.email && (
+                <div className="flex items-center gap-1">
+                  <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>mail</span>
+                  <EditableText 
+                    html={contact.email} 
+                    onChange={v => updateItem(0, 'email', v)} 
+                    placeholder="Email"
+                    className="break-all"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
       return (
-        <div className="mb-6">
+        <div className={marginClass}>
           <SectionHeader title="Liên Hệ" />
-          <div className="space-y-2 text-sm" style={{ color: textColor }}>
-            {['phone', 'email', 'address'].map(field => (
+          <div className={`space-y-1.5 ${bodySize}`} style={{ color: textColor }}>
+            <div className="flex items-center gap-1.5 py-0.5">
+              <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>phone</span>
               <EditableText 
-                key={field}
-                html={contact[field]} 
-                onChange={v => updateItem(0, field, v)} 
-                placeholder={`Nhập ${field}`}
+                html={contact.phone} 
+                onChange={v => updateItem(0, 'phone', v)} 
+                placeholder="Điện thoại"
+                className="flex-1 break-words"
               />
-            ))}
+            </div>
+            <div className="flex items-center gap-1.5 py-0.5">
+              <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>mail</span>
+              <EditableText 
+                html={contact.email} 
+                onChange={v => updateItem(0, 'email', v)} 
+                placeholder="Email"
+                className="flex-1 break-all"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 py-0.5">
+              <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>location_on</span>
+              <EditableText 
+                html={contact.address} 
+                onChange={v => updateItem(0, 'address', v)} 
+                placeholder="Địa chỉ"
+                className="flex-1 break-words"
+              />
+            </div>
           </div>
         </div>
       );
 
     case 'EXPERIENCE':
       return (
-        <div className="mb-6">
+        <div className={marginClass}>
           <SectionHeader title="Kinh Nghiệm" />
-          <div className="space-y-4">
+          <div className={itemGapClass}>
             {items.map((item, i) => (
-              <div key={i} className="relative group/item">
-                <div className="flex justify-between items-baseline mb-1">
-                  <EditableText tag="h3" className="font-bold text-base" style={{ color: headingColor }} html={item.title || 'Vị trí công việc'} onChange={v => updateItem(i, 'title', v)} />
-                  <EditableText className="text-xs font-semibold" style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
+              <div key={i} className={`relative group/item ${ (layoutCode === 'harvard-classic' || layoutCode === 'harvard-gsas') ? '' : 'border-l-2 pl-3' }`} style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}>
+                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.title || 'Vị trí công việc'} onChange={v => updateItem(i, 'title', v)} />
+                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
                 </div>
-                <EditableText className="text-sm font-semibold mb-1" style={{ color: headingColor }} html={item.company || 'Tên công ty'} onChange={v => updateItem(i, 'company', v)} />
-                <EditableText className="text-sm leading-relaxed" style={{ color: textColor }} html={item.description || '- Mô tả công việc...'} onChange={v => updateItem(i, 'description', v)} />
+                <EditableText className={`${bodySize} font-semibold mb-1`} style={{ color: isLeft ? 'rgba(255,255,255,0.9)' : style.themeColorId }} html={item.company || 'Tên công ty'} onChange={v => updateItem(i, 'company', v)} />
+                <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả công việc...'} onChange={v => updateItem(i, 'description', v)} />
                 
                 {/* Delete button */}
-                <button onClick={() => removeItem(i)} className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100"><span className="material-symbols-outlined text-[14px]">delete</span></button>
+                <button onClick={() => removeItem(i)} className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[14px]">delete</span></button>
               </div>
             ))}
-            <button onClick={() => addItem()} className="text-xs text-blue-500 hover:underline">+ Thêm kinh nghiệm</button>
+            <button onClick={() => addItem({ company: 'Tên Công Ty', date: 'Thời gian', title: 'Chức danh', description: 'Mô tả công việc' })} className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">add</span> Thêm kinh nghiệm</button>
           </div>
         </div>
       );
 
     case 'EDUCATION':
       return (
-        <div className="mb-6">
+        <div className={marginClass}>
           <SectionHeader title="Học Vấn" />
-          <div className="space-y-4">
+          <div className={itemGapClass}>
             {items.map((item, i) => (
               <div key={i} className="relative group/item">
-                <div className="flex justify-between items-baseline mb-1">
-                  <EditableText tag="h3" className="font-bold text-base" style={{ color: headingColor }} html={item.school || 'Tên trường'} onChange={v => updateItem(i, 'school', v)} />
-                  <EditableText className="text-xs font-semibold" style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
+                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.school || 'Tên trường'} onChange={v => updateItem(i, 'school', v)} />
+                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
                 </div>
-                <EditableText className="text-sm font-semibold mb-1" style={{ color: headingColor }} html={item.major || 'Chuyên ngành'} onChange={v => updateItem(i, 'major', v)} />
-                <EditableText className="text-sm" style={{ color: textColor }} html={item.gpa || 'GPA: X.X'} onChange={v => updateItem(i, 'gpa', v)} />
+                <div className="flex justify-between items-center gap-2 flex-wrap mb-1">
+                  <EditableText className={`${bodySize} font-semibold`} style={{ color: textColor }} html={item.major || 'Chuyên ngành'} onChange={v => updateItem(i, 'major', v)} />
+                  <EditableText className={`${bodySize}`} style={{ color: subtextColor }} html={item.gpa || 'GPA: X.X'} onChange={v => updateItem(i, 'gpa', v)} />
+                </div>
                 
-                <button onClick={() => removeItem(i)} className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100"><span className="material-symbols-outlined text-[14px]">delete</span></button>
+                <button onClick={() => removeItem(i)} className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[14px]">delete</span></button>
               </div>
             ))}
-            <button onClick={() => addItem()} className="text-xs text-blue-500 hover:underline">+ Thêm học vấn</button>
+            <button onClick={() => addItem({ school: 'Tên Trường', date: 'Thời gian', major: 'Chuyên ngành', gpa: 'GPA' })} className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">add</span> Thêm học vấn</button>
           </div>
         </div>
       );
 
     case 'SKILLS':
       return (
-        <div className="mb-6">
+        <div className={marginClass}>
           <SectionHeader title="Kỹ Năng" />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {items.map((item, i) => (
               <div key={i} className="relative group/item">
                 <EditableText 
-                  className={`px-3 py-1 rounded text-sm font-semibold ${isLeft ? 'bg-white/10' : 'bg-gray-100'}`} 
+                  className={`px-2 py-0.5 rounded ${bodySize} font-medium border transition-colors ${
+                    isLeft 
+                      ? 'bg-white/10 hover:bg-white/20 border-white/10 text-white' 
+                      : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                  }`} 
                   style={{ color: textColor }} 
-                  html={item.name || 'Kỹ năng mới'} 
+                  html={item.name || 'Kỹ năng'} 
                   onChange={v => updateItem(i, 'name', v)} 
                 />
-                <button onClick={() => removeItem(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/item:opacity-100 text-[10px]">x</button>
+                <button onClick={() => removeItem(i)} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/item:opacity-100 text-[10px] shadow transition-opacity">×</button>
               </div>
             ))}
-            <button onClick={() => addItem()} className={`px-3 py-1 rounded text-sm border border-dashed ${isLeft ? 'border-white/50 text-white/80' : 'border-gray-400 text-gray-500'}`}>+ Thêm</button>
+            <button onClick={() => addItem({ name: 'Kỹ năng mới' })} className={`px-2 py-0.5 rounded ${bodySize} border border-dashed flex items-center gap-0.5 ${isLeft ? 'border-white/40 text-white/70 hover:bg-white/5' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}>+ Thêm</button>
+          </div>
+        </div>
+      );
+
+    case 'PROJECTS':
+      return (
+        <div className={marginClass}>
+          <SectionHeader title="Dự Án" />
+          <div className={itemGapClass}>
+            {items.map((item, i) => (
+              <div key={i} className={`relative group/item ${ (layoutCode === 'harvard-classic' || layoutCode === 'harvard-gsas') ? '' : 'border-l-2 pl-3' }`} style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}>
+                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.name || 'Tên dự án'} onChange={v => updateItem(i, 'name', v)} />
+                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                </div>
+                <EditableText className={`${bodySize} font-semibold mb-1`} style={{ color: isLeft ? 'rgba(255,255,255,0.9)' : style.themeColorId }} html={item.role || 'Vai trò'} onChange={v => updateItem(i, 'role', v)} />
+                <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả dự án...'} onChange={v => updateItem(i, 'description', v)} />
+                
+                <button onClick={() => removeItem(i)} className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[14px]">delete</span></button>
+              </div>
+            ))}
+            <button onClick={() => addItem({ name: 'Tên Dự Án', date: 'Thời gian', role: 'Vai trò', description: 'Mô tả dự án' })} className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">add</span> Thêm dự án</button>
+          </div>
+        </div>
+      );
+
+    case 'CERTIFICATES':
+      return (
+        <div className={marginClass}>
+          <SectionHeader title="Chứng Chỉ" />
+          <div className={itemGapClass}>
+            {items.map((item, i) => (
+              <div key={i} className="relative group/item flex justify-between items-center py-0.5">
+                <EditableText className={`font-semibold ${bodySize}`} style={{ color: textColor }} html={item.name || 'Tên chứng chỉ'} onChange={v => updateItem(i, 'name', v)} />
+                <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                
+                <button onClick={() => removeItem(i)} className="absolute -left-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[14px]">delete</span></button>
+              </div>
+            ))}
+            <button onClick={() => addItem({ name: 'Tên chứng chỉ', date: 'Thời gian' })} className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">add</span> Thêm chứng chỉ</button>
+          </div>
+        </div>
+      );
+
+    case 'ACTIVITIES':
+      return (
+        <div className={marginClass}>
+          <SectionHeader title="Hoạt Động" />
+          <div className={itemGapClass}>
+            {items.map((item, i) => (
+              <div key={i} className="relative group/item">
+                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.name || 'Tên hoạt động'} onChange={v => updateItem(i, 'name', v)} />
+                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                </div>
+                <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả hoạt động...'} onChange={v => updateItem(i, 'description', v)} />
+                
+                <button onClick={() => removeItem(i)} className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><span className="material-symbols-outlined text-[14px]">delete</span></button>
+              </div>
+            ))}
+            <button onClick={() => addItem({ name: 'Tên hoạt động', date: 'Thời gian', description: 'Mô tả hoạt động' })} className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">add</span> Thêm hoạt động</button>
           </div>
         </div>
       );
