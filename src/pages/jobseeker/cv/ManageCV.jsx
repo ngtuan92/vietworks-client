@@ -58,6 +58,21 @@ const ManageCV = () => {
     navigate(`/cv-builder/${id}?download=true`);
   };
 
+  const handleRenameCv = async (id, newTitle) => {
+    try {
+      const res = await cvService.updateCv(id, { title: newTitle });
+      if (res.success) {
+        setCvs(prev => prev.map(cv => cv._id === id ? { ...cv, title: newTitle } : cv));
+        success('Đổi tên CV thành công!');
+      } else {
+        error(res.message || 'Đổi tên thất bại!');
+      }
+    } catch (err) {
+      console.error('Rename CV failed:', err);
+      error('Đã xảy ra lỗi khi đổi tên CV!');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background font-body-md">
       
@@ -86,6 +101,7 @@ const ManageCV = () => {
                     image={cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
                     onDelete={handleDeleteCv}
                     onDownload={handleDownloadPdf}
+                    onRename={handleRenameCv}
                   />
                 ))
               )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import cvService from '../../../services/cvService';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -156,8 +156,15 @@ const CVBuilder = () => {
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
     try {
-      setSaving(true); // use saving state to show indicator
-      const canvas = await html2canvas(cvRef.current, { scale: 2, useCORS: true });
+      setSaving(true);
+      // html2canvas-pro: fork hỗ trợ oklab/oklch natively (Tailwind v4 compatible)
+      const canvas = await html2canvas(cvRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
       const pdf = new jsPDF({
