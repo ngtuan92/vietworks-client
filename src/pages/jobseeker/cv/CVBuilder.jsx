@@ -163,6 +163,7 @@ const CVBuilder = () => {
         useCORS: true,
         allowTaint: true,
         logging: false,
+        ignoreElements: (element) => element.hasAttribute('data-html2canvas-ignore'),
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -273,7 +274,10 @@ const CVBuilder = () => {
                         ) : (
                           <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
                         )}
-                        <label className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                        <label 
+                          data-html2canvas-ignore="true"
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                        >
                           <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
                           <input 
                             type="file" 
