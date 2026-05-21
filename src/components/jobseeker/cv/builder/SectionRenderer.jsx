@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Common editable text component
 const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, placeholder }) => {
   return (
     <Tag
@@ -19,7 +18,6 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
   const code = section.sectionCode;
   const items = section.items || [];
   
-  // Base styles based on column context
   const isLeft = columnContext === 'left';
   const headingColor = isLeft ? '#ffffff' : style.themeColorId;
   const textColor = isLeft ? '#f3f4f6' : '#374151';
@@ -27,7 +25,6 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
 
   const fSize = style.fontSize || 'medium';
   
-  // Font sizes map (scaled down for realistic A4 print proportions)
   const nameSize = fSize === 'small' ? 'text-[18px] font-bold' : fSize === 'large' ? 'text-[26px] font-bold' : 'text-[22px] font-bold';
   const headingSize = fSize === 'small' ? 'text-[10.5px]' : fSize === 'large' ? 'text-[14.5px]' : 'text-[12.5px]';
   const subHeadingSize = fSize === 'small' ? 'text-[9px]' : fSize === 'large' ? 'text-[13px]' : 'text-[11px]';
