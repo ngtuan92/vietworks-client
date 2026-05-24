@@ -14,7 +14,7 @@ const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, plac
   );
 };
 
-export const renderSection = (section, style, onUpdate, columnContext, layoutCode) => {
+export const renderSection = (section, style, onUpdate, columnContext, layoutCode, isContinuation) => {
   const code = section.sectionCode;
   const items = section.items || [];
   
@@ -55,6 +55,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
     if (layoutCode === 'harvard-gsas') return null;
     const tStyle = style.titleStyle || 'underline';
     const borderCol = isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}40`;
+    const displayTitle = title;
     
     if (tStyle === 'underline') {
       return (
@@ -63,7 +64,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
             className={`${headingSize} font-black uppercase tracking-widest border-b-2 pb-1`}
             style={{ color: headingColor, borderColor: borderCol }}
           >
-            {title}
+            {displayTitle}
           </h2>
         </div>
       );
@@ -78,7 +79,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
               color: '#ffffff' 
             }}
           >
-            {title}
+            {displayTitle}
           </h2>
         </div>
       );
@@ -93,7 +94,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
               borderColor: isLeft ? '#ffffff' : style.themeColorId 
             }}
           >
-            {title}
+            {displayTitle}
           </h2>
         </div>
       );
@@ -105,7 +106,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
           className={`${headingSize} font-black uppercase tracking-widest`}
           style={{ color: headingColor }}
         >
-          {title}
+          {displayTitle}
         </h2>
       </div>
     );
@@ -461,32 +462,40 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
         <div className={marginClass}>
           <SectionHeader title="Kinh Nghiệm" />
           <div className={itemGapClass}>
-            {items.map((item, i) => (
-              <div key={i} className={`relative group/item ${ (layoutCode === 'harvard-classic' || layoutCode === 'harvard-gsas') ? '' : 'border-l-2 pl-3' }`} style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}>
-                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
-                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.title || 'Vị trí công việc'} onChange={v => updateItem(i, 'title', v)} />
-                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className={`relative group/item ${ (layoutCode === 'harvard-classic' || layoutCode === 'harvard-gsas') ? '' : 'border-l-2 pl-3' }`} style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}>
+                  <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                    <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.title || 'Vị trí công việc'} onChange={v => updateItem(i, 'title', v)} />
+                    <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
+                  </div>
+                  <EditableText className={`${bodySize} font-semibold mb-1`} style={{ color: isLeft ? 'rgba(255,255,255,0.9)' : style.themeColorId }} html={item.company || 'Tên công ty'} onChange={v => updateItem(i, 'company', v)} />
+                  <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả công việc...'} onChange={v => updateItem(i, 'description', v)} />
+                  
+                  {/* Delete button */}
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
                 </div>
-                <EditableText className={`${bodySize} font-semibold mb-1`} style={{ color: isLeft ? 'rgba(255,255,255,0.9)' : style.themeColorId }} html={item.company || 'Tên công ty'} onChange={v => updateItem(i, 'company', v)} />
-                <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả công việc...'} onChange={v => updateItem(i, 'description', v)} />
-                
-                {/* Delete button */}
-                <button 
-                  data-html2canvas-ignore="true"
-                  onClick={() => removeItem(i)} 
-                  className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                </button>
-              </div>
-            ))}
-            <button 
-              data-html2canvas-ignore="true"
-              onClick={() => addItem({ company: 'Tên Công Ty', date: 'Thời gian', title: 'Chức danh', description: 'Mô tả công việc' })} 
-              className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-            >
-              <span className="material-symbols-outlined text-[12px]">add</span> Thêm kinh nghiệm
-            </button>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ company: 'Tên Công Ty', date: 'Thời gian', title: 'Chức danh', description: 'Mô tả công việc' })} 
+                className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">add</span> Thêm kinh nghiệm
+              </button>
+            )}
           </div>
         </div>
       );
@@ -496,33 +505,41 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
         <div className={marginClass}>
           <SectionHeader title="Học Vấn" />
           <div className={itemGapClass}>
-            {items.map((item, i) => (
-              <div key={i} className="relative group/item">
-                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
-                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.school || 'Tên trường'} onChange={v => updateItem(i, 'school', v)} />
-                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className="relative group/item">
+                  <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                    <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.school || 'Tên trường'} onChange={v => updateItem(i, 'school', v)} />
+                    <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'MM/YYYY - MM/YYYY'} onChange={v => updateItem(i, 'date', v)} />
+                  </div>
+                  <div className="flex justify-between items-center gap-2 flex-wrap mb-1">
+                    <EditableText className={`${bodySize} font-semibold`} style={{ color: textColor }} html={item.major || 'Chuyên ngành'} onChange={v => updateItem(i, 'major', v)} />
+                    <EditableText className={`${bodySize}`} style={{ color: subtextColor }} html={item.gpa || 'GPA: X.X'} onChange={v => updateItem(i, 'gpa', v)} />
+                  </div>
+                  
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
                 </div>
-                <div className="flex justify-between items-center gap-2 flex-wrap mb-1">
-                  <EditableText className={`${bodySize} font-semibold`} style={{ color: textColor }} html={item.major || 'Chuyên ngành'} onChange={v => updateItem(i, 'major', v)} />
-                  <EditableText className={`${bodySize}`} style={{ color: subtextColor }} html={item.gpa || 'GPA: X.X'} onChange={v => updateItem(i, 'gpa', v)} />
-                </div>
-                
-                <button 
-                  data-html2canvas-ignore="true"
-                  onClick={() => removeItem(i)} 
-                  className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                </button>
-              </div>
-            ))}
-            <button 
-              data-html2canvas-ignore="true"
-              onClick={() => addItem({ school: 'Tên Trường', date: 'Thời gian', major: 'Chuyên ngành', gpa: 'GPA' })} 
-              className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-            >
-              <span className="material-symbols-outlined text-[12px]">add</span> Thêm học vấn
-            </button>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ school: 'Tên Trường', date: 'Thời gian', major: 'Chuyên ngành', gpa: 'GPA' })} 
+                className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">add</span> Thêm học văn
+              </button>
+            )}
           </div>
         </div>
       );
@@ -532,34 +549,42 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
         <div className={marginClass}>
           <SectionHeader title="Kỹ Năng" />
           <div className="flex flex-wrap gap-1.5">
-            {items.map((item, i) => (
-              <div key={i} className="relative group/item">
-                <EditableText 
-                  className={`px-2 py-0.5 rounded ${bodySize} font-medium border transition-colors ${
-                    isLeft 
-                      ? 'bg-white/10 hover:bg-white/20 border-white/10 text-white' 
-                      : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
-                  }`} 
-                  style={{ color: textColor }} 
-                  html={item.name || 'Kỹ năng'} 
-                  onChange={v => updateItem(i, 'name', v)} 
-                />
-                <button 
-                  data-html2canvas-ignore="true"
-                  onClick={() => removeItem(i)} 
-                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/item:opacity-100 text-[10px] shadow transition-opacity"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            <button 
-              data-html2canvas-ignore="true"
-              onClick={() => addItem({ name: 'Kỹ năng mới' })} 
-              className={`px-2 py-0.5 rounded ${bodySize} border border-dashed flex items-center gap-0.5 ${isLeft ? 'border-white/40 text-white/70 hover:bg-white/5' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}
-            >
-              + Thêm
-            </button>
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className="relative group/item">
+                  <EditableText 
+                    className={`px-2 py-0.5 rounded ${bodySize} font-medium border transition-colors ${
+                      isLeft 
+                        ? 'bg-white/10 hover:bg-white/20 border-white/10 text-white' 
+                        : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                    }`} 
+                    style={{ color: textColor }} 
+                    html={item.name || 'Kỹ năng'} 
+                    onChange={v => updateItem(i, 'name', v)} 
+                  />
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/item:opacity-100 text-[10px] shadow transition-opacity"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ name: 'Kỹ năng mới' })} 
+                className={`px-2 py-0.5 rounded ${bodySize} border border-dashed flex items-center gap-0.5 ${isLeft ? 'border-white/40 text-white/70 hover:bg-white/5' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}
+              >
+                + Thêm
+              </button>
+            )}
           </div>
         </div>
       );
@@ -569,31 +594,39 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
         <div className={marginClass}>
           <SectionHeader title="Dự Án" />
           <div className={itemGapClass}>
-            {items.map((item, i) => (
-              <div key={i} className={`relative group/item ${ (layoutCode === 'harvard-classic' || layoutCode === 'harvard-gsas') ? '' : 'border-l-2 pl-3' }`} style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}>
-                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
-                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.name || 'Tên dự án'} onChange={v => updateItem(i, 'name', v)} />
-                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className={`relative group/item ${ (layoutCode === 'harvard-classic' || layoutCode === 'harvard-gsas') ? '' : 'border-l-2 pl-3' }`} style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}>
+                  <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                    <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.name || 'Tên dự án'} onChange={v => updateItem(i, 'name', v)} />
+                    <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                  </div>
+                  <EditableText className={`${bodySize} font-semibold mb-1`} style={{ color: isLeft ? 'rgba(255,255,255,0.9)' : style.themeColorId }} html={item.role || 'Vai trò'} onChange={v => updateItem(i, 'role', v)} />
+                  <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả dự án...'} onChange={v => updateItem(i, 'description', v)} />
+                  
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
                 </div>
-                <EditableText className={`${bodySize} font-semibold mb-1`} style={{ color: isLeft ? 'rgba(255,255,255,0.9)' : style.themeColorId }} html={item.role || 'Vai trò'} onChange={v => updateItem(i, 'role', v)} />
-                <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả dự án...'} onChange={v => updateItem(i, 'description', v)} />
-                
-                <button 
-                  data-html2canvas-ignore="true"
-                  onClick={() => removeItem(i)} 
-                  className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                </button>
-              </div>
-            ))}
-            <button 
-              data-html2canvas-ignore="true"
-              onClick={() => addItem({ name: 'Tên Dự Án', date: 'Thời gian', role: 'Vai trò', description: 'Mô tả dự án' })} 
-              className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-            >
-              <span className="material-symbols-outlined text-[12px]">add</span> Thêm dự án
-            </button>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ name: 'Tên Dự Án', date: 'Thời gian', role: 'Vai trò', description: 'Mô tả dự án' })} 
+                className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">add</span> Thêm dự án
+              </button>
+            )}
           </div>
         </div>
       );
@@ -603,27 +636,35 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
         <div className={marginClass}>
           <SectionHeader title="Chứng Chỉ" />
           <div className={itemGapClass}>
-            {items.map((item, i) => (
-              <div key={i} className="relative group/item flex justify-between items-center py-0.5">
-                <EditableText className={`font-semibold ${bodySize}`} style={{ color: textColor }} html={item.name || 'Tên chứng chỉ'} onChange={v => updateItem(i, 'name', v)} />
-                <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
-                
-                <button 
-                  data-html2canvas-ignore="true"
-                  onClick={() => removeItem(i)} 
-                  className="absolute -left-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                </button>
-              </div>
-            ))}
-            <button 
-              data-html2canvas-ignore="true"
-              onClick={() => addItem({ name: 'Tên chứng chỉ', date: 'Thời gian' })} 
-              className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-            >
-              <span className="material-symbols-outlined text-[12px]">add</span> Thêm chứng chỉ
-            </button>
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className="relative group/item flex justify-between items-center py-0.5">
+                  <EditableText className={`font-semibold ${bodySize}`} style={{ color: textColor }} html={item.name || 'Tên chứng chỉ'} onChange={v => updateItem(i, 'name', v)} />
+                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                  
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -left-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
+                </div>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ name: 'Tên chứng chỉ', date: 'Thời gian' })} 
+                className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">add</span> Thêm chứng chỉ
+              </button>
+            )}
           </div>
         </div>
       );
@@ -633,30 +674,38 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
         <div className={marginClass}>
           <SectionHeader title="Hoạt Động" />
           <div className={itemGapClass}>
-            {items.map((item, i) => (
-              <div key={i} className="relative group/item">
-                <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
-                  <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.name || 'Tên hoạt động'} onChange={v => updateItem(i, 'name', v)} />
-                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className="relative group/item">
+                  <div className="flex justify-between items-baseline gap-2 flex-wrap mb-0.5">
+                    <EditableText tag="h3" className={`font-bold ${subHeadingSize}`} style={{ color: headingColor }} html={item.name || 'Tên hoạt động'} onChange={v => updateItem(i, 'name', v)} />
+                    <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                  </div>
+                  <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả hoạt động...'} onChange={v => updateItem(i, 'description', v)} />
+                  
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
                 </div>
-                <EditableText className={`${bodySize} leading-relaxed`} style={{ color: textColor }} html={item.description || '- Mô tả hoạt động...'} onChange={v => updateItem(i, 'description', v)} />
-                
-                <button 
-                  data-html2canvas-ignore="true"
-                  onClick={() => removeItem(i)} 
-                  className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                </button>
-              </div>
-            ))}
-            <button 
-              data-html2canvas-ignore="true"
-              onClick={() => addItem({ name: 'Tên hoạt động', date: 'Thời gian', description: 'Mô tả hoạt động' })} 
-              className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-            >
-              <span className="material-symbols-outlined text-[12px]">add</span> Thêm hoạt động
-            </button>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ name: 'Tên hoạt động', date: 'Thời gian', description: 'Mô tả hoạt động' })} 
+                className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">add</span> Thêm hoạt động
+              </button>
+            )}
           </div>
         </div>
       );
