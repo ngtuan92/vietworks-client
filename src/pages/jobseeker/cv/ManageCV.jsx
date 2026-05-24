@@ -14,6 +14,7 @@ const ManageCV = () => {
   const { success, error, confirm } = useNotification();
   const [cvs, setCvs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
 
   const fetchCvs = async () => {
     try {
@@ -39,7 +40,9 @@ const ManageCV = () => {
         try {
           const res = await cvService.deleteCv(id);
           if (res.success) {
-            setCvs(prev => prev.filter(cv => cv._id !== id));
+            // Sau khi xóa, nếu CV bị xóa là CV chính, backend sẽ tự động set 1 CV khác làm chính,
+            // vì thế ta fetch lại toàn bộ danh sách để đồng bộ UI thay vì chỉ filter client-side.
+            await fetchCvs();
             success('Xóa CV thành công!');
           } else {
             error(res.message || 'Xóa CV thất bại!');
@@ -73,6 +76,35 @@ const ManageCV = () => {
     }
   };
 
+  const handleSetMain = async (id) => {
+    try {
+      const res = await cvService.updateCv(id, { isMain: true });
+      if (res.success) {
+        success('Đặt CV làm CV chính thành công!');
+        await fetchCvs();
+      } else {
+        error(res.message || 'Đặt CV chính thất bại!');
+      }
+    } catch (err) {
+      console.error('Set main CV failed:', err);
+      error('Đã xảy ra lỗi khi đặt CV chính!');
+    }
+  };
+
+  // Tính số lượng CV cho các filter
+  const counts = {
+    all: cvs.length,
+    active: cvs.filter(cv => cv.isMain).length,
+    draft: cvs.filter(cv => !cv.isMain).length
+  };
+
+  // Lọc CV theo filter hiện tại
+  const filteredCvs = cvs.filter(cv => {
+    if (filter === 'active') return cv.isMain;
+    if (filter === 'draft') return !cv.isMain;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-background font-body-md">
       
@@ -84,24 +116,25 @@ const ManageCV = () => {
           {/* CV List - Main Content */}
           <div className="lg:col-span-8 space-y-stack-lg">
             {/* Filter and Stats */}
-            <CVFilter totalCount={cvs.length} />
+            <CVFilter currentFilter={filter} onFilterChange={setFilter} counts={counts} />
 
             {/* CV Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
               {loading ? (
                 <div className="col-span-full py-10 text-center text-gray-500">Đang tải danh sách CV...</div>
               ) : (
-                cvs.map(cv => (
+                filteredCvs.map(cv => (
                   <CVCard 
                     key={cv._id} 
                     id={cv._id}
                     title={cv.title}
                     date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
-                    isActive={cv.status === 'ACTIVE'}
+                    isMain={cv.isMain}
                     image={cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
                     onDelete={handleDeleteCv}
                     onDownload={handleDownloadPdf}
                     onRename={handleRenameCv}
+                    onSetMain={handleSetMain}
                   />
                 ))
               )}
