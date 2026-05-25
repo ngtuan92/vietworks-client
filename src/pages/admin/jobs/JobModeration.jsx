@@ -1,51 +1,208 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, StatusBadge } from '../shared/AdminPrimitives';
+// Giả định đây là file chứa hàm getAllJobs của bạn
+import jobAdminService from '../../../services/jobAdminService'; 
 
 const statusMap = {
   PENDING: 'bg-amber-100 text-amber-700',
   PUBLISHED: 'bg-emerald-100 text-emerald-700',
   BANNED: 'bg-red-100 text-red-700',
   CLOSED: 'bg-slate-100 text-slate-700',
+  DRAFT: 'bg-gray-100 text-gray-600',
+  EXPIRED: 'bg-rose-100 text-rose-700'
 };
 
-const jobs = [
-  { id: 1, title: 'Senior Backend Developer', company: 'ABC Corp', category: 'IT / Backend', salary: '30-45 million', location: 'Ho Chi Minh City', status: 'PENDING', type: 'URGENT', deadline: '2026-06-10', submittedAt: '2026-05-18' },
-  { id: 2, title: 'Product Designer', company: 'FinX', category: 'Design / UIUX', salary: '20-30 million', location: 'Ha Noi', status: 'PUBLISHED', type: 'Standard', deadline: '2026-06-01', submittedAt: '2026-05-15' },
-];
-
 const JobModeration = () => {
-  const [filters, setFilters] = useState({ keyword: '', company: '', status: '', location: '', type: '' });
+  // Quản lý bộ lọc tương thích với các tham số nhận vào từ Backend
+  const [filters, setFilters] = useState({ 
+    keyword: '', 
+    status: '' 
+  });
+  
+  // Các state quản lý dữ liệu, phân trang và trạng thái tải
+  const [jobList, setJobList] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
+  const [loading, setLoading] = useState(false);
+
+  // Hàm kích hoạt gọi API đổ dữ liệu vào State
+  const fetchAllJobsData = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: filters.keyword || undefined, // Map keyword từ ô input vào tham số 'search' của API
+        status: filters.status || undefined   // Nếu để trống thì backend sẽ trả về TẤT CẢ các trạng thái
+      };
+
+      const response = await jobAdminService.getAllJobsPending(params);
+      if (response.success) {
+        setJobList(response.data);
+        setPagination(response.pagination);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách công việc toàn hệ thống:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mỗi khi người dùng đổi bộ lọc hoặc đổi trang, API sẽ tự động kích hoạt lại
+  useEffect(() => {
+    fetchAllJobsData();
+  }, [filters.status, pagination.page]);
+
+  // Hàm xử lý riêng cho ô tìm kiếm text để tránh gọi API liên tục khi đang gõ (hoặc ấn Enter / Click tìm)
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    setPagination(p => ({ ...p, page: 1 })); // Reset về trang 1 khi tìm kiếm từ khóa mới
+    fetchAllJobsData();
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Job Moderation" description="Approve, reject or ban job postings across the whole platform." />
-      <SectionCard title="Filters">
-        <FilterGrid>
-          <InputField label="Keyword" value={filters.keyword} onChange={(v) => setFilters((p) => ({ ...p, keyword: v }))} placeholder="Job title" />
-          <InputField label="Company" value={filters.company} onChange={(v) => setFilters((p) => ({ ...p, company: v }))} placeholder="Company name" />
-          <SelectField label="Status" value={filters.status} onChange={(v) => setFilters((p) => ({ ...p, status: v }))} options={['DRAFT', 'PENDING', 'PUBLISHED', 'EXPIRED', 'CLOSED', 'BANNED']} />
-          <InputField label="Location" value={filters.location} onChange={(v) => setFilters((p) => ({ ...p, location: v }))} placeholder="City" />
-          <SelectField label="Type" value={filters.type} onChange={(v) => setFilters((p) => ({ ...p, type: v }))} options={['Standard', 'Featured', 'URGENT']} />
-        </FilterGrid>
+      <PageHeader 
+        title="Job Moderation" 
+        description="Quản lý, phê duyệt, từ chối hoặc cấm các tin tuyển dụng trên toàn hệ thống." 
+      />
+      
+      <SectionCard title="Bộ lọc tìm kiếm">
+        <form onSubmit={handleSearchSubmit}>
+          <FilterGrid>
+            <InputField 
+              label="Từ khóa (Title)" 
+              value={filters.keyword} 
+              onChange={(v) => setFilters((p) => ({ ...p, keyword: v }))} 
+              placeholder="Nhập tiêu đề công việc..." 
+            />
+            <SelectField 
+              label="Trạng thái tin" 
+              value={filters.status} 
+              onChange={(v) => {
+                setFilters((p) => ({ ...p, status: v }));
+                setPagination(p => ({ ...p, page: 1 })); // Reset về trang 1 khi đổi trạng thái
+              }} 
+              // Option đầu tiên để trống tương ứng lấy tất cả trạng thái như backend xử lý
+              options={['', 'PENDING', 'PUBLISHED', 'CLOSED', 'BANNED', 'DRAFT', 'EXPIRED']} 
+            />
+            {/* Nút trigger tìm kiếm theo từ khóa văn bản */}
+            <div className="flex items-end pb-1">
+              <button 
+                type="submit" 
+                className="w-full bg-slate-800 text-white rounded-xl py-2 px-4 font-medium text-sm hover:bg-slate-700 transition"
+              >
+                Tìm kiếm
+              </button>
+            </div>
+          </FilterGrid>
+        </form>
       </SectionCard>
 
-      <SimpleTable headers={['Job', 'Company', 'Category', 'Salary', 'Location', 'Status', 'Type', 'Deadline', 'Submitted', 'Actions']}>
-        {jobs.map((job) => (
-          <tr key={job.id} className="border-t border-slate-100">
-            <td className="px-4 py-3 font-semibold text-slate-900">{job.title}</td>
-            <td className="px-4 py-3">{job.company}</td>
-            <td className="px-4 py-3">{job.category}</td>
-            <td className="px-4 py-3">{job.salary}</td>
-            <td className="px-4 py-3">{job.location}</td>
-            <td className="px-4 py-3"><StatusBadge value={job.status} map={statusMap} /></td>
-            <td className="px-4 py-3">{job.type}</td>
-            <td className="px-4 py-3">{job.deadline}</td>
-            <td className="px-4 py-3">{job.submittedAt}</td>
-            <td className="px-4 py-3"><div className="flex gap-2"><Link to={`/admin/jobs/${job.id}`} className="rounded-xl border border-slate-200 px-3 py-2">View</Link><Link to={`/admin/jobs/${job.id}/review`} className="rounded-xl bg-[#0056b3] px-3 py-2 text-white">Review</Link></div></td>
-          </tr>
-        ))}
-      </SimpleTable>
+      {loading ? (
+        <div className="text-center py-10 text-slate-500 font-medium">Đang tải danh sách công việc...</div>
+      ) : (
+        <>
+          <SimpleTable headers={['Công việc', 'Công ty', 'Người đăng', 'Ngày tạo', 'Trạng thái', 'Hành động']}>
+            {jobList.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="text-center py-8 text-slate-400 italic">
+                  Không tìm thấy công việc nào thỏa mãn điều kiện.
+                </td>
+              </tr>
+            ) : (
+              jobList.map((job) => (
+                <tr key={job._id} className="border-t border-slate-100 hover:bg-slate-50/50 transition">
+                  {/* Cột Công việc */}
+                  <td className="px-4 py-3 font-semibold text-slate-900 max-w-xs truncate">
+                    {job.title}
+                  </td>
+                  
+                  {/* Cột Công ty (đã được populate thông tin từ companyId) */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {job.companyId?.logo && (
+                        <img 
+                          src={job.companyId.logo} 
+                          alt="logo" 
+                          className="w-6 h-6 rounded-md object-cover border border-slate-100" 
+                        />
+                      )}
+                      <span className="truncate max-w-[150px]">
+                        {job.companyId?.name || <span className="text-slate-400 italic">N/A</span>}
+                      </span>
+                    </div>
+                  </td>
+                  
+                  {/* Cột Người đăng tin (đã được populate thông tin từ createdBy) */}
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    <div className="font-medium">{job.createdBy?.fullName || 'Hệ thống'}</div>
+                    <div className="text-xs text-slate-400">{job.createdBy?.email}</div>
+                  </td>
+                  
+                  {/* Cột Ngày tạo tin */}
+                  <td className="px-4 py-3 text-sm text-slate-500">
+                    {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+                  </td>
+                  
+                  {/* Cột Trạng thái */}
+                  <td className="px-4 py-3">
+                    <StatusBadge value={job.status} map={statusMap} />
+                  </td>
+                  
+                  {/* Cột Hành động */}
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <Link 
+                        to={`/admin/jobs/${job._id}`} 
+                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        Xem chi tiết
+                      </Link>
+                      <Link 
+                        to={`/admin/jobs/${job._id}/review`} 
+                        className="rounded-xl bg-[#0056b3] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                      >
+                        Kiểm duyệt
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </SimpleTable>
+
+          {/* Thanh phân trang kết nối trực tiếp với bộ đếm của Mongoose */}
+          {pagination.pages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4 px-2">
+              <div className="text-xs text-slate-500">
+                Hiển thị bản ghi từ {((pagination.page - 1) * pagination.limit) + 1} đến {Math.min(pagination.page * pagination.limit, pagination.total)} trên tổng số {pagination.total} công việc.
+              </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  type="button"
+                  disabled={pagination.page === 1}
+                  onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
+                  className="px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition"
+                >
+                  Trước
+                </button>
+                <div className="px-3 text-xs font-semibold text-slate-700">
+                  Trang {pagination.page} / {pagination.pages}
+                </div>
+                <button 
+                  type="button"
+                  disabled={pagination.page === pagination.pages}
+                  onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
+                  className="px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg disabled:opacity-40 disabled:hover:bg-transparent hover:bg-slate-50 transition"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
