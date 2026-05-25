@@ -10,14 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@react-oauth/google": "^0.13.5",
     "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.16.1",
+    "html2canvas": "^1.4.1",
+    "html2canvas-pro": "^2.0.2",
+    "jspdf": "^4.2.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1",
-    "sub-vn": "^0.0.2"
+    "sub-vn": "^0.0.2",
+    "react-icons": "^5.6.0",
+    "react-router-dom": "^7.15.1"
+
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

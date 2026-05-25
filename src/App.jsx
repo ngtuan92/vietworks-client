@@ -6,6 +6,8 @@ import Home from './pages/jobseeker/home/Home';
 import Jobs from './pages/jobseeker/jobs/Jobs';
 import JobDetail from './pages/jobseeker/jobs/JobDetail';
 import ManageCV from './pages/jobseeker/cv/ManageCV';
+import TemplateGallery from './pages/jobseeker/cv/TemplateGallery';
+import CVBuilder from './pages/jobseeker/cv/CVBuilder';
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
 import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
@@ -80,15 +82,20 @@ import AdminInvoices from './pages/admin/invoices/AdminInvoices';
 import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
 import CVTemplateForm from './pages/admin/cv-templates/CVTemplateForm';
 
+import { NotificationProvider } from './contexts/NotificationContext';
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <NotificationProvider>
+      <BrowserRouter>
+        <Routes>
         <Route path="/" element={<JobseekerLayout />}>
           <Route index element={<Home />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="manage-cv" element={<ManageCV />} />
+          <Route path="cv-templates/gallery" element={<TemplateGallery />} />
+          <Route path="cv-builder/:id" element={<CVBuilder />} />
           <Route path="companies" element={<CompanyList />} />
           <Route path="companies/:id" element={<CompanyDetail />} />
           <Route path="salary-insight" element={<SalaryInsight />} />
@@ -184,7 +191,8 @@ function App() {
           <Route path="account" element={<AdminAccountSettings />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </NotificationProvider>
   );
 }
 

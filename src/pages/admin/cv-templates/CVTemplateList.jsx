@@ -1,121 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Mock data based on the design
-const initialTemplates = [
-  {
-    id: 'TPL-001',
-    name: 'Quản lý Hiện đại',
-    industry: 'Quản trị kinh doanh',
-    createdAt: '12 Th10, 2023',
-    usersCount: 12450,
-    isActive: true,
-    layout: 'Một Cột Trái',
-    color: '#0056b3',
-    font: 'Inter',
-  },
-  {
-    id: 'TPL-002',
-    name: 'Sáng tạo Tối giản',
-    industry: 'Thiết kế',
-    createdAt: '05 Th11, 2023',
-    usersCount: 8210,
-    isActive: true,
-    layout: 'Tiêu đề chia trái',
-    color: '#e056fd',
-    font: 'Outfit',
-  },
-  {
-    id: 'TPL-003',
-    name: 'Khởi nghiệp Công nghệ',
-    industry: 'Công nghệ thông tin',
-    createdAt: '18 Th01, 2024',
-    usersCount: 3055,
-    isActive: false,
-    layout: 'Hai Cột Bằng Nhau',
-    color: '#10ac84',
-    font: 'Roboto',
-  },
-  {
-    id: 'TPL-004',
-    name: 'Chuyên gia Tài chính',
-    industry: 'Tài chính / Ngân hàng',
-    createdAt: '20 Th02, 2024',
-    usersCount: 5410,
-    isActive: true,
-    layout: 'Một Cột Trái',
-    color: '#222f3e',
-    font: 'Inter',
-  },
-  {
-    id: 'TPL-005',
-    name: 'Developer Cực Chất',
-    industry: 'Công nghệ thông tin',
-    createdAt: '01 Th03, 2024',
-    usersCount: 9430,
-    isActive: true,
-    layout: 'Hai Cột Bằng Nhau',
-    color: '#0984e3',
-    font: 'Fira Code',
-  },
-  {
-    id: 'TPL-006',
-    name: 'Nhân sự Chuẩn mực',
-    industry: 'Quản trị kinh doanh',
-    createdAt: '15 Th03, 2024',
-    usersCount: 1220,
-    isActive: false,
-    layout: 'Tiêu đề chia trái',
-    color: '#d63031',
-    font: 'Playfair Display',
-  }
-];
+import adminService from '../../../services/adminService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const CVTemplateList = () => {
   const navigate = useNavigate();
-  const [templates, setTemplates] = useState(initialTemplates);
+  const { error } = useNotification();
+  const [templates, setTemplates] = useState([]);
+  const [careerGroups, setCareerGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Filters
   const [statusFilter, setStatusFilter] = useState('all');
   const [industryFilter, setIndustryFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const fetchTemplates = async () => {
+    setLoading(true);
+    try {
+      const data = await adminService.getTemplates({
+        page,
+        limit: 10,
+        search: searchQuery,
+        status: statusFilter,
+        careerGroupId: industryFilter
+      });
+      if (data.success) {
+        setTemplates(data.data);
+        setTotalPages(data.pagination.totalPages);
+        setTotalItems(data.pagination.total);
+      }
+    } catch (error) {
+      console.error('Failed to fetch templates', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCareerGroups = async () => {
+    try {
+      const data = await adminService.getCareerGroups();
+      if (data.success) {
+        setCareerGroups(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch career groups', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCareerGroups();
+  }, []);
+
+  useEffect(() => {
+    // Debounce search slightly
+    const timeoutId = setTimeout(() => {
+      fetchTemplates();
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [page, statusFilter, industryFilter, searchQuery]);
 
   // Toggle active status
-  const toggleStatus = (id) => {
-    setTemplates(templates.map(tpl => 
-      tpl.id === id ? { ...tpl, isActive: !tpl.isActive } : tpl
-    ));
-  };
-
-  // Delete handler
-  const handleDelete = (id) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa mẫu CV ${id} không?`)) {
-      setTemplates(templates.filter(tpl => tpl.id !== id));
+  const toggleStatus = async (id) => {
+    try {
+      const res = await adminService.toggleTemplateStatus(id);
+      if (res.success) {
+        setTemplates(templates.map(tpl => 
+          tpl._id === id ? { ...tpl, status: res.data.status } : tpl
+        ));
+      }
+    } catch (err) {
+      error('Thay đổi trạng thái thất bại!');
     }
   };
 
-  // Filter & Sort Logic
-  const filteredTemplates = templates.filter(tpl => {
-    const matchesStatus = 
-      statusFilter === 'all' ? true : 
-      statusFilter === 'active' ? tpl.isActive : !tpl.isActive;
-    
-    const matchesIndustry = 
-      industryFilter === 'all' ? true : tpl.industry === industryFilter;
-
-    const matchesSearch = 
-      tpl.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      tpl.id.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesStatus && matchesIndustry && matchesSearch;
-  }).sort((a, b) => {
-    if (sortBy === 'newest') {
-      return new Date(b.createdAt.replace(' Th', ' ')) - new Date(a.createdAt.replace(' Th', ' '));
-    }
-    if (sortBy === 'users') {
-      return b.usersCount - a.usersCount;
-    }
-    return 0;
-  });
+  const handleEdit = (tpl) => {
+    navigate(`/admin/cv-templates/edit/${tpl._id}`, { state: tpl });
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -146,7 +112,7 @@ const CVTemplateList = () => {
             </span>
             <input
               type="text"
-              placeholder="Tìm theo tên hoặc ID..."
+              placeholder="Tìm theo tên hoặc mã..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5"
@@ -160,8 +126,8 @@ const CVTemplateList = () => {
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 cursor-pointer"
           >
             <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="inactive">Ngừng hoạt động</option>
+            <option value="ACTIVE">Đang hoạt động</option>
+            <option value="INACTIVE">Ngừng hoạt động</option>
           </select>
 
           {/* Industry Select */}
@@ -171,31 +137,20 @@ const CVTemplateList = () => {
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 cursor-pointer"
           >
             <option value="all">Ngành nghề: Tất cả</option>
-            <option value="Quản trị kinh doanh">Quản trị kinh doanh</option>
-            <option value="Thiết kế">Thiết kế</option>
-            <option value="Công nghệ thông tin">Công nghệ thông tin</option>
-            <option value="Tài chính / Ngân hàng">Tài chính / Ngân hàng</option>
-          </select>
-
-          {/* Sort Select */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 cursor-pointer"
-          >
-            <option value="newest">Sắp xếp: Mới nhất</option>
-            <option value="users">Sắp xếp: Số người dùng</option>
+            {careerGroups.map(group => (
+              <option key={group._id} value={group._id}>{group.name}</option>
+            ))}
           </select>
         </div>
 
         <div className="text-sm font-semibold text-gray-500 whitespace-nowrap self-end md:self-auto">
-          Hiển thị {filteredTemplates.length} mẫu
+          Tổng số {totalItems} mẫu
         </div>
       </div>
 
       {/* Data Table */}
       <div className="bg-white border border-[#e5e7eb] rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-left text-sm text-gray-700">
             <thead className="bg-[#f9fafb] border-b border-[#e5e7eb] text-xs font-bold text-gray-500 uppercase tracking-wider">
               <tr>
@@ -208,89 +163,83 @@ const CVTemplateList = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5e7eb]">
-              {filteredTemplates.length > 0 ? (
-                filteredTemplates.map((tpl) => (
-                  <tr key={tpl.id} className="hover:bg-gray-50 transition-colors">
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-400">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : templates.length > 0 ? (
+                templates.map((tpl) => (
+                  <tr key={tpl._id} className="hover:bg-gray-50 transition-colors">
                     {/* Preview & Name */}
                     <td className="px-6 py-4 flex items-center gap-4">
-                      {/* CV Icon / Preview Box */}
-                      <div className="w-12 h-16 bg-gray-100 border border-gray-300 rounded-lg flex flex-col justify-between p-1.5 shadow-sm relative overflow-hidden group">
-                        {/* Miniature layout visualization */}
-                        <div className="w-full flex-1 flex gap-1">
-                          <div className="w-1/3 bg-gray-300 rounded-sm"></div>
-                          <div className="flex-1 flex flex-col gap-1">
-                            <div className="h-1 bg-gray-300 w-full rounded-sm"></div>
-                            <div className="h-1 bg-gray-200 w-3/4 rounded-sm"></div>
-                            <div className="h-1 bg-gray-200 w-5/6 rounded-sm"></div>
-                          </div>
-                        </div>
-                        {/* Tiny color badge */}
-                        <div className="h-1 w-full rounded-sm" style={{ backgroundColor: tpl.color }}></div>
+                      {/* CV Preview Box */}
+                      <div 
+                        className="w-12 h-16 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center shadow-sm relative overflow-hidden group cursor-pointer"
+                        onClick={() => handleEdit(tpl)}
+                      >
+                        {tpl.thumbnailUrl ? (
+                          <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-gray-400">image</span>
+                        )}
                       </div>
 
                       <div>
-                        <div className="font-bold text-gray-900 text-base hover:text-[#0056b3] cursor-pointer" onClick={() => navigate(`/admin/cv-templates/edit/${tpl.id}`, { state: tpl })}>
+                        <div className="font-bold text-gray-900 text-base hover:text-[#0056b3] cursor-pointer" onClick={() => handleEdit(tpl)}>
                           {tpl.name}
                         </div>
-                        <div className="text-xs text-gray-500 font-mono mt-0.5">ID: {tpl.id}</div>
+                        <div className="text-xs text-gray-500 font-mono mt-0.5">Mã: {tpl.code}</div>
+                        {tpl.isPremium && <span className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded">PREMIUM</span>}
                       </div>
                     </td>
 
                     {/* Industry */}
-                    <td className="px-6 py-4 text-gray-600 font-medium">{tpl.industry}</td>
+                    <td className="px-6 py-4 text-gray-600 font-medium">{tpl.careerGroupId?.name || 'Chung'}</td>
 
                     {/* Created Date */}
-                    <td className="px-6 py-4 text-gray-500">{tpl.createdAt}</td>
+                    <td className="px-6 py-4 text-gray-500">{new Date(tpl.createdAt).toLocaleDateString('vi-VN')}</td>
 
                     {/* Users count */}
                     <td className="px-6 py-4 text-right font-semibold text-gray-900">
-                      {tpl.usersCount.toLocaleString()}
+                      {tpl.usersCount?.toLocaleString() || 0}
                     </td>
 
-                    {/* Status Badge */}
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => toggleStatus(tpl.id)}
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 ${
-                          tpl.isActive
-                            ? 'bg-[#ebf5ff] text-[#0056b3] hover:bg-[#d6ebff]'
-                            : 'bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]'
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${tpl.isActive ? 'bg-[#0056b3]' : 'bg-[#6b7280]'}`}></span>
-                        {tpl.isActive ? 'Hoạt động' : 'Ngừng hoạt động'}
-                      </button>
+                    {/* Status Toggle Switch */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => toggleStatus(tpl._id)}
+                          type="button"
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            tpl.status === 'ACTIVE' ? 'bg-[#0056b3]' : 'bg-gray-200'
+                          }`}
+                          title={tpl.status === 'ACTIVE' ? 'Đang hoạt động - Click để ngừng hoạt động' : 'Ngừng hoạt động - Click để hoạt động'}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              tpl.status === 'ACTIVE' ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                        <span className={`text-xs font-bold w-10 text-left ${
+                          tpl.status === 'ACTIVE' ? 'text-[#0056b3]' : 'text-gray-400'
+                        }`}>
+                          {tpl.status === 'ACTIVE' ? 'Bật' : 'Tắt'}
+                        </span>
+                      </div>
                     </td>
 
                     {/* Actions */}
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => navigate(`/admin/cv-templates/edit/${tpl.id}`, { state: tpl })}
+                          onClick={() => handleEdit(tpl)}
                           title="Sửa mẫu CV"
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-600 hover:bg-[#ebf5ff] hover:text-[#0056b3] transition-all"
                         >
                           <span className="material-symbols-outlined text-[20px]">edit</span>
-                        </button>
-                        <button
-                          onClick={() => toggleStatus(tpl.id)}
-                          title={tpl.isActive ? "Tắt hoạt động" : "Bật hoạt động"}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                            tpl.isActive 
-                              ? 'text-yellow-600 hover:bg-yellow-50' 
-                              : 'text-green-600 hover:bg-green-50'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[20px]">
-                            {tpl.isActive ? 'visibility_off' : 'visibility'}
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tpl.id)}
-                          title="Xóa mẫu CV"
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-red-600 hover:bg-red-50 transition-all"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
                         </button>
                       </div>
                     </td>
@@ -311,23 +260,22 @@ const CVTemplateList = () => {
         {/* Footer & Pagination */}
         <div className="bg-[#f9fafb] border-t border-[#e5e7eb] px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-xs font-semibold text-gray-500">
-            Hiển thị 1 đến {filteredTemplates.length} trong {templates.length} kết quả
+            Hiển thị trang {page} / {totalPages}
           </div>
           <div className="flex items-center gap-1.5">
-            <button className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 bg-white hover:bg-gray-50 transition-all disabled:opacity-50" disabled>
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 bg-white hover:bg-gray-50 transition-all disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[16px]">chevron_left</span>
             </button>
-            <button className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold bg-[#0056b3] text-white shadow-sm">
-              1
-            </button>
-            <button className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-sm font-bold bg-white text-gray-700 hover:bg-gray-50 transition-all">
-              2
-            </button>
-            <button className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-sm font-bold bg-white text-gray-700 hover:bg-gray-50 transition-all">
-              3
-            </button>
-            <span className="text-gray-400 px-1">...</span>
-            <button className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 bg-white hover:bg-gray-50 transition-all">
+            <span className="text-sm font-bold text-gray-700 px-2">{page}</span>
+            <button 
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || totalPages === 0}
+              className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 bg-white hover:bg-gray-50 transition-all disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             </button>
           </div>

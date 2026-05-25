@@ -1,30 +1,77 @@
-
-import Navbar from '../../../components/layout/Navbar';
-import Footer from '../../../components/layout/Footer';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CVWelcome from '../../../components/jobseeker/cv/CVWelcome';
 import CVFilter from '../../../components/jobseeker/cv/CVFilter';
 import { CVCard, CVPlaceholderCard } from '../../../components/jobseeker/cv/CVCard';
 import ProfileStrength from '../../../components/jobseeker/cv/ProfileStrength';
 import CVExpertReview from '../../../components/jobseeker/cv/CVExpertReview';
 import CareerResources from '../../../components/jobseeker/cv/CareerResources';
+import cvService from '../../../services/cvService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const ManageCV = () => {
-  const cvs = [
-    {
-      id: 1,
-      title: "Senior Project Manager",
-      date: "2 days ago",
-      isActive: true,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBCZZrdFGhDg0yENKK7pbUffm_Tg02eahPoW9kuTSO6hzM2NQA9y9TY-YJjiYoeBWalBfrx_wzb1hxEEFV4x_0EHD3hQ3yKGUFa8z7IIvW1ESpYaXRN9w_fooBOI40MyDx8YquietMy1VXnmuKWe2OtThVXpb3eSEE-mpEqc6xczg5jEiKcHZ4ped_KbH8lGhXF8h2kIs7F4JhkPEBgatSdFj9IFaZomRRZaUdzSuXIl8rqnngnFhW2xfBapmlHmqFSHriRXzhW_01k"
-    },
-    {
-      id: 2,
-      title: "Business Analyst",
-      date: "Jan 15, 2024",
-      isActive: false,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuArEOyN7T1Xd-fuXEqelvU5ylKbqMFjSLm3eUGlOZZkjNbOkyU4wsZjCE_fC3UGiljeYHF40i38g6lfauzcRr9MIY2zxSnBTRE6pCEzawfpQ2xIVaxXvGzJQJ4ATeS_VvAT0ObbzvrMI7Xo6ZUTLHZ4iy0KSxU68iREVF7m3BB-g5QANBcLNWncr1c5UsE1owXiModNwHABEZiivPh82hvMuyDrR7TzLUrkq8Ig9SWP3iB7QoRicLzGpBDu3uoPFKc0UVpFx9WZar1T"
+  const navigate = useNavigate();
+  const { success, error, confirm } = useNotification();
+  const [cvs, setCvs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCvs = async () => {
+    try {
+      const response = await cvService.getUserCvs();
+      if (response.success) {
+        setCvs(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch CVs:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchCvs();
+  }, []);
+
+  const handleDeleteCv = (id, title) => {
+    confirm(
+      `Bạn có chắc chắn muốn xóa CV "${title}" không? Hành động này không thể hoàn tác.`,
+      async () => {
+        try {
+          const res = await cvService.deleteCv(id);
+          if (res.success) {
+            setCvs(prev => prev.filter(cv => cv._id !== id));
+            success('Xóa CV thành công!');
+          } else {
+            error(res.message || 'Xóa CV thất bại!');
+          }
+        } catch (err) {
+          console.error('Delete CV failed:', err);
+          error('Đã xảy ra lỗi khi xóa CV!');
+        }
+      },
+      null,
+      'Xác nhận xóa'
+    );
+  };
+
+  const handleDownloadPdf = (id) => {
+    navigate(`/cv-builder/${id}?download=true`);
+  };
+
+  const handleRenameCv = async (id, newTitle) => {
+    try {
+      const res = await cvService.updateCv(id, { title: newTitle });
+      if (res.success) {
+        setCvs(prev => prev.map(cv => cv._id === id ? { ...cv, title: newTitle } : cv));
+        success('Đổi tên CV thành công!');
+      } else {
+        error(res.message || 'Đổi tên thất bại!');
+      }
+    } catch (err) {
+      console.error('Rename CV failed:', err);
+      error('Đã xảy ra lỗi khi đổi tên CV!');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background font-body-md">
@@ -37,13 +84,27 @@ const ManageCV = () => {
           {/* CV List - Main Content */}
           <div className="lg:col-span-8 space-y-stack-lg">
             {/* Filter and Stats */}
-            <CVFilter />
+            <CVFilter totalCount={cvs.length} />
 
             {/* CV Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
-              {cvs.map(cv => (
-                <CVCard key={cv.id} {...cv} />
-              ))}
+              {loading ? (
+                <div className="col-span-full py-10 text-center text-gray-500">Đang tải danh sách CV...</div>
+              ) : (
+                cvs.map(cv => (
+                  <CVCard 
+                    key={cv._id} 
+                    id={cv._id}
+                    title={cv.title}
+                    date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
+                    isActive={cv.status === 'ACTIVE'}
+                    image={cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
+                    onDelete={handleDeleteCv}
+                    onDownload={handleDownloadPdf}
+                    onRename={handleRenameCv}
+                  />
+                ))
+              )}
               
               {/* Create Placeholder */}
               <CVPlaceholderCard />

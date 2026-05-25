@@ -77,27 +77,33 @@ const Navbar = () => {
 
           <nav className="hidden md:flex items-center gap-8">
             <Link
-              className={`text-sm font-semibold transition-colors duration-200 pb-1 ${
-                isActive('/jobs') ? 'text-[#003f87] border-b-2 border-[#003f87]' : 'text-black hover:text-[#003f87]'
+              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 ${
+                isActive('/jobs') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
               }`}
               to="/jobs"
             >
               Việc làm
             </Link>
             <button
-              className="text-sm font-semibold text-black hover:text-[#003f87] transition-colors duration-200"
+              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 bg-transparent cursor-pointer ${
+                isActive('/manage-cv') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+              }`}
               onClick={() => handleProtectedNavigation('/manage-cv')}
             >
               Tạo CV
             </button>
             <Link
-              className="text-sm font-semibold text-black hover:text-[#003f87] transition-colors duration-200"
+              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 ${
+                isActive('/companies') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+              }`}
               to="/companies"
             >
               Công ty
             </Link>
             <button
-              className="text-sm font-semibold text-black hover:text-[#003f87] transition-colors duration-200"
+              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 bg-transparent cursor-pointer ${
+                isActive('/salary-insight') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+              }`}
               onClick={() => handleProtectedNavigation('/salary-insight')}
             >
               Tra cứu lương
