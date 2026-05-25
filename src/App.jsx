@@ -86,8 +86,8 @@ function App() {
       <Routes>
         <Route path="/" element={<JobseekerLayout />}>
           <Route index element={<Home />} />
-          <Route path="jobs" element={<Jobs />} />
-          <Route path="jobs/:id" element={<JobDetail />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="manage-cv" element={<ManageCV />} />
           <Route path="companies" element={<CompanyList />} />
           <Route path="companies/:id" element={<CompanyDetail />} />
@@ -150,8 +150,8 @@ function App() {
           
           <Route path="jobs" element={<JobModeration />} />
           <Route path="jobs/history" element={<JobModerationHistory />} />
-          <Route path="jobs/:id" element={<JobDetailAdmin />} />
-          <Route path="jobs/:id/review" element={<JobReview />} />
+          <Route path="/admin/jobs/:jobId" element={<JobDetailAdmin />} />
+          <Route path="/admin/jobs/:jobId/review" element={<JobReview />} />
           
           <Route path="master-data" element={<MasterDataManagement />} />
           
