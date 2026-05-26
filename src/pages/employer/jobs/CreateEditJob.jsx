@@ -1,8 +1,8 @@
 ﻿import { useMemo, useState, useEffect } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
-import HierarchicalLocationPicker from './../../../components/HierarchicalLocationPicker'; // Component chọn địa điểm phân cấp
-
+import companyLocationService from '../../../services/companyLocationService';
+console.log('companyLocationService:', companyLocationService);
 const STEPS = [
   'Thông tin cơ bản',
   'Mức lương',
@@ -18,7 +18,7 @@ const CreateEditJob = () => {
   const [isCompanyVerified, setIsCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-
+const [companyLocations, setCompanyLocations] = useState([]);
   // --- States lưu trữ Danh mục Động từ Backend ---
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
@@ -49,6 +49,29 @@ const CreateEditJob = () => {
     deadline: '',
     isUrgent: false,
   });
+  useEffect(() => {
+  const fetchCompanyLocations = async () => {
+    try {
+      const res = await companyLocationService.getMyCompanyLocations();
+      console.log('Company locations response:', res);
+      setCompanyLocations(res.data || []);
+    } catch (err) {
+      console.error('Load company locations error:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        fullUrl: `${err.config?.baseURL || ''}${err.config?.url || ''}`,
+        headers: err.config?.headers,
+      });
+
+      showToast(
+        'error',
+        err.response?.data?.message || 'Không thể tải danh sách địa điểm công ty.'
+      );
+    }
+  };
+
+  fetchCompanyLocations();
+}, []);
 
   // --- Lấy dữ liệu danh mục ban đầu (Global Master Data) ---
   useEffect(() => {
@@ -128,19 +151,7 @@ const CreateEditJob = () => {
   };
 
   // --- Nhận dữ liệu snapshot từ HierarchicalLocationPicker ---
-  const handleSelectHierarchicalLocation = (locationInfo) => {
-    // Lưu ý: Đã sửa lỗi dùng nhầm setForm thành setField chuẩn của component
-    setField('workLocations', [
-      {
-        provinceId: locationInfo.provinceId || '', // Đảm bảo lưu ID để backend mapping nếu cần
-        provinceName: locationInfo.provinceName,
-        districtName: locationInfo.districtName || '', 
-        wardName: locationInfo.wardName || '',         
-        address: locationInfo.fullAddress              // Chuỗi gộp đầy đủ
-      }
-    ]);
-  };
-
+ 
   const toggleMulti = (key, value) => {
     setForm((prev) => {
       const current = new Set(prev[key]);
@@ -329,7 +340,7 @@ const CreateEditJob = () => {
           <StepLocationDeadline 
             form={form} 
             setField={setField} 
-            onLocationSelect={handleSelectHierarchicalLocation} // Đã sửa logic đồng bộ chuẩn
+  companyLocations={companyLocations}
           />
         )}        
         {step === 7 && (
@@ -523,42 +534,145 @@ const StepBenefits = ({ form, setField }) => (
   </div>
 );
 
-const StepLocationDeadline = ({ form, setField, onLocationSelect }) => {
-  const isPastDeadline = form.deadline ? new Date(form.deadline) < new Date().setHours(0,0,0,0) : false;
+const StepLocationDeadline = ({ form, setField, companyLocations }) => {
+  const isPastDeadline = form.deadline
+    ? new Date(form.deadline) < new Date().setHours(0, 0, 0, 0)
+    : false;
+
+  const selectedLocationIds = form.workLocations.map((location) => location.locationId);
+
+  const toggleLocation = (location) => {
+    const exists = selectedLocationIds.includes(location._id);
+
+    if (exists) {
+      setField(
+        'workLocations',
+        form.workLocations.filter((item) => item.locationId !== location._id)
+      );
+      return;
+    }
+
+    setField('workLocations', [
+      ...form.workLocations,
+      {
+        locationId: location._id,
+        provinceName: location.province,
+        districtName: location.district || '',
+        wardName: location.ward || '',
+        address: [
+          location.addressLine,
+          location.ward,
+          location.district,
+          location.province
+        ]
+          .filter(Boolean)
+          .join(', '),
+        latitude: location.latitude ?? null,
+        longitude: location.longitude ?? null,
+      },
+    ]);
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold text-slate-900">Bước 6: Khối địa điểm & Thời hạn ứng tuyển</h2>
-      
-      <div> 
+
+      <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2">
           Địa điểm đặt văn phòng làm việc <span className="text-red-600">*</span>
         </label>
-        
-        {/* Sửa cú pháp truyền hàm callback từ dạng chuỗi "{...}" về đúng chuẩn JS {...} */}
-        <HierarchicalLocationPicker onLocationSelect={onLocationSelect}/> 
-        
-        {/* ĐÃ LOẠI BỎ HOÀN TOÀN KHỐI CHECKBOX FIXED_LOCATIONS TẠI ĐÂY */}
+
+        {companyLocations.length === 0 ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 font-medium">
+            Công ty chưa có địa điểm làm việc. Vui lòng thêm địa điểm trong hồ sơ công ty trước khi tạo tin.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {companyLocations.map((location) => {
+              const checked = selectedLocationIds.includes(location._id);
+              const fullAddress = [
+                location.addressLine,
+                location.ward,
+                location.district,
+                location.province
+              ]
+                .filter(Boolean)
+                .join(', ');
+
+              return (
+                <label
+                  key={location._id}
+                  className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all ${
+                    checked
+                      ? 'border-[#003f87] bg-blue-50'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleLocation(location)}
+                    className="mt-1"
+                  />
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-slate-900">{location.name}</p>
+                      {location.isPrimary ? (
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                          Trụ sở chính
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-slate-600 mt-1">{fullAddress}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-        <Select 
-          label="Chính sách làm việc Thứ 7" 
-          value={form.saturdayPolicy} 
-          onChange={(v) => setField('saturdayPolicy', v)} 
+        <Select
+          label="Chính sách làm việc Thứ 7"
+          value={form.saturdayPolicy}
+          onChange={(v) => setField('saturdayPolicy', v)}
           options={[
             { value: 'NOT_SPECIFIED', label: 'Không đề cập chi tiết' },
             { value: 'WORK_SATURDAY', label: 'Có làm việc ngày Thứ 7' },
-            { value: 'OFF_SATURDAY', label: 'Nghỉ hoàn toàn Thứ 7 & CN' }
-          ]} 
+            { value: 'OFF_SATURDAY', label: 'Nghỉ hoàn toàn Thứ 7 & CN' },
+          ]}
         />
-        <Field label="Hạn cuối nộp hồ sơ nhận CV" required type="date" value={form.deadline} onChange={(v) => setField('deadline', v)} />
+        <Field
+          label="Hạn cuối nộp hồ sơ nhận CV"
+          required
+          type="date"
+          value={form.deadline}
+          onChange={(v) => setField('deadline', v)}
+        />
       </div>
-      {isPastDeadline && <p className="text-sm text-red-600 font-medium">⚠️ Lỗi: Ngày hết hạn không hợp lệ (không thể chọn ngày trong quá khứ).</p>}
 
-      <TextArea label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên" required value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} />
-      
+      {isPastDeadline ? (
+        <p className="text-sm text-red-600 font-medium">
+          ⚠️ Lỗi: Ngày hết hạn không hợp lệ (không thể chọn ngày trong quá khứ).
+        </p>
+      ) : null}
+
+      <TextArea
+        label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
+        required
+        value={form.applyInstruction}
+        onChange={(v) => setField('applyInstruction', v)}
+      />
+
       <label className="flex items-center gap-2 font-semibold text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-100 max-w-max cursor-pointer">
-        <input type="checkbox" checked={form.isUrgent} onChange={(e) => setField('isUrgent', e.target.checked)} className="rounded" />
+        <input
+          type="checkbox"
+          checked={form.isUrgent}
+          onChange={(e) => setField('isUrgent', e.target.checked)}
+          className="rounded"
+        />
         Đánh dấu đây là tin tuyển dụng GẤP (Hiển thị Badge Urgent nổi bật)
       </label>
     </div>
