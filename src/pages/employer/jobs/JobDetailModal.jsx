@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import jobService from '../../../services/jobService'; 
-import HierarchicalLocationPicker from '../../../components/HierarchicalLocationPicker'; // Hãy đảm bảo đường dẫn này chính xác
-
+import companyLocationService from '../../../services/companyLocationService';
 const formatSalaryText = (salaryField) => {
   if (!salaryField) return 'Thỏa thuận';
   if (typeof salaryField === 'object') {
@@ -14,13 +13,48 @@ const formatSalaryText = (salaryField) => {
   return salaryField;
 };
 
+const getLocationId = (location) => {
+  if (!location) return '';
+
+  if (location.locationId && typeof location.locationId === 'object') {
+    return location.locationId._id || '';
+  }
+
+  return location.locationId || '';
+};
+
+const buildFullAddress = (location) => {
+  return [
+    location.addressLine,
+    location.ward,
+    location.district,
+    location.province
+  ]
+    .filter(Boolean)
+    .join(', ');
+};
+
+const buildWorkLocationSnapshot = (location) => {
+  const fullAddress = buildFullAddress(location);
+
+  return {
+    locationId: location._id,
+    provinceName: location.province,
+    districtName: location.district || '',
+    wardName: location.ward || '',
+    address: fullAddress,
+    fullAddress,
+    latitude: location.latitude ?? null,
+    longitude: location.longitude ?? null
+  };
+};
+
 const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // State quản lý địa điểm đang chọn từ picker phụ trợ
-  const [currentSelectedLocation, setCurrentSelectedLocation] = useState(null);
-
+const [companyLocations, setCompanyLocations] = useState([]);
   // --- Các State lưu danh sách Master Data từ API ---
   const [masterData, setMasterData] = useState({
     careerGroups: [],
@@ -56,10 +90,12 @@ const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
   useEffect(() => {
     const initModalData = async () => {
       try {
-        const [jobRes, groupRes, expRes] = await Promise.all([
+        const [jobRes, groupRes, expRes,locationRes] = await Promise.all([
           jobService.getJobById(jobId),
           jobService.getCareerGroups(),
-          jobService.getExperienceLevels()
+          jobService.getExperienceLevels(),
+            companyLocationService.getMyCompanyLocations()
+
         ]);
 
         let loadedJob = null;
@@ -75,6 +111,7 @@ const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
           careerGroups: groupRes.success ? groupRes.data : [],
           experienceLevels: expRes.success ? expRes.data : []
         }));
+        setCompanyLocations(locationRes.success ? locationRes.data : []);
 
         const getId = (field) => (field && typeof field === 'object' ? field._id : field || '');
 
@@ -96,8 +133,12 @@ const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
             currency: loadedJob.salary?.currency || 'VND'
           },
           // Gán trực tiếp mảng Object từ backend, nếu không tồn tại hoặc lỗi thì đặt mảng rỗng
-          workLocations: Array.isArray(loadedJob.workLocations) ? loadedJob.workLocations : [],
-          saturdayPolicy: loadedJob.saturdayPolicy || 'OFF',
+workLocations: Array.isArray(loadedJob.workLocations)
+  ? loadedJob.workLocations.map((location) => ({
+      ...location,
+      locationId: getLocationId(location)
+    }))
+  : [],          saturdayPolicy: loadedJob.saturdayPolicy || 'OFF',
           description: loadedJob.description || '',
           requirements: loadedJob.requirements || '',
           benefits: loadedJob.benefits || '',
@@ -195,7 +236,59 @@ const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+  const handleRemoveLocation = (indexToRemove) => {
+  setFormData((prev) => ({
+    ...prev,
+    workLocations: prev.workLocations.filter((_, index) => index !== indexToRemove)
+  }));
+};
 
+  const handleSaveChanges = async () => {
+  if (formData.workLocations.length === 0) {
+    alert('Vui lòng chọn ít nhất một địa điểm làm việc!');
+    return;
+  }
+
+  const uniqueWorkLocations = Array.from(
+    new Map(
+      formData.workLocations.map((location) => [
+        getLocationId(location) || location.address || location.fullAddress,
+        location
+      ])
+    ).values()
+  );
+
+  try {
+    const payload = {
+      title: formData.title,
+      careerGroupId: formData.careerGroupId || null,
+      careerId: formData.careerId || null,
+      careerPositionId: formData.careerPositionId || null,
+      jobLevelId: formData.jobLevelId || null,
+      experienceLevelId: formData.experienceLevelId || null,
+      skills: formData.skills,
+      salary: formData.salary,
+      workLocations: uniqueWorkLocations,
+      saturdayPolicy: formData.saturdayPolicy,
+      description: formData.description,
+      requirements: formData.requirements,
+      benefits: formData.benefits,
+      workingTime: formData.workingTime,
+      applyInstruction: formData.applyInstruction,
+      isUrgent: formData.isUrgent,
+      deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null
+    };
+
+    const response = await jobService.updateJob(jobId, payload);
+
+    if (response.success) {
+      alert('Cập nhật thông tin tin tuyển dụng thành công!');
+      onSuccess();
+    }
+  } catch (error) {
+    alert('Cập nhật thất bại: ' + (error.response?.data?.message || error.message));
+  }
+};
   const handleSalaryChange = (subField, value) => {
     setFormData(prev => ({
       ...prev,
@@ -214,73 +307,33 @@ const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
   };
 
   // --- Xử lý Thêm/Xóa phần tử địa điểm (Object Snapshot) ---
-  const handleAddLocation = () => {
-    if (!currentSelectedLocation) {
-      alert('Vui lòng chọn Tỉnh/Thành phố trước khi thêm!');
-      return;
-    }
-    
-    // Kiểm tra trùng lặp dựa trên địa chỉ hoàn chỉnh
-    const isDuplicate = formData.workLocations.some(
-      loc => loc.fullAddress === currentSelectedLocation.fullAddress
-    );
+ const handleToggleCompanyLocation = (location) => {
+  const exists = formData.workLocations.some(
+    (item) => getLocationId(item) === location._id
+  );
 
-    if (isDuplicate) {
-      alert('Địa điểm này đã được thêm vào danh sách!');
-      return;
-    }
-
-    setFormData(prev => ({
+  if (exists) {
+    setFormData((prev) => ({
       ...prev,
-      workLocations: [...prev.workLocations, currentSelectedLocation]
+      workLocations: prev.workLocations.filter(
+        (item) => getLocationId(item) !== location._id
+      )
     }));
-  };
+    return;
+  }
 
-  const handleRemoveLocation = (indexToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      workLocations: prev.workLocations.filter((_, idx) => idx !== indexToRemove)
-    }));
-  };
+  const snapshot = buildWorkLocationSnapshot(location);
 
-  // --- Đồng bộ lưu dữ liệu lên Backend ---
-  const handleSaveChanges = async () => {
-    if (formData.workLocations.length === 0) {
-      alert('Vui lòng thêm ít nhất một địa điểm làm việc!');
-      return;
-    }
-
-    try {
-      // payload gửi lên mang mảng Object chính xác với Schema locationSnapshotSchema
-      const payload = {
-        title: formData.title,
-        careerGroupId: formData.careerGroupId || null,
-        careerId: formData.careerId || null,
-        careerPositionId: formData.careerPositionId || null,
-        jobLevelId: formData.jobLevelId || null,
-        experienceLevelId: formData.experienceLevelId || null,
-        skills: formData.skills,
-        salary: formData.salary,
-        workLocations: formData.workLocations, // Đã là mảng các Object khớp cấu trúc
-        saturdayPolicy: formData.saturdayPolicy,
-        description: formData.description,
-        requirements: formData.requirements,
-        benefits: formData.benefits,
-        workingTime: formData.workingTime,
-        applyInstruction: formData.applyInstruction,
-        isUrgent: formData.isUrgent,
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null
-      };
-
-      const response = await jobService.updateJob(jobId, payload);
-      if (response.success) {
-        alert('Cập nhật thông tin tin tuyển dụng thành công!');
-        onSuccess();
-      }
-    } catch (error) {
-      alert('Cập nhật thất bại: ' + (error.response?.data?.message || error.message));
-    }
-  };
+  setFormData((prev) => ({
+    ...prev,
+    workLocations: [
+      ...prev.workLocations.filter(
+        (item) => getLocationId(item) !== location._id
+      ),
+      snapshot
+    ]
+  }));
+};
 
   const handleSendToReview = async () => {
     if (!window.confirm('Bạn có chắc muốn gửi duyệt tin này trực tiếp không?')) return;
@@ -524,55 +577,115 @@ const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
           </div>
 
           {/* CẤU TRÚC MỚI: Tích hợp Bộ chọn địa chỉ phân cấp động */}
-          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-800">Địa điểm làm việc (workLocations)</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Bạn có thể chọn và thêm nhiều địa điểm làm việc chi tiết nếu tuyển dụng cho nhiều cơ sở.</p>
+         <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-4">
+  <div>
+    <h3 className="text-sm font-bold text-slate-800">Địa điểm làm việc (workLocations)</h3>
+    <p className="text-xs text-slate-500 mt-0.5">
+      Chọn địa điểm làm việc từ danh sách chi nhánh đã tạo trong hồ sơ công ty.
+    </p>
+  </div>
+
+  {isEditable && (
+    <div className="space-y-2">
+      {companyLocations.length === 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 font-medium">
+          Công ty chưa có địa điểm làm việc. Vui lòng thêm địa điểm trong hồ sơ công ty trước.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
+         {companyLocations.map((location) => {
+  const selected = formData.workLocations.some(
+    (item) => getLocationId(item) === location._id
+  );
+
+  const fullAddress = [
+    location.addressLine,
+    location.ward,
+    location.district,
+    location.province
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  return (
+    <label
+      key={location._id}
+      className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
+        selected
+          ? 'border-[#003f87] bg-blue-50'
+          : 'border-slate-200 bg-white hover:bg-slate-50'
+      }`}
+    >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => handleToggleCompanyLocation(location)}
+                  className="mt-1"
+                />
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-bold text-slate-900">
+                      {location.name}
+                    </p>
+                    {location.isPrimary ? (
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Trụ sở chính
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1">
+                    {fullAddress}
+                  </p>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  )}
+
+  <div className="space-y-2 pt-2">
+    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+      Danh sách địa điểm đã chọn:
+    </label>
+
+    {formData.workLocations.length === 0 ? (
+      <p className="text-xs text-slate-400 italic">
+        Chưa có địa điểm nào được chọn.
+      </p>
+    ) : (
+      <div className="grid grid-cols-1 gap-2">
+        {formData.workLocations.map((loc, index) => (
+          <div
+key={getLocationId(loc) || loc.address || loc.fullAddress || index}            className="flex items-center justify-between bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm"
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-slate-800">
+                {loc.address || loc.fullAddress}
+              </p>
+              <p className="text-xs text-slate-400">
+                Tỉnh/Thành: {loc.provinceName || 'N/A'} | Quận/Huyện:{' '}
+                {loc.districtName || 'N/A'} | Phường/Xã: {loc.wardName || 'N/A'}
+              </p>
             </div>
 
             {isEditable && (
-              <div className="space-y-2">
-                <HierarchicalLocationPicker onLocationSelect={(loc) => setCurrentSelectedLocation(loc)} />
-                <button
-                  type="button"
-                  onClick={handleAddLocation}
-                  className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-sm transition-colors"
-                >
-                  + Thêm địa điểm này vào danh sách
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => handleRemoveLocation(index)}
+                className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                Xóa
+              </button>
             )}
-
-            {/* Danh sách các địa điểm đã thêm */}
-            <div className="space-y-2 pt-2">
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Danh sách địa điểm đã chọn:</label>
-              {formData.workLocations.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">Chưa có địa điểm nào được chọn. Vui lòng thêm phía trên.</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-2">
-                  {formData.workLocations.map((loc, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm">
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-semibold text-slate-800">{loc.fullAddress}</p>
-                        <p className="text-xs text-slate-400">
-                          Tỉnh/Thành: {loc.provinceName} | Quận/Huyện: {loc.districtName || 'N/A'} | Phường/Xã: {loc.wardName || 'N/A'}
-                        </p>
-                      </div>
-                      {isEditable && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveLocation(index)}
-                          className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                        >
-                          Xóa
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
 
           {/* Các trường mô tả chi tiết bằng Text */}
           <div>
