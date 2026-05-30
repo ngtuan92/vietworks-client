@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, onDelete, onDownload, onRename }) => {
+export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, fileType, onDelete, onDownload, onRename }) => {
   const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
@@ -12,6 +12,16 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, o
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
+
+  const getFileIcon = (fileType, fileName) => {
+    const ext = fileName?.split('.').pop()?.toLowerCase();
+    const type = fileType || ext;
+    if (type === 'application/pdf' || ext === 'pdf') return { icon: 'picture_as_pdf', color: 'text-red-500' };
+    if (['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc', 'docx'].includes(type) || ['doc', 'docx'].includes(ext)) return { icon: 'description', color: 'text-blue-500' };
+    return { icon: 'insert_drive_file', color: 'text-gray-500' };
+  };
+
+  const { icon, color } = getFileIcon(fileType, fileName);
 
   const handleRenameStart = (e) => {
     e.stopPropagation();
@@ -32,10 +42,24 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, o
     if (e.key === 'Escape') setIsRenaming(false);
   };
 
-  const handleDownload = (e) => {
+  const handleDownload = async (e) => {
     e.stopPropagation();
     if (fileUrl) {
-      window.open(fileUrl, '_blank');
+      try {
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName || 'document';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.warn('Download failed, opening in new tab:', error);
+        window.open(fileUrl, '_blank');
+      }
     } else {
       onDownload?.(id);
     }
@@ -48,9 +72,9 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, o
         onClick={handleDownload}
       >
         <div className="w-16 h-20 bg-white rounded shadow-md flex items-center justify-center mb-3">
-          <span className="material-symbols-outlined text-red-500 text-3xl">picture_as_pdf</span>
+          <span className={`material-symbols-outlined ${color} text-3xl`}>{icon}</span>
         </div>
-        <p className="text-xs text-slate-500 truncate w-full text-center">{fileName || 'document.pdf'}</p>
+        <p className="text-xs text-slate-500 truncate w-full text-center">{fileName || 'document'}</p>
         <p className="text-xs text-slate-400 mt-1">{fileSize ? formatFileSize(fileSize) : 'N/A'}</p>
       </div>
 
@@ -104,13 +128,6 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, o
             className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm"
           >
             Tải về
-          </button>
-          <button
-            onClick={handleDownload}
-            className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
-            title="Xem CV"
-          >
-            <span className="material-symbols-outlined">visibility</span>
           </button>
         </div>
       </div>

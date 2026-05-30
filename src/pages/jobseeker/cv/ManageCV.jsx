@@ -21,6 +21,13 @@ const ManageCV = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  const getFileIcon = (fileName) => {
+    const ext = fileName?.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return { icon: 'picture_as_pdf', color: 'text-red-500', bgColor: 'bg-red-100' };
+    if (['doc', 'docx'].includes(ext)) return { icon: 'description', color: 'text-blue-500', bgColor: 'bg-blue-100' };
+    return { icon: 'insert_drive_file', color: 'text-gray-500', bgColor: 'bg-gray-100' };
+  };
+
   const fetchCvs = async () => {
     try {
       const response = await cvService.getUserCvs();
@@ -161,8 +168,9 @@ const ManageCV = () => {
         error(res.message || 'Tải CV thất bại!');
       }
     } catch (err) {
-      console.error('Upload CV failed:', err);
-      error('Đã xảy ra lỗi khi tải CV!');
+      console.warn('Upload CV failed:', err);
+      const errorMessage = err.response?.data?.message || 'Đã xảy ra lỗi khi tải CV!';
+      error(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -225,6 +233,7 @@ const ManageCV = () => {
                     fileName={cv.fileName}
                     fileSize={cv.fileSize}
                     fileUrl={cv.fileUrl}
+                    fileType={cv.fileType}
                     onDelete={handleDeleteUploadedCv}
                     onDownload={handleDownloadUploadedCv}
                     onRename={handleRenameUploadedCv}
@@ -285,9 +294,14 @@ const ManageCV = () => {
               {uploadFile && (
                 <div className="mb-6">
                   <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                      <span className="material-symbols-outlined text-red-500">picture_as_pdf</span>
-                    </div>
+                    {(() => {
+                      const { icon, color, bgColor } = getFileIcon(uploadFile?.name);
+                      return (
+                        <div className={`w-12 h-12 ${bgColor} rounded-lg flex items-center justify-center`}>
+                          <span className={`material-symbols-outlined ${color}`}>{icon}</span>
+                        </div>
+                      );
+                    })()}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-800 truncate">{uploadFile.name}</p>
                       <p className="text-sm text-slate-500">
