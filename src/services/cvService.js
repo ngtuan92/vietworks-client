@@ -34,6 +34,28 @@ const cvService = {
   deleteCv: async (id) => {
     const response = await api.delete(`/cvs/${id}`);
     return response.data;
+  },
+
+  uploadCv: async (formData) => {
+    const response = await api.post('/jobseeker/cvs/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  getUserUploadedCvs: async () => {
+    const response = await api.get('/jobseeker/cvs');
+    return response.data;
+  },
+
+  updateUploadedCv: async (id, data) => {
+    const response = await api.put(`/jobseeker/cvs/${id}`, data);
+    return response.data;
+  },
+
+  deleteUploadedCv: async (id) => {
+    const response = await api.delete(`/jobseeker/cvs/${id}`);
+    return response.data;
   }
 };
 
