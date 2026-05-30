@@ -60,8 +60,8 @@ const Register = () => {
         password: formData.password,
       });
       if (data.success) {
-        setSuccess('Đăng ký thành công.');
-        setTimeout(() => navigate('/job-preferences'), 600);
+        setSuccess('Đăng ký thành công. Vui lòng đăng nhập.');
+        setTimeout(() => navigate('/login'), 600);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');

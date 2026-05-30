@@ -5,6 +5,9 @@ import {
   getVietMapPlaceDetail
 } from '../../../services/vietmapLocationService.js';
 import companyLocationService from '../../../services/companyLocationService.js';
+import employerCompanyService from '../../../services/employerCompanyService.js';
+import uploadService from '../../../services/uploadService.js';
+import companyMasterDataService from '../../../services/companyMasterDataService.js';
 const TABS = [
   { key: 'general', label: 'Thông tin chung' },
   { key: 'locations', label: 'Địa điểm làm việc' },
@@ -21,39 +24,29 @@ const CompanyProfile = () => {
     reason: 'Ảnh mờ, thông tin không khớp với tên công ty.',
     handledAt: '15/05/2026',
   });
+  const [banner, setBanner] = useState(null);
+const [legalPreview, setLegalPreview] = useState('');
+ const [general, setGeneral] = useState({
+  taxCode: '',
+  companyName: '',
+  website: '',
+  industryId: '',
+  sizeId: '',
+  email: '',
+  phone: '',
+  logo: null,
+  cover: null,
+  avatarUrl: '',
+  coverUrl: '',
+});
+const [industries, setIndustries] = useState([]);
+const [sizes, setSizes] = useState([]);
+const [savingCompany, setSavingCompany] = useState(false);
+const [logoPreview, setLogoPreview] = useState('');
+const [coverPreview, setCoverPreview] = useState('');
 
-  const [general, setGeneral] = useState({
-    taxCode: '',
-    companyName: '',
-    website: '',
-    industry: '',
-    size: '',
-    email: '',
-    phone: '',
-    logo: null,
-    cover: null,
-  });
-
-  const [locations, setLocations] = useState([
-    {
-      id: 1,
-      city: 'TP. Hồ Chí Minh',
-      ward: 'Phường 1',
-      address: '123 Nguyễn Huệ, Quận 1',
-      note: 'Trụ sở chính',
-      isHQ: true,
-      isUsedInPublishedJob: true,
-    },
-    {
-      id: 2,
-      city: 'Hà Nội',
-      ward: 'Phường 2',
-      address: '45 Tràng Tiền, Hoàn Kiếm',
-      note: '',
-      isHQ: false,
-      isUsedInPublishedJob: false,
-    },
-  ]);
+  const [locations, setLocations] = useState([]);
+const [locationsLoading, setLocationsLoading] = useState(false);
   const [locationModal, setLocationModal] = useState({ open: false, mode: 'create', data: null });
 
   const [description, setDescription] = useState({
@@ -69,10 +62,11 @@ const CompanyProfile = () => {
     gallery: [],
   });
 
-  const [legal, setLegal] = useState({
-    file: null,
-    noteToAdmin: '',
-  });
+ const [legal, setLegal] = useState({
+  file: null,
+  businessLicenseFile: null,
+  noteToAdmin: '',
+});
 
   const statusMeta = useMemo(() => {
     const map = {
@@ -91,16 +85,169 @@ const CompanyProfile = () => {
     }
   }, [searchParams]);
 
-  const handleGeneralChange = (event) => {
-    const { id, value, files } = event.target;
-    setGeneral((prev) => ({ ...prev, [id]: files ? files[0] : value }));
-  };
 
-  const [banner, setBanner] = useState(null);
-  const handleSave = () => {
-    setBanner({ type: 'success', message: 'Đã lưu thay đổi.' });
+  const fetchCompanyProfile = async () => {
+  try {
+    const [companyRes, industriesRes, sizesRes] = await Promise.all([
+      employerCompanyService.getMyCompanyProfile(),
+      companyMasterDataService.getCompanyIndustries(),
+      companyMasterDataService.getCompanySizes(),
+    ]);
+    
+
+    const company = companyRes.data;
+console.log('company profile:', company);
+console.log('businessLicenseFile:', company.businessLicenseFile);
+    setIndustries(industriesRes.data || []);
+    setSizes(sizesRes.data || []);
+
+    setGeneral({
+      taxCode: company.taxCode || '',
+      companyName: company.name || '',
+      website: company.website || '',
+      industryId: company.industry?._id || '',
+      sizeId: company.size?._id || '',
+      email: company.email || '',
+      phone: company.phone || '',
+      logo: null,
+      cover: null,
+      avatarUrl: company.avatarUrl || '',
+      coverUrl: company.coverUrl || '',
+    });
+
+    setLogoPreview(company.avatarUrl || '');
+    setCoverPreview(company.coverUrl || '');
+
+    setDescription((prev) => ({
+      ...prev,
+      intro: company.description || '',
+    }));
+
+  setLegal((prev) => ({
+  ...prev,
+  file: null,
+  businessLicenseFile: company.businessLicenseFile || null,
+}));
+
+setLegalPreview(company.businessLicenseFile?.fileUrl || '');
+
+    setVerificationStatus(company.verificationStatus || 'UNVERIFIED');
+  } catch (error) {
+    setBanner({
+      type: 'error',
+      message: error.response?.data?.message || 'Không thể tải hồ sơ công ty.'
+    });
+  }
+};
+
+const handleLegalFileChange = (event) => {
+  const file = event.target.files?.[0] || null;
+
+  setLegal((prev) => ({
+    ...prev,
+    file,
+  }));
+
+  if (file) {
+    setLegalPreview(URL.createObjectURL(file));
+  }
+};
+
+
+
+  const handleGeneralChange = (event) => {
+  const { id, value, files } = event.target;
+
+  if (files?.[0]) {
+    const file = files[0];
+
+    setGeneral((prev) => ({ ...prev, [id]: file }));
+
+    if (id === 'logo') {
+      setLogoPreview(URL.createObjectURL(file));
+    }
+
+    if (id === 'cover') {
+      setCoverPreview(URL.createObjectURL(file));
+    }
+
+    return;
+  }
+
+  setGeneral((prev) => ({ ...prev, [id]: value }));
+};
+
+ const handleSave = async () => {
+  try {
+    setSavingCompany(true);
+
+    let avatarUrl = general.avatarUrl;
+    let coverUrl = general.coverUrl;
+    let businessLicenseFile = legal.businessLicenseFile;
+
+    if (general.logo) {
+      const uploadRes = await uploadService.uploadCompanyImage(general.logo);
+      avatarUrl = uploadRes.data.fileUrl;
+    }
+
+    if (general.cover) {
+      const uploadRes = await uploadService.uploadCompanyImage(general.cover);
+      coverUrl = uploadRes.data.fileUrl;
+    }
+
+    if (legal.file) {
+      const uploadRes = await uploadService.uploadCompanyImage(legal.file);
+      businessLicenseFile = {
+        fileUrl: uploadRes.data.fileUrl,
+        fileName: uploadRes.data.fileName,
+        fileType: uploadRes.data.fileType,
+        fileSize: uploadRes.data.fileSize,
+      };
+    }
+
+    const res = await employerCompanyService.updateMyCompanyProfile({
+      name: general.companyName,
+      taxCode: general.taxCode,
+      website: general.website || null,
+      industryId: general.industryId,
+      sizeId: general.sizeId,
+      email: general.email,
+      phone: general.phone,
+      avatarUrl,
+      coverUrl,
+      description: description.intro,
+      businessLicenseFile,
+    });
+
+    setGeneral((prev) => ({
+      ...prev,
+      logo: null,
+      cover: null,
+      avatarUrl: res.data.avatarUrl || '',
+      coverUrl: res.data.coverUrl || '',
+    }));
+
+    setLogoPreview(res.data.avatarUrl || avatarUrl || '');
+    setCoverPreview(res.data.coverUrl || coverUrl || '');
+
+    setLegal((prev) => ({
+      ...prev,
+      file: null,
+      businessLicenseFile: res.data.businessLicenseFile || businessLicenseFile,
+    }));
+    setLegalPreview((res.data.businessLicenseFile || businessLicenseFile)?.fileUrl || '');
+
+    setBanner({ type: 'success', message: 'Đã cập nhật hồ sơ công ty.' });
     setTimeout(() => setBanner(null), 2500);
-  };
+  } catch (error) {
+    setBanner({
+      type: 'error',
+      message: error.response?.data?.message || 'Cập nhật hồ sơ công ty thất bại.'
+    });
+  } finally {
+    setSavingCompany(false);
+  }
+};
 
   const handleSubmitForApproval = () => {
     setBanner({ type: 'success', message: 'Đã gửi hồ sơ để Admin kiểm duyệt.' });
@@ -110,17 +257,17 @@ const CompanyProfile = () => {
   const openCreateLocation = () => setLocationModal({ open: true, mode: 'create', data: null });
   const openEditLocation = (loc) => setLocationModal({ open: true, mode: 'edit', data: loc });
   const closeLocationModal = () => setLocationModal({ open: false, mode: 'create', data: null });
+const upsertLocation = async () => {
+  await fetchCompanyLocations();
+  closeLocationModal();
 
-  const upsertLocation = (payload) => {
-    setLocations((prev) => {
-      if (locationModal.mode === 'edit' && locationModal.data) {
-        return prev.map((l) => (l.id === locationModal.data.id ? { ...l, ...payload } : l));
-      }
-      const id = Math.max(0, ...prev.map((p) => p.id)) + 1;
-      return [...prev, { id, ...payload, isUsedInPublishedJob: false }];
-    });
-    closeLocationModal();
-  };
+  setBanner({
+    type: 'success',
+    message: 'Đã cập nhật danh sách địa điểm.'
+  });
+
+  setTimeout(() => setBanner(null), 2500);
+};
 
   const removeLocation = (loc) => {
     if (loc.isUsedInPublishedJob) {
@@ -129,6 +276,31 @@ const CompanyProfile = () => {
     }
     setLocations((prev) => prev.filter((l) => l.id !== loc.id));
   };
+
+
+  const fetchCompanyLocations = async () => {
+  try {
+    setLocationsLoading(true);
+    const res = await companyLocationService.getMyCompanyLocations();
+
+    if (res.success) {
+      setLocations(res.data || []);
+    }
+  } catch (error) {
+    setBanner({
+      type: 'error',
+      message: error.response?.data?.message || 'Không thể tải danh sách địa điểm.'
+    });
+  } finally {
+    setLocationsLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchCompanyProfile();
+  fetchCompanyLocations();
+}, []);
+
 
   return (
     <div className="space-y-6">
@@ -141,9 +313,13 @@ const CompanyProfile = () => {
           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusMeta.color}`}>
             Trạng thái: {statusMeta.label}
           </span>
-          <button onClick={handleSave} className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50">
-            Lưu thay đổi
-          </button>
+        <button
+  onClick={handleSave}
+  disabled={savingCompany}
+  className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+>
+  {savingCompany ? 'Đang lưu...' : 'Lưu thay đổi'}
+</button>
           <button onClick={handleSubmitForApproval} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
             Gửi duyệt
           </button>
@@ -184,30 +360,47 @@ const CompanyProfile = () => {
             <Field label="Mã số thuế" id="taxCode" value={general.taxCode} onChange={handleGeneralChange} required placeholder="VD: 0312345678" />
             <Field label="Tên công ty" id="companyName" value={general.companyName} onChange={handleGeneralChange} required placeholder="VD: Công ty TNHH ABC" />
             <Field label="Website" id="website" value={general.website} onChange={handleGeneralChange} placeholder="https://company.com" type="url" />
+           <Select
+  label="Lĩnh vực hoạt động"
+  id="industryId"
+  value={general.industryId}
+  onChange={handleGeneralChange}
+  required
+  options={industries.map((item) => ({
+    value: item._id,
+    label: item.name
+  }))}
+/>
             <Select
-              label="Lĩnh vực hoạt động"
-              id="industry"
-              value={general.industry}
-              onChange={handleGeneralChange}
-              required
-              options={['Công nghệ thông tin', 'Tài chính - Ngân hàng', 'Bán lẻ', 'Sản xuất']}
-            />
-            <Select
-              label="Quy mô công ty"
-              id="size"
-              value={general.size}
-              onChange={handleGeneralChange}
-              required
-              options={['1-10', '11-50', '51-200', '201-500', '500+']}
-            />
+  label="Quy mô công ty"
+  id="sizeId"
+  value={general.sizeId}
+  onChange={handleGeneralChange}
+  required
+  options={sizes.map((item) => ({
+    value: item._id,
+    label: item.name
+  }))}
+/>
             <Field label="Email công ty" id="email" value={general.email} onChange={handleGeneralChange} required placeholder="hr@company.com" type="email" />
             <Field label="Số điện thoại công ty" id="phone" value={general.phone} onChange={handleGeneralChange} required placeholder="090xxxxxxx" type="tel" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <FileField label="Logo công ty" id="logo" onChange={handleGeneralChange} accept="image/*" hint="PNG/JPG, tỷ lệ vuông" />
-            <FileField label="Ảnh bìa" id="cover" onChange={handleGeneralChange} accept="image/*" hint="Ảnh ngang" />
-          </div>
+  <div>
+    <FileField label="Logo công ty" id="logo" onChange={handleGeneralChange} accept="image/*" hint="PNG/JPG, tỷ lệ vuông" />
+    {logoPreview ? (
+      <img src={logoPreview} alt="Logo công ty" className="mt-3 h-24 w-24 rounded-xl object-cover border border-slate-200" />
+    ) : null}
+  </div>
+
+  <div>
+    <FileField label="Ảnh bìa" id="cover" onChange={handleGeneralChange} accept="image/*" hint="Ảnh ngang" />
+    {coverPreview ? (
+      <img src={coverPreview} alt="Ảnh bìa công ty" className="mt-3 h-32 w-full rounded-xl object-cover border border-slate-200" />
+    ) : null}
+  </div>
+</div>
 
           <p className="text-sm text-slate-500">Gợi ý: Tên công ty có thể bị khóa sau khi được xác thực.</p>
         </section>
@@ -226,24 +419,81 @@ const CompanyProfile = () => {
           </div>
 
           <div className="space-y-3">
-            {locations.map((loc) => (
-              <div key={loc.id} className="rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-slate-900">{loc.city} • {loc.ward}</p>
-                    {loc.isHQ ? <span className="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">Trụ sở chính</span> : null}
-                    {loc.isUsedInPublishedJob ? <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-800">Đang dùng trong Job</span> : null}
-                  </div>
-                  <p className="text-sm text-slate-600 mt-1 truncate">{loc.address}</p>
-                  {loc.note ? <p className="text-sm text-slate-500 mt-1">{loc.note}</p> : null}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => openEditLocation(loc)} className="px-3 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50">Sửa</button>
-                  <button onClick={() => removeLocation(loc)} className="px-3 py-2 rounded-xl border border-red-200 text-red-700 font-semibold hover:bg-red-50">Xóa</button>
-                </div>
-              </div>
-            ))}
+  {locationsLoading ? (
+    <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-500">
+      Đang tải danh sách địa điểm...
+    </div>
+  ) : null}
+
+  {!locationsLoading && locations.length === 0 ? (
+    <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500 bg-slate-50">
+      Chưa có địa điểm làm việc nào. Bấm “Thêm địa điểm” để tạo chi nhánh đầu tiên.
+    </div>
+  ) : null}
+
+  {!locationsLoading && locations.map((loc) => {
+    const fullAddress = [
+      loc.addressLine,
+      loc.ward,
+      loc.district,
+      loc.province
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    return (
+      <div
+        key={loc._id}
+        className="rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-slate-900">
+              {loc.name}
+            </p>
+
+            {loc.isPrimary ? (
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                Trụ sở chính
+              </span>
+            ) : null}
+
+            {loc.status ? (
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                {loc.status}
+              </span>
+            ) : null}
           </div>
+
+          <p className="text-sm text-slate-600 mt-1">
+            {fullAddress}
+          </p>
+
+          {loc.latitude && loc.longitude ? (
+            <p className="text-xs text-slate-400 mt-1">
+              Tọa độ: {loc.latitude}, {loc.longitude}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openEditLocation(loc)}
+            className="px-3 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Sửa
+          </button>
+          <button
+            onClick={() => removeLocation(loc)}
+            className="px-3 py-2 rounded-xl border border-red-200 text-red-700 font-semibold hover:bg-red-50"
+          >
+            Xóa
+          </button>
+        </div>
+      </div>
+    );
+  })}
+</div>
 
           {locationModal.open ? (
             <LocationModal
@@ -344,9 +594,45 @@ const CompanyProfile = () => {
             <FileField
               label="File giấy đăng ký doanh nghiệp"
               accept="application/pdf,image/*"
-              onChange={(e) => setLegal((p) => ({ ...p, file: e.target.files?.[0] || null }))}
-              hint="PDF hoặc ảnh"
+onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
             />
+{legal.file ? (
+  <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <p className="text-sm text-slate-700">
+      File mới đã chọn: <span className="font-semibold">{legal.file.name}</span>
+    </p>
+
+    {legal.file.type?.startsWith('image/') && legalPreview ? (
+      <img
+        src={legalPreview}
+        alt="Giấy đăng ký doanh nghiệp mới"
+        className="mt-3 max-h-64 rounded-xl border border-slate-200 object-contain"
+      />
+    ) : null}
+  </div>
+) : legal.businessLicenseFile?.fileUrl ? (
+  <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <p className="text-sm font-semibold text-slate-800">File đã tải lên</p>
+    <a
+      href={legal.businessLicenseFile.fileUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="text-sm text-[#003f87] font-semibold hover:underline"
+    >
+      {legal.businessLicenseFile.fileName || 'Xem giấy đăng ký doanh nghiệp'}
+    </a>
+
+    {legal.businessLicenseFile.fileType?.startsWith('image/') ? (
+      <img
+        src={legal.businessLicenseFile.fileUrl}
+        alt="Giấy đăng ký doanh nghiệp"
+        className="mt-3 max-h-64 rounded-xl border border-slate-200 object-contain"
+      />
+    ) : null}
+  </div>
+) : (
+  <p className="mt-3 text-sm text-slate-500">Chưa upload giấy đăng ký doanh nghiệp.</p>
+)}
             <div className="mt-4">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Ghi chú gửi Admin</label>
               <textarea
@@ -405,8 +691,8 @@ const Select = ({ label, id, value, onChange, options, required = false }) => (
     >
       <option value="">Chọn...</option>
       {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
+        <option key={opt.value || opt} value={opt.value || opt}>
+          {opt.label || opt}
         </option>
       ))}
     </select>
