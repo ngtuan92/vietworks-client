@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import employerAccountService from '../../../services/employerAccountService.js';
 
 const tabs = [
   { key: 'profile', label: 'Thông tin cá nhân' },
@@ -6,16 +7,26 @@ const tabs = [
   { key: 'notifications', label: 'Thông báo' },
 ];
 
+const genderOptions = [
+  { label: 'Nam', value: 'MALE' },
+  { label: 'Nữ', value: 'FEMALE' },
+  { label: 'Khác', value: 'OTHER' },
+];
+
 const AccountSettings = () => {
   const [tab, setTab] = useState('profile');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
   const [profile, setProfile] = useState({
-    fullName: 'Nguyễn Văn A',
-    gender: 'Nam',
-    phone: '090xxxxxxx',
-    email: 'hr@company.com',
+    representativeName: '',
+    gender: '',
+    phone: '',
+    email: '',
   });
+
   const [security, setSecurity] = useState({
-    email: 'hr@company.com',
+    email: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -36,19 +47,110 @@ const AccountSettings = () => {
     packageSystem: true,
   });
 
+  useEffect(() => {
+    const fetchAccountSettings = async () => {
+      try {
+        setLoading(true);
+
+        const [representativeRes, accountRes] = await Promise.all([
+          employerAccountService.getMyRepresentativeProfile(),
+          employerAccountService.getMyEmployerLoginInfo(),
+        ]);
+
+        setProfile({
+          representativeName: representativeRes.data?.representativeName || '',
+          gender: representativeRes.data?.gender || '',
+          phone: representativeRes.data?.phone || '',
+          email: accountRes.data?.email || '',
+        });
+
+        setSecurity((prev) => ({
+          ...prev,
+          email: accountRes.data?.email || '',
+        }));
+      } catch (error) {
+        setMessage(error.response?.data?.message || 'Không thể tải thông tin tài khoản');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccountSettings();
+  }, []);
+
+  const handleUpdateProfile = async () => {
+    try {
+      setLoading(true);
+      setMessage('');
+
+      const res = await employerAccountService.updateMyRepresentativeProfile({
+        representativeName: profile.representativeName,
+        gender: profile.gender,
+        phone: profile.phone,
+      });
+
+      setMessage(res.message || 'Cập nhật thông tin người đại diện thành công');
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Cập nhật thông tin thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    try {
+      setLoading(true);
+      setMessage('');
+
+      const res = await employerAccountService.updateMyEmployerPassword({
+        currentPassword: security.currentPassword,
+        newPassword: security.newPassword,
+        confirmNewPassword: security.confirmPassword,
+      });
+
+      setSecurity((prev) => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+
+      setMessage(res.message || 'Đổi mật khẩu thành công');
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Đổi mật khẩu thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Cài đặt tài khoản</h1>
-        <p className="text-slate-600 mt-1">Quản lý thông tin người đại diện, bảo mật và cài đặt thông báo.</p>
+        <p className="text-slate-600 mt-1">
+          Quản lý thông tin người đại diện, bảo mật và cài đặt thông báo.
+        </p>
       </div>
+
+      {message ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+          {message}
+        </div>
+      ) : null}
 
       <div className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold ${tab === t.key ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
+            onClick={() => {
+              setTab(t.key);
+              setMessage('');
+            }}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold ${
+              tab === t.key
+                ? 'bg-[#003f87] text-white'
+                : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+            }`}
           >
             {t.label}
           </button>
@@ -57,12 +159,35 @@ const AccountSettings = () => {
 
       {tab === 'profile' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Họ tên" value={profile.fullName} onChange={(v) => setProfile((p) => ({ ...p, fullName: v }))} />
-          <Select label="Giới tính" value={profile.gender} onChange={(v) => setProfile((p) => ({ ...p, gender: v }))} options={['Nam', 'Nữ', 'Khác']} />
-          <Field label="Số điện thoại" value={profile.phone} onChange={(v) => setProfile((p) => ({ ...p, phone: v }))} />
+          <Field
+            label="Họ tên"
+            value={profile.representativeName}
+            onChange={(v) => setProfile((p) => ({ ...p, representativeName: v }))}
+          />
+
+          <Select
+            label="Giới tính"
+            value={profile.gender}
+            onChange={(v) => setProfile((p) => ({ ...p, gender: v }))}
+            options={genderOptions}
+          />
+
+          <Field
+            label="Số điện thoại"
+            value={profile.phone}
+            onChange={(v) => setProfile((p) => ({ ...p, phone: v }))}
+          />
+
           <Field label="Email" value={profile.email} readOnly />
+
           <div className="md:col-span-2 flex justify-end">
-            <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">Lưu thay đổi</button>
+            <button
+              onClick={handleUpdateProfile}
+              disabled={loading}
+              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
+            >
+              {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+            </button>
           </div>
         </section>
       ) : null}
@@ -70,26 +195,36 @@ const AccountSettings = () => {
       {tab === 'security' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Email" value={security.email} readOnly />
+
           <Field
             label="Mật khẩu hiện tại"
             type="password"
             value={security.currentPassword}
             onChange={(v) => setSecurity((p) => ({ ...p, currentPassword: v }))}
           />
+
           <Field
             label="Mật khẩu mới"
             type="password"
             value={security.newPassword}
             onChange={(v) => setSecurity((p) => ({ ...p, newPassword: v }))}
           />
+
           <Field
             label="Nhập lại mật khẩu mới"
             type="password"
             value={security.confirmPassword}
             onChange={(v) => setSecurity((p) => ({ ...p, confirmPassword: v }))}
           />
+
           <div className="md:col-span-2 flex justify-end">
-            <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">Đổi mật khẩu</button>
+            <button
+              onClick={handleUpdatePassword}
+              disabled={loading}
+              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
+            >
+              {loading ? 'Đang đổi...' : 'Đổi mật khẩu'}
+            </button>
           </div>
         </section>
       ) : null}
@@ -115,8 +250,11 @@ const AccountSettings = () => {
               </tbody>
             </table>
           </div>
+
           <div className="mt-5 flex justify-end">
-            <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">Lưu cài đặt thông báo</button>
+            <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+              Lưu cài đặt thông báo
+            </button>
           </div>
         </section>
       ) : null}
@@ -132,7 +270,9 @@ const Field = ({ label, value, onChange, type = 'text', readOnly = false }) => (
       value={value}
       readOnly={readOnly}
       onChange={(e) => onChange?.(e.target.value)}
-      className={`w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ${readOnly ? 'bg-slate-50 text-slate-500' : 'focus:border-[#003f87]'}`}
+      className={`w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ${
+        readOnly ? 'bg-slate-50 text-slate-500' : 'focus:border-[#003f87]'
+      }`}
     />
   </div>
 );
@@ -145,8 +285,11 @@ const Select = ({ label, value, onChange, options }) => (
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
     >
+      <option value="">Chọn giới tính</option>
       {options.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
       ))}
     </select>
   </div>
@@ -168,9 +311,15 @@ const Toggle = ({ checked, onChange }) => (
   <button
     type="button"
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${checked ? 'bg-[#003f87]' : 'bg-slate-300'}`}
+    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+      checked ? 'bg-[#003f87]' : 'bg-slate-300'
+    }`}
   >
-    <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+    <span
+      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+        checked ? 'translate-x-6' : 'translate-x-1'
+      }`}
+    />
   </button>
 );
 

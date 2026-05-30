@@ -3,7 +3,7 @@ import React from 'react';
 const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, placeholder }) => {
   return (
     <Tag
-      className={`outline-none border border-transparent hover:border-gray-300 hover:bg-gray-50 focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 rounded px-1 transition-all min-h-[1.5em] empty:before:content-[attr(placeholder)] empty:before:text-gray-400 ${className || ''}`}
+      className={`outline-none border border-transparent hover:border-gray-300 hover:bg-gray-50 hover:!text-gray-900 focus:border-blue-500 focus:bg-white focus:!text-gray-900 focus:ring-1 focus:ring-blue-500 rounded px-1 transition-all min-h-[1.5em] empty:before:content-[attr(placeholder)] empty:before:text-gray-400 ${className || ''}`}
       style={style}
       contentEditable
       suppressContentEditableWarning

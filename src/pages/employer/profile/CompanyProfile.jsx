@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-
+import {
+  searchVietMapPlaces,
+  getVietMapPlaceDetail
+} from '../../../services/vietmapLocationService.js';
+import companyLocationService from '../../../services/companyLocationService.js';
 const TABS = [
   { key: 'general', label: 'Thông tin chung' },
   { key: 'locations', label: 'Địa điểm làm việc' },
@@ -527,40 +531,209 @@ const RichTextEditor = ({ label, value, onChange, placeholder }) => {
   );
 };
 
+
+
+const getBoundaryName = (boundaries = [], type) => {
+  const item = boundaries.find((boundary) => boundary.type === type);
+
+  if (!item) {
+    return '';
+  }
+
+  return item.full_name || [item.prefix, item.name].filter(Boolean).join(' ');
+};
+
+const normalizeVietMapPlace = (item, detail) => {
+  const oldData = detail?.data_old || item?.data_old;
+  const oldBoundaries = oldData?.boundaries || [];
+  const currentBoundaries = detail?.boundaries || item?.boundaries || [];
+  const boundaries = oldBoundaries.length > 0 ? oldBoundaries : currentBoundaries;
+
+  return {
+    addressLine: detail?.address || detail?.display || item?.address || item?.display || '',
+    province: getBoundaryName(boundaries, 0) || detail?.city || item?.city || '',
+    district: getBoundaryName(boundaries, 1) || detail?.district || item?.district || '',
+    ward: getBoundaryName(boundaries, 2) || detail?.ward || item?.ward || '',
+    latitude: detail?.lat ?? item?.lat ?? null,
+    longitude: detail?.lng ?? item?.lng ?? null,
+  };
+};
+
 const LocationModal = ({ title, initial, onClose, onSubmit }) => {
+  const [keyword, setKeyword] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const [data, setData] = useState({
-    city: initial?.city || '',
+    name: initial?.name || '',
+    addressLine: initial?.addressLine || '',
+    province: initial?.province || '',
+    district: initial?.district || '',
     ward: initial?.ward || '',
-    address: initial?.address || '',
-    note: initial?.note || '',
-    isHQ: Boolean(initial?.isHQ),
+    latitude: initial?.latitude || null,
+    longitude: initial?.longitude || null,
+    isPrimary: Boolean(initial?.isPrimary),
   });
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (keyword.trim().length < 3) {
+        setSuggestions([]);
+        return;
+      }
+
+      try {
+        setSearching(true);
+        const results = await searchVietMapPlaces(keyword);
+        setSuggestions(results);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
+  const handleSelectPlace = async (item) => {
+    try {
+      const detail = await getVietMapPlaceDetail(item.ref_id);
+      const normalized = normalizeVietMapPlace(item, detail);
+
+      setData((prev) => ({
+        ...prev,
+        ...normalized,
+      }));
+
+      setKeyword(detail.display || item.display || normalized.addressLine);
+      setSuggestions([]);
+    } catch {
+      setSuggestions([]);
+    }
+  };
 
   const handleChange = (event) => {
     const { id, value, type, checked } = event.target;
-    setData((p) => ({ ...p, [id]: type === 'checkbox' ? checked : value }));
+
+    setData((prev) => ({
+      ...prev,
+      [id]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    const payload = {
+      name: data.name,
+      addressLine: data.addressLine,
+      province: data.province,
+      district: data.district,
+      ward: data.ward,
+      latitude: data.latitude === '' ? null : Number(data.latitude),
+      longitude: data.longitude === '' ? null : Number(data.longitude),
+      isPrimary: data.isPrimary,
+    };
+
+    try {
+      setSaving(true);
+      await companyLocationService.createMyCompanyLocation(payload);
+      onSubmit?.(payload);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-        <div className="p-5 flex items-center justify-between border-b border-slate-200">
-          <h3 className="font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
-        </div>
-        <div className="p-5 space-y-4">
-          <Select label="Tỉnh/Thành phố" id="city" value={data.city} onChange={handleChange} required options={['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng']} />
-          <Select label="Phường/Xã" id="ward" value={data.ward} onChange={handleChange} required options={['Phường 1', 'Phường 2', 'Phường 3']} />
-          <Field label="Địa chỉ chi tiết" id="address" value={data.address} onChange={handleChange} required placeholder="Số nhà, đường..." />
-          <Field label="Ghi chú" id="note" value={data.note} onChange={handleChange} placeholder="VD: gần metro..." />
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input id="isHQ" type="checkbox" checked={data.isHQ} onChange={handleChange} />
-            Đặt làm trụ sở chính
-          </label>
-        </div>
-        <div className="p-5 flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700">Hủy</button>
-          <button onClick={() => onSubmit(data)} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold">Lưu</button>
+    <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+      <div className="min-h-full flex items-start justify-center p-4 sm:p-6">
+        <div className="w-full max-w-xl my-6 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+          <div className="p-5 flex items-center justify-between border-b border-slate-200">
+            <h3 className="font-bold text-slate-900">{title}</h3>
+            <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700">
+              ✕
+            </button>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <Field
+              label="Tên địa điểm"
+              id="name"
+              value={data.name}
+              onChange={handleChange}
+              required
+              placeholder="VD: Chi nhánh Hà Nội"
+            />
+
+            <div className="relative">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Tìm địa chỉ <span className="text-red-600">*</span>
+              </label>
+              <input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Nhập số nhà, đường, phường, thành phố..."
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+              />
+
+              {suggestions.length > 0 ? (
+                <div className="absolute z-20 mt-2 w-full max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                  {suggestions.map((item) => (
+                    <button
+                      key={item.ref_id}
+                      type="button"
+                      onClick={() => handleSelectPlace(item)}
+                      className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+                    >
+                      <p className="font-semibold text-sm text-slate-900">
+                        {item.name || item.address || item.display}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {item.display || item.address}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {searching ? (
+                <p className="text-xs text-slate-500 mt-2">Đang tìm địa chỉ...</p>
+              ) : null}
+            </div>
+
+            <Field label="Địa chỉ chi tiết" id="addressLine" value={data.addressLine} onChange={handleChange} required />
+            <Field label="Tỉnh/Thành phố" id="province" value={data.province} onChange={handleChange} required />
+            <Field label="Quận/Huyện" id="district" value={data.district} onChange={handleChange} />
+            <Field label="Phường/Xã" id="ward" value={data.ward} onChange={handleChange} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Vĩ độ" id="latitude" value={data.latitude || ''} onChange={handleChange} />
+              <Field label="Kinh độ" id="longitude" value={data.longitude || ''} onChange={handleChange} />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input id="isPrimary" type="checkbox" checked={data.isPrimary} onChange={handleChange} />
+              Đặt làm trụ sở chính
+            </label>
+          </div>
+
+          <div className="sticky bottom-0 p-5 flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving}
+              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold disabled:opacity-60"
+            >
+              {saving ? 'Đang lưu...' : 'Lưu'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,122 +1,326 @@
+import React, { useState, useEffect } from 'react';
+import jobService from '../../../services/jobService'; // Đường dẫn tới file API của bạn
+import JobDetailModal from './JobDetailModal';
 
-import { Link } from 'react-router-dom';
-
-const jobs = [
-  { id: 1, title: 'Senior Backend Developer', status: 'PUBLISHED', location: 'TP. Hồ Chí Minh', salary: '30 - 45 triệu', deadline: '31/05/2026', cvs: 18, package: 'GẤP', createdAt: '12/05/2026' },
-  { id: 2, title: 'Product Designer', status: 'PENDING_APPROVAL', location: 'Hà Nội', salary: '20 - 30 triệu', deadline: '28/05/2026', cvs: 0, package: 'Thường', createdAt: '15/05/2026' },
-  { id: 3, title: 'Sales Executive', status: 'EXPIRED', location: 'Đà Nẵng', salary: 'Thỏa thuận', deadline: '10/05/2026', cvs: 32, package: 'Nổi bật', createdAt: '20/04/2026' },
-  { id: 4, title: 'HR Intern', status: 'DRAFT', location: 'TP. Hồ Chí Minh', salary: '4 - 6 triệu', deadline: '20/06/2026', cvs: 0, package: 'Thường', createdAt: '18/05/2026' },
-];
-
+// Ánh xạ màu sắc và text hiển thị tiếng Việt tương ứng cho từng trạng thái
 const statusMeta = {
-  DRAFT: 'bg-slate-100 text-slate-700',
-  PENDING_APPROVAL: 'bg-amber-100 text-amber-800',
-  PUBLISHED: 'bg-emerald-100 text-emerald-800',
-  EXPIRED: 'bg-slate-200 text-slate-700',
-  CLOSED: 'bg-slate-200 text-slate-700',
-  BANNED: 'bg-red-100 text-red-700',
-  LOCKED: 'bg-red-100 text-red-700',
-};
-
-const actionsByStatus = {
-  DRAFT: ['Sửa', 'Gửi duyệt', 'Xóa'],
-  PENDING_APPROVAL: ['Xem', 'Hủy gửi duyệt'],
-  PUBLISHED: ['Xem', 'Sửa', 'Đóng', 'Mua gói', 'Xem CV'],
-  EXPIRED: ['Xem', 'Gia hạn', 'Tạo bản sao'],
-  CLOSED: ['Xem', 'Mở lại', 'Tạo bản sao'],
-  BANNED: ['Xem lý do khóa'],
-  LOCKED: ['Xem lý do khóa'],
+  DRAFT: {
+    label: 'Bản nháp',
+    className: 'bg-slate-100 text-slate-700 border border-slate-200'
+  },
+  PENDING_APPROVAL: {
+    label: 'Chờ duyệt',
+    className: 'bg-amber-50 text-amber-700 border border-amber-200'
+  },
+  PUBLISHED: {
+    label: 'Đang hiển thị',
+    className: 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+  },
+  EXPIRED: {
+    label: 'Hết hạn',
+    className: 'bg-orange-50 text-orange-700 border border-orange-200'
+  },
+  CLOSED: {
+    label: 'Đã đóng',
+    className: 'bg-slate-200 text-slate-600'
+  },
+  BANNED: {
+    label: 'Vi phạm/Khóa',
+    className: 'bg-red-50 text-red-700 border border-red-200'
+  },
+  LOCKED: {
+    label: 'Đã khóa',
+    className: 'bg-red-50 text-red-700 border border-red-200'
+  }
 };
 
 const JobList = () => {
+  const [jobs, setJobs] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
+  const [loading, setLoading] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState(null); // Quản lý job đang xem chi tiết
+
+  // State lưu bộ lọc tìm kiếm
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    location: '',
+    package: '',
+    createdAtFrom: '',
+    createdAtTo: '',
+    deadlineFrom: '',
+    deadlineTo: '',
+    page: 1,
+    limit: 10
+  });
+
+  const formatSalary = (salaryField) => {
+    // Nếu không có dữ liệu lương
+    if (!salaryField) return 'Thỏa thuận';
+    
+    // Nếu backend trả về Object theo cấu trúc trong thông báo lỗi
+    if (typeof salaryField === 'object') {
+      const { type, minMillion, maxMillion, currency } = salaryField;
+      
+      if (minMillion && maxMillion) {
+        return `${minMillion} - ${maxMillion} triệu ${currency || 'VND'}`;
+      } else if (minMillion) {
+        return `Từ ${minMillion} triệu ${currency || 'VND'}`;
+      } else if (maxMillion) {
+        return `Đến ${maxMillion} triệu ${currency || 'VND'}`;
+      }
+      return 'Thỏa thuận';
+    }
+
+    // Nếu backend trả về String sẵn thì in ra luôn
+    return salaryField;
+  };
+
+  // Hàm fetch data từ API getMyJobs
+  const fetchJobs = async () => {
+    setLoading(true);
+    try {
+      // Chuẩn hóa params gửi lên backend theo đúng cấu trúc API query
+      const params = {
+        page: filters.page,
+        limit: filters.limit,
+        ...(filters.status && { status: filters.status })
+        // Bạn có thể mở rộng backend để nhận thêm search, location... nếu cần
+      };
+
+      const response = await jobService.getMyJobs(params);
+      if (response.success) {
+        setJobs(response.data);
+        setPagination(response.pagination);
+      }
+    } catch (error) {
+      alert('Không thể tải danh sách công việc: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, [filters.page, filters.status]); // Tự động gọi lại khi đổi trang hoặc đổi nhanh trạng thái
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value, page: 1 })); // Reset về trang 1 khi lọc
+  };
+
+  // Xử lý Gửi duyệt nhanh tại hàng
+  const handleSubmitReview = async (jobId) => {
+    if (!window.confirm('Bạn có chắc muốn gửi duyệt tin này không?')) return;
+    try {
+      await jobService.submitJobForReview(jobId);
+      alert('Gửi duyệt thành công!');
+      fetchJobs();
+    } catch (error) {
+      alert('Gửi duyệt thất bại: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Xử lý Xóa nhanh tại hàng
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa tin nháp này không? Hành động này không thể hoàn tác.')) return;
+    try {
+      await jobService.deleteJob(jobId);
+      alert('Xóa tin tuyển dụng thành công!');
+      fetchJobs();
+    } catch (error) {
+      alert('Xóa thất bại: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="space-y-6 p-6 max-w-[1600px] mx-auto">
+      {/* Tiêu đề */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Danh sách tin tuyển dụng</h1>
           <p className="text-slate-600 mt-1">Quản lý toàn bộ Job của công ty theo trạng thái và hiệu quả tuyển dụng.</p>
         </div>
-        <Link to="/employer/jobs/create" className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] w-fit">
+        <button className="px-5 py-2.5 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] transition-all">
           Tạo tin mới
-        </Link>
+        </button>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl p-5">
+      {/* Khu vực Bộ lọc (Filters) */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <FilterField label="Từ khóa" placeholder="Tên job..." />
-          <FilterSelect label="Trạng thái" options={['Draft', 'Pending', 'Published', 'Expired', 'Closed', 'Banned']} />
-          <FilterSelect label="Địa điểm" options={['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng']} />
-          <FilterSelect label="Loại tin" options={['Thường', 'Nổi bật', 'GẤP']} />
-          <FilterField label="Ngày tạo từ" type="date" />
-          <FilterField label="Ngày tạo đến" type="date" />
-          <FilterField label="Hết hạn từ" type="date" />
-          <FilterField label="Hết hạn đến" type="date" />
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Từ khóa</label>
+            <input 
+              type="text" value={filters.search} onChange={(e) => handleFilterChange('search', e.target.value)}
+              placeholder="Tên job..." className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87]" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Trạng thái</label>
+            <select 
+              value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] bg-white text-slate-800"
+            >
+              <option value="">Tất cả trạng thái</option>
+              {Object.keys(statusMeta).map(st => (
+                <option key={st} value={st}>{statusMeta[st].label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Địa điểm</label>
+            <select 
+              value={filters.location} onChange={(e) => handleFilterChange('location', e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] bg-white text-slate-800"
+            >
+              <option value="">Chọn địa điểm...</option>
+              <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
+              <option value="Hà Nội">Hà Nội</option>
+              <option value="Đà Nẵng">Đà Nẵng</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Loại tin</label>
+            <select 
+              value={filters.package} onChange={(e) => handleFilterChange('package', e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] bg-white text-slate-800"
+            >
+              <option value="">Chọn loại tin...</option>
+              <option value="Thường">Thường</option>
+              <option value="Nổi bật">Nổi bật</option>
+              <option value="GẤP">GẤP</option>
+            </select>
+          </div>
+        </div>
+        
+        {/* Nút tìm kiếm thủ công nếu cần kích hoạt toàn bộ filter cùng lúc */}
+        <div className="flex justify-end mt-4">
+          <button onClick={fetchJobs} className="px-4 py-2 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-700">
+            Áp dụng bộ lọc
+          </button>
         </div>
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      {/* Bảng danh sách Job */}
+      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
               <tr>
-                {['Tên tin tuyển dụng', 'Trạng thái', 'Địa điểm', 'Mức lương', 'Hạn nộp', 'Số CV', 'Gói dịch vụ', 'Ngày tạo', 'Hành động'].map((head) => (
-                  <th key={head} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{head}</th>
+                {['Tên tin tuyển dụng', 'Trạng thái', 'Mức lương', 'Hạn nộp', 'Ngày tạo', 'Hành động'].map((head) => (
+                  <th key={head} className="text-left px-5 py-3.5 font-semibold whitespace-nowrap">{head}</th>
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr key={job.id} className="border-t border-slate-100 align-top">
-                  <td className="px-4 py-4 min-w-[220px]">
-                    <div className="font-semibold text-slate-900">{job.title}</div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusMeta[job.status] || 'bg-slate-100 text-slate-700'}`}>
-                      {job.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">{job.location}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{job.salary}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{job.deadline}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{job.cvs}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{job.package}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{job.createdAt}</td>
-                  <td className="px-4 py-4 min-w-[240px]">
-                    <div className="flex flex-wrap gap-2">
-                      {(actionsByStatus[job.status] || ['Xem']).map((action) => (
-                        <button key={action} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">
-                          {action}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-8 text-slate-500">Đang tải dữ liệu...</td>
                 </tr>
-              ))}
+              ) : jobs.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-8 text-slate-500">Không tìm thấy tin tuyển dụng nào phù hợp.</td>
+                </tr>
+              ) : (
+                jobs.map((job) => {
+                  // Lấy dữ liệu giao diện cấu hình tương ứng cho status của bản ghi hiện tại
+                  const currentStatus = statusMeta[job.status] || { label: job.status, className: 'bg-slate-100 text-slate-700' };
+                  
+                  return (
+                    <tr key={job._id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-5 py-4 max-w-[300px]">
+                        <div className="font-semibold text-slate-900 truncate">{job.title}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">ID: {job._id}</div>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${currentStatus.className}`}>
+                          {currentStatus.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-700">
+                        {formatSalary(job.salary)}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap text-slate-600">
+                        {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : '---'}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap text-slate-500">
+                        {new Date(job.createdAt).toLocaleDateString('vi-VN')}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center gap-2">
+                          {/* Nút Xem chi tiết luôn xuất hiện ở mọi status */}
+                          <button 
+                            onClick={() => setSelectedJobId(job._id)} 
+                            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors"
+                          >
+                            Xem chi tiết
+                          </button>
+
+                          {/* Các hành động đặc quyền cho DRAFT */}
+                          {job.status === 'DRAFT' && (
+                            <>
+                              <button 
+                                onClick={() => handleSubmitReview(job._id)}
+                                className="px-3 py-1.5 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition-colors"
+                              >
+                                Gửi duyệt
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteJob(job._id)}
+                                className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 font-medium hover:bg-red-50 transition-colors"
+                              >
+                                Xóa
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Thanh Phân Trang */}
+        {pagination.pages > 1 && (
+          <div className="px-5 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-xs text-slate-500">Hiển thị bản ghi từ hệ thống (Tổng số: {pagination.total})</span>
+            <div className="flex gap-1">
+              <button 
+                disabled={filters.page === 1}
+                onClick={() => handleFilterChange('page', filters.page - 1)}
+                className="px-3 py-1 bg-white border border-slate-200 rounded text-slate-600 disabled:opacity-50"
+              >
+                Trước
+              </button>
+              <span className="px-3 py-1 text-sm font-medium text-slate-700">Trang {filters.page} / {pagination.pages}</span>
+              <button 
+                disabled={filters.page === pagination.pages}
+                onClick={() => handleFilterChange('page', filters.page + 1)}
+                className="px-3 py-1 bg-white border border-slate-200 rounded text-slate-600 disabled:opacity-50"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </section>
+
+      {/* Render Modal chi tiết khi click */}
+      {selectedJobId && (
+        <JobDetailModal 
+          jobId={selectedJobId} 
+          onClose={() => setSelectedJobId(null)} 
+          onSuccess={() => {
+            setSelectedJobId(null);
+            fetchJobs(); // Làm mới danh sách khi có thay đổi từ modal
+          }}
+        />
+      )}
     </div>
   );
 };
-
-const FilterField = ({ label, placeholder = '', type = 'text' }) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
-    <input type={type} placeholder={placeholder} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]" />
-  </div>
-);
-
-const FilterSelect = ({ label, options }) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
-    <select className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white">
-      <option value="">Chọn...</option>
-      {options.map((option) => (
-        <option key={option} value={option}>{option}</option>
-      ))}
-    </select>
-  </div>
-);
 
 export default JobList;
