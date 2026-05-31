@@ -9,7 +9,8 @@ const JobDetailHeader = ({
   location,
   updatedAt,
   canApply,
-  cannotApplyReason
+  cannotApplyReason,
+  hasApplied
 }) => {
   const navigate = useNavigate();
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -65,7 +66,15 @@ const JobDetailHeader = ({
             </div>
           </div>
           <div className="flex flex-col gap-3 w-full md:w-auto">
-            {canApply ? (
+            {hasApplied ? (
+              <button
+                disabled
+                className="w-full md:w-48 py-3 bg-green-100 text-green-700 font-bold rounded-lg cursor-not-allowed text-body-md flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined">check_circle</span>
+                Đã Ứng Tuyển
+              </button>
+            ) : canApply ? (
               <button
                 onClick={handleApply}
                 className="w-full md:w-48 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg active:scale-95 transition-all text-body-md"
