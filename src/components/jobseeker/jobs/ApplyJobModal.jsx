@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
 import cvService from '../../../services/cvService';
 
-const ApplyJobModal = ({ job, onClose }) => {
+const ApplyJobModal = ({ job, onClose, onSuccess }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState('select'); // 'select' | 'confirm' | 'success'
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,7 @@ const ApplyJobModal = ({ job, onClose }) => {
 
       const response = await jobService.applyJob(job._id, applyData);
       if (response.success) {
+        if (onSuccess) onSuccess();
         setStep('success');
       } else {
         setError(response.message || 'Ứng tuyển thất bại');
@@ -86,7 +87,7 @@ const ApplyJobModal = ({ job, onClose }) => {
   };
 
   const handleGoToMyApplications = () => {
-    navigate('/jobseeker/applied-jobs');
+    navigate('/applied-jobs');
     onClose();
   };
 

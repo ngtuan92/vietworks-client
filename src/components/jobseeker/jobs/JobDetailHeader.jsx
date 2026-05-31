@@ -10,7 +10,8 @@ const JobDetailHeader = ({
   updatedAt,
   canApply,
   cannotApplyReason,
-  hasApplied
+  hasApplied,
+  onApplySuccess
 }) => {
   const navigate = useNavigate();
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -111,6 +112,7 @@ const JobDetailHeader = ({
         <ApplyJobModal
           job={job}
           onClose={() => setShowApplyModal(false)}
+          onSuccess={onApplySuccess}
         />
       )}
     </>
