@@ -1011,14 +1011,14 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
             >
               Hủy
             </button>
-     <button
-  type="button"
-  onClick={handleSubmit}
-  disabled={saving}
-  className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold disabled:opacity-60"
->
-  {saving ? 'Đang lưu...' : 'Lưu'}
-</button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving}
+              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold disabled:opacity-60"
+            >
+              {saving ? 'Đang lưu...' : 'Lưu'}
+            </button>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export const CVCard = ({ id, title, date, isActive, image, onDelete, onDownload, onRename }) => {
+export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, onRename, onSetMain }) => {
   const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
@@ -45,8 +45,8 @@ export const CVCard = ({ id, title, date, isActive, image, onDelete, onDownload,
           src={image}
         />
         <div className="absolute top-stack-md right-stack-md">
-          <span className={`${isActive ? 'bg-primary text-white' : 'bg-outline-variant text-on-surface-variant'} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider`}>
-            {isActive ? 'Đang dùng' : 'Không hoạt động'}
+          <span className={`${isMain ? 'bg-primary text-white' : 'bg-[#e0e0e0] text-[#616161]'} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider`}>
+            {isMain ? 'Đang dùng' : 'Bản nháp'}
           </span>
         </div>
       </div>
@@ -96,16 +96,26 @@ export const CVCard = ({ id, title, date, isActive, image, onDelete, onDownload,
 
         <p className="text-on-surface-variant font-body-sm mb-stack-md">Cập nhật: {date}</p>
 
+        {!isMain && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSetMain?.(id); }}
+            className="w-full mb-stack-sm bg-surface-container border border-outline-variant text-on-surface hover:bg-primary hover:text-white font-bold py-1.5 rounded-lg transition-all text-body-sm flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+            Dùng làm CV chính
+          </button>
+        )}
+
         <div className="flex gap-stack-sm">
           <button
             onClick={() => navigate(`/cv-builder/${id}`)}
-            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm"
+            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm cursor-pointer"
           >
             Xem trước
           </button>
           <button
             onClick={() => onDownload && onDownload(id)}
-            className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+            className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
             title="Tải PDF"
           >
             <span className="material-symbols-outlined">download</span>
@@ -121,13 +131,13 @@ export const CVPlaceholderCard = () => {
   return (
     <button
       onClick={() => navigate('/cv-templates/gallery')}
-      className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group"
+      className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group cursor-pointer"
     >
       <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
         <span className="material-symbols-outlined text-primary text-headline-lg">add</span>
       </div>
-      <p className="font-bold text-on-surface">Tạo Mẫu CV Mới</p>
-      <p className="text-body-sm text-on-surface-variant">Chọn từ 20+ bố cục thiết kế</p>
+      <p className="font-bold text-on-surface">Tạo CV Mới</p>
+      <p className="text-body-sm text-on-surface-variant">Chọn từ 20+ mẫu thiết kế</p>
     </button>
   );
 };
