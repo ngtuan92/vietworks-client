@@ -4,17 +4,29 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import JobCard from '../../../components/jobseeker/jobs/JobCard';
 import JobFilterSidebar from '../../../components/jobseeker/jobs/JobFilterSidebar';
 import JobPagination from '../../../components/jobseeker/jobs/JobPagination';
+import jobService from '../../../services/jobService';
 
 const locationOptions = [
   { value: 'all', label: 'Tất cả địa điểm' },
-  { value: 'hcm', label: 'Hồ Chí Minh' },
-  { value: 'hn', label: 'Hà Nội' },
-  { value: 'dn', label: 'Đà Nẵng' },
+  { value: '79', label: 'Hồ Chí Minh' },
+  { value: '01', label: 'Hà Nội' },
+  { value: '48', label: 'Đà Nẵng' },
+];
+
+const sortOptions = [
+  { value: 'createdAt', label: 'Mới nhất' },
+  { value: 'salary.minMillion', label: 'Lương cao nhất' },
 ];
 
 const Jobs = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState('createdAt');
 
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('all');
@@ -22,45 +34,76 @@ const Jobs = () => {
   useEffect(() => {
     setKeyword(searchParams.get('q') ?? '');
     setLocation(searchParams.get('location') ?? 'all');
+    setSortBy(searchParams.get('sortBy') ?? 'createdAt');
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const params = Object.fromEntries(searchParams);
+        const result = await jobService.getJobs(params);
+        if (result.success) {
+          setJobs(result.data);
+          setPagination(result.pagination);
+          setTotal(result.pagination?.total || result.data.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
   }, [searchParams]);
 
   const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (keyword.trim()) params.set('q', keyword.trim());
-    if (location !== 'all') params.set('location', location);
+    const params = new URLSearchParams(searchParams);
+    if (keyword.trim()) {
+      params.set('q', keyword.trim());
+    } else {
+      params.delete('q');
+    }
+    if (location !== 'all') {
+      params.set('location', location);
+    } else {
+      params.delete('location');
+    }
     const qs = params.toString();
+    setSearchParams(params);
     navigate(qs ? `/jobs?${qs}` : '/jobs');
   };
 
-  const jobs = [
-    {
-      title: 'Kỹ sư Phần mềm Senior (Java/Cloud)',
-      company: 'TechNova Solutions Việt Nam',
-      location: 'Quận 1, TP. Hồ Chí Minh',
-      salary: '2,500 - 4,000 USD',
-      logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDY0wep9rxjDcpqULLDa0ElhlMD6FHhZTfG4Hpi2j6Xvw38c5wlOD3RNrNbxocT2rep_0fEZ4sD7kuqGYz9KwBkTmrE1d6g8NZ6BjKkOSwKXtKW1WfSSs750Vm9anpVa91vWTRDIypfB52SHpePkT_PjpYy2iSDrdRKYTuUdtTxWE7Q6MYLUV6ubaQHF-J3bwHk5MPIJP-cQbOeS0xafTPPchhXWCSXYuLt2tsKtLBwwzKju_9dNR4ZwmI_fhUQcVPb4pkIftC3hIvl',
-      updatedTime: '2 giờ trước',
-      tags: ['Từ xa', 'Tuyển gấp'],
-    },
-    {
-      title: 'Trưởng phòng Marketing - Chuyển đổi số',
-      company: 'Tập đoàn Ngân hàng FinTrust',
-      location: 'Ba Đình, Hà Nội',
-      salary: 'Thỏa thuận',
-      logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDy6R6t1QhaSl_WKXrGKAHJ09FzTfnQWNoKZ93R0jQcSYcgzhCJbDOQlWgouL7CNNE7ruq63orfV3fw6AdAHu-YCpKKpmTK0kaCZAA8MFp_HIniQowZgdT-gq432BBxx_yozXrqTHMFyRkCd41AiwHXDIOrVWhg0GHsV7-5lRB8s7ohD67ipepUEpC2Nyuyk9aSjRmiAde-hCNcCvdMQAhr0dc7GMU9_tgwwjV0c5mpzSZophV1EoRbzFeQArYGI3863B2yLFwyiTaW',
-      updatedTime: '1 ngày trước',
-      tags: ['Ngân hàng', 'Chế độ thưởng'],
-    },
-    {
-      title: 'Chuyên viên Thiết kế UI/UX',
-      company: 'BrightSide Creative Lab',
-      location: 'TP. Đà Nẵng',
-      salary: '1,800 - 2,800 USD',
-      logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB1A2v5UwkWZ4oMa-VeR1TCBH44r1GVoUky42rs9VT6x36kLD8DY-nk97SV-7Q7s6KQrTmhk_fGhvh7Jt3bdmUeu3Rx1G7EgxnNY4HatE4UF3zQzJLRMQ8LRSIZfYht4IMlKXTMO0yhTFw7J31CO7FWJZNv6VgmHPgU0U98cK0jO__cUuYUYyy0v006lbHi4diur9LgGh95f47NYGzEuY16U8X-vUlg6GXh2sZygkBkTBo2tSQ-nq5V9FY79FVlxN9n2mPk1dVLz2qy',
-      updatedTime: '3 ngày trước',
-      tags: ['Mới đăng', 'Bảo hiểm'],
-    },
-  ];
+  const handleSortChange = (newSortBy) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('sortBy', newSortBy);
+    setSearchParams(params);
+    setSortBy(newSortBy);
+  };
+
+  const handlePageChange = (newPage) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', newPage.toString());
+    setSearchParams(params);
+  };
+
+  const formatLocation = (workLocations) => {
+    if (!workLocations || workLocations.length === 0) return 'Không xác định';
+    return workLocations[0].provinceName || workLocations[0].provinceCode || 'Không xác định';
+  };
+
+  const formatSalary = (salary) => {
+    if (!salary) return 'Thỏa thuận';
+    if (salary.type === 'NEGOTIABLE') return 'Thỏa thuận';
+    return `${salary.minMillion || 0} - ${salary.maxMillion || 0} triệu`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('vi-VN');
+  };
 
   return (
     <div className="bg-[#fbf9f8] min-h-screen font-body-md">
@@ -85,6 +128,7 @@ const Jobs = () => {
                     type="text"
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
                 <div className="flex-1 flex items-center px-4 gap-3 w-full py-3 md:py-0">
@@ -119,21 +163,65 @@ const Jobs = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div>
                 <h2 className="text-xl font-bold text-black">Việc làm đề xuất</h2>
-                <p className="text-sm text-gray-500">Hiển thị 1,248 việc làm phù hợp với hồ sơ của bạn</p>
+                <p className="text-sm text-gray-500">
+                  {loading ? 'Đang tải...' : `Hiển thị ${total} việc làm phù hợp`}
+                </p>
               </div>
               <div className="flex items-center gap-2 bg-[#f5f3f3] p-1 rounded-lg">
-                <button className="px-4 py-2 text-sm font-semibold bg-white text-[#003f87] shadow-sm rounded-md">Mới nhất</button>
-                <button className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-[#003f87] transition-colors">Lương cao nhất</button>
+                {sortOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSortChange(opt.value)}
+                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+                      sortBy === opt.value
+                        ? 'bg-white text-[#003f87] shadow-sm'
+                        : 'text-gray-500 hover:text-[#003f87]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="space-y-4">
-              {jobs.map((job, index) => (
-                <JobCard key={index} {...job} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <span className="material-symbols-outlined animate-spin text-4xl text-gray-400">progress_activity</span>
+                <p className="text-gray-500 mt-2">Đang tải việc làm...</p>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="text-center py-12">
+                <span className="material-symbols-outlined text-4xl text-gray-400">work_off</span>
+                <p className="text-gray-500 mt-2">Không tìm thấy việc làm phù hợp</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {jobs.map((job) => (
+                  <JobCard
+                    key={job._id}
+                    id={job._id}
+                    title={job.title}
+                    company={job.companyId?.name || 'Công ty không xác định'}
+                    companyAvatar={job.companyId?.avatarUrl}
+                    location={formatLocation(job.workLocations)}
+                    salary={formatSalary(job.salary)}
+                    updatedTime={formatDate(job.updatedAt)}
+                    tags={job.isUrgent ? ['Tuyển gấp'] : []}
+                    skills={job.skills?.map(s => s.name) || []}
+                    experience={job.experienceLevelId?.name}
+                    level={job.jobLevelId?.name}
+                  />
+                ))}
+              </div>
+            )}
 
-            <JobPagination />
+            {pagination && pagination.pages > 1 && (
+              <JobPagination
+                currentPage={pagination.page}
+                totalPages={pagination.pages}
+                onPageChange={handlePageChange}
+              />
+            )}
           </div>
         </div>
       </main>
