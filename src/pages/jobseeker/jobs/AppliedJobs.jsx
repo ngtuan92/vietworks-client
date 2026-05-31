@@ -67,7 +67,7 @@ const AppliedJobs = () => {
   };
 
   const handleViewApplication = (applicationId) => {
-    navigate(`/jobseeker/applications/${applicationId}`);
+    navigate(`/applied-jobs/${applicationId}/status`);
   };
 
   return (

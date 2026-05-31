@@ -136,6 +136,11 @@ export const getMyApplications = async (params = {}) => {
   return response.data;
 };
 
+export const getApplicationStatus = async (applicationId) => {
+  const response = await api.get(`/jobseeker/applications/${applicationId}/status`);
+  return response.data;
+};
+
 export default {
   createJob,
   updateJob,
@@ -155,4 +160,5 @@ export default {
   getApplyCvPreview,
   checkDuplicateApplication,
   getMyApplications,
+  getApplicationStatus,
 };

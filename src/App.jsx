@@ -10,6 +10,7 @@ import TemplateGallery from './pages/jobseeker/cv/TemplateGallery';
 import CVBuilder from './pages/jobseeker/cv/CVBuilder';
 import CvPreview from './pages/jobseeker/cv/CvPreview';
 import AppliedJobs from './pages/jobseeker/jobs/AppliedJobs';
+import ApplicationStatusDetail from './pages/jobseeker/jobs/ApplicationStatusDetail';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
@@ -101,6 +102,7 @@ function App() {
           <Route path="cv-builder/:id" element={<CVBuilder />} />
           <Route path="cv-preview/:jobId/:cvId" element={<CvPreview />} />
           <Route path="applied-jobs" element={<AppliedJobs />} />
+          <Route path="applied-jobs/:id/status" element={<ApplicationStatusDetail />} />
           
           <Route path="companies" element={<CompanyList />} />
           <Route path="companies/:id" element={<CompanyDetail />} />
