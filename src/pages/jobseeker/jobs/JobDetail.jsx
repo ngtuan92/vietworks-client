@@ -14,6 +14,7 @@ const JobDetail = () => {
   const [error, setError] = useState(null);
   const [canApply, setCanApply] = useState(true);
   const [cannotApplyReason, setCannotApplyReason] = useState(null);
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -38,7 +39,19 @@ const JobDetail = () => {
       }
     };
 
+    const checkApplied = async () => {
+      try {
+        const res = await jobService.checkDuplicateApplication(jobId);
+        if (res.success) {
+          setHasApplied(res.data.hasApplied);
+        }
+      } catch (err) {
+        console.error('Error checking duplicate application:', err);
+      }
+    };
+
     fetchJob();
+    checkApplied();
   }, [jobId]);
 
   if (loading) {
@@ -102,6 +115,7 @@ const JobDetail = () => {
           updatedAt={updatedAt}
           canApply={canApply}
           cannotApplyReason={cannotApplyReason}
+          hasApplied={hasApplied}
         />
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">

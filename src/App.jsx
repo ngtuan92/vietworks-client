@@ -8,6 +8,8 @@ import JobDetail from './pages/jobseeker/jobs/JobDetail';
 import ManageCV from './pages/jobseeker/cv/ManageCV';
 import TemplateGallery from './pages/jobseeker/cv/TemplateGallery';
 import CVBuilder from './pages/jobseeker/cv/CVBuilder';
+import CvPreview from './pages/jobseeker/cv/CvPreview';
+
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
 import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
@@ -96,6 +98,8 @@ function App() {
           <Route path="manage-cv" element={<ManageCV />} />
           <Route path="cv-templates/gallery" element={<TemplateGallery />} />
           <Route path="cv-builder/:id" element={<CVBuilder />} />
+          <Route path="cv-preview/:jobId/:cvId" element={<CvPreview />} />
+          
           <Route path="companies" element={<CompanyList />} />
           <Route path="companies/:id" element={<CompanyDetail />} />
           <Route path="salary-insight" element={<SalaryInsight />} />

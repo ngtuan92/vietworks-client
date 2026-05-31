@@ -121,6 +121,16 @@ export const applyJob = async (jobId, applyData) => {
   return response.data;
 };
 
+export const getApplyCvPreview = async (jobId, cvId) => {
+  const response = await api.get(`/jobs/${jobId}/apply/cv-preview/${cvId}`);
+  return response.data;
+};
+
+export const checkDuplicateApplication = async (jobId) => {
+  const response = await api.get(`/jobs/${jobId}/apply/check`);
+  return response.data;
+};
+
 export default {
   createJob,
   updateJob,
@@ -137,4 +147,6 @@ export default {
   getMyJobs,
   getApplyOptions,
   applyJob,
+  getApplyCvPreview,
+  checkDuplicateApplication,
 };

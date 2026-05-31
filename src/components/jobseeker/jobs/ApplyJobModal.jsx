@@ -100,6 +100,18 @@ const ApplyJobModal = ({ job, onClose }) => {
     onClose();
   };
 
+  const handlePreviewCv = () => {
+    if (!selectedCv) return;
+
+    if (selectedCv.type === 'ONLINE') {
+      window.open(`/cv-preview/${job._id}/${selectedCv.id}`, '_blank');
+    } else {
+      const fileUrl = selectedCv.fileUrl;
+      const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+      window.open(googleViewerUrl, '_blank');
+    }
+  };
+
   if (step === 'success') {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -374,23 +386,34 @@ const ApplyJobModal = ({ job, onClose }) => {
         {/* Footer */}
         {applyOptions?.cvs?.length > 0 && (
           <div className="px-6 py-4 border-t border-outline-variant shrink-0">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !selectedCv || (applyOptions.requireLocationSelection && !selectedLocation) || !agreedToTerms}
-              className="w-full py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined">send</span>
-                  Nộp hồ sơ
-                </>
+            <div className="flex gap-3">
+              {selectedCv && (
+                <button
+                  onClick={handlePreviewCv}
+                  className="flex-1 py-3 border border-outline text-on-surface font-semibold rounded-lg hover:bg-surface-container-low transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined">visibility</span>
+                  Xem trước CV
+                </button>
               )}
-            </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !selectedCv || (applyOptions.requireLocationSelection && !selectedLocation) || !agreedToTerms}
+                className="flex-1 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined">send</span>
+                    Nộp hồ sơ
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>
