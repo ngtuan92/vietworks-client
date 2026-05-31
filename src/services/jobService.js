@@ -96,6 +96,14 @@ export const getJobById = async (jobId) => {
   return response.data;
 };
 
+/**
+ * Lấy danh sách job public (đã PUBLISHED) - Dùng cho ứng viên/guest tìm việc
+ */
+export const getJobs = async (params = {}) => {
+  const response = await api.get('/jobs', { params });
+  return response.data;
+};
+
 // ==================== UTILITY ====================
 
 export const getMyJobs = async (params = {}) => {
@@ -115,5 +123,6 @@ export default {
   getExperienceLevels,
   getSkillsByCareerGroup,
   getJobById,
+  getJobs,
   getMyJobs,
 };
