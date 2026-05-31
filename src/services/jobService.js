@@ -111,6 +111,16 @@ export const getMyJobs = async (params = {}) => {
   return response.data;
 };
 
+export const getApplyOptions = async (jobId) => {
+  const response = await api.get(`/jobs/${jobId}/apply-options`);
+  return response.data;
+};
+
+export const applyJob = async (jobId, applyData) => {
+  const response = await api.post(`/jobs/${jobId}/apply`, applyData);
+  return response.data;
+};
+
 export default {
   createJob,
   updateJob,
@@ -125,4 +135,6 @@ export default {
   getJobById,
   getJobs,
   getMyJobs,
+  getApplyOptions,
+  applyJob,
 };
