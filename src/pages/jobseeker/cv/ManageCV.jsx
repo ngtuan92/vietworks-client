@@ -176,10 +176,14 @@ const ManageCV = () => {
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setUploadFile(file);
-      setShowUploadModal(true);
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      error('Chỉ chấp nhận file PDF!');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
+    setUploadFile(file);
+    setShowUploadModal(true);
   };
 
   const handleUploadSubmit = async () => {
@@ -302,7 +306,7 @@ const ManageCV = () => {
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelect}
-        accept=".pdf,.doc,.docx"
+        accept=".pdf"
         className="hidden"
       />
 
