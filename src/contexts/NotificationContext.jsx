@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
 const NotificationContext = createContext(null);
@@ -19,9 +19,9 @@ export const NotificationProvider = ({ children }) => {
     message: '',
     onConfirm: null,
     onCancel: null,
-    confirmText: 'Đồng ý',
-    cancelText: 'Hủy',
-    closeText: 'Đóng'
+    confirmText: 'Äá»“ng Ã½',
+    cancelText: 'Há»§y',
+    closeText: 'ÄÃ³ng'
   });
 
   const show = useCallback((options) => {
@@ -31,30 +31,30 @@ export const NotificationProvider = ({ children }) => {
       message: options.message || '',
       onConfirm: options.onConfirm || null,
       onCancel: options.onCancel || null,
-      confirmText: options.confirmText || 'Đồng ý',
-      cancelText: options.cancelText || 'Hủy',
-      closeText: options.closeText || 'Đóng'
+      confirmText: options.confirmText || 'Äá»“ng Ã½',
+      cancelText: options.cancelText || 'Há»§y',
+      closeText: options.closeText || 'ÄÃ³ng'
     });
     setIsOpen(true);
   }, []);
 
-  const success = useCallback((message, title = 'Thành công', onClose = null) => {
+  const success = useCallback((message, title = 'ThÃ nh cÃ´ng', onClose = null) => {
     show({ type: 'success', title, message, onCancel: onClose });
   }, [show]);
 
-  const error = useCallback((message, title = 'Lỗi', onClose = null) => {
+  const error = useCallback((message, title = 'Lá»—i', onClose = null) => {
     show({ type: 'error', title, message, onCancel: onClose });
   }, [show]);
 
-  const warning = useCallback((message, title = 'Cảnh báo', onClose = null) => {
+  const warning = useCallback((message, title = 'Cáº£nh bÃ¡o', onClose = null) => {
     show({ type: 'warning', title, message, onCancel: onClose });
   }, [show]);
 
-  const info = useCallback((message, title = 'Thông báo', onClose = null) => {
+  const info = useCallback((message, title = 'ThÃ´ng bÃ¡o', onClose = null) => {
     show({ type: 'info', title, message, onCancel: onClose });
   }, [show]);
 
-  const confirm = useCallback((message, onConfirm, onCancel = null, title = 'Xác nhận') => {
+  const confirm = useCallback((message, onConfirm, onCancel = null, title = 'XÃ¡c nháº­n') => {
     show({ type: 'confirm', title, message, onConfirm, onCancel });
   }, [show]);
 
@@ -116,9 +116,28 @@ export const NotificationProvider = ({ children }) => {
       );
     };
 
+    const handleAccountBlocked = (event) => {
+      const detail = event?.detail || {};
+      const message = detail.message || 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.';
+
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+
+      warning(
+        message,
+        'Tài khoản bị khóa',
+        () => {
+          window.location.href = '/login';
+        }
+      );
+    };
+
     window.addEventListener('unauthorized_access', handleUnauthorized);
+    window.addEventListener('account_blocked', handleAccountBlocked);
+
     return () => {
       window.removeEventListener('unauthorized_access', handleUnauthorized);
+      window.removeEventListener('account_blocked', handleAccountBlocked);
     };
   }, [warning]);
 
@@ -186,3 +205,5 @@ export const NotificationProvider = ({ children }) => {
     </NotificationContext.Provider>
   );
 };
+
+

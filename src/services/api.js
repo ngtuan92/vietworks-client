@@ -1,5 +1,27 @@
-
+﻿
 import axios from 'axios';
+
+const handleBlockedAccount = (error) => {
+  if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_BANNED') {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    try {
+      window.dispatchEvent(new Event('auth_changed'));
+      window.dispatchEvent(new CustomEvent('account_blocked', {
+        detail: {
+          message: error.response.data.message,
+          banReason: error.response.data.banReason || null,
+          bannedAt: error.response.data.bannedAt || null
+        }
+      }));
+    } catch (e) {
+      // ignore
+    }
+    return true;
+  }
+
+  return false;
+};
 
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}`,
@@ -35,10 +57,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (handleBlockedAccount(error)) {
+      return Promise.reject(error);
+    }
     
-    // Tránh vòng lặp vô hạn và chỉ xử lý khi lỗi 401 xảy ra
+    // TrÃ¡nh vÃ²ng láº·p vÃ´ háº¡n vÃ  chá»‰ xá»­ lÃ½ khi lá»—i 401 xáº£y ra
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Nếu yêu cầu refresh token chính nó bị 401, logout ngay lập tức
+      // Náº¿u yÃªu cáº§u refresh token chÃ­nh nÃ³ bá»‹ 401, logout ngay láº­p tá»©c
       if (originalRequest.url?.includes('/auth/refresh')) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
@@ -104,3 +130,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+
