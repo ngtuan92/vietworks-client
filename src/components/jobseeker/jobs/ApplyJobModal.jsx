@@ -15,6 +15,18 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  const [showCvPreview, setShowCvPreview] = useState(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [previewCvId, setPreviewCvId] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+    };
+  }, [previewBlobUrl]);
+
   useEffect(() => {
     fetchApplyOptions();
   }, [job._id]);
@@ -97,19 +109,37 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
   };
 
   const handleGoToUploadCV = () => {
-    navigate('/jobseeker/cvs/upload');
+    navigate('/manage-cv');
     onClose();
   };
 
-  const handlePreviewCv = () => {
+  const handlePreviewCv = async () => {
     if (!selectedCv) return;
 
     if (selectedCv.type === 'ONLINE') {
       window.open(`/cv-preview/${job._id}/${selectedCv.id}`, '_blank');
-    } else {
-      const fileUrl = selectedCv.fileUrl;
-      const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-      window.open(googleViewerUrl, '_blank');
+      return;
+    }
+
+    setShowCvPreview(true);
+
+    if (previewCvId === selectedCv.id && previewBlobUrl) return;
+
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+      setPreviewBlobUrl(null);
+    }
+
+    setPreviewLoading(true);
+    setPreviewError(null);
+    try {
+      const blob = await cvService.getUploadedCvView(selectedCv.id);
+      setPreviewBlobUrl(URL.createObjectURL(blob));
+      setPreviewCvId(selectedCv.id);
+    } catch {
+      setPreviewError('Không thể tải file để xem trước.');
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -184,6 +214,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
   }
 
   return (
+    <>
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-surface rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-[fade-in-scale_0.25s_ease-out]">
         {/* Header */}
@@ -419,6 +450,47 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
         )}
       </div>
     </div>
+
+    {showCvPreview && (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={() => setShowCvPreview(false)}>
+        <div className="bg-surface rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between shrink-0">
+            <div>
+              <h3 className="font-headline-md text-on-surface">{selectedCv?.title}</h3>
+              <p className="text-body-sm text-on-surface-variant">{selectedCv?.fileName}</p>
+            </div>
+            <button
+              onClick={() => setShowCvPreview(false)}
+              className="p-2 hover:bg-surface-container-low rounded-full transition-colors"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-hidden" style={{ minHeight: '75vh' }}>
+            {previewLoading ? (
+              <div className="flex flex-col items-center justify-center h-full py-20">
+                <span className="material-symbols-outlined animate-spin text-4xl text-primary mb-3">progress_activity</span>
+                <p className="text-on-surface-variant">Đang tải file...</p>
+              </div>
+            ) : previewError ? (
+              <div className="flex flex-col items-center justify-center h-full py-20 text-center px-8">
+                <span className="material-symbols-outlined text-4xl text-error mb-3">error</span>
+                <p className="text-on-surface-variant">{previewError}</p>
+              </div>
+            ) : previewBlobUrl ? (
+              <iframe
+                src={previewBlobUrl}
+                className="w-full h-full"
+                style={{ minHeight: '75vh' }}
+                title={selectedCv?.title}
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

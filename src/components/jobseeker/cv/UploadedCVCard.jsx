@@ -1,11 +1,24 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import cvService from '../../../services/cvService';
 
 export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, fileType, onDelete, onDownload, onRename }) => {
   const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
   const inputRef = useRef(null);
+
+  const isPdf = fileType === 'application/pdf' || fileName?.split('.').pop()?.toLowerCase() === 'pdf';
+
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+    };
+  }, [previewBlobUrl]);
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
@@ -43,7 +56,7 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
   };
 
   const handleDownload = async (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     if (fileUrl) {
       try {
         const response = await fetch(fileUrl);
@@ -57,12 +70,32 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch (error) {
-        console.warn('Download failed, opening in new tab:', error);
         window.open(fileUrl, '_blank');
       }
     } else {
       onDownload?.(id);
     }
+  };
+
+  const handleOpenPreview = async (e) => {
+    e.stopPropagation();
+    setShowPreview(true);
+    if (!isPdf || previewBlobUrl) return;
+
+    setPreviewLoading(true);
+    setPreviewError(null);
+    try {
+      const blob = await cvService.getUploadedCvView(id);
+      setPreviewBlobUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      setPreviewError('Không thể tải file để xem trước.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setShowPreview(false);
   };
 
   return (
@@ -124,13 +157,96 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
 
         <div className="flex gap-stack-sm">
           <button
-            onClick={handleDownload}
-            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm"
+            onClick={handleOpenPreview}
+            className="flex-1 border border-outline text-on-surface font-bold py-2 rounded-lg hover:bg-surface-container-low transition-colors text-body-sm flex items-center justify-center gap-1"
           >
+            <span className="material-symbols-outlined text-base">visibility</span>
+            Xem trước
+          </button>
+          <button
+            onClick={handleDownload}
+            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm flex items-center justify-center gap-1"
+          >
+            <span className="material-symbols-outlined text-base">download</span>
             Tải về
           </button>
         </div>
       </div>
+
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={handleClosePreview}>
+          <div className="bg-surface rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="font-headline-md text-on-surface">{title}</h3>
+                <p className="text-body-sm text-on-surface-variant">{fileName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-1 px-3 py-2 border border-primary text-primary rounded-lg hover:bg-primary-fixed transition-colors text-body-sm"
+                >
+                  <span className="material-symbols-outlined text-base">download</span>
+                  Tải về
+                </button>
+                <button
+                  onClick={handleClosePreview}
+                  className="p-2 hover:bg-surface-container-low rounded-full transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden" style={{ minHeight: '75vh' }}>
+              {isPdf ? (
+                previewLoading ? (
+                  <div className="flex flex-col items-center justify-center h-full py-20">
+                    <span className="material-symbols-outlined animate-spin text-4xl text-primary mb-3">progress_activity</span>
+                    <p className="text-on-surface-variant">Đang tải file...</p>
+                  </div>
+                ) : previewError ? (
+                  <div className="flex flex-col items-center justify-center h-full py-20 text-center px-8">
+                    <span className="material-symbols-outlined text-4xl text-error mb-3">error</span>
+                    <p className="text-on-surface-variant mb-4">{previewError}</p>
+                    <button
+                      onClick={handleDownload}
+                      className="px-6 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined">download</span>
+                      Tải về để xem
+                    </button>
+                  </div>
+                ) : previewBlobUrl ? (
+                  <iframe
+                    src={previewBlobUrl}
+                    className="w-full h-full"
+                    style={{ minHeight: '75vh' }}
+                    title={title}
+                  />
+                ) : null
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full py-16 text-center px-8">
+                  <div className="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-4xl text-on-surface-variant">description</span>
+                  </div>
+                  <h4 className="font-headline-md text-on-surface mb-2">Không hỗ trợ xem trước</h4>
+                  <p className="text-on-surface-variant text-body-sm mb-6">
+                    Trình duyệt không thể hiển thị trực tiếp file <span className="font-semibold">.{fileName?.split('.').pop()}</span>. Hãy tải về để xem.
+                  </p>
+                  <button
+                    onClick={handleDownload}
+                    className="px-6 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined">download</span>
+                    Tải về để xem
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -145,7 +261,7 @@ export const UploadedCVPlaceholderCard = ({ onClick }) => {
         <span className="material-symbols-outlined text-primary group-hover:text-white text-headline-lg">upload</span>
       </div>
       <p className="font-bold text-on-surface">Tải CV lên</p>
-      <p className="text-body-sm text-on-surface-variant">Định dạng: PDF, DOC, DOCX</p>
+      <p className="text-body-sm text-on-surface-variant">Định dạng: PDF (tối đa 10MB)</p>
     </button>
   );
 };
