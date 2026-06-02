@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -91,122 +91,138 @@ import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
 import CVTemplateForm from './pages/admin/cv-templates/CVTemplateForm';
 
 import { NotificationProvider } from './contexts/NotificationContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
     <NotificationProvider>
       <BrowserRouter>
         <Routes>
-        <Route path="/" element={<JobseekerLayout />}>
-          <Route index element={<Home />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/:id" element={<JobDetail />} />
-          <Route path="manage-cv" element={<ManageCV />} />
-          <Route path="cv-templates/gallery" element={<TemplateGallery />} />
-          <Route path="cv-builder/:id" element={<CVBuilder />} />
-          <Route path="cv-preview/:jobId/:cvId" element={<CvPreview />} />
-          <Route path="applied-jobs" element={<AppliedJobs />} />
-          <Route path="applied-jobs/:id/status" element={<ApplicationStatusDetail />} />
-          
-          <Route path="companies" element={<CompanyList />} />
-          <Route path="companies/:id" element={<CompanyDetail />} />
-          <Route path="salary-insight" element={<SalaryInsight />} />
-          <Route path="premium" element={<UpgradePremium />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="saved-jobs" element={<SavedJobs />} />
-          <Route path="matched-jobs" element={<MatchedJobs />} />
-          <Route path="privacy-settings" element={<PrivacySettings />} />
-        </Route>
+          <Route path="/" element={<JobseekerLayout />}>
+            {/* Public routes */}
+            <Route index element={<Home />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:id" element={<JobDetail />} />
+            <Route path="companies" element={<CompanyList />} />
+            <Route path="companies/:id" element={<CompanyDetail />} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/job-preferences" element={<JobPreferences />} />
-        <Route path="/linkedin-callback" element={<LinkedinCallback />} />
+            {/* Protected Jobseeker routes */}
+            <Route element={<ProtectedRoute allowedRoles={['JOBSEEKER']} />}>
+              <Route path="manage-cv" element={<ManageCV />} />
+              <Route path="cv-templates/gallery" element={<TemplateGallery />} />
+              <Route path="cv-builder/:id" element={<CVBuilder />} />
+              <Route path="cv-preview/:jobId/:cvId" element={<CvPreview />} />
+              <Route path="applied-jobs" element={<AppliedJobs />} />
+              <Route path="applied-jobs/:id/status" element={<ApplicationStatusDetail />} />
+              <Route path="salary-insight" element={<SalaryInsight />} />
+              <Route path="premium" element={<UpgradePremium />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="saved-jobs" element={<SavedJobs />} />
+              <Route path="matched-jobs" element={<MatchedJobs />} />
+              <Route path="privacy-settings" element={<PrivacySettings />} />
+            </Route>
+          </Route>
 
-        <Route path="/employer/register" element={<EmployerRegister />} />
-        <Route path="/employer/login" element={<Login />} />
-        <Route path="/employer/verify-email" element={<EmployerVerifyEmail />} />
-        <Route path="/employer/forgot-password" element={<EmployerForgotPassword />} />
-        <Route path="/employer/reset-password" element={<EmployerResetPassword />} />
-        <Route path="/employer/linkedin-callback" element={<EmployerLinkedinCallback />} />
-        
-        <Route path="/employer" element={<EmployerLayout />}>
-          <Route path="dashboard" element={<EmployerDashboard />} />
-          <Route path="company-profile" element={<CompanyProfile />} />
-          <Route path="jobs" element={<JobList />} />
-          <Route path="jobs/create" element={<CreateEditJob />} />
-          <Route path="jobs/:id/edit" element={<CreateEditJob />} />
-          <Route path="candidates" element={<CandidateList />} />
-          <Route path="jobs/:id/applications" element={<JobApplications />} />
-          <Route path="applications/:id" element={<ApplicationDetail />} />
-          <Route path="talent-pool" element={<CVSearch />} />
-          <Route path="talent-pool/:id" element={<CandidateDetail />} />
-          <Route path="unlocked-candidates" element={<UnlockedCandidates />} />
-          <Route path="wallet" element={<EmployerWallet />} />
-          <Route path="wallet-legacy" element={<Wallet />} />
-          <Route path="wallet/topup" element={<TopUp />} />
-          <Route path="wallet/payment-result" element={<PaymentResult />} />
-          <Route path="packages" element={<BuyPackages />} />
-          <Route path="packages/featured-job" element={<BuyFeaturedPackage />} />
-          <Route path="active-packages" element={<ActivePackages />} />
-          <Route path="transactions" element={<Transactions />} />
-          <Route path="messages" element={<Messages />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="account-settings" element={<AccountSettings />} />
-        </Route>
+          {/* Public authentication and helper routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/linkedin-callback" element={<LinkedinCallback />} />
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          
-          {/* User management routes */}
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="users-legacy" element={<UserManagement />} />
-          <Route path="users/:id" element={<UserDetail />} />
-          
-          <Route path="companies" element={<CompanyVerification />} />
-          <Route path="companies/history" element={<CompanyModerationHistory />} />
-          <Route path="companies/:id" element={<CompanyDetailAdmin />} />
-          <Route path="companies/:id/review" element={<CompanyReview />} />
-          
-          <Route path="jobs" element={<JobModeration />} />
-          <Route path="jobs/history" element={<JobModerationHistory />} />
-          <Route path="/admin/jobs/:jobId" element={<JobDetailAdmin />} />
-          <Route path="/admin/jobs/:jobId/review" element={<JobReview />} />
-          
-          <Route path="master-data" element={<MasterDataManagement />} />
-          
-          {/* CV Template management routes */}
-          <Route path="cv-templates" element={<CVTemplateList />} />
-          <Route path="cv-templates-management" element={<CVTemplateManagement />} />
-          <Route path="cv-templates/create" element={<CVTemplateForm />} />
-          <Route path="cv-templates/edit/:id" element={<CVTemplateForm />} />
-          
-          {/* Transaction management routes */}
-          <Route path="transactions" element={<AdminTransactions />} />
-          <Route path="transactions-legacy" element={<TransactionManagement />} />
-          
-          {/* Invoice management routes */}
-          <Route path="invoices" element={<AdminInvoices />} />
-          <Route path="invoices-legacy" element={<InvoiceManagement />} />
-          
-          {/* Package management routes */}
-          <Route path="packages" element={<AdminPackages />} />
-          <Route path="packages-legacy" element={<PackageManagement />} />
-          
-          <Route path="notifications" element={<NotificationCenter />} />
-          
-          {/* Analytics routes */}
-          <Route path="analytics" element={<AnalyticsDashboard />} />
-          <Route path="revenue-report" element={<AdminRevenueReport />} />
-          <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
-          
-          <Route path="violations" element={<ViolationsManagement />} />
-          <Route path="account" element={<AdminAccountSettings />} />
-        </Route>
-      </Routes>
+          <Route path="/employer/register" element={<EmployerRegister />} />
+          <Route path="/employer/login" element={<Login />} />
+          <Route path="/employer/verify-email" element={<EmployerVerifyEmail />} />
+          <Route path="/employer/forgot-password" element={<EmployerForgotPassword />} />
+          <Route path="/employer/reset-password" element={<EmployerResetPassword />} />
+          <Route path="/employer/linkedin-callback" element={<EmployerLinkedinCallback />} />
+
+          {/* Protected Jobseeker Preferences */}
+          <Route element={<ProtectedRoute allowedRoles={['JOBSEEKER']} />}>
+            <Route path="/job-preferences" element={<JobPreferences />} />
+          </Route>
+
+          {/* Protected Employer routes */}
+          <Route element={<ProtectedRoute allowedRoles={['EMPLOYER']} />}>
+            <Route path="/employer" element={<EmployerLayout />}>
+              <Route path="dashboard" element={<EmployerDashboard />} />
+              <Route path="company-profile" element={<CompanyProfile />} />
+              <Route path="jobs" element={<JobList />} />
+              <Route path="jobs/create" element={<CreateEditJob />} />
+              <Route path="jobs/:id/edit" element={<CreateEditJob />} />
+              <Route path="candidates" element={<CandidateList />} />
+              <Route path="jobs/:id/applications" element={<JobApplications />} />
+              <Route path="applications/:id" element={<ApplicationDetail />} />
+              <Route path="talent-pool" element={<CVSearch />} />
+              <Route path="talent-pool/:id" element={<CandidateDetail />} />
+              <Route path="unlocked-candidates" element={<UnlockedCandidates />} />
+              <Route path="wallet" element={<EmployerWallet />} />
+              <Route path="wallet-legacy" element={<Wallet />} />
+              <Route path="wallet/topup" element={<TopUp />} />
+              <Route path="wallet/payment-result" element={<PaymentResult />} />
+              <Route path="packages" element={<BuyPackages />} />
+              <Route path="packages/featured-job" element={<BuyFeaturedPackage />} />
+              <Route path="active-packages" element={<ActivePackages />} />
+              <Route path="transactions" element={<Transactions />} />
+              <Route path="messages" element={<Messages />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="account-settings" element={<AccountSettings />} />
+            </Route>
+          </Route>
+
+          {/* Protected Admin routes */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              
+              {/* User management routes */}
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="users-legacy" element={<UserManagement />} />
+              <Route path="users/:id" element={<UserDetail />} />
+              
+              <Route path="companies" element={<CompanyVerification />} />
+              <Route path="companies/history" element={<CompanyModerationHistory />} />
+              <Route path="companies/:id" element={<CompanyDetailAdmin />} />
+              <Route path="companies/:id/review" element={<CompanyReview />} />
+              
+              <Route path="jobs" element={<JobModeration />} />
+              <Route path="jobs/history" element={<JobModerationHistory />} />
+              <Route path="/admin/jobs/:jobId" element={<JobDetailAdmin />} />
+              <Route path="/admin/jobs/:jobId/review" element={<JobReview />} />
+              
+              <Route path="master-data" element={<MasterDataManagement />} />
+              
+              {/* CV Template management routes */}
+              <Route path="cv-templates" element={<CVTemplateList />} />
+              <Route path="cv-templates-management" element={<CVTemplateManagement />} />
+              <Route path="cv-templates/create" element={<CVTemplateForm />} />
+              <Route path="cv-templates/edit/:id" element={<CVTemplateForm />} />
+              
+              {/* Transaction management routes */}
+              <Route path="transactions" element={<AdminTransactions />} />
+              <Route path="transactions-legacy" element={<TransactionManagement />} />
+              
+              {/* Invoice management routes */}
+              <Route path="invoices" element={<AdminInvoices />} />
+              <Route path="invoices-legacy" element={<InvoiceManagement />} />
+              
+              {/* Package management routes */}
+              <Route path="packages" element={<AdminPackages />} />
+              <Route path="packages-legacy" element={<PackageManagement />} />
+              
+              <Route path="notifications" element={<NotificationCenter />} />
+              
+              {/* Analytics routes */}
+              <Route path="analytics" element={<AnalyticsDashboard />} />
+              <Route path="revenue-report" element={<AdminRevenueReport />} />
+              <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
+              
+              <Route path="violations" element={<ViolationsManagement />} />
+              <Route path="account" element={<AdminAccountSettings />} />
+            </Route>
+          </Route>
+        </Routes>
       </BrowserRouter>
     </NotificationProvider>
   );

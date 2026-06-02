@@ -71,7 +71,6 @@ const EmployerSidebar = () => {
   const handleLogout = async (e) => {
     e.preventDefault();
     await logout();
-    navigate('/employer/login');
   };
 
   return (
