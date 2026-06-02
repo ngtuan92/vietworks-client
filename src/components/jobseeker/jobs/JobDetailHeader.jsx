@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApplyJobModal from './ApplyJobModal';
+import useAuth from '../../../hooks/useAuth';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const JobDetailHeader = ({
   job,
@@ -14,18 +16,42 @@ const JobDetailHeader = ({
   onApplySuccess
 }) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { confirm } = useNotification();
   const [showApplyModal, setShowApplyModal] = useState(false);
   const companyAvatar = company?.avatarUrl || 'https://placehold.co/96x96/png?text=C';
   const companyName = company?.name || 'Công ty không xác định';
   const isVerified = company?.verificationStatus === 'VERIFIED';
 
   const handleApply = () => {
+    if (!isAuthenticated) {
+      confirm(
+        'Bạn cần đăng nhập để ứng tuyển việc làm. Bạn có muốn đăng nhập ngay không?',
+        () => {
+          navigate('/login', { state: { from: `/jobs/${job._id}` } });
+        },
+        null,
+        'Yêu cầu đăng nhập'
+      );
+      return;
+    }
     if (canApply) {
       setShowApplyModal(true);
     }
   };
 
   const handleSave = () => {
+    if (!isAuthenticated) {
+      confirm(
+        'Bạn cần đăng nhập để lưu việc làm. Bạn có muốn đăng nhập ngay không?',
+        () => {
+          navigate('/login', { state: { from: `/jobs/${job._id}` } });
+        },
+        null,
+        'Yêu cầu đăng nhập'
+      );
+      return;
+    }
     console.log('Save job:', job._id);
   };
 

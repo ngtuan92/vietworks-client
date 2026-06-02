@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import Hero from '../../../components/jobseeker/home/Hero';
 import JobGrid from '../../../components/jobseeker/jobs/JobGrid';
+import useAuth from '../../../hooks/useAuth';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const featuredJobs = [
   {
@@ -38,11 +40,19 @@ const featuredCompanies = [
 
 const Home = () => {
   const navigate = useNavigate();
-  const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
+  const { isAuthenticated } = useAuth();
+  const { confirm } = useNotification();
 
   const goProtected = (path) => {
     if (!isAuthenticated) {
-      navigate('/login');
+      confirm(
+        'Bạn cần đăng nhập để sử dụng tính năng này. Bạn có muốn đăng nhập ngay không?',
+        () => {
+          navigate('/login', { state: { from: path } });
+        },
+        null,
+        'Yêu cầu đăng nhập'
+      );
       return;
     }
     navigate(path);

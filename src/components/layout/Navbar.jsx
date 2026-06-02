@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
+import { useNotification } from '../../contexts/NotificationContext';
 
 const Navbar = () => {
   const location = useLocation();
@@ -8,6 +9,7 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, isEmployer, isAdmin, logout } = useAuth();
+  const { confirm } = useNotification();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -29,7 +31,14 @@ const Navbar = () => {
 
   const handleProtectedNavigation = (path) => {
     if (!isAuthenticated) {
-      navigate('/login');
+      confirm(
+        'Bạn cần đăng nhập để sử dụng tính năng này. Bạn có muốn đăng nhập ngay không?',
+        () => {
+          navigate('/login', { state: { from: path } });
+        },
+        null,
+        'Yêu cầu đăng nhập'
+      );
       return;
     }
     navigate(path);
