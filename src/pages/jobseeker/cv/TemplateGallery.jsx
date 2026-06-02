@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cvService from '../../../services/cvService';
 import adminService from '../../../services/adminService';
+import useAuth from '../../../hooks/useAuth';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const TemplateGallery = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { confirm } = useNotification();
   const [templates, setTemplates] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +35,18 @@ const TemplateGallery = () => {
   }, [selectedGroup]);
 
   const handleUseTemplate = async (templateId) => {
+    if (!isAuthenticated) {
+      confirm(
+        'Bạn cần đăng nhập để tạo CV từ mẫu này. Bạn có muốn đăng nhập ngay không?',
+        () => {
+          navigate('/login', { state: { from: '/cv-templates/gallery' } });
+        },
+        null,
+        'Yêu cầu đăng nhập'
+      );
+      return;
+    }
+
     try {
       const response = await cvService.createCv({
         templateId,

@@ -105,17 +105,17 @@ function App() {
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="companies" element={<CompanyList />} />
             <Route path="companies/:id" element={<CompanyDetail />} />
+            <Route path="cv-templates/gallery" element={<TemplateGallery />} />
+            <Route path="salary-insight" element={<SalaryInsight />} />
+            <Route path="premium" element={<UpgradePremium />} />
 
             {/* Protected Jobseeker routes */}
             <Route element={<ProtectedRoute allowedRoles={['JOBSEEKER']} />}>
               <Route path="manage-cv" element={<ManageCV />} />
-              <Route path="cv-templates/gallery" element={<TemplateGallery />} />
               <Route path="cv-builder/:id" element={<CVBuilder />} />
               <Route path="cv-preview/:jobId/:cvId" element={<CvPreview />} />
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="applied-jobs/:id/status" element={<ApplicationStatusDetail />} />
-              <Route path="salary-insight" element={<SalaryInsight />} />
-              <Route path="premium" element={<UpgradePremium />} />
               <Route path="profile" element={<Profile />} />
               <Route path="saved-jobs" element={<SavedJobs />} />
               <Route path="matched-jobs" element={<MatchedJobs />} />
