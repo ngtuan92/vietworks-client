@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import employerAccountService from '../../../services/employerAccountService.js';
+import authService from '../../../services/authService.js';
 
 const tabs = [
-  { key: 'profile', label: 'Thông tin cá nhân' },
-  { key: 'security', label: 'Bảo mật' },
-  { key: 'notifications', label: 'Thông báo' },
+  { key: 'profile', label: 'ThÃ´ng tin cÃ¡ nhÃ¢n' },
+  { key: 'security', label: 'Báº£o máº­t' },
+  { key: 'notifications', label: 'ThÃ´ng bÃ¡o' },
 ];
 
 const genderOptions = [
   { label: 'Nam', value: 'MALE' },
-  { label: 'Nữ', value: 'FEMALE' },
-  { label: 'Khác', value: 'OTHER' },
+  { label: 'Ná»¯', value: 'FEMALE' },
+  { label: 'KhÃ¡c', value: 'OTHER' },
 ];
 
 const AccountSettings = () => {
@@ -69,7 +70,7 @@ const AccountSettings = () => {
           email: accountRes.data?.email || '',
         }));
       } catch (error) {
-        setMessage(error.response?.data?.message || 'Không thể tải thông tin tài khoản');
+        setMessage(error.response?.data?.message || 'KhÃ´ng thá»ƒ táº£i thÃ´ng tin tÃ i khoáº£n');
       } finally {
         setLoading(false);
       }
@@ -89,9 +90,9 @@ const AccountSettings = () => {
         phone: profile.phone,
       });
 
-      setMessage(res.message || 'Cập nhật thông tin người đại diện thành công');
+      setMessage(res.message || 'Cáº­p nháº­t thÃ´ng tin ngÆ°á»i Ä‘áº¡i diá»‡n thÃ nh cÃ´ng');
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Cập nhật thông tin thất bại');
+      setMessage(error.response?.data?.message || 'Cáº­p nháº­t thÃ´ng tin tháº¥t báº¡i');
     } finally {
       setLoading(false);
     }
@@ -102,7 +103,7 @@ const AccountSettings = () => {
       setLoading(true);
       setMessage('');
 
-      const res = await employerAccountService.updateMyEmployerPassword({
+      const res = await authService.changePassword({
         currentPassword: security.currentPassword,
         newPassword: security.newPassword,
         confirmNewPassword: security.confirmPassword,
@@ -115,9 +116,9 @@ const AccountSettings = () => {
         confirmPassword: '',
       }));
 
-      setMessage(res.message || 'Đổi mật khẩu thành công');
+      setMessage(res.message || 'Äá»•i máº­t kháº©u thÃ nh cÃ´ng');
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Đổi mật khẩu thất bại');
+      setMessage(error.response?.data?.message || 'Äá»•i máº­t kháº©u tháº¥t báº¡i');
     } finally {
       setLoading(false);
     }
@@ -126,9 +127,9 @@ const AccountSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Cài đặt tài khoản</h1>
+        <h1 className="text-2xl font-bold text-slate-900">CÃ i Ä‘áº·t tÃ i khoáº£n</h1>
         <p className="text-slate-600 mt-1">
-          Quản lý thông tin người đại diện, bảo mật và cài đặt thông báo.
+          Quáº£n lÃ½ thÃ´ng tin ngÆ°á»i Ä‘áº¡i diá»‡n, báº£o máº­t vÃ  cÃ i Ä‘áº·t thÃ´ng bÃ¡o.
         </p>
       </div>
 
@@ -160,20 +161,20 @@ const AccountSettings = () => {
       {tab === 'profile' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field
-            label="Họ tên"
+            label="Há» tÃªn"
             value={profile.representativeName}
             onChange={(v) => setProfile((p) => ({ ...p, representativeName: v }))}
           />
 
           <Select
-            label="Giới tính"
+            label="Giá»›i tÃ­nh"
             value={profile.gender}
             onChange={(v) => setProfile((p) => ({ ...p, gender: v }))}
             options={genderOptions}
           />
 
           <Field
-            label="Số điện thoại"
+            label="Sá»‘ Ä‘iá»‡n thoáº¡i"
             value={profile.phone}
             onChange={(v) => setProfile((p) => ({ ...p, phone: v }))}
           />
@@ -186,7 +187,7 @@ const AccountSettings = () => {
               disabled={loading}
               className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
             >
-              {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+              {loading ? 'Äang lÆ°u...' : 'LÆ°u thay Ä‘á»•i'}
             </button>
           </div>
         </section>
@@ -197,21 +198,21 @@ const AccountSettings = () => {
           <Field label="Email" value={security.email} readOnly />
 
           <Field
-            label="Mật khẩu hiện tại"
+            label="Máº­t kháº©u hiá»‡n táº¡i"
             type="password"
             value={security.currentPassword}
             onChange={(v) => setSecurity((p) => ({ ...p, currentPassword: v }))}
           />
 
           <Field
-            label="Mật khẩu mới"
+            label="Máº­t kháº©u má»›i"
             type="password"
             value={security.newPassword}
             onChange={(v) => setSecurity((p) => ({ ...p, newPassword: v }))}
           />
 
           <Field
-            label="Nhập lại mật khẩu mới"
+            label="Nháº­p láº¡i máº­t kháº©u má»›i"
             type="password"
             value={security.confirmPassword}
             onChange={(v) => setSecurity((p) => ({ ...p, confirmPassword: v }))}
@@ -223,7 +224,7 @@ const AccountSettings = () => {
               disabled={loading}
               className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
             >
-              {loading ? 'Đang đổi...' : 'Đổi mật khẩu'}
+              {loading ? 'Äang Ä‘á»•i...' : 'Äá»•i máº­t kháº©u'}
             </button>
           </div>
         </section>
@@ -235,25 +236,25 @@ const AccountSettings = () => {
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold">Loại thông báo</th>
+                  <th className="text-left px-4 py-3 font-semibold">Loáº¡i thÃ´ng bÃ¡o</th>
                   <th className="text-left px-4 py-3 font-semibold">Email</th>
-                  <th className="text-left px-4 py-3 font-semibold">Trong hệ thống</th>
+                  <th className="text-left px-4 py-3 font-semibold">Trong há»‡ thá»‘ng</th>
                 </tr>
               </thead>
               <tbody>
-                <NotifyRow label="Có ứng viên mới ứng tuyển" emailKey="newApplicationEmail" systemKey="newApplicationSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Admin duyệt/từ chối Job" emailKey="jobReviewEmail" systemKey="jobReviewSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Admin duyệt/từ chối công ty" emailKey="companyReviewEmail" systemKey="companyReviewSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Tin nhắn mới từ ứng viên" emailKey="messageEmail" systemKey="messageSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Giao dịch ví" emailKey="billingEmail" systemKey="billingSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Gói dịch vụ sắp hết hạn" emailKey="packageEmail" systemKey="packageSystem" state={notify} setState={setNotify} />
+                <NotifyRow label="CÃ³ á»©ng viÃªn má»›i á»©ng tuyá»ƒn" emailKey="newApplicationEmail" systemKey="newApplicationSystem" state={notify} setState={setNotify} />
+                <NotifyRow label="Admin duyá»‡t/tá»« chá»‘i Job" emailKey="jobReviewEmail" systemKey="jobReviewSystem" state={notify} setState={setNotify} />
+                <NotifyRow label="Admin duyá»‡t/tá»« chá»‘i cÃ´ng ty" emailKey="companyReviewEmail" systemKey="companyReviewSystem" state={notify} setState={setNotify} />
+                <NotifyRow label="Tin nháº¯n má»›i tá»« á»©ng viÃªn" emailKey="messageEmail" systemKey="messageSystem" state={notify} setState={setNotify} />
+                <NotifyRow label="Giao dá»‹ch vÃ­" emailKey="billingEmail" systemKey="billingSystem" state={notify} setState={setNotify} />
+                <NotifyRow label="GÃ³i dá»‹ch vá»¥ sáº¯p háº¿t háº¡n" emailKey="packageEmail" systemKey="packageSystem" state={notify} setState={setNotify} />
               </tbody>
             </table>
           </div>
 
           <div className="mt-5 flex justify-end">
             <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
-              Lưu cài đặt thông báo
+              LÆ°u cÃ i Ä‘áº·t thÃ´ng bÃ¡o
             </button>
           </div>
         </section>
@@ -285,7 +286,7 @@ const Select = ({ label, value, onChange, options }) => (
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
     >
-      <option value="">Chọn giới tính</option>
+      <option value="">Chá»n giá»›i tÃ­nh</option>
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>
           {opt.label}
@@ -324,3 +325,4 @@ const Toggle = ({ checked, onChange }) => (
 );
 
 export default AccountSettings;
+

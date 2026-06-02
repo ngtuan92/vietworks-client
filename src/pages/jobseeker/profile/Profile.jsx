@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import authService from '../../../services/authService';
 
 const notificationOptions = [
   'Nhà tuyển dụng đã xem CV',
@@ -107,22 +108,56 @@ const Overview = ({ profile, setProfile }) => (
   </div>
 );
 
-const Security = ({ security, setSecurity }) => (
-  <div className="space-y-5">
-    <SectionTitle title="Bảo mật & đổi mật khẩu" description="Đổi mật khẩu khi bạn còn đăng nhập. Nếu quên mật khẩu, dùng luồng Quên mật khẩu ngoài trang đăng nhập." />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Mật khẩu hiện tại" type="password" value={security.currentPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, currentPassword: value }))} />
-      <Field label="Mật khẩu mới" type="password" value={security.newPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, newPassword: value }))} />
-      <Field label="Nhập lại mật khẩu mới" type="password" value={security.confirmPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, confirmPassword: value }))} />
+const Security = ({ security, setSecurity }) => {
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChangePassword = async () => {
+    setMessage('');
+
+    if (!security.currentPassword || !security.newPassword || !security.confirmPassword) {
+      setMessage('Vui lòng nhập đầy đủ mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.');
+      return;
+    }
+
+    if (security.newPassword !== security.confirmPassword) {
+      setMessage('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await authService.changePassword({
+        currentPassword: security.currentPassword,
+        newPassword: security.newPassword,
+        confirmNewPassword: security.confirmPassword,
+      });
+      setSecurity((prev) => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
+      setMessage(response.message || 'Đổi mật khẩu thành công.');
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Đổi mật khẩu thất bại.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <SectionTitle title="Bảo mật & đổi mật khẩu" description="Đổi mật khẩu khi bạn còn đăng nhập. Nếu quên mật khẩu, dùng luồng Quên mật khẩu ngoài trang đăng nhập." />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Field label="Mật khẩu hiện tại" type="password" value={security.currentPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, currentPassword: value }))} />
+        <Field label="Mật khẩu mới" type="password" value={security.newPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, newPassword: value }))} />
+        <Field label="Nhập lại mật khẩu mới" type="password" value={security.confirmPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, confirmPassword: value }))} />
+      </div>
+      {message ? <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">{message}</div> : null}
+      <div className="flex justify-end">
+        <button onClick={handleChangePassword} disabled={submitting} className="px-5 py-3 rounded-xl bg-[#003f87] text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+          {submitting ? 'Đang đổi...' : 'Đổi mật khẩu'}
+        </button>
+      </div>
     </div>
-    <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
-      API theo plan: <b>PATCH /auth/change-password</b>. Hiện đây là UI sẵn sàng để nối API.
-    </div>
-    <div className="flex justify-end">
-      <button className="px-5 py-3 rounded-xl bg-[#003f87] text-white font-bold">Đổi mật khẩu</button>
-    </div>
-  </div>
-);
+  );
+};
 
 const Notifications = ({ notifications, setNotifications }) => (
   <div className="space-y-5">
@@ -214,5 +249,6 @@ const SectionTitle = ({ title, description }) => (
 
 export { PrivacySettings };
 export default Profile;
+
 
 

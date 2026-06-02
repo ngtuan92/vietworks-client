@@ -1,4 +1,5 @@
 ﻿import axios from 'axios';
+import api from './api';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
@@ -131,6 +132,15 @@ const authService = {
     return response.data;
   },
 
+  changePassword: async ({ currentPassword, newPassword, confirmNewPassword }) => {
+    const response = await api.patch('/auth/change-password', {
+      currentPassword,
+      newPassword,
+      confirmNewPassword
+    });
+    return response.data;
+  },
+
   forgotPassword: async ({ email }) => {
     const response = await axios.post(`${API_URL}/forgot-password`, { email }, { withCredentials: true });
     return response.data;
@@ -150,4 +160,6 @@ const authService = {
 };
 
 export default authService;
+
+
 
