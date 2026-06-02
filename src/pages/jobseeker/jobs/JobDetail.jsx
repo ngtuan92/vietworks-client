@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import JobDetailHeader from '../../../components/jobseeker/jobs/JobDetailHeader';
 import JobDetailContent from '../../../components/jobseeker/jobs/JobDetailContent';
 import JobInfoSidebar from '../../../components/jobseeker/jobs/JobInfoSidebar';
@@ -9,40 +9,42 @@ import jobService from '../../../services/jobService';
 import useAuth from '../../../hooks/useAuth';
 
 const JobDetail = () => {
-  const { id: jobId } = useParams();
+  const { jobId } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
   const [canApply, setCanApply] = useState(true);
   const [cannotApplyReason, setCannotApplyReason] = useState(null);
   const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
-    const fetchJob = async () => {
+    const fetchJobDetail = async () => {
       if (!jobId) return;
-      
-      setLoading(true);
-      setError(null);
-      
       try {
-        const response = await jobService.getJobById(jobId);
-        if (response.success) {
-          setJob(response.data);
-          setCanApply(response.canApply !== undefined ? response.canApply : true);
-          setCannotApplyReason(response.cannotApplyReason || null);
+        setLoading(true);
+        setError('');
+
+        const res = await jobService.getJobById(jobId);
+        if (res.success) {
+          setJob(res.data || null);
+          setCanApply(res.canApply !== undefined ? res.canApply : true);
+          setCannotApplyReason(res.cannotApplyReason || null);
         } else {
-          setError(response.message || 'Failed to load job');
+          setError(res.message || 'Không thể tải chi tiết công việc.');
         }
       } catch (err) {
-        setError(err.message || 'Something went wrong');
+        setError(err.response?.data?.message || err.message || 'Không thể tải chi tiết công việc.');
+        setJob(null);
       } finally {
         setLoading(false);
       }
     };
 
     const checkApplied = async () => {
-      if (!isAuthenticated) return;
+      if (!isAuthenticated || !jobId) return;
       try {
         const res = await jobService.checkDuplicateApplication(jobId);
         if (res.success) {
@@ -53,17 +55,18 @@ const JobDetail = () => {
       }
     };
 
-    fetchJob();
+    fetchJobDetail();
     checkApplied();
   }, [jobId, isAuthenticated]);
 
   if (loading) {
     return (
-      <div className="bg-background font-body-md">
+      <div className="bg-background min-h-screen font-body-md">
         <main className="max-w-container-max mx-auto px-gutter py-8">
-          <div className="flex items-center justify-center py-20">
-            <span className="material-symbols-outlined animate-spin text-4xl text-gray-400">progress_activity</span>
-            <p className="text-gray-500 ml-4">Đang tải...</p>
+          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-8 animate-pulse">
+            <div className="h-8 w-2/3 rounded bg-slate-100" />
+            <div className="mt-4 h-5 w-1/3 rounded bg-slate-100" />
+            <div className="mt-8 h-40 rounded bg-slate-100" />
           </div>
         </main>
       </div>
@@ -72,50 +75,28 @@ const JobDetail = () => {
 
   if (error || !job) {
     return (
-      <div className="bg-background font-body-md">
+      <div className="bg-background min-h-screen font-body-md">
         <main className="max-w-container-max mx-auto px-gutter py-8">
-          <div className="text-center py-20">
-            <span className="material-symbols-outlined text-4xl text-gray-400">error</span>
-            <p className="text-gray-500 mt-2">{error || 'Không tìm thấy việc làm'}</p>
+          <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-red-700">
+            <p className="font-bold">Không thể hiển thị công việc</p>
+            <p className="mt-1 text-sm">{error}</p>
+            <button
+              onClick={() => navigate('/jobs')}
+              className="mt-4 rounded-lg bg-red-700 px-4 py-2 font-bold text-white"
+            >
+              Quay lại danh sách việc làm
+            </button>
           </div>
         </main>
       </div>
     );
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('vi-VN');
-  };
-
-  const formatSalary = (salary) => {
-    if (!salary) return 'Thỏa thuận';
-    if (salary.type === 'NEGOTIABLE') return 'Thỏa thuận';
-    return `${salary.minMillion || 0} - ${salary.maxMillion || 0} triệu`;
-  };
-
-  const formatLocation = (locations) => {
-    if (!locations || locations.length === 0) return 'Không xác định';
-    const first = locations[0];
-    return first.districtName 
-      ? `${first.districtName}, ${first.provinceName}` 
-      : first.provinceName || 'Không xác định';
-  };
-
-  const company = job.companyId;
-  const updatedAt = formatDate(job.updatedAt);
-
   return (
     <div className="bg-background font-body-md">
       <main className="max-w-container-max mx-auto px-gutter py-8">
         <JobDetailHeader
           job={job}
-          company={company}
-          salary={formatSalary(job.salary)}
-          location={formatLocation(job.workLocations)}
-          updatedAt={updatedAt}
           canApply={canApply}
           cannotApplyReason={cannotApplyReason}
           hasApplied={hasApplied}
@@ -125,12 +106,12 @@ const JobDetail = () => {
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
             <JobDetailContent job={job} />
-            <CompanyCard company={company} />
+            <CompanyCard company={job.companyId} />
           </div>
 
           <div className="lg:col-span-4 space-y-6">
             <JobInfoSidebar job={job} />
-            <RelatedJobsSidebar />
+            <RelatedJobsSidebar currentJob={job} />
           </div>
         </div>
       </main>

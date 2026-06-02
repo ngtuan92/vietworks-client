@@ -201,28 +201,30 @@ const [companyLocations, setCompanyLocations] = useState([]);
 
   // --- Chuẩn hóa Payload chuẩn cấu trúc Model trước khi API Call ---
   const preparePayload = () => {
-    const payload = { ...form };
-    
-    if (form.salaryType === 'NEGOTIABLE') {
-      payload.salary = { type: 'NEGOTIABLE' };
-    } else {
-      payload.salary = {
-        type: form.salaryType,
-        from: form.salaryFrom ? Number(form.salaryFrom) : undefined,
-        to: form.salaryTo ? Number(form.salaryTo) : undefined,
-      };
-    }
-    
-    // Vì form.workLocations lúc này ĐÃ LÀ cấu trúc dạng mảng object snapshot chuẩn 
-    // có đầy đủ text từ bộ chọn mới nên ta có thể gửi trực tiếp sang backend, không cần map() thủ công qua FIXED_LOCATIONS nữa.
-    
-    // Loại bỏ các trường phục vụ giao diện tính toán mức lương trước khi POST/PATCH
-    delete payload.salaryType;
-    delete payload.salaryFrom;
-    delete payload.salaryTo;
+  const payload = { ...form };
 
-    return payload;
-  };
+  if (form.salaryType === 'NEGOTIABLE') {
+    payload.salary = {
+      type: 'NEGOTIABLE',
+      minMillion: null,
+      maxMillion: null,
+      currency: 'VND',
+    };
+  } else {
+    payload.salary = {
+      type: form.salaryType,
+      minMillion: form.salaryFrom ? Number(form.salaryFrom) : null,
+      maxMillion: form.salaryTo ? Number(form.salaryTo) : null,
+      currency: 'VND',
+    };
+  }
+
+  delete payload.salaryType;
+  delete payload.salaryFrom;
+  delete payload.salaryTo;
+
+  return payload;
+};
 
   // --- Chức năng 1: Lưu Nháp (DRAFT) ---
   const handleSaveDraft = async () => {
