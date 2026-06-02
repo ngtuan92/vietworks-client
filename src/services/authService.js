@@ -141,6 +141,16 @@ const authService = {
     return response.data;
   },
 
+  getCurrentUser: async () => {
+    const response = await api.get('/auth/me');
+    if (response.data.success) {
+      const currentUser = response.data.user || response.data.data;
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      notifyAuthChanged();
+    }
+    return response.data;
+  },
+
   forgotPassword: async ({ email }) => {
     const response = await axios.post(`${API_URL}/forgot-password`, { email }, { withCredentials: true });
     return response.data;
