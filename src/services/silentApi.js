@@ -1,6 +1,27 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+const handleBlockedAccount = (error) => {
+  if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_BANNED') {
+    useAuthStore.getState().clearAuth();
+    try {
+      window.dispatchEvent(new Event('auth_changed'));
+      window.dispatchEvent(new CustomEvent('account_blocked', {
+        detail: {
+          message: error.response.data.message,
+          banReason: error.response.data.banReason || null,
+          bannedAt: error.response.data.bannedAt || null
+        }
+      }));
+    } catch {
+      // ignore
+    }
+    return true;
+  }
+
+  return false;
+};
+
 const silentApi = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}`,
   withCredentials: true,
@@ -37,13 +58,17 @@ silentApi.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (handleBlockedAccount(error)) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (originalRequest.url?.includes('/auth/refresh')) {
         useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch (e) {
+        } catch{
           // ignore
         }
         return Promise.reject(error);
@@ -92,7 +117,7 @@ silentApi.interceptors.response.use(
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch (e) {
+        } catch{
           // ignore
         }
         return Promise.reject(refreshError);

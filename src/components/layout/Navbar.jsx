@@ -48,7 +48,7 @@ const Navbar = () => {
     } else if (isEmployer) {
       navigate('/employer/account-settings');
     } else {
-      navigate('/job-preferences');
+      navigate('/profile');
     }
   };
 
@@ -59,7 +59,7 @@ const Navbar = () => {
     } else if (isEmployer) {
       navigate('/employer/dashboard');
     } else {
-      navigate('/job-preferences');
+      navigate('/profile');
     }
   };
 
@@ -150,23 +150,39 @@ const Navbar = () => {
                   </div>
 
                   <div className="p-2">
-                    <button
-                      type="button"
-                      onClick={handleProfileHome}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">account_circle</span>
-                      <span className="text-sm font-medium">Trang hồ sơ</span>
-                    </button>
+                    {isEmployer || isAdmin ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleProfileHome}
+                          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                          <span className="text-sm font-medium">Trang hồ sơ</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={handleAccountSettings}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">settings</span>
-                      <span className="text-sm font-medium">Cài đặt tài khoản</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={handleAccountSettings}
+                          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">settings</span>
+                          <span className="text-sm font-medium">Cài đặt tài khoản</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <MenuLink to="/profile" icon="person" label="Hồ sơ cá nhân" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/manage-cv" icon="description" label="CV của tôi" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/saved-jobs" icon="favorite" label="Việc làm đã lưu" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/applied-jobs" icon="assignment_turned_in" label="Việc đã ứng tuyển" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/matched-jobs" icon="recommend" label="Việc làm phù hợp" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/job-preferences" icon="tune" label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/privacy-settings" icon="visibility_off" label="Quyền riêng tư" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/premium" icon="workspace_premium" label="Gói Premium" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/profile" icon="settings" label="Tài khoản & bảo mật" onClick={() => setIsMenuOpen(false)} />
+                      </>
+                    )}
 
                     <button
                       type="button"
@@ -202,4 +218,17 @@ const Navbar = () => {
   );
 };
 
+const MenuLink = ({ to, icon, label, onClick }) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+  >
+    <span className="material-symbols-outlined text-[20px]">{icon}</span>
+    <span className="text-sm font-medium">{label}</span>
+  </Link>
+);
+
 export default Navbar;
+
+

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import api from './api';
 import { useAuthStore } from '../store/authStore';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
@@ -121,6 +122,35 @@ const authService = {
     return response.data;
   },
 
+  changePassword: async ({ currentPassword, newPassword, confirmNewPassword }) => {
+    const response = await api.patch('/auth/change-password', {
+      currentPassword,
+      newPassword,
+      confirmNewPassword
+    });
+    return response.data;
+  },
+
+  getCurrentUser: async () => {
+    const response = await api.get('/auth/me');
+    if (response.data.success) {
+      const currentUser = response.data.user || response.data.data;
+      useAuthStore.getState().updateUser(currentUser);
+      notifyAuthChanged();
+    }
+    return response.data;
+  },
+
+  forgotPassword: async ({ email }) => {
+    const response = await axios.post(`${API_URL}/forgot-password`, { email }, { withCredentials: true });
+    return response.data;
+  },
+
+  resetPassword: async ({ token, password, confirmPassword }) => {
+    const response = await axios.post(`${API_URL}/reset-password/${token}`, { password, confirmPassword }, { withCredentials: true });
+    return response.data;
+  },
+
   logout: async () => {
     try {
       await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
@@ -132,3 +162,6 @@ const authService = {
 };
 
 export default authService;
+
+
+

@@ -64,7 +64,7 @@ const Register = () => {
         setTimeout(() => navigate('/login'), 600);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     }
   };
 
@@ -89,7 +89,7 @@ const Register = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-              <input id="email" type="email" value={formData.email} onChange={handleChange} required placeholder="example@gmail.com" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]" />
+              <input id="email" type="email" value={formData.email} onChange={handleChange} required placeholder="ví dụ: ban@gmail.com" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]" />
             </div>
 
             <div>
