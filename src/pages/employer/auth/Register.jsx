@@ -1,5 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  getProvinces,
+  getDistrictsByProvinceCode,
+  getWardsByDistrictCode
+} from 'sub-vn';
 import authService from '../../../services/authService';
 
 const EmployerRegister = () => {
@@ -21,6 +26,55 @@ const EmployerRegister = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // sub-vn dropdown states
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
+  const [selectedWardCode, setSelectedWardCode] = useState('');
+
+  useEffect(() => {
+    setProvinces(getProvinces());
+  }, []);
+
+  const handleProvinceChange = (e) => {
+    const code = e.target.value;
+    setSelectedProvinceCode(code);
+    setSelectedDistrictCode('');
+    setSelectedWardCode('');
+    
+    const provObj = provinces.find(p => p.code === code);
+    setDistricts(code ? getDistrictsByProvinceCode(code) : []);
+    setWards([]);
+
+    setFormData(prev => ({
+      ...prev,
+      city: provObj?.name || '',
+      ward: ''
+    }));
+  };
+
+  const handleDistrictChange = (e) => {
+    const code = e.target.value;
+    setSelectedDistrictCode(code);
+    setSelectedWardCode('');
+    setWards(code ? getWardsByDistrictCode(code) : []);
+  };
+
+  const handleWardChange = (e) => {
+    const code = e.target.value;
+    setSelectedWardCode(code);
+
+    const wardObj = wards.find(w => w.code === code);
+    setFormData(prev => ({
+      ...prev,
+      ward: wardObj?.name || ''
+    }));
+  };
+
   const passwordChecks = useMemo(
     () => ({
       minLength: formData.password.length >= 8,
@@ -64,6 +118,9 @@ const EmployerRegister = () => {
     }
 
     try {
+      const dObj = districts.find(d => d.code === selectedDistrictCode);
+      const districtName = dObj?.name || '';
+
       const payload = {
         fullName: formData.representativeName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -78,7 +135,7 @@ const EmployerRegister = () => {
           sizeId: import.meta.env.VITE_DEFAULT_COMPANY_SIZE_ID || '000000000000000000000001',
           email: formData.email.trim().toLowerCase(),
           phone: formData.phone.trim(),
-          description: `${formData.companyName.trim()} - ${formData.city || ''} ${formData.ward || ''} ${formData.address || ''}`.trim(),
+          description: `${formData.companyName.trim()} - ${formData.city || ''} ${districtName} ${formData.ward || ''} ${formData.address || ''}`.trim(),
         }
       };
 
@@ -149,8 +206,67 @@ const EmployerRegister = () => {
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-[#003f87] mb-4">Thông tin công ty</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Tên công ty" id="companyName" value={formData.companyName} onChange={handleChange} placeholder="Tên doanh nghiệp" required />
-                  <Field label="Tỉnh/Thành phố" id="city" value={formData.city} onChange={handleChange} placeholder="Ví dụ: TP.HCM" />
-                  <Field label="Phường/Xã" id="ward" value={formData.ward} onChange={handleChange} placeholder="Ví dụ: Phường 1" />
+                  
+                  {/* Tỉnh/Thành phố select */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Tỉnh/Thành phố <span className="text-red-600">*</span>
+                    </label>
+                    <select
+                      value={selectedProvinceCode}
+                      onChange={handleProvinceChange}
+                      required
+                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87] bg-white text-slate-700"
+                    >
+                      <option value="">Chọn Tỉnh/Thành phố...</option>
+                      {provinces.map((p) => (
+                        <option key={p.code} value={p.code}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Quận/Huyện select */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Quận/Huyện
+                    </label>
+                    <select
+                      value={selectedDistrictCode}
+                      onChange={handleDistrictChange}
+                      disabled={!selectedProvinceCode}
+                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87] bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Chọn Quận/Huyện...</option>
+                      {districts.map((d) => (
+                        <option key={d.code} value={d.code}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Phường/Xã select */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Phường/Xã
+                    </label>
+                    <select
+                      value={selectedWardCode}
+                      onChange={handleWardChange}
+                      disabled={!selectedDistrictCode}
+                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87] bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Chọn Phường/Xã...</option>
+                      {wards.map((w) => (
+                        <option key={w.code} value={w.code}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <Field label="Địa chỉ chi tiết" id="address" value={formData.address} onChange={handleChange} placeholder="Số nhà, tên đường" />
                 </div>
               </div>
