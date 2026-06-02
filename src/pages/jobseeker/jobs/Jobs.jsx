@@ -91,13 +91,7 @@ const mapJobToCard = (job) => ({
 
 const Jobs = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState(null);
-  const [total, setTotal] = useState(0);
-  const [sortBy, setSortBy] = useState('createdAt');
+  const [searchParams] = useSearchParams();
 
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
