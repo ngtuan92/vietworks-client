@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import useAuth from '../../../hooks/useAuth';
 
 const navItems = [
   {
@@ -91,6 +92,7 @@ const navItems = [
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const isActive = (to) => {
     if (!to) return false;
@@ -116,11 +118,8 @@ const AdminSidebar = () => {
     setOpenGroup(openGroup === label ? null : label);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('admin_token');
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 

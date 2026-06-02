@@ -1,13 +1,23 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import useAuth from '../../hooks/useAuth';
 
 const JobseekerLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
-  const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))?.role : null;
-  const isJobseeker = userRole === 'JOBSEEKER';
+  const { isAuthenticated, isJobseeker, isAdmin, isEmployer } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (isEmployer) {
+        navigate('/employer/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, isAdmin, isEmployer, navigate]);
 
   return (
     <div className="min-h-screen bg-background font-body-md flex flex-col">

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const silentApi = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}`,
@@ -8,7 +9,7 @@ const silentApi = axios.create({
 
 silentApi.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = useAuthStore.getState().accessToken || localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -17,6 +18,20 @@ silentApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 silentApi.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -24,8 +39,7 @@ silentApi.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (originalRequest.url?.includes('/auth/refresh')) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
+        useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
@@ -58,7 +72,10 @@ silentApi.interceptors.response.use(
 
         if (response.data?.success && response.data?.accessToken) {
           const newToken = response.data.accessToken;
-          localStorage.setItem('accessToken', newToken);
+          const currentUser = useAuthStore.getState().user;
+          
+          useAuthStore.getState().setAuth(currentUser, newToken);
+          
           silentApi.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
@@ -71,8 +88,7 @@ silentApi.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
 
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
+        useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
@@ -86,19 +102,5 @@ silentApi.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
 
 export default silentApi;

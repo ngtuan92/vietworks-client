@@ -1,19 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import authService from '../../services/authService';
+import useAuth from '../../hooks/useAuth';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-  const [authVersion, setAuthVersion] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handler = () => setAuthVersion((prev) => prev + 1);
-    window.addEventListener('auth_changed', handler);
-    return () => window.removeEventListener('auth_changed', handler);
-  }, []);
+  const { user, isAuthenticated, isEmployer, isAdmin, logout } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,20 +20,10 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const user = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, [authVersion]);
-
-  const isAuthenticated = Boolean(localStorage.getItem('accessToken')) && Boolean(user);
-  const isEmployer = user?.role === 'EMPLOYER';
   const profileLabel = user?.fullName || user?.email || 'Tài khoản';
   const profileEmail = user?.email || '';
   const profileInitial = profileLabel.trim().charAt(0).toUpperCase() || 'U';
+  const roleLabel = isAdmin ? 'Quản trị viên' : isEmployer ? 'Nhà tuyển dụng' : 'Ứng viên';
 
   const isActive = (path) => location.pathname === path;
 
@@ -53,18 +37,30 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
-    await authService.logout();
+    await logout();
     navigate('/');
   };
 
   const handleAccountSettings = () => {
     setIsMenuOpen(false);
-    navigate(isEmployer ? '/employer/account-settings' : '/job-preferences');
+    if (isAdmin) {
+      navigate('/admin/account');
+    } else if (isEmployer) {
+      navigate('/employer/account-settings');
+    } else {
+      navigate('/job-preferences');
+    }
   };
 
   const handleProfileHome = () => {
     setIsMenuOpen(false);
-    navigate(isEmployer ? '/employer/dashboard' : '/job-preferences');
+    if (isAdmin) {
+      navigate('/admin/dashboard');
+    } else if (isEmployer) {
+      navigate('/employer/dashboard');
+    } else {
+      navigate('/job-preferences');
+    }
   };
 
   return (
@@ -132,7 +128,7 @@ const Navbar = () => {
                 </div>
                 <div className="hidden sm:block text-left max-w-[180px]">
                   <p className="text-sm font-semibold text-slate-800 truncate">{profileLabel}</p>
-                  <p className="text-xs text-slate-500 truncate">{isEmployer ? 'Nhà tuyển dụng' : 'Ứng viên'}</p>
+                  <p className="text-xs text-slate-500 truncate">{roleLabel}</p>
                 </div>
                 <span className="material-symbols-outlined text-slate-500 text-[20px]">
                   {isMenuOpen ? 'expand_less' : 'expand_more'}

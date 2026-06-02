@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
@@ -14,8 +15,7 @@ const authService = {
   registerJobseeker: async (userData) => {
     const response = await axios.post(`${API_URL}/register/jobseeker`, userData, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -29,8 +29,7 @@ const authService = {
   verifyEmployerOtp: async ({ email, otp }) => {
     const response = await axios.post(`${API_URL}/register/employer/verify-otp`, { email, otp }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -44,8 +43,7 @@ const authService = {
   login: async (credentials) => {
     const response = await axios.post(`${API_URL}/login`, credentials, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -54,8 +52,7 @@ const authService = {
   loginJobseeker: async (credentials) => {
     const response = await axios.post(`${API_URL}/login/jobseeker`, credentials, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -64,8 +61,7 @@ const authService = {
   loginEmployer: async (credentials) => {
     const response = await axios.post(`${API_URL}/login/employer`, credentials, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -74,8 +70,7 @@ const authService = {
   googleLoginJobseeker: async ({ tokenId }) => {
     const response = await axios.post(`${API_URL}/google/jobseeker`, { tokenId }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -84,8 +79,7 @@ const authService = {
   googleLoginEmployer: async ({ tokenId }) => {
     const response = await axios.post(`${API_URL}/google/employer`, { tokenId }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -94,8 +88,7 @@ const authService = {
   googleLoginGeneric: async ({ tokenId }) => {
     const response = await axios.post(`${API_URL}/google`, { tokenId }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -104,8 +97,7 @@ const authService = {
   linkedinLoginJobseeker: async ({ code }) => {
     const response = await axios.post(`${API_URL}/linkedin/jobseeker`, { code }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -114,8 +106,7 @@ const authService = {
   linkedinLoginEmployer: async ({ code }) => {
     const response = await axios.post(`${API_URL}/linkedin/employer`, { code }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
@@ -124,18 +115,19 @@ const authService = {
   linkedinLoginGeneric: async ({ code }) => {
     const response = await axios.post(`${API_URL}/linkedin`, { code }, { withCredentials: true });
     if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      useAuthStore.getState().setAuth(response.data.user, response.data.accessToken);
       notifyAuthChanged();
     }
     return response.data;
   },
 
   logout: async () => {
-    await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    notifyAuthChanged();
+    try {
+      await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
+    } finally {
+      useAuthStore.getState().clearAuth();
+      notifyAuthChanged();
+    }
   }
 };
 

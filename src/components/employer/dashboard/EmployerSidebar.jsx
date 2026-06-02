@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import useAuth from '../../../hooks/useAuth';
 
 const navItems = [
   {
@@ -59,10 +60,18 @@ const navItems = [
 ];
 
 const EmployerSidebar = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [openGroup, setOpenGroup] = useState('Tin tuyển dụng');
 
   const toggle = (label) => {
     setOpenGroup(openGroup === label ? null : label);
+  };
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await logout();
+    navigate('/employer/login');
   };
 
   return (
@@ -122,26 +131,40 @@ const EmployerSidebar = () => {
             >
               <div className="pl-9 space-y-0.5 py-1">
                 {item.children.map((child) => (
-                  <NavLink
-                    key={child.label}
-                    to={child.to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-1.5 py-2 text-sm transition-all ${
-                        child.isDanger
-                          ? 'text-[#ba1a1a] font-bold'
-                          : child.isPrimary
-                          ? 'text-[#0056b3] font-semibold'
-                          : isActive
-                          ? 'text-[#0056b3] font-semibold'
-                          : 'text-[#5e5e62] hover:text-[#0056b3]'
-                      }`
-                    }
-                  >
-                    {child.icon ? (
-                      <span className="material-symbols-outlined text-[16px]">{child.icon}</span>
-                    ) : null}
-                    {child.label}
-                  </NavLink>
+                  child.label === 'Đăng xuất' ? (
+                    <button
+                      key={child.label}
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-1.5 py-2 text-sm transition-all text-left cursor-pointer text-[#ba1a1a] font-bold bg-transparent border-0 hover:text-[#ba1a1a]"
+                    >
+                      {child.icon ? (
+                        <span className="material-symbols-outlined text-[16px]">{child.icon}</span>
+                      ) : null}
+                      {child.label}
+                    </button>
+                  ) : (
+                    <NavLink
+                      key={child.label}
+                      to={child.to}
+                      className={({ isActive }) =>
+                        `flex items-center gap-1.5 py-2 text-sm transition-all ${
+                          child.isDanger
+                            ? 'text-[#ba1a1a] font-bold'
+                            : child.isPrimary
+                            ? 'text-[#0056b3] font-semibold'
+                            : isActive
+                            ? 'text-[#0056b3] font-semibold'
+                            : 'text-[#5e5e62] hover:text-[#0056b3]'
+                        }`
+                      }
+                    >
+                      {child.icon ? (
+                        <span className="material-symbols-outlined text-[16px]">{child.icon}</span>
+                      ) : null}
+                      {child.label}
+                    </NavLink>
+                  )
                 ))}
               </div>
             </div>

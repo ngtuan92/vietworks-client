@@ -1,5 +1,5 @@
-
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}`,
@@ -8,7 +8,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = useAuthStore.getState().accessToken || localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -40,8 +40,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Nếu yêu cầu refresh token chính nó bị 401, logout ngay lập tức
       if (originalRequest.url?.includes('/auth/refresh')) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
+        useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
@@ -74,7 +73,11 @@ api.interceptors.response.use(
 
         if (response.data?.success && response.data?.accessToken) {
           const newToken = response.data.accessToken;
-          localStorage.setItem('accessToken', newToken);
+          const currentUser = useAuthStore.getState().user;
+          
+          // Update store with new token
+          useAuthStore.getState().setAuth(currentUser, newToken);
+          
           api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           
@@ -87,8 +90,7 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
         
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
+        useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
