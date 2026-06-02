@@ -92,7 +92,7 @@ function App() {
         <Route path="/" element={<JobseekerLayout />}>
           <Route index element={<Home />} />
           <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/:id" element={<JobDetail />} />
+<Route path="/jobs/:jobId" element={<JobDetail />} />
           <Route path="manage-cv" element={<ManageCV />} />
           <Route path="cv-templates/gallery" element={<TemplateGallery />} />
           <Route path="cv-builder/:id" element={<CVBuilder />} />
@@ -152,7 +152,7 @@ function App() {
           
           <Route path="companies" element={<CompanyVerification />} />
           <Route path="companies/history" element={<CompanyModerationHistory />} />
-          <Route path="companies/:id" element={<CompanyDetailAdmin />} />
+          <Route path="companies/:companyId" element={<CompanyDetailAdmin />} />
           <Route path="companies/:id/review" element={<CompanyReview />} />
           
           <Route path="jobs" element={<JobModeration />} />

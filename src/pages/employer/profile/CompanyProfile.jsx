@@ -42,6 +42,7 @@ const [legalPreview, setLegalPreview] = useState('');
 const [industries, setIndustries] = useState([]);
 const [sizes, setSizes] = useState([]);
 const [savingCompany, setSavingCompany] = useState(false);
+const [submittingVerification, setSubmittingVerification] = useState(false);
 const [logoPreview, setLogoPreview] = useState('');
 const [coverPreview, setCoverPreview] = useState('');
 
@@ -218,6 +219,7 @@ const handleLegalFileChange = (event) => {
       description: description.intro,
       businessLicenseFile,
     });
+    
 
     setGeneral((prev) => ({
       ...prev,
@@ -249,10 +251,29 @@ const handleLegalFileChange = (event) => {
   }
 };
 
-  const handleSubmitForApproval = () => {
-    setBanner({ type: 'success', message: 'Đã gửi hồ sơ để Admin kiểm duyệt.' });
+  const handleSubmitForApproval = async () => {
+  try {
+    setSubmittingVerification(true);
+
+    const res = await employerCompanyService.submitMyCompanyForVerification();
+
+    setVerificationStatus(res.data?.verificationStatus || 'PENDING');
+
+    setBanner({
+      type: 'success',
+      message: res.message || 'Đã gửi hồ sơ để Admin kiểm duyệt.'
+    });
+
     setTimeout(() => setBanner(null), 2500);
-  };
+  } catch (error) {
+    setBanner({
+      type: 'error',
+      message: error.response?.data?.message || 'Gửi duyệt hồ sơ công ty thất bại.'
+    });
+  } finally {
+    setSubmittingVerification(false);
+  }
+};
 
   const openCreateLocation = () => setLocationModal({ open: true, mode: 'create', data: null });
   const openEditLocation = (loc) => setLocationModal({ open: true, mode: 'edit', data: loc });
@@ -320,9 +341,13 @@ useEffect(() => {
 >
   {savingCompany ? 'Đang lưu...' : 'Lưu thay đổi'}
 </button>
-          <button onClick={handleSubmitForApproval} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
-            Gửi duyệt
-          </button>
+          <button
+  onClick={handleSubmitForApproval}
+  disabled={submittingVerification || verificationStatus === 'PENDING' || verificationStatus === 'VERIFIED'}
+  className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
+>
+  {submittingVerification ? 'Đang gửi...' : 'Gửi duyệt'}
+</button>
         </div>
       </header>
 

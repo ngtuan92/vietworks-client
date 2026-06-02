@@ -1,45 +1,68 @@
+const formatDate = (date) => {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString('vi-VN');
+};
 
+const saturdayMap = {
+  NOT_SPECIFIED: 'Không đề cập',
+  WORK_SATURDAY: 'Có làm Thứ 7',
+  OFF_SATURDAY: 'Nghỉ Thứ 7',
+};
 
-const JobInfoSidebar = () => {
+const InfoItem = ({ icon, label, value, danger = false }) => (
+  <div className="flex gap-4">
+    <span className="material-symbols-outlined text-primary shrink-0">{icon}</span>
+    <div>
+      <p className="text-on-surface-variant font-body-sm text-body-sm">{label}</p>
+      <p className={`font-semibold font-body-md ${danger ? 'text-error' : 'text-on-surface'}`}>
+        {value || '-'}
+      </p>
+    </div>
+  </div>
+);
+
+const JobInfoSidebar = ({ job }) => {
   return (
     <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant">
       <h3 className="font-headline-md text-headline-md mb-6">Thông Tin Việc Làm</h3>
+
       <div className="space-y-6">
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-primary shrink-0">military_tech</span>
-          <div>
-            <p className="text-on-surface-variant font-body-sm text-body-sm">Kinh nghiệm</p>
-            <p className="font-semibold text-on-surface font-body-md">5+ Năm</p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-primary shrink-0">signal_cellular_alt</span>
-          <div>
-            <p className="text-on-surface-variant font-body-sm text-body-sm">Cấp bậc</p>
-            <p className="font-semibold text-on-surface font-body-md">Senior Manager / Lead</p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-primary shrink-0">group</span>
-          <div>
-            <p className="text-on-surface-variant font-body-sm text-body-sm">Số lượng tuyển</p>
-            <p className="font-semibold text-on-surface font-body-md">02 vị trí</p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-primary shrink-0">work</span>
-          <div>
-            <p className="text-on-surface-variant font-body-sm text-body-sm">Loại hình</p>
-            <p className="font-semibold text-on-surface font-body-md">Toàn thời gian</p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-primary shrink-0">alarm_on</span>
-          <div>
-            <p className="text-on-surface-variant font-body-sm text-body-sm">Hạn nộp hồ sơ</p>
-            <p className="font-semibold text-error font-body-md">25/11/2024</p>
-          </div>
-        </div>
+        <InfoItem
+          icon="military_tech"
+          label="Kinh nghiệm"
+          value={job?.experienceLevelId?.name}
+        />
+
+        <InfoItem
+          icon="signal_cellular_alt"
+          label="Cấp bậc"
+          value={job?.jobLevelId?.name}
+        />
+
+        <InfoItem
+          icon="category"
+          label="Ngành nghề"
+          value={job?.careerId?.name}
+        />
+
+        <InfoItem
+          icon="badge"
+          label="Vị trí"
+          value={job?.careerPositionId?.name}
+        />
+
+        <InfoItem
+          icon="event_available"
+          label="Chính sách Thứ 7"
+          value={saturdayMap[job?.saturdayPolicy]}
+        />
+
+        <InfoItem
+          icon="alarm_on"
+          label="Hạn nộp hồ sơ"
+          value={formatDate(job?.deadline)}
+          danger
+        />
       </div>
     </div>
   );

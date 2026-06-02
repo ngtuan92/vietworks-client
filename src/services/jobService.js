@@ -5,6 +5,26 @@ import api from './api';   // Import instance axios đã config
 /**
  * Tạo job mới (ở trạng thái DRAFT)
  */
+export const getPublicJobs = async (params = {}) => {
+  try {
+    const response = await api.get('/jobs/public', {
+      params,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.log('STATUS:', error.response?.status);
+    console.log('DATA:', error.response?.data);
+    console.log('URL:', error.config?.url);
+
+    throw error;
+  }
+};
+
+export const getPublicJobDetail = async (jobId) => {
+  const response = await api.get(`/jobs/public/${jobId}`);
+  return response.data;
+};
 export const createJob = async (jobData) => {
   const response = await api.post('/jobs', jobData);
   return response.data;
@@ -116,4 +136,6 @@ export default {
   getSkillsByCareerGroup,
   getJobById,
   getMyJobs,
+  
+
 };
