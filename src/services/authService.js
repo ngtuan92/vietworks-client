@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
@@ -131,6 +131,16 @@ const authService = {
     return response.data;
   },
 
+  forgotPassword: async ({ email }) => {
+    const response = await axios.post(`${API_URL}/forgot-password`, { email }, { withCredentials: true });
+    return response.data;
+  },
+
+  resetPassword: async ({ token, password, confirmPassword }) => {
+    const response = await axios.post(`${API_URL}/reset-password/${token}`, { password, confirmPassword }, { withCredentials: true });
+    return response.data;
+  },
+
   logout: async () => {
     await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
     localStorage.removeItem('accessToken');
@@ -140,3 +150,4 @@ const authService = {
 };
 
 export default authService;
+

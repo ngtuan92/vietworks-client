@@ -2,18 +2,18 @@
 
 const CVTemplateManagement = () => (
   <div className="space-y-6">
-    <PageHeader title="CV Template Management" description="Manage CV templates, supported fonts/colors and visibility state." />
-    <SectionCard title="Filters">
+    <PageHeader title="Quản lý mẫu CV" description="Quản lý mẫu CV, font/màu hỗ trợ và trạng thái hiển thị." />
+    <SectionCard title="Bộ lọc">
       <FilterGrid>
-        <InputField label="Keyword" placeholder="Template name" />
-        <SelectField label="Category" options={['IT', 'Sales', 'Marketing']} />
-        <SelectField label="Status" options={['Active', 'Hidden']} />
-        <SelectField label="Template type" options={['Free', 'Premium']} />
+        <InputField label="Từ khóa" placeholder="Tên mẫu" />
+        <SelectField label="Danh mục" options={["CNTT", "Bán hàng", "Tiếp thị"]} />
+        <SelectField label="Trạng thái" options={["Hoạt động", "Ẩn"]} />
+        <SelectField label="Loại mẫu" options={["Miễn phí", "Cao cấp"]} />
       </FilterGrid>
     </SectionCard>
 
-    <SimpleTable headers={['Preview', 'Template', 'Category', 'Type', 'Status', 'Usage', 'Created', 'Actions']}>
-      <tr className="border-t border-slate-100"><td className="px-4 py-3">[Preview]</td><td className="px-4 py-3">Modern IT 01</td><td className="px-4 py-3">IT</td><td className="px-4 py-3">Free</td><td className="px-4 py-3">Active</td><td className="px-4 py-3">1,245</td><td className="px-4 py-3">2026-05-01</td><td className="px-4 py-3">View / Edit / Hide</td></tr>
+    <SimpleTable headers={["Xem trước", "Mẫu", "Danh mục", "Loại", "Trạng thái", "Lượt dùng", "Tạo lúc", "Hành động"]}>
+      <tr className="border-t border-slate-100"><td className="px-4 py-3">[Xem trước]</td><td className="px-4 py-3">Modern IT 01</td><td className="px-4 py-3">CNTT</td><td className="px-4 py-3">Miễn phí</td><td className="px-4 py-3">Hoạt động</td><td className="px-4 py-3">1,245</td><td className="px-4 py-3">2026-05-01</td><td className="px-4 py-3">Xem / Sửa / Ẩn</td></tr>
     </SimpleTable>
   </div>
 );

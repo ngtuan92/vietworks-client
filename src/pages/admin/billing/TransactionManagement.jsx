@@ -15,7 +15,7 @@ const TransactionManagement = () => {
 
       <SectionCard title="Bộ lọc giao dịch">
         <FilterGrid>
-          <InputField label="Mã giao dịch" placeholder="Transaction ID" />
+          <InputField label="Mã giao dịch" placeholder="Nhập mã giao dịch" />
           <InputField label="Người dùng" placeholder="Tên/email user" />
           <SelectField label="Loại user" options={['JobSeeker', 'Employer']} />
           <SelectField label="Loại giao dịch" options={['Nạp tiền', 'Mua gói', 'Mở CV']} />

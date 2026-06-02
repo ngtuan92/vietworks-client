@@ -1,8 +1,6 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, fileType, onDelete, onDownload, onRename }) => {
-  const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
   const inputRef = useRef(null);
@@ -57,7 +55,7 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch (error) {
-        console.warn('Download failed, opening in new tab:', error);
+        console.warn('Tải xuống thất bại, mở trong tab mới:', error);
         window.open(fileUrl, '_blank');
       }
     } else {

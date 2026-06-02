@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -18,6 +18,10 @@ import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
 import ResetPassword from './pages/jobseeker/auth/ResetPassword';
 import VerifyEmail from './pages/jobseeker/auth/VerifyEmail';
 import JobPreferences from './pages/jobseeker/profile/JobPreferences';
+import Profile from './pages/jobseeker/profile/Profile';
+import PrivacySettings from './pages/jobseeker/profile/PrivacySettings';
+import SavedJobs from './pages/jobseeker/jobs/SavedJobs';
+import MatchedJobs from './pages/jobseeker/jobs/MatchedJobs';
 import LinkedinCallback from './pages/jobseeker/auth/LinkedinCallback';
 import CompanyList from './pages/jobseeker/companies/CompanyList';
 import CompanyDetail from './pages/jobseeker/companies/CompanyDetail';
@@ -108,6 +112,10 @@ function App() {
           <Route path="companies/:id" element={<CompanyDetail />} />
           <Route path="salary-insight" element={<SalaryInsight />} />
           <Route path="premium" element={<UpgradePremium />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="saved-jobs" element={<SavedJobs />} />
+          <Route path="matched-jobs" element={<MatchedJobs />} />
+          <Route path="privacy-settings" element={<PrivacySettings />} />
         </Route>
 
         <Route path="/login" element={<Login />} />
@@ -205,3 +213,6 @@ function App() {
 }
 
 export default App;
+
+
+

@@ -14,7 +14,7 @@ const handleBlockedAccount = (error) => {
           bannedAt: error.response.data.bannedAt || null
         }
       }));
-    } catch (e) {
+    } catch {
       // ignore
     }
     return true;
@@ -62,16 +62,16 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // TrÃ¡nh vÃ²ng láº·p vÃ´ háº¡n vÃ  chá»‰ xá»­ lÃ½ khi lá»—i 401 xáº£y ra
+    // Tránh vòng lặp vô hạn và chỉ xử lý khi lỗi 401 xảy ra
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Náº¿u yÃªu cáº§u refresh token chÃ­nh nÃ³ bá»‹ 401, logout ngay láº­p tá»©c
+      // Nếu yêu cầu refresh token chính nó bị 401, logout ngay lập tức
       if (originalRequest.url?.includes('/auth/refresh')) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch (e) {
+        } catch {
           // ignore
         }
         return Promise.reject(error);
@@ -118,7 +118,7 @@ api.interceptors.response.use(
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch (e) {
+        } catch {
           // ignore
         }
         return Promise.reject(refreshError);

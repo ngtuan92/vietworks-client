@@ -1,4 +1,5 @@
-﻿import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+﻿/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
 const NotificationContext = createContext(null);
@@ -19,9 +20,9 @@ export const NotificationProvider = ({ children }) => {
     message: '',
     onConfirm: null,
     onCancel: null,
-    confirmText: 'Äá»“ng Ã½',
-    cancelText: 'Há»§y',
-    closeText: 'ÄÃ³ng'
+    confirmText: 'Đồng ý',
+    cancelText: 'Hủy',
+    closeText: 'Đóng'
   });
 
   const show = useCallback((options) => {
@@ -31,30 +32,30 @@ export const NotificationProvider = ({ children }) => {
       message: options.message || '',
       onConfirm: options.onConfirm || null,
       onCancel: options.onCancel || null,
-      confirmText: options.confirmText || 'Äá»“ng Ã½',
-      cancelText: options.cancelText || 'Há»§y',
-      closeText: options.closeText || 'ÄÃ³ng'
+      confirmText: options.confirmText || 'Đồng ý',
+      cancelText: options.cancelText || 'Hủy',
+      closeText: options.closeText || 'Đóng'
     });
     setIsOpen(true);
   }, []);
 
-  const success = useCallback((message, title = 'ThÃ nh cÃ´ng', onClose = null) => {
+  const success = useCallback((message, title = 'Thành công', onClose = null) => {
     show({ type: 'success', title, message, onCancel: onClose });
   }, [show]);
 
-  const error = useCallback((message, title = 'Lá»—i', onClose = null) => {
+  const error = useCallback((message, title = 'Lỗi', onClose = null) => {
     show({ type: 'error', title, message, onCancel: onClose });
   }, [show]);
 
-  const warning = useCallback((message, title = 'Cáº£nh bÃ¡o', onClose = null) => {
+  const warning = useCallback((message, title = 'Cảnh báo', onClose = null) => {
     show({ type: 'warning', title, message, onCancel: onClose });
   }, [show]);
 
-  const info = useCallback((message, title = 'ThÃ´ng bÃ¡o', onClose = null) => {
+  const info = useCallback((message, title = 'Thông báo', onClose = null) => {
     show({ type: 'info', title, message, onCancel: onClose });
   }, [show]);
 
-  const confirm = useCallback((message, onConfirm, onCancel = null, title = 'XÃ¡c nháº­n') => {
+  const confirm = useCallback((message, onConfirm, onCancel = null, title = 'Xác nhận') => {
     show({ type: 'confirm', title, message, onConfirm, onCancel });
   }, [show]);
 
