@@ -267,8 +267,11 @@ const EmployerRegister = () => {
                     </select>
                   </div>
 
-                  <Field label="Địa chỉ chi tiết" id="address" value={formData.address} onChange={handleChange} placeholder="Số nhà, tên đường" />
-                </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <Field label="Địa chỉ chi tiết" id="address" value={formData.address} onChange={handleChange} placeholder="Số nhà, tên đường" />
+                  </div>
               </div>
 
               <label className="flex items-start gap-3 text-sm text-slate-600">

@@ -716,7 +716,7 @@ const FileField = ({ label, id, onChange, accept, hint }) => (
 
 const RichTextEditor = ({ label, value, onChange, placeholder }) => {
   const editorRef = useRef(null);
-  const [fontSize, setFontSize] = useState('3'); // execCommand uses 1-7
+  const [fontSize, setFontSize] = useState('3');
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
