@@ -3,15 +3,24 @@ import employerAccountService from '../../../services/employerAccountService.js'
 import authService from '../../../services/authService.js';
 
 const tabs = [
-  { key: 'profile', label: 'ThÃ´ng tin cÃ¡ nhÃ¢n' },
-  { key: 'security', label: 'Báº£o máº­t' },
-  { key: 'notifications', label: 'ThÃ´ng bÃ¡o' },
+  { key: 'profile', label: 'Thông tin cá nhân' },
+  { key: 'security', label: 'Bảo mật' },
+  { key: 'notifications', label: 'Thông báo' },
 ];
 
 const genderOptions = [
   { label: 'Nam', value: 'MALE' },
-  { label: 'Ná»¯', value: 'FEMALE' },
-  { label: 'KhÃ¡c', value: 'OTHER' },
+  { label: 'Nữ', value: 'FEMALE' },
+  { label: 'Khác', value: 'OTHER' },
+];
+
+const notificationRows = [
+  { label: 'Có ứng viên mới ứng tuyển', emailKey: 'newApplicationEmail', systemKey: 'newApplicationSystem' },
+  { label: 'Admin duyệt/từ chối Job', emailKey: 'jobReviewEmail', systemKey: 'jobReviewSystem' },
+  { label: 'Admin duyệt/từ chối công ty', emailKey: 'companyReviewEmail', systemKey: 'companyReviewSystem' },
+  { label: 'Tin nhắn mới từ ứng viên', emailKey: 'messageEmail', systemKey: 'messageSystem' },
+  { label: 'Giao dịch ví', emailKey: 'billingEmail', systemKey: 'billingSystem' },
+  { label: 'Gói dịch vụ sắp hết hạn', emailKey: 'packageEmail', systemKey: 'packageSystem' },
 ];
 
 const AccountSettings = () => {
@@ -70,7 +79,7 @@ const AccountSettings = () => {
           email: accountRes.data?.email || '',
         }));
       } catch (error) {
-        setMessage(error.response?.data?.message || 'KhÃ´ng thá»ƒ táº£i thÃ´ng tin tÃ i khoáº£n');
+        setMessage(error.response?.data?.message || 'Không thể tải thông tin tài khoản');
       } finally {
         setLoading(false);
       }
@@ -90,9 +99,9 @@ const AccountSettings = () => {
         phone: profile.phone,
       });
 
-      setMessage(res.message || 'Cáº­p nháº­t thÃ´ng tin ngÆ°á»i Ä‘áº¡i diá»‡n thÃ nh cÃ´ng');
+      setMessage(res.message || 'Cập nhật thông tin người đại diện thành công');
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Cáº­p nháº­t thÃ´ng tin tháº¥t báº¡i');
+      setMessage(error.response?.data?.message || 'Cập nhật thông tin thất bại');
     } finally {
       setLoading(false);
     }
@@ -116,9 +125,9 @@ const AccountSettings = () => {
         confirmPassword: '',
       }));
 
-      setMessage(res.message || 'Äá»•i máº­t kháº©u thÃ nh cÃ´ng');
+      setMessage(res.message || 'Đổi mật khẩu thành công');
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Äá»•i máº­t kháº©u tháº¥t báº¡i');
+      setMessage(error.response?.data?.message || 'Đổi mật khẩu thất bại');
     } finally {
       setLoading(false);
     }
@@ -127,9 +136,9 @@ const AccountSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">CÃ i Ä‘áº·t tÃ i khoáº£n</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Cài đặt tài khoản</h1>
         <p className="text-slate-600 mt-1">
-          Quáº£n lÃ½ thÃ´ng tin ngÆ°á»i Ä‘áº¡i diá»‡n, báº£o máº­t vÃ  cÃ i Ä‘áº·t thÃ´ng bÃ¡o.
+          Quản lý thông tin người đại diện, bảo mật và cài đặt thông báo.
         </p>
       </div>
 
@@ -140,54 +149,32 @@ const AccountSettings = () => {
       ) : null}
 
       <div className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-wrap gap-2">
-        {tabs.map((t) => (
+        {tabs.map((item) => (
           <button
-            key={t.key}
+            key={item.key}
             onClick={() => {
-              setTab(t.key);
+              setTab(item.key);
               setMessage('');
             }}
             className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-              tab === t.key
-                ? 'bg-[#003f87] text-white'
-                : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+              tab === item.key ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
             }`}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
 
       {tab === 'profile' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field
-            label="Há» tÃªn"
-            value={profile.representativeName}
-            onChange={(v) => setProfile((p) => ({ ...p, representativeName: v }))}
-          />
-
-          <Select
-            label="Giá»›i tÃ­nh"
-            value={profile.gender}
-            onChange={(v) => setProfile((p) => ({ ...p, gender: v }))}
-            options={genderOptions}
-          />
-
-          <Field
-            label="Sá»‘ Ä‘iá»‡n thoáº¡i"
-            value={profile.phone}
-            onChange={(v) => setProfile((p) => ({ ...p, phone: v }))}
-          />
-
+          <Field label="Họ tên" value={profile.representativeName} onChange={(value) => setProfile((prev) => ({ ...prev, representativeName: value }))} />
+          <Select label="Giới tính" value={profile.gender} onChange={(value) => setProfile((prev) => ({ ...prev, gender: value }))} options={genderOptions} />
+          <Field label="Số điện thoại" value={profile.phone} onChange={(value) => setProfile((prev) => ({ ...prev, phone: value }))} />
           <Field label="Email" value={profile.email} readOnly />
 
           <div className="md:col-span-2 flex justify-end">
-            <button
-              onClick={handleUpdateProfile}
-              disabled={loading}
-              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
-            >
-              {loading ? 'Äang lÆ°u...' : 'LÆ°u thay Ä‘á»•i'}
+            <button onClick={handleUpdateProfile} disabled={loading} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60">
+              {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>
         </section>
@@ -196,35 +183,13 @@ const AccountSettings = () => {
       {tab === 'security' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Email" value={security.email} readOnly />
-
-          <Field
-            label="Máº­t kháº©u hiá»‡n táº¡i"
-            type="password"
-            value={security.currentPassword}
-            onChange={(v) => setSecurity((p) => ({ ...p, currentPassword: v }))}
-          />
-
-          <Field
-            label="Máº­t kháº©u má»›i"
-            type="password"
-            value={security.newPassword}
-            onChange={(v) => setSecurity((p) => ({ ...p, newPassword: v }))}
-          />
-
-          <Field
-            label="Nháº­p láº¡i máº­t kháº©u má»›i"
-            type="password"
-            value={security.confirmPassword}
-            onChange={(v) => setSecurity((p) => ({ ...p, confirmPassword: v }))}
-          />
+          <Field label="Mật khẩu hiện tại" type="password" value={security.currentPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, currentPassword: value }))} />
+          <Field label="Mật khẩu mới" type="password" value={security.newPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, newPassword: value }))} />
+          <Field label="Nhập lại mật khẩu mới" type="password" value={security.confirmPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, confirmPassword: value }))} />
 
           <div className="md:col-span-2 flex justify-end">
-            <button
-              onClick={handleUpdatePassword}
-              disabled={loading}
-              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
-            >
-              {loading ? 'Äang Ä‘á»•i...' : 'Äá»•i máº­t kháº©u'}
+            <button onClick={handleUpdatePassword} disabled={loading} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60">
+              {loading ? 'Đang đổi...' : 'Đổi mật khẩu'}
             </button>
           </div>
         </section>
@@ -236,25 +201,22 @@ const AccountSettings = () => {
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold">Loáº¡i thÃ´ng bÃ¡o</th>
+                  <th className="text-left px-4 py-3 font-semibold">Loại thông báo</th>
                   <th className="text-left px-4 py-3 font-semibold">Email</th>
-                  <th className="text-left px-4 py-3 font-semibold">Trong há»‡ thá»‘ng</th>
+                  <th className="text-left px-4 py-3 font-semibold">Trong hệ thống</th>
                 </tr>
               </thead>
               <tbody>
-                <NotifyRow label="CÃ³ á»©ng viÃªn má»›i á»©ng tuyá»ƒn" emailKey="newApplicationEmail" systemKey="newApplicationSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Admin duyá»‡t/tá»« chá»‘i Job" emailKey="jobReviewEmail" systemKey="jobReviewSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Admin duyá»‡t/tá»« chá»‘i cÃ´ng ty" emailKey="companyReviewEmail" systemKey="companyReviewSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Tin nháº¯n má»›i tá»« á»©ng viÃªn" emailKey="messageEmail" systemKey="messageSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Giao dá»‹ch vÃ­" emailKey="billingEmail" systemKey="billingSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="GÃ³i dá»‹ch vá»¥ sáº¯p háº¿t háº¡n" emailKey="packageEmail" systemKey="packageSystem" state={notify} setState={setNotify} />
+                {notificationRows.map((row) => (
+                  <NotifyRow key={row.emailKey} {...row} state={notify} setState={setNotify} />
+                ))}
               </tbody>
             </table>
           </div>
 
           <div className="mt-5 flex justify-end">
             <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
-              LÆ°u cÃ i Ä‘áº·t thÃ´ng bÃ¡o
+              Lưu cài đặt thông báo
             </button>
           </div>
         </section>
@@ -270,7 +232,7 @@ const Field = ({ label, value, onChange, type = 'text', readOnly = false }) => (
       type={type}
       value={value}
       readOnly={readOnly}
-      onChange={(e) => onChange?.(e.target.value)}
+      onChange={(event) => onChange?.(event.target.value)}
       className={`w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ${
         readOnly ? 'bg-slate-50 text-slate-500' : 'focus:border-[#003f87]'
       }`}
@@ -283,13 +245,13 @@ const Select = ({ label, value, onChange, options }) => (
     <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange(event.target.value)}
       className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
     >
-      <option value="">Chá»n giá»›i tÃ­nh</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
+      <option value="">Chọn giới tính</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
         </option>
       ))}
     </select>
@@ -300,10 +262,10 @@ const NotifyRow = ({ label, emailKey, systemKey, state, setState }) => (
   <tr className="border-t border-slate-100">
     <td className="px-4 py-3 font-medium text-slate-800">{label}</td>
     <td className="px-4 py-3">
-      <Toggle checked={state[emailKey]} onChange={(val) => setState((p) => ({ ...p, [emailKey]: val }))} />
+      <Toggle checked={state[emailKey]} onChange={(value) => setState((prev) => ({ ...prev, [emailKey]: value }))} />
     </td>
     <td className="px-4 py-3">
-      <Toggle checked={state[systemKey]} onChange={(val) => setState((p) => ({ ...p, [systemKey]: val }))} />
+      <Toggle checked={state[systemKey]} onChange={(value) => setState((prev) => ({ ...prev, [systemKey]: value }))} />
     </td>
   </tr>
 );
@@ -312,17 +274,10 @@ const Toggle = ({ checked, onChange }) => (
   <button
     type="button"
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-      checked ? 'bg-[#003f87]' : 'bg-slate-300'
-    }`}
+    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${checked ? 'bg-[#003f87]' : 'bg-slate-300'}`}
   >
-    <span
-      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-        checked ? 'translate-x-6' : 'translate-x-1'
-      }`}
-    />
+    <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
   </button>
 );
 
 export default AccountSettings;
-
