@@ -37,12 +37,14 @@ const TemplateGallery = () => {
   const handleUseTemplate = async (templateId) => {
     if (!isAuthenticated) {
       confirm(
-        'Bạn cần đăng nhập để tạo CV từ mẫu này. Bạn có muốn đăng nhập ngay không?',
+        'Bạn cần đăng nhập để tạo CV từ mẫu này. Vui lòng đăng nhập để tiếp tục.',
         () => {
           navigate('/login', { state: { from: '/cv-templates/gallery' } });
         },
         null,
-        'Yêu cầu đăng nhập'
+        'Yêu cầu đăng nhập',
+        'Đăng nhập',
+        'Hủy'
       );
       return;
     }

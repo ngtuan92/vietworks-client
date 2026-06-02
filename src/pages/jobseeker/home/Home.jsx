@@ -46,12 +46,14 @@ const Home = () => {
   const goProtected = (path) => {
     if (!isAuthenticated) {
       confirm(
-        'Bạn cần đăng nhập để sử dụng tính năng này. Bạn có muốn đăng nhập ngay không?',
+        'Bạn cần đăng nhập để sử dụng tính năng này. Vui lòng đăng nhập để tiếp tục.',
         () => {
           navigate('/login', { state: { from: path } });
         },
         null,
-        'Yêu cầu đăng nhập'
+        'Yêu cầu đăng nhập',
+        'Đăng nhập',
+        'Hủy'
       );
       return;
     }

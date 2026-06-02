@@ -1,4 +1,4 @@
-﻿/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
@@ -55,8 +55,8 @@ export const NotificationProvider = ({ children }) => {
     show({ type: 'info', title, message, onCancel: onClose });
   }, [show]);
 
-  const confirm = useCallback((message, onConfirm, onCancel = null, title = 'Xác nhận') => {
-    show({ type: 'confirm', title, message, onConfirm, onCancel });
+  const confirm = useCallback((message, onConfirm, onCancel = null, title = 'Xác nhận', confirmText = 'Đồng ý', cancelText = 'Hủy') => {
+    show({ type: 'confirm', title, message, onConfirm, onCancel, confirmText, cancelText });
   }, [show]);
 
   const close = useCallback(() => {
@@ -108,12 +108,15 @@ export const NotificationProvider = ({ children }) => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
 
-      warning(
-        'Phiên làm việc của bạn đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại để tiếp tục.',
-        'Yêu cầu đăng nhập',
+      confirm(
+        'Bạn cần đăng nhập để thực hiện chức năng này. Vui lòng đăng nhập để tiếp tục.',
         () => {
           window.location.href = '/login';
-        }
+        },
+        null,
+        'Yêu cầu đăng nhập',
+        'Đăng nhập',
+        'Hủy'
       );
     };
 
@@ -140,7 +143,7 @@ export const NotificationProvider = ({ children }) => {
       window.removeEventListener('unauthorized_access', handleUnauthorized);
       window.removeEventListener('account_blocked', handleAccountBlocked);
     };
-  }, [warning]);
+  }, [warning, confirm]);
 
   return (
     <NotificationContext.Provider value={{ success, error, warning, info, confirm }}>

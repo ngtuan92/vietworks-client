@@ -6,9 +6,11 @@ import JobInfoSidebar from '../../../components/jobseeker/jobs/JobInfoSidebar';
 import RelatedJobsSidebar from '../../../components/jobseeker/jobs/RelatedJobsSidebar';
 import CompanyCard from '../../../components/jobseeker/jobs/CompanyCard';
 import jobService from '../../../services/jobService';
+import useAuth from '../../../hooks/useAuth';
 
 const JobDetail = () => {
   const { id: jobId } = useParams();
+  const { isAuthenticated } = useAuth();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +42,7 @@ const JobDetail = () => {
     };
 
     const checkApplied = async () => {
+      if (!isAuthenticated) return;
       try {
         const res = await jobService.checkDuplicateApplication(jobId);
         if (res.success) {
@@ -52,7 +55,7 @@ const JobDetail = () => {
 
     fetchJob();
     checkApplied();
-  }, [jobId]);
+  }, [jobId, isAuthenticated]);
 
   if (loading) {
     return (

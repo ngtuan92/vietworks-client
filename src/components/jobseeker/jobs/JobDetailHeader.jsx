@@ -26,12 +26,14 @@ const JobDetailHeader = ({
   const handleApply = () => {
     if (!isAuthenticated) {
       confirm(
-        'Bạn cần đăng nhập để ứng tuyển việc làm. Bạn có muốn đăng nhập ngay không?',
+        'Bạn cần đăng nhập để ứng tuyển việc làm. Vui lòng đăng nhập để tiếp tục.',
         () => {
           navigate('/login', { state: { from: `/jobs/${job._id}` } });
         },
         null,
-        'Yêu cầu đăng nhập'
+        'Yêu cầu đăng nhập',
+        'Đăng nhập',
+        'Hủy'
       );
       return;
     }
@@ -43,12 +45,14 @@ const JobDetailHeader = ({
   const handleSave = () => {
     if (!isAuthenticated) {
       confirm(
-        'Bạn cần đăng nhập để lưu việc làm. Bạn có muốn đăng nhập ngay không?',
+        'Bạn cần đăng nhập để lưu việc làm. Vui lòng đăng nhập để tiếp tục.',
         () => {
           navigate('/login', { state: { from: `/jobs/${job._id}` } });
         },
         null,
-        'Yêu cầu đăng nhập'
+        'Yêu cầu đăng nhập',
+        'Đăng nhập',
+        'Hủy'
       );
       return;
     }
