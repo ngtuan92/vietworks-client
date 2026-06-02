@@ -22,12 +22,13 @@ const handleBlockedAccount = (error) => {
   return false;
 };
 
-const api = axios.create({
+const silentApi = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}`,
   withCredentials: true,
+  silent: true
 });
 
-api.interceptors.request.use(
+silentApi.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken || localStorage.getItem('accessToken');
     if (token) {
@@ -52,7 +53,7 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-api.interceptors.response.use(
+silentApi.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
@@ -60,16 +61,14 @@ api.interceptors.response.use(
     if (handleBlockedAccount(error)) {
       return Promise.reject(error);
     }
-    
-    // Tránh vòng lặp vô hạn và chỉ xử lý khi lỗi 401 xảy ra
+
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Nếu yêu cầu refresh token chính nó bị 401, logout ngay lập tức
       if (originalRequest.url?.includes('/auth/refresh')) {
         useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch {
+        } catch{
           // ignore
         }
         return Promise.reject(error);
@@ -81,7 +80,7 @@ api.interceptors.response.use(
         })
           .then((token) => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
+            return silentApi(originalRequest);
           })
           .catch((err) => Promise.reject(err));
       }
@@ -100,35 +99,33 @@ api.interceptors.response.use(
           const newToken = response.data.accessToken;
           const currentUser = useAuthStore.getState().user;
           
-          // Update store with new token
           useAuthStore.getState().setAuth(currentUser, newToken);
           
-          api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+          silentApi.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          
+
           processQueue(null, newToken);
           isRefreshing = false;
-          
-          return api(originalRequest);
+
+          return silentApi(originalRequest);
         }
       } catch (refreshError) {
         processQueue(refreshError, null);
         isRefreshing = false;
-        
+
         useAuthStore.getState().clearAuth();
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch {
+        } catch{
           // ignore
         }
         return Promise.reject(refreshError);
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
 
-export default api;
-
+export default silentApi;

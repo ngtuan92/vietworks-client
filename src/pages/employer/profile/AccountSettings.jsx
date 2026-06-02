@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import employerAccountService from '../../../services/employerAccountService.js';
+import authService from '../../../services/authService.js';
 
 const tabs = [
   { key: 'profile', label: 'Thông tin cá nhân' },
@@ -11,6 +12,15 @@ const genderOptions = [
   { label: 'Nam', value: 'MALE' },
   { label: 'Nữ', value: 'FEMALE' },
   { label: 'Khác', value: 'OTHER' },
+];
+
+const notificationRows = [
+  { label: 'Có ứng viên mới ứng tuyển', emailKey: 'newApplicationEmail', systemKey: 'newApplicationSystem' },
+  { label: 'Admin duyệt/từ chối Job', emailKey: 'jobReviewEmail', systemKey: 'jobReviewSystem' },
+  { label: 'Admin duyệt/từ chối công ty', emailKey: 'companyReviewEmail', systemKey: 'companyReviewSystem' },
+  { label: 'Tin nhắn mới từ ứng viên', emailKey: 'messageEmail', systemKey: 'messageSystem' },
+  { label: 'Giao dịch ví', emailKey: 'billingEmail', systemKey: 'billingSystem' },
+  { label: 'Gói dịch vụ sắp hết hạn', emailKey: 'packageEmail', systemKey: 'packageSystem' },
 ];
 
 const AccountSettings = () => {
@@ -102,7 +112,7 @@ const AccountSettings = () => {
       setLoading(true);
       setMessage('');
 
-      const res = await employerAccountService.updateMyEmployerPassword({
+      const res = await authService.changePassword({
         currentPassword: security.currentPassword,
         newPassword: security.newPassword,
         confirmNewPassword: security.confirmPassword,
@@ -139,53 +149,31 @@ const AccountSettings = () => {
       ) : null}
 
       <div className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-wrap gap-2">
-        {tabs.map((t) => (
+        {tabs.map((item) => (
           <button
-            key={t.key}
+            key={item.key}
             onClick={() => {
-              setTab(t.key);
+              setTab(item.key);
               setMessage('');
             }}
             className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-              tab === t.key
-                ? 'bg-[#003f87] text-white'
-                : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+              tab === item.key ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
             }`}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
 
       {tab === 'profile' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field
-            label="Họ tên"
-            value={profile.representativeName}
-            onChange={(v) => setProfile((p) => ({ ...p, representativeName: v }))}
-          />
-
-          <Select
-            label="Giới tính"
-            value={profile.gender}
-            onChange={(v) => setProfile((p) => ({ ...p, gender: v }))}
-            options={genderOptions}
-          />
-
-          <Field
-            label="Số điện thoại"
-            value={profile.phone}
-            onChange={(v) => setProfile((p) => ({ ...p, phone: v }))}
-          />
-
+          <Field label="Họ tên" value={profile.representativeName} onChange={(value) => setProfile((prev) => ({ ...prev, representativeName: value }))} />
+          <Select label="Giới tính" value={profile.gender} onChange={(value) => setProfile((prev) => ({ ...prev, gender: value }))} options={genderOptions} />
+          <Field label="Số điện thoại" value={profile.phone} onChange={(value) => setProfile((prev) => ({ ...prev, phone: value }))} />
           <Field label="Email" value={profile.email} readOnly />
 
           <div className="md:col-span-2 flex justify-end">
-            <button
-              onClick={handleUpdateProfile}
-              disabled={loading}
-              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
-            >
+            <button onClick={handleUpdateProfile} disabled={loading} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60">
               {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>
@@ -195,34 +183,12 @@ const AccountSettings = () => {
       {tab === 'security' ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Email" value={security.email} readOnly />
-
-          <Field
-            label="Mật khẩu hiện tại"
-            type="password"
-            value={security.currentPassword}
-            onChange={(v) => setSecurity((p) => ({ ...p, currentPassword: v }))}
-          />
-
-          <Field
-            label="Mật khẩu mới"
-            type="password"
-            value={security.newPassword}
-            onChange={(v) => setSecurity((p) => ({ ...p, newPassword: v }))}
-          />
-
-          <Field
-            label="Nhập lại mật khẩu mới"
-            type="password"
-            value={security.confirmPassword}
-            onChange={(v) => setSecurity((p) => ({ ...p, confirmPassword: v }))}
-          />
+          <Field label="Mật khẩu hiện tại" type="password" value={security.currentPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, currentPassword: value }))} />
+          <Field label="Mật khẩu mới" type="password" value={security.newPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, newPassword: value }))} />
+          <Field label="Nhập lại mật khẩu mới" type="password" value={security.confirmPassword} onChange={(value) => setSecurity((prev) => ({ ...prev, confirmPassword: value }))} />
 
           <div className="md:col-span-2 flex justify-end">
-            <button
-              onClick={handleUpdatePassword}
-              disabled={loading}
-              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
-            >
+            <button onClick={handleUpdatePassword} disabled={loading} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60">
               {loading ? 'Đang đổi...' : 'Đổi mật khẩu'}
             </button>
           </div>
@@ -241,12 +207,9 @@ const AccountSettings = () => {
                 </tr>
               </thead>
               <tbody>
-                <NotifyRow label="Có ứng viên mới ứng tuyển" emailKey="newApplicationEmail" systemKey="newApplicationSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Admin duyệt/từ chối Job" emailKey="jobReviewEmail" systemKey="jobReviewSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Admin duyệt/từ chối công ty" emailKey="companyReviewEmail" systemKey="companyReviewSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Tin nhắn mới từ ứng viên" emailKey="messageEmail" systemKey="messageSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Giao dịch ví" emailKey="billingEmail" systemKey="billingSystem" state={notify} setState={setNotify} />
-                <NotifyRow label="Gói dịch vụ sắp hết hạn" emailKey="packageEmail" systemKey="packageSystem" state={notify} setState={setNotify} />
+                {notificationRows.map((row) => (
+                  <NotifyRow key={row.emailKey} {...row} state={notify} setState={setNotify} />
+                ))}
               </tbody>
             </table>
           </div>
@@ -269,7 +232,7 @@ const Field = ({ label, value, onChange, type = 'text', readOnly = false }) => (
       type={type}
       value={value}
       readOnly={readOnly}
-      onChange={(e) => onChange?.(e.target.value)}
+      onChange={(event) => onChange?.(event.target.value)}
       className={`w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ${
         readOnly ? 'bg-slate-50 text-slate-500' : 'focus:border-[#003f87]'
       }`}
@@ -282,13 +245,13 @@ const Select = ({ label, value, onChange, options }) => (
     <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange(event.target.value)}
       className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
     >
       <option value="">Chọn giới tính</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
         </option>
       ))}
     </select>
@@ -299,10 +262,10 @@ const NotifyRow = ({ label, emailKey, systemKey, state, setState }) => (
   <tr className="border-t border-slate-100">
     <td className="px-4 py-3 font-medium text-slate-800">{label}</td>
     <td className="px-4 py-3">
-      <Toggle checked={state[emailKey]} onChange={(val) => setState((p) => ({ ...p, [emailKey]: val }))} />
+      <Toggle checked={state[emailKey]} onChange={(value) => setState((prev) => ({ ...prev, [emailKey]: value }))} />
     </td>
     <td className="px-4 py-3">
-      <Toggle checked={state[systemKey]} onChange={(val) => setState((p) => ({ ...p, [systemKey]: val }))} />
+      <Toggle checked={state[systemKey]} onChange={(value) => setState((prev) => ({ ...prev, [systemKey]: value }))} />
     </td>
   </tr>
 );
@@ -311,15 +274,9 @@ const Toggle = ({ checked, onChange }) => (
   <button
     type="button"
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-      checked ? 'bg-[#003f87]' : 'bg-slate-300'
-    }`}
+    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${checked ? 'bg-[#003f87]' : 'bg-slate-300'}`}
   >
-    <span
-      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-        checked ? 'translate-x-6' : 'translate-x-1'
-      }`}
-    />
+    <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
   </button>
 );
 

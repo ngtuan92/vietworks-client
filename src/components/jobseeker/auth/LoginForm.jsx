@@ -65,7 +65,7 @@ const LoginForm = () => {
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
+          placeholder="ví dụ: ban@example.com"
           required
           className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87]"
         />
@@ -81,7 +81,7 @@ const LoginForm = () => {
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
+            placeholder="Nhập mật khẩu"
             required
             className="w-full rounded-xl border border-slate-200 px-5 py-4 pr-12 text-base outline-none focus:border-[#003f87]"
           />

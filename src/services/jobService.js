@@ -116,10 +116,48 @@ export const getJobById = async (jobId) => {
   return response.data;
 };
 
+/**
+ * Lấy danh sách job public (đã PUBLISHED) - Dùng cho ứng viên/guest tìm việc
+ */
+export const getJobs = async (params = {}) => {
+  const response = await api.get('/jobs', { params });
+  return response.data;
+};
+
 // ==================== UTILITY ====================
 
 export const getMyJobs = async (params = {}) => {
   const response = await api.get('/employer/jobs', { params });
+  return response.data;
+};
+
+export const getApplyOptions = async (jobId) => {
+  const response = await api.get(`/jobs/${jobId}/apply-options`);
+  return response.data;
+};
+
+export const applyJob = async (jobId, applyData) => {
+  const response = await api.post(`/jobs/${jobId}/apply`, applyData);
+  return response.data;
+};
+
+export const getApplyCvPreview = async (jobId, cvId) => {
+  const response = await api.get(`/jobs/${jobId}/apply/cv-preview/${cvId}`);
+  return response.data;
+};
+
+export const checkDuplicateApplication = async (jobId) => {
+  const response = await api.get(`/jobs/${jobId}/apply/check`);
+  return response.data;
+};
+
+export const getMyApplications = async (params = {}) => {
+  const response = await api.get('/jobseeker/applications', { params });
+  return response.data;
+};
+
+export const getApplicationStatus = async (applicationId) => {
+  const response = await api.get(`/jobseeker/applications/${applicationId}/status`);
   return response.data;
 };
 
@@ -135,7 +173,14 @@ export default {
   getExperienceLevels,
   getSkillsByCareerGroup,
   getJobById,
+  getJobs,
   getMyJobs,
   
 
+  getApplyOptions,
+  applyJob,
+  getApplyCvPreview,
+  checkDuplicateApplication,
+  getMyApplications,
+  getApplicationStatus,
 };

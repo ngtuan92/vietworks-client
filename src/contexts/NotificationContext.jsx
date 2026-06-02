@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+﻿/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
 const NotificationContext = createContext(null);
@@ -116,9 +117,28 @@ export const NotificationProvider = ({ children }) => {
       );
     };
 
+    const handleAccountBlocked = (event) => {
+      const detail = event?.detail || {};
+      const message = detail.message || 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.';
+
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+
+      warning(
+        message,
+        'Tài khoản bị khóa',
+        () => {
+          window.location.href = '/login';
+        }
+      );
+    };
+
     window.addEventListener('unauthorized_access', handleUnauthorized);
+    window.addEventListener('account_blocked', handleAccountBlocked);
+
     return () => {
       window.removeEventListener('unauthorized_access', handleUnauthorized);
+      window.removeEventListener('account_blocked', handleAccountBlocked);
     };
   }, [warning]);
 
@@ -186,3 +206,5 @@ export const NotificationProvider = ({ children }) => {
     </NotificationContext.Provider>
   );
 };
+
+

@@ -3,6 +3,7 @@ const ContentBlock = ({ title, content }) => (
     <h2 className="font-headline-md text-headline-md border-l-4 border-primary pl-4 mb-4">
       {title}
     </h2>
+
     <div className="text-on-surface-variant font-body-md text-body-md leading-relaxed whitespace-pre-line">
       {content || 'Chưa cập nhật.'}
     </div>
@@ -17,13 +18,14 @@ const SkillList = ({ skills = [] }) => {
       <h2 className="font-headline-md text-headline-md border-l-4 border-primary pl-4 mb-4">
         Kỹ Năng
       </h2>
+
       <div className="flex flex-wrap gap-2">
-        {skills.map((skill) => (
+        {skills.map((skill, index) => (
           <span
-            key={skill._id || skill.name}
+            key={skill._id || skill.name || index}
             className="px-3 py-1 bg-[#d9e3f2] text-[#3e4853] text-xs font-semibold rounded-full"
           >
-            {skill.name}
+            {typeof skill === 'string' ? skill : skill.name}
           </span>
         ))}
       </div>

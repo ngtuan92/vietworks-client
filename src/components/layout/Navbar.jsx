@@ -1,19 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import authService from '../../services/authService';
+import useAuth from '../../hooks/useAuth';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-  const [authVersion, setAuthVersion] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handler = () => setAuthVersion((prev) => prev + 1);
-    window.addEventListener('auth_changed', handler);
-    return () => window.removeEventListener('auth_changed', handler);
-  }, []);
+  const { user, isAuthenticated, isEmployer, isAdmin, logout } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,20 +20,10 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const user = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, [authVersion]);
-
-  const isAuthenticated = Boolean(localStorage.getItem('accessToken')) && Boolean(user);
-  const isEmployer = user?.role === 'EMPLOYER';
   const profileLabel = user?.fullName || user?.email || 'Tài khoản';
   const profileEmail = user?.email || '';
   const profileInitial = profileLabel.trim().charAt(0).toUpperCase() || 'U';
+  const roleLabel = isAdmin ? 'Quản trị viên' : isEmployer ? 'Nhà tuyển dụng' : 'Ứng viên';
 
   const isActive = (path) => location.pathname === path;
 
@@ -53,18 +37,30 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
-    await authService.logout();
+    await logout();
     navigate('/');
   };
 
   const handleAccountSettings = () => {
     setIsMenuOpen(false);
-    navigate(isEmployer ? '/employer/account-settings' : '/job-preferences');
+    if (isAdmin) {
+      navigate('/admin/account');
+    } else if (isEmployer) {
+      navigate('/employer/account-settings');
+    } else {
+      navigate('/profile');
+    }
   };
 
   const handleProfileHome = () => {
     setIsMenuOpen(false);
-    navigate(isEmployer ? '/employer/dashboard' : '/job-preferences');
+    if (isAdmin) {
+      navigate('/admin/dashboard');
+    } else if (isEmployer) {
+      navigate('/employer/dashboard');
+    } else {
+      navigate('/profile');
+    }
   };
 
   return (
@@ -132,7 +128,7 @@ const Navbar = () => {
                 </div>
                 <div className="hidden sm:block text-left max-w-[180px]">
                   <p className="text-sm font-semibold text-slate-800 truncate">{profileLabel}</p>
-                  <p className="text-xs text-slate-500 truncate">{isEmployer ? 'Nhà tuyển dụng' : 'Ứng viên'}</p>
+                  <p className="text-xs text-slate-500 truncate">{roleLabel}</p>
                 </div>
                 <span className="material-symbols-outlined text-slate-500 text-[20px]">
                   {isMenuOpen ? 'expand_less' : 'expand_more'}
@@ -154,23 +150,39 @@ const Navbar = () => {
                   </div>
 
                   <div className="p-2">
-                    <button
-                      type="button"
-                      onClick={handleProfileHome}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">account_circle</span>
-                      <span className="text-sm font-medium">Trang hồ sơ</span>
-                    </button>
+                    {isEmployer || isAdmin ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleProfileHome}
+                          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                          <span className="text-sm font-medium">Trang hồ sơ</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={handleAccountSettings}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">settings</span>
-                      <span className="text-sm font-medium">Cài đặt tài khoản</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={handleAccountSettings}
+                          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">settings</span>
+                          <span className="text-sm font-medium">Cài đặt tài khoản</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <MenuLink to="/profile" icon="person" label="Hồ sơ cá nhân" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/manage-cv" icon="description" label="CV của tôi" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/saved-jobs" icon="favorite" label="Việc làm đã lưu" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/applied-jobs" icon="assignment_turned_in" label="Việc đã ứng tuyển" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/matched-jobs" icon="recommend" label="Việc làm phù hợp" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/job-preferences" icon="tune" label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/privacy-settings" icon="visibility_off" label="Quyền riêng tư" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/premium" icon="workspace_premium" label="Gói Premium" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/profile" icon="settings" label="Tài khoản & bảo mật" onClick={() => setIsMenuOpen(false)} />
+                      </>
+                    )}
 
                     <button
                       type="button"
@@ -206,4 +218,17 @@ const Navbar = () => {
   );
 };
 
+const MenuLink = ({ to, icon, label, onClick }) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+  >
+    <span className="material-symbols-outlined text-[20px]">{icon}</span>
+    <span className="text-sm font-medium">{label}</span>
+  </Link>
+);
+
 export default Navbar;
+
+

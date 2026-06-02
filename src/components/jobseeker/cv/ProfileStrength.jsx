@@ -7,8 +7,8 @@ const ProfileStrength = () => {
       <div className="flex items-center gap-stack-lg mb-stack-lg">
         <div className="relative w-20 h-20">
           <svg className="w-full h-full transform -rotate-90">
-            <circle className="text-surface-container-high" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-width="8"></circle>
-            <circle className="text-primary" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-dasharray="226.19" stroke-dashoffset="56.5" stroke-width="8"></circle>
+            <circle className="text-surface-container-high" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" strokeWidth="8"></circle>
+            <circle className="text-primary" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" strokeDasharray="226.19" strokeDashoffset="56.5" strokeWidth="8"></circle>
           </svg>
           <span className="absolute inset-0 flex items-center justify-center font-bold text-headline-md">75%</span>
         </div>
