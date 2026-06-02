@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  getProvinces,
-  getDistrictsByProvinceCode,
-  getWardsByDistrictCode
-} from 'sub-vn';
-import {
   searchVietMapPlaces,
   getVietMapPlaceDetail
 } from '../../../services/vietmapLocationService.js';
@@ -867,132 +862,6 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
     isPrimary: Boolean(initial?.isPrimary),
   });
 
-  // sub-vn dropdown states
-  const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [wards, setWards] = useState([]);
-
-  const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
-  const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
-  const [selectedWardCode, setSelectedWardCode] = useState('');
-
-  // Fetch provinces on mount
-  useEffect(() => {
-    setProvinces(getProvinces());
-  }, []);
-
-  // Sync data.province, data.district, data.ward strings with dropdown selections
-  useEffect(() => {
-    if (provinces.length === 0) return;
-
-    if (data.province) {
-      const provObj = provinces.find(p => 
-        p.name === data.province || 
-        p.name.includes(data.province) || 
-        data.province.includes(p.name)
-      );
-      if (provObj) {
-        setSelectedProvinceCode(provObj.code);
-        const listDist = getDistrictsByProvinceCode(provObj.code);
-        setDistricts(listDist);
-
-        if (data.district) {
-          const distObj = listDist.find(d => 
-            d.name === data.district || 
-            d.name.includes(data.district) || 
-            data.district.includes(d.name)
-          );
-          if (distObj) {
-            setSelectedDistrictCode(distObj.code);
-            const listWard = getWardsByDistrictCode(distObj.code);
-            setWards(listWard);
-
-            if (data.ward) {
-              const wardObj = listWard.find(w => 
-                w.name === data.ward || 
-                w.name.includes(data.ward) || 
-                data.ward.includes(w.name)
-              );
-              if (wardObj) {
-                setSelectedWardCode(wardObj.code);
-              } else {
-                setSelectedWardCode('');
-              }
-            } else {
-              setSelectedWardCode('');
-            }
-          } else {
-            setSelectedDistrictCode('');
-            setSelectedWardCode('');
-            setWards([]);
-          }
-        } else {
-          setSelectedDistrictCode('');
-          setSelectedWardCode('');
-          setWards([]);
-        }
-      } else {
-        setSelectedProvinceCode('');
-        setSelectedDistrictCode('');
-        setSelectedWardCode('');
-        setDistricts([]);
-        setWards([]);
-      }
-    } else {
-      setSelectedProvinceCode('');
-      setSelectedDistrictCode('');
-      setSelectedWardCode('');
-      setDistricts([]);
-      setWards([]);
-    }
-  }, [data.province, data.district, data.ward, provinces]);
-
-  const handleProvinceChange = (e) => {
-    const code = e.target.value;
-    setSelectedProvinceCode(code);
-    setSelectedDistrictCode('');
-    setSelectedWardCode('');
-    
-    const provObj = provinces.find(p => p.code === code);
-    const listDist = code ? getDistrictsByProvinceCode(code) : [];
-    setDistricts(listDist);
-    setWards([]);
-
-    setData(prev => ({
-      ...prev,
-      province: provObj?.name || '',
-      district: '',
-      ward: ''
-    }));
-  };
-
-  const handleDistrictChange = (e) => {
-    const code = e.target.value;
-    setSelectedDistrictCode(code);
-    setSelectedWardCode('');
-    
-    const distObj = districts.find(d => d.code === code);
-    const listWard = code ? getWardsByDistrictCode(code) : [];
-    setWards(listWard);
-
-    setData(prev => ({
-      ...prev,
-      district: distObj?.name || '',
-      ward: ''
-    }));
-  };
-
-  const handleWardChange = (e) => {
-    const code = e.target.value;
-    setSelectedWardCode(code);
-
-    const wardObj = wards.find(w => w.code === code);
-    setData(prev => ({
-      ...prev,
-      ward: wardObj?.name || ''
-    }));
-  };
-
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (keyword.trim().length < 3) {
@@ -1119,66 +988,9 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
             </div>
 
             <Field label="Địa chỉ chi tiết" id="addressLine" value={data.addressLine} onChange={handleChange} required />
-            
-            {/* Tỉnh/Thành phố select */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Tỉnh/Thành phố <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={selectedProvinceCode}
-                onChange={handleProvinceChange}
-                required
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white text-slate-700 text-sm"
-              >
-                <option value="">Chọn Tỉnh/Thành phố...</option>
-                {provinces.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Quận/Huyện select */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Quận/Huyện
-              </label>
-              <select
-                value={selectedDistrictCode}
-                onChange={handleDistrictChange}
-                disabled={!selectedProvinceCode}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white text-slate-700 text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
-              >
-                <option value="">Chọn Quận/Huyện...</option>
-                {districts.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Phường/Xã select */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Phường/Xã
-              </label>
-              <select
-                value={selectedWardCode}
-                onChange={handleWardChange}
-                disabled={!selectedDistrictCode}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white text-slate-700 text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
-              >
-                <option value="">Chọn Phường/Xã...</option>
-                {wards.map((w) => (
-                  <option key={w.code} value={w.code}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Field label="Tỉnh/Thành phố" id="province" value={data.province} onChange={handleChange} required />
+            <Field label="Quận/Huyện" id="district" value={data.district} onChange={handleChange} />
+            <Field label="Phường/Xã" id="ward" value={data.ward} onChange={handleChange} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Vĩ độ" id="latitude" value={data.latitude || ''} onChange={handleChange} />
