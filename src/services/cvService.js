@@ -56,6 +56,11 @@ const cvService = {
   deleteUploadedCv: async (id) => {
     const response = await api.delete(`/jobseeker/cvs/${id}`);
     return response.data;
+  },
+
+  getUploadedCvView: async (id) => {
+    const response = await api.get(`/jobseeker/cvs/${id}/view`, { responseType: 'blob' });
+    return response.data;
   }
 };
 
