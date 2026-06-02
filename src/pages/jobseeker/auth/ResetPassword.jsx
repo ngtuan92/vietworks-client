@@ -1,27 +1,31 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+﻿import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import authService from '../../../services/authService';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || '';
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: '',
-  });
+  const [formData, setFormData] = useState({ password: '', confirmPassword: '' });
   const [error, setError] = useState('');
-
-  const isPasswordValid = useMemo(() => formData.password.length >= 8, [formData.password]);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (event) => {
     const { id, value } = event.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
 
-    if (!isPasswordValid) {
+    if (!token) {
+      setError('Link đặt lại mật khẩu không hợp lệ hoặc thiếu token.');
+      return;
+    }
+
+    if (formData.password.length < 8) {
       setError('Mật khẩu mới phải có ít nhất 8 ký tự.');
       return;
     }
@@ -31,7 +35,15 @@ const ResetPassword = () => {
       return;
     }
 
-    navigate('/login');
+    try {
+      setSubmitting(true);
+      await authService.resetPassword({ token, ...formData });
+      navigate('/login');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Đặt lại mật khẩu thất bại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -43,43 +55,32 @@ const ResetPassword = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {error ? <div className="rounded-xl bg-red-50 text-red-700 p-3 text-sm">{error}</div> : null}
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">Mật khẩu mới</label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-11 outline-none focus:border-[#003f87]"
-                placeholder="Ít nhất 8 ký tự"
-              />
-              <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-3.5 text-slate-500">
-                <span className="material-symbols-outlined">{showPassword ? 'visibility' : 'visibility_off'}</span>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">Xác nhận mật khẩu mới</label>
-            <input
-              id="confirmPassword"
-              type={showPassword ? 'text' : 'password'}
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
-              placeholder="Nhập lại mật khẩu mới"
-            />
-          </div>
-
-          <button type="submit" className="w-full rounded-xl bg-[#003f87] text-white py-3 font-semibold">Lưu mật khẩu mới</button>
+          <PasswordFields formData={formData} showPassword={showPassword} setShowPassword={setShowPassword} handleChange={handleChange} />
+          <button type="submit" disabled={submitting} className="w-full rounded-xl bg-[#003f87] text-white py-3 font-semibold disabled:opacity-50">
+            {submitting ? 'Đang lưu...' : 'Lưu mật khẩu mới'}
+          </button>
         </form>
       </main>
     </div>
   );
 };
+
+const PasswordFields = ({ formData, showPassword, setShowPassword, handleChange }) => (
+  <>
+    <div>
+      <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">Mật khẩu mới</label>
+      <div className="relative">
+        <input id="password" type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-11 outline-none focus:border-[#003f87]" placeholder="Ít nhất 8 ký tự" />
+        <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-3.5 text-slate-500">
+          <span className="material-symbols-outlined">{showPassword ? 'visibility' : 'visibility_off'}</span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">Xác nhận mật khẩu mới</label>
+      <input id="confirmPassword" type={showPassword ? 'text' : 'password'} required value={formData.confirmPassword} onChange={handleChange} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]" placeholder="Nhập lại mật khẩu mới" />
+    </div>
+  </>
+);
 
 export default ResetPassword;

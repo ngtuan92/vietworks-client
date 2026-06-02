@@ -1,5 +1,27 @@
-
+﻿
 import axios from 'axios';
+
+const handleBlockedAccount = (error) => {
+  if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_BANNED') {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    try {
+      window.dispatchEvent(new Event('auth_changed'));
+      window.dispatchEvent(new CustomEvent('account_blocked', {
+        detail: {
+          message: error.response.data.message,
+          banReason: error.response.data.banReason || null,
+          bannedAt: error.response.data.bannedAt || null
+        }
+      }));
+    } catch {
+      // ignore
+    }
+    return true;
+  }
+
+  return false;
+};
 
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}`,
@@ -35,6 +57,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (handleBlockedAccount(error)) {
+      return Promise.reject(error);
+    }
     
     // Tránh vòng lặp vô hạn và chỉ xử lý khi lỗi 401 xảy ra
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -45,7 +71,7 @@ api.interceptors.response.use(
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch (e) {
+        } catch {
           // ignore
         }
         return Promise.reject(error);
@@ -92,7 +118,7 @@ api.interceptors.response.use(
         try {
           window.dispatchEvent(new Event('auth_changed'));
           window.dispatchEvent(new Event('unauthorized_access'));
-        } catch (e) {
+        } catch {
           // ignore
         }
         return Promise.reject(refreshError);
@@ -104,3 +130,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

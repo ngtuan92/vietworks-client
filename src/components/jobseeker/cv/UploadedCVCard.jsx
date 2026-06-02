@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import cvService from '../../../services/cvService';
 
 export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, fileType, onDelete, onDownload, onRename }) => {
-  const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
   const [showPreview, setShowPreview] = useState(false);
@@ -70,6 +69,7 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch (error) {
+        console.warn('Tải xuống thất bại, mở trong tab mới:', error);
         window.open(fileUrl, '_blank');
       }
     } else {
