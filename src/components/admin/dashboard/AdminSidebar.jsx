@@ -120,6 +120,7 @@ const AdminSidebar = () => {
 
   const handleLogout = async () => {
     await logout();
+    navigate('/login');
   };
 
   return (
