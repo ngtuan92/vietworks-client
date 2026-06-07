@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
+import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, FileText, Heart, CheckSquare, ThumbsUp, Sliders, EyeOff, Award } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -78,14 +79,14 @@ const Navbar = () => {
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
       <div className="flex justify-between items-center w-full h-16 px-gutter max-w-container-max mx-auto">
         <div className="flex items-center gap-10">
-          <Link to="/" className="text-xl font-bold text-[#003f87]">
+          <Link to="/" className="text-xl font-bold text-[var(--color-primary)]">
             VietWorks
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
             <Link
               className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 ${
-                isActive('/jobs') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+                isActive('/jobs') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
               }`}
               to="/jobs"
             >
@@ -93,7 +94,7 @@ const Navbar = () => {
             </Link>
             <button
               className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 bg-transparent cursor-pointer ${
-                isActive('/manage-cv') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+                isActive('/manage-cv') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
               }`}
               onClick={() => handleProtectedNavigation('/manage-cv')}
             >
@@ -101,7 +102,7 @@ const Navbar = () => {
             </button>
             <Link
               className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 ${
-                isActive('/companies') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+                isActive('/companies') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
               }`}
               to="/companies"
             >
@@ -109,7 +110,7 @@ const Navbar = () => {
             </Link>
             <button
               className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 bg-transparent cursor-pointer ${
-                isActive('/salary-insight') ? 'text-[#003f87] border-[#003f87]' : 'text-black hover:text-[#003f87] border-transparent'
+                isActive('/salary-insight') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
               }`}
               onClick={() => handleProtectedNavigation('/salary-insight')}
             >
@@ -123,7 +124,7 @@ const Navbar = () => {
             to={isEmployer ? '/employer/dashboard' : '/employer/register'}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:opacity-95 shadow-md transition-all"
           >
-            <span className="material-symbols-outlined text-[18px]">campaign</span>
+            <Megaphone className="w-[18px] h-[18px]" />
             <span className="hidden sm:inline">Đăng tin tuyển dụng</span>
           </Link>
 
@@ -134,23 +135,21 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen((prev) => !prev)}
                 className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50 transition-all shadow-sm"
               >
-                <div className="h-9 w-9 rounded-full bg-[#003f87] text-white flex items-center justify-center font-bold text-sm">
+                <div className="h-9 w-9 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-sm">
                   {profileInitial}
                 </div>
                 <div className="hidden sm:block text-left max-w-[180px]">
                   <p className="text-sm font-semibold text-slate-800 truncate">{profileLabel}</p>
                   <p className="text-xs text-slate-500 truncate">{roleLabel}</p>
                 </div>
-                <span className="material-symbols-outlined text-slate-500 text-[20px]">
-                  {isMenuOpen ? 'expand_less' : 'expand_more'}
-                </span>
+                {isMenuOpen ? <ChevronUp className="text-slate-500 w-5 h-5" /> : <ChevronDown className="text-slate-500 w-5 h-5" />}
               </button>
 
               {isMenuOpen ? (
                 <div className="absolute right-0 mt-3 w-[280px] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
                   <div className="px-4 py-4 bg-slate-50 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                      <div className="h-11 w-11 rounded-full bg-[#003f87] text-white flex items-center justify-center font-bold">
+                      <div className="h-11 w-11 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold">
                         {profileInitial}
                       </div>
                       <div className="min-w-0">
@@ -168,7 +167,7 @@ const Navbar = () => {
                           onClick={handleProfileHome}
                           className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
                         >
-                          <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                          <User className="w-5 h-5" />
                           <span className="text-sm font-medium">Trang hồ sơ</span>
                         </button>
 
@@ -177,21 +176,21 @@ const Navbar = () => {
                           onClick={handleAccountSettings}
                           className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
                         >
-                          <span className="material-symbols-outlined text-[20px]">settings</span>
+                          <Settings className="w-5 h-5" />
                           <span className="text-sm font-medium">Cài đặt tài khoản</span>
                         </button>
                       </>
                     ) : (
                       <>
-                        <MenuLink to="/profile" icon="person" label="Hồ sơ cá nhân" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/manage-cv" icon="description" label="CV của tôi" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/saved-jobs" icon="favorite" label="Việc làm đã lưu" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/applied-jobs" icon="assignment_turned_in" label="Việc đã ứng tuyển" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/matched-jobs" icon="recommend" label="Việc làm phù hợp" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/job-preferences" icon="tune" label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/privacy-settings" icon="visibility_off" label="Quyền riêng tư" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/premium" icon="workspace_premium" label="Gói Premium" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/profile" icon="settings" label="Tài khoản & bảo mật" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/profile" icon={<User className="w-5 h-5" />} label="Hồ sơ cá nhân" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/manage-cv" icon={<FileText className="w-5 h-5" />} label="CV của tôi" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/saved-jobs" icon={<Heart className="w-5 h-5" />} label="Việc làm đã lưu" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/applied-jobs" icon={<CheckSquare className="w-5 h-5" />} label="Việc đã ứng tuyển" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-5 h-5" />} label="Việc làm phù hợp" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/job-preferences" icon={<Sliders className="w-5 h-5" />} label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/privacy-settings" icon={<EyeOff className="w-5 h-5" />} label="Quyền riêng tư" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/premium" icon={<Award className="w-5 h-5" />} label="Gói Premium" onClick={() => setIsMenuOpen(false)} />
+                        <MenuLink to="/profile" icon={<Settings className="w-5 h-5" />} label="Tài khoản & bảo mật" onClick={() => setIsMenuOpen(false)} />
                       </>
                     )}
 
@@ -200,7 +199,7 @@ const Navbar = () => {
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition"
                     >
-                      <span className="material-symbols-outlined text-[20px]">logout</span>
+                      <LogOut className="w-5 h-5" />
                       <span className="text-sm font-medium">Đăng xuất</span>
                     </button>
                   </div>
@@ -211,13 +210,13 @@ const Navbar = () => {
             <>
               <Link
                 to="/login"
-                className="px-5 py-2 text-[#003f87] font-bold hover:bg-[#003f87]/10 rounded-lg transition-all active:scale-95"
+                className="px-5 py-2 text-[var(--color-primary)] font-bold hover:bg-[var(--color-primary)]/10 rounded-lg transition-all active:scale-95"
               >
                 Đăng nhập
               </Link>
               <Link
                 to="/register"
-                className="px-5 py-2 bg-[#003f87] text-white font-bold rounded-lg hover:opacity-90 shadow-sm active:scale-95 transition-all"
+                className="px-5 py-2 bg-[var(--color-primary)] text-white font-bold rounded-lg hover:opacity-90 shadow-sm active:scale-95 transition-all"
               >
                 Đăng ký
               </Link>
@@ -235,7 +234,7 @@ const MenuLink = ({ to, icon, label, onClick }) => (
     onClick={onClick}
     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
   >
-    <span className="material-symbols-outlined text-[20px]">{icon}</span>
+    {icon}
     <span className="text-sm font-medium">{label}</span>
   </Link>
 );
