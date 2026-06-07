@@ -120,14 +120,14 @@ const JobReview = () => {
   if (error || !job) {
     return (
       <div className="text-center py-20 space-y-4">
-        <div className="text-red-500 font-medium">{error || 'Không tồn tại tin tuyển dụng.'}</div>
+        <div className="text-[#0056B3] font-medium">{error || 'Không tồn tại tin tuyển dụng.'}</div>
         <button onClick={() => navigate(-1)} className="text-sm text-slate-600 underline">Quay lại</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader 
         title="Review Job Posting" 
         description={`Đang kiểm duyệt hồ sơ: ID ${job._id} • Trạng thái hiện tại: ${job.status}`} 
@@ -141,7 +141,7 @@ const JobReview = () => {
             <div className="flex justify-between items-start">
               <h3 className="text-2xl font-bold text-slate-900">{job.title}</h3>
               {job.salary && (
-                <span className="text-emerald-600 font-semibold text-lg">
+                <span className="text-blue-700 font-semibold text-lg">
                   {job.salary.type === 'NEGOTIABLE' 
                     ? 'Thỏa thuận' 
                     : `${job.salary.minMillion} - ${job.salary.maxMillion} triệu VND`}
@@ -178,7 +178,7 @@ const JobReview = () => {
           <p className="text-xs text-slate-400 mb-3 italic">Lưu ý: Bạn phải tích xác nhận toàn bộ checklist mới có thể kích hoạt quyền Approve tin này lên hệ thống.</p>
           <div className="space-y-3">
             {checks.map((item) => (
-              <label key={item} className="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition">
+              <label key={item} className="flex items-start gap-3 rounded-[1.5rem] border border-slate-200/80 shadow-soft px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition">
                 <input 
                   type="checkbox" 
                   checked={checked[item]} 
@@ -278,3 +278,4 @@ const JobReview = () => {
 };
 
 export default JobReview;
+

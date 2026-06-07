@@ -2,14 +2,14 @@
 
 const AnalyticsDashboard = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Báo cáo & Thống kê" description="Theo dõi tăng trưởng người dùng, hoạt động tuyển dụng, doanh thu và tỷ lệ thành công." />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Ứng viên mới" value="+128" tone="blue" note="7 ngày gần nhất" />
-        <StatCard label="Employer mới" value="+34" tone="violet" note="7 ngày gần nhất" />
-        <StatCard label="Job mới" value="+256" tone="amber" note="7 ngày gần nhất" />
-        <StatCard label="Lượt ứng tuyển" value="1,842" tone="emerald" note="7 ngày gần nhất" />
+        <StatCard label="Employer mới" value="+34" tone="blue" note="7 ngày gần nhất" />
+        <StatCard label="Job mới" value="+256" tone="blue" note="7 ngày gần nhất" />
+        <StatCard label="Lượt ứng tuyển" value="1,842" tone="blue" note="7 ngày gần nhất" />
       </div>
 
       <SectionCard title="Biểu đồ (UI mẫu)" description="Sẵn sàng tích hợp Recharts/ECharts ở bước sau.">
@@ -30,3 +30,6 @@ const AnalyticsDashboard = () => {
 };
 
 export default AnalyticsDashboard;
+
+
+

@@ -1,6 +1,7 @@
 
 
 import { useNavigate } from 'react-router-dom';
+import { BookmarkPlus, Banknote, MapPin, Clock, Award, Briefcase, Calendar } from 'lucide-react';
 
 const JobCard = ({
   id,
@@ -30,7 +31,7 @@ const JobCard = ({
 
   return (
     <div
-      className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:border-[#003f87] transition-all group cursor-pointer"
+      className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover-3d hover:border-primary transition-all group cursor-pointer"
       onClick={handleClick}
     >
       <div className="flex flex-col sm:flex-row gap-6">
@@ -41,28 +42,28 @@ const JobCard = ({
         <div className="flex-1">
           <div className="flex justify-between items-start gap-3">
             <div>
-              <h3 className="text-lg font-bold text-black group-hover:text-[#003f87] transition-colors line-clamp-1">{title}</h3>
+              <h3 className="text-lg font-bold text-black group-hover:text-primary transition-colors line-clamp-1">{title}</h3>
               <p className="text-gray-600 font-medium">{company}</p>
             </div>
             <button
-              className="text-gray-400 hover:text-[#003f87] transition-colors"
+              className="text-gray-400 hover:text-primary transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="material-symbols-outlined">bookmark_add</span>
+              <BookmarkPlus className="w-6 h-6" />
             </button>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
             <div className="flex items-center gap-1.5 text-gray-600">
-              <span className="material-symbols-outlined text-base">payments</span>
-              <span className="text-sm font-bold text-[#003f87]">{salary}</span>
+              <Banknote className="w-4 h-4" />
+              <span className="text-sm font-bold text-primary">{salary}</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-600">
-              <span className="material-symbols-outlined text-base">location_on</span>
+              <MapPin className="w-4 h-4" />
               <span className="text-sm">{location}</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-600">
-              <span className="material-symbols-outlined text-base">schedule</span>
+              <Clock className="w-4 h-4" />
               <span className="text-sm">Cập nhật: {updatedTime}</span>
             </div>
           </div>
@@ -71,25 +72,25 @@ const JobCard = ({
             <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2">
               {experience ? (
                 <div className="flex items-center gap-1.5 text-gray-600">
-                  <span className="material-symbols-outlined text-base">workspace_premium</span>
+                  <Award className="w-4 h-4" />
                   <span className="text-sm">{experience}</span>
                 </div>
               ) : null}
               {level ? (
                 <div className="flex items-center gap-1.5 text-gray-600">
-                  <span className="material-symbols-outlined text-base">badge</span>
+                  <Briefcase className="w-4 h-4" />
                   <span className="text-sm">{level}</span>
                 </div>
               ) : null}
               {workType ? (
                 <div className="flex items-center gap-1.5 text-gray-600">
-                  <span className="material-symbols-outlined text-base">work_history</span>
+                  <Briefcase className="w-4 h-4" />
                   <span className="text-sm">{workType}</span>
                 </div>
               ) : null}
               {deadline ? (
                 <div className="flex items-center gap-1.5 text-orange-600">
-                  <span className="material-symbols-outlined text-base">event</span>
+                  <Calendar className="w-4 h-4" />
                   <span className="text-sm font-medium">Hạn nộp: {deadline}</span>
                 </div>
               ) : null}

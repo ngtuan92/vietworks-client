@@ -74,7 +74,7 @@ const CompanyDetail = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader
         title={company?.name || 'Chi tiết công ty'}
         description="Xem thông tin công ty, địa điểm và giấy tờ pháp lý để kiểm duyệt."
@@ -87,7 +87,7 @@ const CompanyDetail = () => {
       />
 
       {message ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+        <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/86 shadow-soft backdrop-blur-xl px-4 py-3 text-sm font-semibold text-slate-700">
           {message}
         </div>
       ) : null}
@@ -136,7 +136,7 @@ const CompanyDetail = () => {
         <SectionCard title="Giấy phép kinh doanh">
           {company?.businessLicenseFile?.fileUrl ? (
             <div className="space-y-3">
-              <a href={company.businessLicenseFile.fileUrl} target="_blank" rel="noreferrer" className="font-semibold text-[#0056b3] hover:underline">
+              <a href={company.businessLicenseFile.fileUrl} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
                 {company.businessLicenseFile.fileName || 'Xem file giấy phép'}
               </a>
 
@@ -169,3 +169,4 @@ const Info = ({ label, value }) => (
 );
 
 export default CompanyDetail;
+

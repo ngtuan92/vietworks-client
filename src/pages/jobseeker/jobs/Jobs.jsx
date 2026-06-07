@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import JobCard from '../../../components/jobseeker/jobs/JobCard';
+import { Search, MapPin } from 'lucide-react';
 import {
   getCareersByGroup,
   getCareerGroups,
@@ -303,7 +304,7 @@ const Jobs = () => {
     <div className="bg-[#fbf9f8] min-h-screen font-body-md">
       <main className="max-w-container-max mx-auto px-gutter py-8">
         <section className="mb-12">
-          <div className="relative overflow-hidden rounded-xl bg-[#003f87] p-8 mb-8">
+          <div className="relative overflow-hidden rounded-2xl hero-gradient p-8 md:p-12 mb-8 shadow-md">
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <img
                 className="w-full h-full object-cover"
@@ -317,9 +318,9 @@ const Jobs = () => {
                 Tìm kiếm công việc mơ ước tại Việt Nam
               </h1>
 
-              <div className="bg-white rounded-xl p-2 shadow-lg flex flex-col md:flex-row items-center gap-2">
+              <div className="glass-card rounded-2xl p-2 md:flex items-center gap-2 shadow-xl">
                 <div className="flex-1 flex items-center px-4 gap-3 w-full border-b md:border-b-0 md:border-r border-gray-200 py-3 md:py-0">
-                  <span className="material-symbols-outlined text-gray-400">search</span>
+                  <Search className="w-5 h-5 text-slate-400" />
                   <input
                     className="w-full py-2 bg-transparent border-none focus:ring-0 text-gray-700 outline-none"
                     placeholder="Chức danh, từ khóa..."
@@ -333,7 +334,7 @@ const Jobs = () => {
                 </div>
 
                 <div className="flex-1 flex items-center px-4 gap-3 w-full py-3 md:py-0">
-                  <span className="material-symbols-outlined text-gray-400">location_on</span>
+                  <MapPin className="w-5 h-5 text-slate-400" />
                   <select
                     className="w-full py-2 bg-transparent border-none focus:ring-0 text-gray-700 outline-none appearance-none cursor-pointer"
                     value={location}
@@ -349,7 +350,7 @@ const Jobs = () => {
 
                 <button
                   onClick={handleSearch}
-                  className="w-full md:w-auto px-10 py-3 bg-[#003f87] text-white font-bold rounded-lg hover:bg-[#004491] transition-colors flex items-center justify-center gap-2"
+                  className="w-full md:w-auto px-10 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
                   Tìm việc
                 </button>
@@ -411,7 +412,7 @@ const Jobs = () => {
                     value={salaryMin}
                     onChange={(event) => setSalaryMin(event.target.value)}
                     placeholder="Từ"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#003f87]"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
                   />
                   <input
                     type="number"
@@ -419,7 +420,7 @@ const Jobs = () => {
                     value={salaryMax}
                     onChange={(event) => setSalaryMax(event.target.value)}
                     placeholder="Đến"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#003f87]"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
                   />
                 </div>
               </div>
@@ -434,7 +435,7 @@ const Jobs = () => {
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={handleFilterSubmit}
-                  className="flex-1 rounded-xl bg-[#003f87] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#004491]"
+                  className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90"
                 >
                   Áp dụng
                 </button>
@@ -464,8 +465,8 @@ const Jobs = () => {
                   onClick={() => handleSort('publishedAt')}
                   className={`px-4 py-2 text-sm font-semibold rounded-md ${
                     sortBy === 'publishedAt'
-                      ? 'bg-white text-[#003f87] shadow-sm'
-                      : 'text-gray-500 hover:text-[#003f87]'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-gray-500 hover:text-primary'
                   }`}
                 >
                   Mới nhất
@@ -474,8 +475,8 @@ const Jobs = () => {
                   onClick={() => handleSort('salary.minMillion')}
                   className={`px-4 py-2 text-sm font-semibold rounded-md ${
                     sortBy === 'salary.minMillion'
-                      ? 'bg-white text-[#003f87] shadow-sm'
-                      : 'text-gray-500 hover:text-[#003f87]'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-gray-500 hover:text-primary'
                   }`}
                 >
                   Lương cao nhất
@@ -557,7 +558,7 @@ const SelectFilter = ({ label, value, onChange, options, disabled = false }) => 
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#003f87] disabled:bg-slate-100 disabled:text-slate-400"
+      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary disabled:bg-slate-100 disabled:text-slate-400"
     >
       <option value="">Tất cả</option>
       {options.map((option) => (
@@ -576,7 +577,7 @@ const PageButton = ({ children, active = false, disabled = false, onClick }) => 
     onClick={onClick}
     className={`min-w-10 rounded-xl px-3 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
       active
-        ? 'bg-[#003f87] text-white'
+        ? 'bg-primary text-white'
         : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
     }`}
   >

@@ -4,9 +4,9 @@ import adminCompanyVerificationService from '../../../services/adminCompanyVerif
 import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, StatusBadge } from '../shared/AdminPrimitives';
 
 const statusMap = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  VERIFIED: 'bg-emerald-100 text-emerald-700',
-  REJECTED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-blue-100 text-blue-800',
+  VERIFIED: 'bg-blue-100 text-blue-700',
+  REJECTED: 'bg-blue-100 text-[#001a40]',
   UNVERIFIED: 'bg-slate-100 text-slate-700',
 };
 
@@ -57,11 +57,11 @@ const CompanyVerification = () => {
   const sizeOptions = [...new Set(companies.map((c) => c.size?.name).filter(Boolean))];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Quản lý công ty" description="Danh sách công ty đang chờ kiểm duyệt pháp lý." />
 
       {message ? (
-        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-[#001a40]">
           {message}
         </div>
       ) : null}
@@ -99,8 +99,8 @@ const CompanyVerification = () => {
             <td className="px-4 py-3">{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString('vi-VN') : '-'}</td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
-                <Link to={`/admin/companies/${company.id}`} className="rounded-xl border border-slate-200 px-3 py-2">Xem</Link>
-                <Link to={`/admin/companies/${company.id}/review`} className="rounded-xl bg-[#0056b3] px-3 py-2 text-white">Duyệt</Link>
+                <Link to={`/admin/companies/${company.id}`} className="rounded-[1.5rem] border border-slate-200/80 shadow-soft px-3 py-2">Xem</Link>
+                <Link to={`/admin/companies/${company.id}/review`} className="rounded-xl bg-primary px-3 py-2 text-white">Duyệt</Link>
               </div>
             </td>
           </tr>
@@ -111,3 +111,5 @@ const CompanyVerification = () => {
 };
 
 export default CompanyVerification;
+
+

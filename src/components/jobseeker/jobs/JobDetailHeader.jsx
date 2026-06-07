@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ApplyJobModal from './ApplyJobModal';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { Banknote, MapPin, Clock, CheckCircle, BookmarkPlus } from 'lucide-react';
 
 const DEFAULT_LOGO =
   'https://ui-avatars.com/api/?name=Company&background=EAF2FF&color=003F87&bold=true';
@@ -144,17 +145,17 @@ const JobDetailHeader = ({
 
             <div className="flex flex-wrap gap-6 text-on-surface-variant font-body-sm text-body-sm">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">payments</span>
+                <Banknote className="w-5 h-5" />
                 <span className="font-semibold text-primary">{formatSalary(job?.salary)}</span>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">location_on</span>
+                <MapPin className="w-5 h-5" />
                 <span>{formatLocation(job?.workLocations)}</span>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">schedule</span>
+                <Clock className="w-5 h-5" />
                 <span>{formatUpdatedTime(job?.publishedAt || job?.createdAt)}</span>
               </div>
             </div>
@@ -166,13 +167,13 @@ const JobDetailHeader = ({
                 disabled
                 className="w-full md:w-48 py-3 bg-green-100 text-green-700 font-bold rounded-lg cursor-not-allowed text-body-md flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined">check_circle</span>
+                <CheckCircle className="w-5 h-5" />
                 Đã Ứng Tuyển
               </button>
             ) : canApply ? (
               <button
                 onClick={handleApply}
-                className="w-full md:w-48 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg active:scale-95 transition-all text-body-md"
+                className="w-full md:w-48 py-3 bg-primary text-white font-bold rounded-lg hover:shadow-lg active:scale-95 transition-all text-body-md"
               >
                 Ứng Tuyển Ngay
               </button>
@@ -196,7 +197,7 @@ const JobDetailHeader = ({
               onClick={handleSave}
               className="w-full md:w-48 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary-fixed transition-all text-body-md flex items-center justify-center gap-2"
             >
-              <span className="material-symbols-outlined">bookmark</span>
+              <BookmarkPlus className="w-5 h-5" />
               Lưu Việc Làm
             </button>
           </div>

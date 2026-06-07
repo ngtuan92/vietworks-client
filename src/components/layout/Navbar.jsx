@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
-import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, FileText, Heart, CheckSquare, ThumbsUp, Sliders, EyeOff, Award } from 'lucide-react';
-
+import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, FileText, Heart, CheckSquare, ThumbsUp, Sliders, EyeOff, Award, Bell } from 'lucide-react';
+import logoImg from '../../assets/logo.jpg';
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,147 +76,159 @@ const Navbar = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm sticky top-0 z-50 transition-all">
       <div className="flex justify-between items-center w-full h-16 px-gutter max-w-container-max mx-auto">
         <div className="flex items-center gap-10">
-          <Link to="/" className="text-xl font-bold text-[var(--color-primary)]">
-            VietWorks
+          <Link to="/" className="flex items-center gap-2 mr-2">
+            <img src={logoImg} alt="VietWorks Logo" className="h-9 w-auto object-contain rounded" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-2">
             <Link
-              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 ${
-                isActive('/jobs') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
-              }`}
+              className={`text-sm font-bold transition-all duration-300 px-3 py-2 rounded-xl ${isActive('/jobs') ? 'text-primary bg-primary/10' : 'text-slate-600 hover:text-primary hover:bg-slate-50'}`}
               to="/jobs"
             >
               Việc làm
             </Link>
-            <button
-              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 bg-transparent cursor-pointer ${
-                isActive('/manage-cv') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
-              }`}
-              onClick={() => handleProtectedNavigation('/manage-cv')}
-            >
-              Tạo CV
-            </button>
             <Link
-              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 ${
-                isActive('/companies') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
-              }`}
+              className={`text-sm font-bold transition-all duration-300 px-3 py-2 rounded-xl ${isActive('/companies') ? 'text-primary bg-primary/10' : 'text-slate-600 hover:text-primary hover:bg-slate-50'}`}
               to="/companies"
             >
               Công ty
             </Link>
             <button
-              className={`text-sm font-semibold transition-colors duration-200 py-1 border-b-2 bg-transparent cursor-pointer ${
-                isActive('/salary-insight') ? 'text-[var(--color-primary)] border-[var(--color-primary)]' : 'text-black hover:text-[var(--color-primary)] border-transparent'
-              }`}
+              className={`text-sm font-bold transition-all duration-300 px-3 py-2 rounded-xl bg-transparent cursor-pointer ${isActive('/manage-cv') ? 'text-primary bg-primary/10' : 'text-slate-600 hover:text-primary hover:bg-slate-50'}`}
+              onClick={() => handleProtectedNavigation('/manage-cv')}
+            >
+              Hồ sơ & CV
+            </button>
+
+            {isAuthenticated && !isEmployer && !isAdmin && (
+              <div className="relative group">
+                <button className={`flex items-center gap-1 text-sm font-bold transition-all duration-300 px-3 py-2 rounded-xl bg-transparent cursor-pointer text-slate-600 hover:text-primary hover:bg-slate-50`}>
+                  Việc của tôi <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
+                </button>
+                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
+                    <MenuLink to="/applied-jobs" icon={<CheckSquare className="w-4 h-4" />} label="Việc đã ứng tuyển" />
+                    <MenuLink to="/saved-jobs" icon={<Heart className="w-4 h-4" />} label="Việc đã lưu" />
+                    <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-4 h-4" />} label="Việc làm phù hợp" />
+                    <MenuLink to="/ai-cv-review" icon={<Award className="w-4 h-4 text-yellow-500" />} label="AI CV Review" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              className={`text-sm font-bold transition-all duration-300 px-3 py-2 rounded-xl bg-transparent cursor-pointer ${isActive('/salary-insight') ? 'text-primary bg-primary/10' : 'text-slate-600 hover:text-primary hover:bg-slate-50'}`}
               onClick={() => handleProtectedNavigation('/salary-insight')}
             >
               Tra cứu lương
             </button>
+
+            <Link to="/premium" className="text-sm font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
+              <Award className="w-4 h-4" />
+              Gói Premium
+            </Link>
           </nav>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             to={isEmployer ? '/employer/dashboard' : '/employer/register'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:opacity-95 shadow-md transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm group"
           >
-            <Megaphone className="w-[18px] h-[18px]" />
+            <Megaphone className="w-4 h-4 group-hover:-rotate-12 transition-transform" />
             <span className="hidden sm:inline">Đăng tin tuyển dụng</span>
           </Link>
 
           {isAuthenticated ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsMenuOpen((prev) => !prev)}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50 transition-all shadow-sm"
-              >
-                <div className="h-9 w-9 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-sm">
-                  {profileInitial}
-                </div>
-                <div className="hidden sm:block text-left max-w-[180px]">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{profileLabel}</p>
-                  <p className="text-xs text-slate-500 truncate">{roleLabel}</p>
-                </div>
-                {isMenuOpen ? <ChevronUp className="text-slate-500 w-5 h-5" /> : <ChevronDown className="text-slate-500 w-5 h-5" />}
+            <div className="flex items-center gap-3">
+              <button className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors hidden sm:block">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
               </button>
 
-              {isMenuOpen ? (
-                <div className="absolute right-0 mt-3 w-[280px] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-                  <div className="px-4 py-4 bg-slate-50 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="h-11 w-11 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold">
-                        {profileInitial}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate">{profileLabel}</p>
-                        <p className="text-xs text-slate-500 truncate">{profileEmail}</p>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-white p-1 pr-3 hover:bg-slate-50 transition-all shadow-sm"
+                >
+                  <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                    {profileInitial}
+                  </div>
+                  {isMenuOpen ? <ChevronUp className="text-slate-500 w-4 h-4" /> : <ChevronDown className="text-slate-500 w-4 h-4" />}
+                </button>
+
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-3 w-[260px] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
+                    <div className="px-4 py-4 bg-slate-50 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="h-11 w-11 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-bold">
+                          {profileInitial}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-900 truncate">{profileLabel}</p>
+                          <p className="text-xs text-slate-500 truncate">{profileEmail}</p>
+                        </div>
                       </div>
                     </div>
+
+                    <div className="p-2">
+                      {isEmployer || isAdmin ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleProfileHome}
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+                          >
+                            <User className="w-5 h-5" />
+                            <span className="text-sm font-medium">Trang hồ sơ</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleAccountSettings}
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+                          >
+                            <Settings className="w-5 h-5" />
+                            <span className="text-sm font-medium">Cài đặt tài khoản</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <MenuLink to="/profile" icon={<User className="w-4 h-4" />} label="Cài đặt tài khoản" onClick={() => setIsMenuOpen(false)} />
+                          <MenuLink to="/job-preferences" icon={<Sliders className="w-4 h-4" />} label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
+                        </>
+                      )}
+
+                      <div className="h-px bg-slate-100 my-1 mx-2" />
+
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span className="text-sm font-medium">Đăng xuất</span>
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="p-2">
-                    {isEmployer || isAdmin ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleProfileHome}
-                          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <User className="w-5 h-5" />
-                          <span className="text-sm font-medium">Trang hồ sơ</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleAccountSettings}
-                          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <Settings className="w-5 h-5" />
-                          <span className="text-sm font-medium">Cài đặt tài khoản</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <MenuLink to="/profile" icon={<User className="w-5 h-5" />} label="Hồ sơ cá nhân" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/manage-cv" icon={<FileText className="w-5 h-5" />} label="CV của tôi" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/saved-jobs" icon={<Heart className="w-5 h-5" />} label="Việc làm đã lưu" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/applied-jobs" icon={<CheckSquare className="w-5 h-5" />} label="Việc đã ứng tuyển" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-5 h-5" />} label="Việc làm phù hợp" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/job-preferences" icon={<Sliders className="w-5 h-5" />} label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/privacy-settings" icon={<EyeOff className="w-5 h-5" />} label="Quyền riêng tư" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/premium" icon={<Award className="w-5 h-5" />} label="Gói Premium" onClick={() => setIsMenuOpen(false)} />
-                        <MenuLink to="/profile" icon={<Settings className="w-5 h-5" />} label="Tài khoản & bảo mật" onClick={() => setIsMenuOpen(false)} />
-                      </>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span className="text-sm font-medium">Đăng xuất</span>
-                    </button>
-                  </div>
-                </div>
-              ) : null}
+                )}
+              </div>
             </div>
           ) : (
             <>
               <Link
                 to="/login"
-                className="px-5 py-2 text-[var(--color-primary)] font-bold hover:bg-[var(--color-primary)]/10 rounded-lg transition-all active:scale-95"
+                className="px-4 py-2 text-primary font-bold hover:bg-primary/10 rounded-xl transition-all active:scale-95 text-sm hidden sm:block"
               >
                 Đăng nhập
               </Link>
               <Link
                 to="/register"
-                className="px-5 py-2 bg-[var(--color-primary)] text-white font-bold rounded-lg hover:opacity-90 shadow-sm active:scale-95 transition-all"
+                className="px-5 py-2 bg-gradient-to-r from-primary to-blue-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all text-sm"
               >
                 Đăng ký
               </Link>
@@ -232,7 +244,7 @@ const MenuLink = ({ to, icon, label, onClick }) => (
   <Link
     to={to}
     onClick={onClick}
-    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-700 hover:bg-slate-50 transition"
+    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-700 hover:text-primary hover:bg-blue-50 transition"
   >
     {icon}
     <span className="text-sm font-medium">{label}</span>
@@ -240,5 +252,4 @@ const MenuLink = ({ to, icon, label, onClick }) => (
 );
 
 export default Navbar;
-
 

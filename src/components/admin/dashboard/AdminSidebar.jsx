@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+﻿import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Scale, Settings, PlusCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+
+const iconClass = 'w-5 h-5';
 
 const navItems = [
   {
-    icon: 'group',
+    icon: <Users className={iconClass} />,
     label: 'Người dùng',
     children: [
       { label: 'Tất cả người dùng', to: '/admin/users' },
@@ -14,30 +17,30 @@ const navItems = [
     ],
   },
   {
-    icon: 'domain',
+    icon: <Building2 className={iconClass} />,
     label: 'Công ty',
     children: [{ label: 'Quản lý công ty', to: '/admin/companies' }],
   },
   {
-    icon: 'work',
+    icon: <Briefcase className={iconClass} />,
     label: 'Tin tuyển dụng',
     children: [{ label: 'Quản lý Job', to: '/admin/jobs' }],
   },
   {
-    icon: 'database',
+    icon: <Database className={iconClass} />,
     label: 'Dữ liệu gốc',
     children: [{ label: 'Quản lý dữ liệu gốc', to: '/admin/master-data' }],
   },
   {
-    icon: 'description',
+    icon: <FileText className={iconClass} />,
     label: 'Mẫu CV',
     children: [
       { label: 'Danh sách mẫu CV', to: '/admin/cv-templates' },
-      { label: 'Thêm mẫu CV', to: '/admin/cv-templates/create', icon: 'add_circle' },
+      { label: 'Thêm mẫu CV', to: '/admin/cv-templates/create', icon: <PlusCircle className="w-4 h-4" /> },
     ],
   },
   {
-    icon: 'payments',
+    icon: <CreditCard className={iconClass} />,
     label: 'Giao dịch & Hóa đơn',
     children: [
       { label: 'Tất cả giao dịch', to: '/admin/transactions' },
@@ -47,20 +50,20 @@ const navItems = [
     ],
   },
   {
-    icon: 'inventory_2',
+    icon: <Package className={iconClass} />,
     label: 'Gói dịch vụ',
     children: [
       { label: 'Danh sách gói', to: '/admin/packages' },
-      { label: 'Thêm gói mới', to: '/admin/packages/new', icon: 'add_circle' },
+      { label: 'Thêm gói mới', to: '/admin/packages/new', icon: <PlusCircle className="w-4 h-4" /> },
     ],
   },
   {
-    icon: 'notifications_active',
+    icon: <BellRing className={iconClass} />,
     label: 'Thông báo',
     children: [{ label: 'Quản lý thông báo', to: '/admin/notifications' }],
   },
   {
-    icon: 'bar_chart',
+    icon: <BarChart2 className={iconClass} />,
     label: 'Báo cáo',
     children: [
       { label: 'Thống kê hệ thống', to: '#' },
@@ -70,17 +73,17 @@ const navItems = [
     ],
   },
   {
-    icon: 'receipt_long',
+    icon: <Receipt className={iconClass} />,
     label: 'Yêu cầu hóa đơn',
     to: '/admin/invoices',
   },
   {
-    icon: 'gavel',
+    icon: <Scale className={iconClass} />,
     label: 'Vi phạm',
     children: [{ label: 'Quản lý báo cáo vi phạm', to: '/admin/violations' }],
   },
   {
-    icon: 'admin_panel_settings',
+    icon: <Settings className={iconClass} />,
     label: 'Tài khoản',
     children: [
       { label: 'Cài đặt Admin', to: '/admin/account' },
@@ -90,7 +93,6 @@ const navItems = [
 ];
 
 const AdminSidebar = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
 
@@ -103,12 +105,9 @@ const AdminSidebar = () => {
   };
 
   const [openGroup, setOpenGroup] = useState(() => {
-    // Find if any group has an active child
     for (const item of navItems) {
-      if (item.children) {
-        if (item.children.some(child => isActive(child.to))) {
-          return item.label;
-        }
+      if (item.children?.some((child) => isActive(child.to))) {
+        return item.label;
       }
     }
     return 'Người dùng';
@@ -123,24 +122,28 @@ const AdminSidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-[#c2c6d4] bg-[#f5f3f3]">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#0056b3] rounded-lg flex items-center justify-center text-white font-black text-xl">
+    <aside className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-white/70 bg-white/82 shadow-[18px_0_55px_rgba(15,23,42,.08)] backdrop-blur-2xl">
+      <div className="p-5 flex items-center gap-3 border-b border-slate-100/80">
+        <div className="relative grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#004491] to-[#0056B3] text-white font-black shadow-glow">
           VW
+          <span className="absolute inset-0 rounded-2xl vw-shimmer opacity-40" />
         </div>
-        <span className="text-xl font-black text-[#0056b3] tracking-tight">VietWorks</span>
+        <div>
+          <span className="block text-xl font-black tracking-tight vw-gradient-text">VietWorks</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Admin Suite</span>
+        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-1 scrollbar-thin scrollbar-thumb-[#c2c6d4]">
+      <nav className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <Link
           to="/admin/dashboard"
-          className={`flex items-center gap-3 rounded-lg px-4 py-2.5 font-bold text-sm transition-all mb-4 ${
+          className={`mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
             isActive('/admin/dashboard')
-              ? 'bg-[#0056b3]/10 text-[#0056b3]'
-              : 'text-[#5e5e62] hover:bg-[#e4e2e2]'
+              ? 'bg-gradient-to-r from-[#004491] to-[#0056B3] text-white shadow-glow'
+              : 'text-slate-600 hover:-translate-y-0.5 hover:bg-blue-50 hover:text-[#0056B3]'
           }`}
         >
-          <span className="material-symbols-outlined text-[20px]">dashboard</span>
+          <LayoutDashboard className="w-5 h-5" />
           Tổng quan
         </Link>
 
@@ -149,13 +152,13 @@ const AdminSidebar = () => {
             <Link
               key={item.label}
               to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-4 py-2.5 font-bold text-sm transition-all mb-1 ${
+              className={`mb-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                 isActive(item.to)
-                  ? 'bg-[#0056b3] text-white'
-                  : 'text-[#5e5e62] hover:bg-[#e4e2e2]'
+                  ? 'bg-gradient-to-r from-[#004491] to-[#0056B3] text-white shadow-glow'
+                  : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+              {item.icon}
               {item.label}
             </Link>
           ) : (
@@ -163,24 +166,24 @@ const AdminSidebar = () => {
               <button
                 type="button"
                 onClick={() => toggle(item.label)}
-                className="w-full flex items-center justify-between text-[#5e5e62] px-4 py-2.5 hover:bg-[#e4e2e2] rounded-lg transition-all text-sm font-medium"
+                className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
+                  openGroup === item.label ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                  {item.icon}
                   <span>{item.label}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   {item.badge && (
-                    <span className="bg-[#ba1a1a] text-white text-[10px] px-1.5 rounded-full font-bold">
+                    <span className="rounded-full bg-[#0056B3] px-1.5 text-[10px] font-bold text-white">
                       {item.badge}
                     </span>
                   )}
-                  <span
-                    className="material-symbols-outlined text-[18px] transition-transform duration-200"
+                  <ChevronDown
+                    className="w-4 h-4 transition-transform duration-200"
                     style={{ transform: openGroup === item.label ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                  >
-                    expand_more
-                  </span>
+                  />
                 </div>
               </button>
 
@@ -191,15 +194,15 @@ const AdminSidebar = () => {
                   transition: 'max-height 0.3s ease-out',
                 }}
               >
-                <div className="pl-9 space-y-0.5 py-1">
-                  {item.children.map((child) => (
+                <div className="ml-5 border-l border-slate-200/80 pl-4 space-y-0.5 py-1.5">
+                  {item.children.map((child) =>
                     child.action === 'logout' ? (
                       <button
                         key={child.label}
                         type="button"
                         onClick={handleLogout}
-                        className={`w-full flex items-center justify-between py-2 text-sm transition-all text-left ${
-                          child.isDanger ? 'text-[#ba1a1a] hover:text-[#ba1a1a]' : 'text-[#5e5e62] hover:text-[#0056b3]'
+                        className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold transition-all ${
+                          child.isDanger ? 'text-blue-800 hover:bg-blue-50' : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
                         }`}
                       >
                         <span>{child.label}</span>
@@ -208,28 +211,26 @@ const AdminSidebar = () => {
                       <Link
                         key={child.label}
                         to={child.to}
-                        className={`flex items-center justify-between py-2 text-sm transition-all group ${
+                        className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
                           isActive(child.to)
-                            ? 'text-[#0056b3] font-bold'
+                            ? 'bg-blue-50 text-[#0056B3] font-black'
                             : child.isDanger
-                            ? 'text-[#ba1a1a] font-bold'
-                            : 'text-[#5e5e62] hover:text-[#0056b3]'
+                            ? 'text-blue-800 font-bold hover:bg-blue-50'
+                            : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3] font-semibold'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          {child.icon && (
-                            <span className="material-symbols-outlined text-[16px]">{child.icon}</span>
-                          )}
+                          {child.icon ? child.icon : null}
                           <span>{child.label}</span>
                         </div>
                         {child.badge && (
-                          <span className="bg-[#ba1a1a]/10 text-[#ba1a1a] text-[9px] px-1.5 py-0.5 rounded-md font-bold group-hover:bg-[#ba1a1a] group-hover:text-white transition-all">
+                          <span className="rounded-md bg-[#0056B3]/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-800 transition-all group-hover:bg-[#0056B3] group-hover:text-white">
                             {child.badge}
                           </span>
                         )}
                       </Link>
                     )
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -237,11 +238,16 @@ const AdminSidebar = () => {
         )}
       </nav>
 
-      <div className="border-t border-[#c2c6d4] p-3 text-[11px] text-[#727784]">
-        Quản trị viên hệ thống
+      <div className="border-t border-slate-100 p-4">
+        <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-white p-3 text-[11px] font-bold text-slate-500 shadow-insetLight">
+          <p className="text-slate-900">Quản trị viên hệ thống</p>
+          <p className="mt-1">Vận hành an toàn · minh bạch</p>
+        </div>
       </div>
     </aside>
   );
 };
 
 export default AdminSidebar;
+
+

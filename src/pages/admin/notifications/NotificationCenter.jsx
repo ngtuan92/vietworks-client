@@ -1,7 +1,7 @@
 ﻿import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, TextAreaField } from '../shared/AdminPrimitives';
 
 const NotificationCenter = () => (
-  <div className="space-y-6">
+  <div className="space-y-7 animate-rise-in">
     <PageHeader title="Quản lý thông báo" description="Gửi thông báo hàng loạt hoặc cá nhân qua Web/Email/Push." />
 
     <SectionCard title="Thông báo đã gửi">
@@ -18,9 +18,11 @@ const NotificationCenter = () => (
         <InputField label="Liên kết" placeholder="/jobs/123" />
       </FilterGrid>
       <div className="mt-4"><TextAreaField label="Nội dung" required placeholder="Nhập nội dung thông báo" /></div>
-      <div className="mt-4 flex gap-3"><button className="rounded-2xl bg-[#0056b3] px-4 py-2.5 font-semibold text-white">Gửi</button><button className="rounded-2xl border border-slate-200 px-4 py-2.5 font-semibold">Lưu nháp</button></div>
+      <div className="mt-4 flex gap-3"><button className="rounded-2xl bg-primary px-4 py-2.5 font-semibold text-white">Gửi</button><button className="rounded-2xl border border-slate-200 px-4 py-2.5 font-semibold">Lưu nháp</button></div>
     </SectionCard>
   </div>
 );
 
 export default NotificationCenter;
+
+

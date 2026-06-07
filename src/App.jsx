@@ -11,9 +11,11 @@ import CVBuilder from './pages/jobseeker/cv/CVBuilder';
 import CvPreview from './pages/jobseeker/cv/CvPreview';
 import AppliedJobs from './pages/jobseeker/jobs/AppliedJobs';
 import ApplicationStatusDetail from './pages/jobseeker/jobs/ApplicationStatusDetail';
+import AICvReview from './pages/jobseeker/cv/AICvReview';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
+import RoleSelection from './pages/jobseeker/auth/RoleSelection';
 import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
 import ResetPassword from './pages/jobseeker/auth/ResetPassword';
 import VerifyEmail from './pages/jobseeker/auth/VerifyEmail';
@@ -120,12 +122,14 @@ function App() {
               <Route path="saved-jobs" element={<SavedJobs />} />
               <Route path="matched-jobs" element={<MatchedJobs />} />
               <Route path="privacy-settings" element={<PrivacySettings />} />
+              <Route path="ai-cv-review" element={<AICvReview />} />
             </Route>
           </Route>
 
           {/* Public authentication and helper routes */}
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<RoleSelection />} />
+          <Route path="/register-candidate" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />

@@ -10,9 +10,11 @@ import { useNotification } from '../../../contexts/NotificationContext';
 // Sortable Item wrapper
 import { SortableItem } from '../../../components/jobseeker/cv/builder/SortableItem';
 // Toolbar
-import { BuilderToolbar } from '../../../components/jobseeker/cv/builder/BuilderToolbar';
+import { BuilderLeftSidebar } from '../../../components/jobseeker/cv/builder/BuilderLeftSidebar';
+import { BuilderRightSidebar } from '../../../components/jobseeker/cv/builder/BuilderRightSidebar';
 // Sections
 import { renderSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
+import { User, UploadCloud } from 'lucide-react';
 
 const CVBuilder = () => {
   const { id } = useParams();
@@ -436,27 +438,22 @@ const CVBuilder = () => {
   const isAutoDownloading = queryParams.get('download') === 'true';
 
   return (
-    <div className="min-h-screen bg-slate-50 font-body-md flex flex-col md:flex-row p-4 md:p-8 gap-6 max-w-7xl mx-auto w-full relative">
+    <div className="min-h-screen bg-slate-50 font-body-md flex p-6 gap-6 max-w-[1600px] mx-auto w-full relative justify-center">
       {/* Auto-downloading PDF Overlay */}
       {isAutoDownloading && (
         <div className="fixed inset-0 bg-[#f9fafb] z-[9999] flex flex-col items-center justify-center gap-4">
-          <div className="w-16 h-16 border-4 border-t-[#0056b3] border-gray-200 rounded-full animate-spin"></div>
+          <div className="w-16 h-16 border-4 border-t-primary border-gray-200 rounded-full animate-spin"></div>
           <h2 className="text-xl font-bold text-gray-900 mt-2">Đang xuất bản file PDF của bạn...</h2>
           <p className="text-sm text-gray-500">Quá trình này có thể mất vài giây để đảm bảo độ sắc nét cao nhất.</p>
         </div>
       )}
-      {/* Sidebar Toolbar */}
-      <BuilderToolbar
-        style={style}
-        onStyleChange={handleStyleChange}
-        onExport={handleExportPDF}
-        isSaving={saving}
-        navigateBack={() => navigate('/manage-cv')}
+      
+      {/* Left Sidebar Toolbox */}
+      <BuilderLeftSidebar
         sections={sections}
         setSections={setSections}
         saveCvConfig={saveCvConfig}
-        currentTemplateId={cvData?.templateId?._id}
-        onTemplateChange={handleTemplateChange}
+        style={style}
       />
 
       {/* Main Canvas Area */}
@@ -511,13 +508,13 @@ const CVBuilder = () => {
                                     {profileSection?.items[0]?.avatar ? (
                                       <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                      <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+                                      <User className="w-5 h-5 text-white/70"  />
                                     )}
                                     <label
                                       data-html2canvas-ignore="true"
                                       className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                                     >
-                                      <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                                      <UploadCloud className="text-white w-5 h-5"  />
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -839,8 +836,19 @@ const CVBuilder = () => {
               </SortableContext>
             </SortableContext>
           </div>
-        </DndContext>
+                </DndContext>
       </div>
+
+      {/* Right Sidebar Properties/Settings */}
+      <BuilderRightSidebar
+        style={style}
+        onStyleChange={handleStyleChange}
+        onExport={handleExportPDF}
+        isSaving={saving}
+        navigateBack={() => navigate('/manage-cv')}
+        currentTemplateId={cvData?.templateId?._id}
+        onTemplateChange={handleTemplateChange}
+      />
     </div>
   );
 };

@@ -6,9 +6,9 @@ const MasterDataManagement = () => {
   const tabs = ['Địa điểm', 'Danh mục', 'Cấp bậc', 'Kinh nghiệm', 'Kỹ năng / Tags', 'Lĩnh vực công ty', 'Quy mô công ty'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Quản lý dữ liệu gốc" description="Quản lý dữ liệu dùng chung trên toàn nền tảng. Ưu tiên ẩn thay vì xóa cứng với dữ liệu đã được sử dụng." />
-      <SectionCard><div className="flex flex-wrap gap-2">{tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-[#0056b3] text-white' : 'bg-slate-100 text-slate-700'}`}>{t}</button>)}</div></SectionCard>
+      <SectionCard><div className="flex flex-wrap gap-2">{tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}>{t}</button>)}</div></SectionCard>
       <SectionCard title={`Danh sách: ${tab}`}>
         <FilterGrid>
           <InputField label="Từ khóa" placeholder="Tìm kiếm" />
@@ -23,3 +23,5 @@ const MasterDataManagement = () => {
 };
 
 export default MasterDataManagement;
+
+

@@ -8,12 +8,12 @@ const tabs = ['Job Content', 'Company', 'Applicants', 'Service Package', 'Review
 
 // Cấu hình màu sắc cho trạng thái tin tuyển dụng
 const statusMap = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PUBLISHED: 'bg-emerald-100 text-emerald-700',
-  BANNED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-blue-100 text-blue-800',
+  PUBLISHED: 'bg-blue-100 text-blue-700',
+  BANNED: 'bg-blue-100 text-[#001a40]',
   CLOSED: 'bg-slate-100 text-slate-700',
   DRAFT: 'bg-gray-100 text-gray-600',
-  EXPIRED: 'bg-rose-100 text-rose-700'
+  EXPIRED: 'bg-blue-100 text-[#001a40]'
 };
 
 const JobDetailAdmin = () => {
@@ -81,14 +81,14 @@ const JobDetailAdmin = () => {
   if (error || !job) {
     return (
       <div className="text-center py-20 space-y-4">
-        <div className="text-red-500 font-medium">{error || 'Không tìm thấy dữ liệu'}</div>
+        <div className="text-[#0056B3] font-medium">{error || 'Không tìm thấy dữ liệu'}</div>
         <button onClick={() => navigate(-1)} className="text-sm text-slate-600 underline">Quay lại danh sách</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       {/* Tiêu đề trang tích hợp dữ liệu động (Đã đổi div sang span để sửa lỗi lồng thẻ HTML) */}
       <PageHeader 
         title={`Chi tiết: ${job.title}`} 
@@ -259,3 +259,4 @@ const JobDetailAdmin = () => {
 };
 
 export default JobDetailAdmin;
+

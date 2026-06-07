@@ -1,4 +1,5 @@
 import React from 'react';
+import { User, UploadCloud, Trash2, Plus } from 'lucide-react';
 
 const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, placeholder }) => {
   return (
@@ -180,13 +181,13 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                   {profile.avatar ? (
                     <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
+                    <User className="w-5 h-5 text-white/80"  />
                   )}
                   <label 
                     data-html2canvas-ignore="true"
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                    <UploadCloud className="text-white w-5 h-5"  />
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -224,13 +225,13 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                   {profile.avatar ? (
                     <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="material-symbols-outlined text-[32px] text-gray-400">person</span>
+                    <User className="w-5 h-5 text-gray-400"  />
                   )}
                   <label 
                     data-html2canvas-ignore="true"
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                    <UploadCloud className="text-white w-5 h-5"  />
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -310,14 +311,14 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 {profile.avatar ? (
                   <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="material-symbols-outlined text-[32px]" style={{ color: isLeft ? '#ffffffaa' : '#9ca3af' }}>person</span>
+                  <User className="w-5 h-5"  style={{ color: isLeft ? '#ffffffaa' : '#9ca3af' }} />
                 )}
                 {/* Invisible file input trigger */}
                 <label 
                   data-html2canvas-ignore="true"
                   className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                 >
-                  <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
+                  <UploadCloud className="text-white w-5 h-5"  />
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -482,7 +483,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                     onClick={() => removeItem(i)} 
                     className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    <Trash2 className="w-5 h-5"  />
                   </button>
                 </div>
               );
@@ -493,7 +494,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 onClick={() => addItem({ company: 'Tên Công Ty', date: 'Thời gian', title: 'Chức danh', description: 'Mô tả công việc' })} 
                 className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-[12px]">add</span> Thêm kinh nghiệm
+                <Plus className="w-5 h-5"  /> Thêm kinh nghiệm
               </button>
             )}
           </div>
@@ -526,7 +527,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                     onClick={() => removeItem(i)} 
                     className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    <Trash2 className="w-5 h-5"  />
                   </button>
                 </div>
               );
@@ -537,7 +538,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 onClick={() => addItem({ school: 'Tên Trường', date: 'Thời gian', major: 'Chuyên ngành', gpa: 'GPA' })} 
                 className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-[12px]">add</span> Thêm học văn
+                <Plus className="w-5 h-5"  /> Thêm học văn
               </button>
             )}
           </div>
@@ -613,7 +614,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                     onClick={() => removeItem(i)} 
                     className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    <Trash2 className="w-5 h-5"  />
                   </button>
                 </div>
               );
@@ -624,7 +625,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 onClick={() => addItem({ name: 'Tên Dự Án', date: 'Thời gian', role: 'Vai trò', description: 'Mô tả dự án' })} 
                 className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-[12px]">add</span> Thêm dự án
+                <Plus className="w-5 h-5"  /> Thêm dự án
               </button>
             )}
           </div>
@@ -651,7 +652,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                     onClick={() => removeItem(i)} 
                     className="absolute -left-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    <Trash2 className="w-5 h-5"  />
                   </button>
                 </div>
               );
@@ -662,7 +663,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 onClick={() => addItem({ name: 'Tên chứng chỉ', date: 'Thời gian' })} 
                 className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-[12px]">add</span> Thêm chứng chỉ
+                <Plus className="w-5 h-5"  /> Thêm chứng chỉ
               </button>
             )}
           </div>
@@ -692,7 +693,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                     onClick={() => removeItem(i)} 
                     className="absolute -left-6 top-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                    <Trash2 className="w-5 h-5"  />
                   </button>
                 </div>
               );
@@ -703,7 +704,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 onClick={() => addItem({ name: 'Tên hoạt động', date: 'Thời gian', description: 'Mô tả hoạt động' })} 
                 className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-[12px]">add</span> Thêm hoạt động
+                <Plus className="w-5 h-5"  /> Thêm hoạt động
               </button>
             )}
           </div>

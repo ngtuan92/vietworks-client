@@ -5,12 +5,12 @@ import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTab
 import jobAdminService from '../../../services/jobAdminService'; 
 
 const statusMap = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PUBLISHED: 'bg-emerald-100 text-emerald-700',
-  BANNED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-blue-100 text-blue-800',
+  PUBLISHED: 'bg-blue-100 text-blue-700',
+  BANNED: 'bg-blue-100 text-[#001a40]',
   CLOSED: 'bg-slate-100 text-slate-700',
   DRAFT: 'bg-gray-100 text-gray-600',
-  EXPIRED: 'bg-rose-100 text-rose-700'
+  EXPIRED: 'bg-blue-100 text-[#001a40]'
 };
 
 const JobModeration = () => {
@@ -61,7 +61,7 @@ const JobModeration = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader 
         title="Job Moderation" 
         description="Quản lý, phê duyệt, từ chối hoặc cấm các tin tuyển dụng trên toàn hệ thống." 
@@ -155,13 +155,13 @@ const JobModeration = () => {
                     <div className="flex gap-2">
                       <Link 
                         to={`/admin/jobs/${job._id}`} 
-                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        className="rounded-[1.5rem] border border-slate-200/80 shadow-soft px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                       >
                         Xem chi tiết
                       </Link>
                       <Link 
                         to={`/admin/jobs/${job._id}/review`} 
-                        className="rounded-xl bg-[#0056b3] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                        className="rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
                       >
                         Kiểm duyệt
                       </Link>
@@ -208,3 +208,4 @@ const JobModeration = () => {
 };
 
 export default JobModeration;
+
