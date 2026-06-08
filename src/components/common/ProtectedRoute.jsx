@@ -18,11 +18,19 @@ const ProtectedRoute = ({ allowedRoles }) => {
   };
 
   const handleCancelRedirect = () => {
-    setShowModal(false);
-    if (window.history.length > 1) {
-      navigate(-1);
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    const isEmployerRoute = location.pathname.startsWith('/employer');
+
+    if (isAdminRoute) {
+      navigate('/login', { replace: true });
+    } else if (isEmployerRoute) {
+      navigate('/employer/login', { replace: true });
     } else {
-      navigate('/', { replace: true });
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/', { replace: true });
+      }
     }
   };
 

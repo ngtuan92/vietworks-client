@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const navItems = [
   {
@@ -62,6 +63,7 @@ const navItems = [
 const EmployerSidebar = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { confirm } = useNotification();
   const [openGroup, setOpenGroup] = useState('Tin tuyển dụng');
 
   const toggle = (label) => {
@@ -70,7 +72,17 @@ const EmployerSidebar = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    await logout();
+    confirm(
+      'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nhà tuyển dụng?',
+      async () => {
+        await logout();
+        navigate('/employer/login', { replace: true });
+      },
+      null,
+      'Xác nhận đăng xuất',
+      'Đăng xuất',
+      'Hủy'
+    );
   };
 
   return (

@@ -240,13 +240,13 @@ const CVBuilder = () => {
 
     const getItemHeight = (sectionCode, item) => {
       let h = 40;
-      if (sectionCode === 'OBJECTIVE') {
+      if (sectionCode === 'OBJECTIVE' || sectionCode === 'ADDITIONAL_INFO') {
         h = style.density === 'compact' ? 35 : style.density === 'comfortable' ? 65 : 50;
       } else if (sectionCode === 'CONTACT') {
         h = style.density === 'compact' ? 40 : style.density === 'comfortable' ? 70 : 55;
-      } else if (sectionCode === 'SKILLS') {
+      } else if (sectionCode === 'SKILLS' || sectionCode === 'INTERESTS') {
         h = style.density === 'compact' ? 18 : style.density === 'comfortable' ? 32 : 24;
-      } else if (sectionCode === 'CERTIFICATES') {
+      } else if (sectionCode === 'CERTIFICATES' || sectionCode === 'AWARDS') {
         h = style.density === 'compact' ? 18 : style.density === 'comfortable' ? 30 : 22;
       } else if (sectionCode === 'EDUCATION') {
         h = style.density === 'compact' ? 30 : style.density === 'comfortable' ? 50 : 40;
@@ -272,7 +272,7 @@ const CVBuilder = () => {
       let secHeaderHeight = headerHeight * fontScale;
       const gap = currentPageSecs.length > 0 ? gapBetweenSections : 0;
 
-      if (isObjective || isContact) {
+      if (isObjective || isContact || sec.sectionCode === 'ADDITIONAL_INFO') {
         const itemH = getItemHeight(sec.sectionCode);
         const totalSecHeight = secHeaderHeight + itemH;
 
@@ -287,8 +287,8 @@ const CVBuilder = () => {
         continue;
       }
 
-      if (sec.sectionCode === 'SKILLS') {
-        const itemH = getItemHeight('SKILLS');
+      if (sec.sectionCode === 'SKILLS' || sec.sectionCode === 'INTERESTS') {
+        const itemH = getItemHeight(sec.sectionCode);
         const rows = Math.max(Math.ceil(items.length / 5), 1);
         const addButtonH = (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 16) * fontScale;
         const totalSecHeight = secHeaderHeight + rows * itemH + addButtonH;
@@ -828,9 +828,8 @@ const CVBuilder = () => {
                         )}
 
                         {/* Page Footer Watermark */}
-                        <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-white px-8 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider select-none pointer-events-none z-20">
-                          <span>VietWorks - Mẫu CV Chuyên Nghiệp</span>
-                          <span>Trang {pageIdx + 1} / {totalPages}</span>
+                        <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-white px-12 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none z-20">
+                          <span>© VietWorks</span>
                         </div>
                       </div>
                     );

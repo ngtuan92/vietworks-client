@@ -144,8 +144,11 @@ const initialSections = [
   { id: 'education', name: 'Học vấn', required: false },
   { id: 'skills', name: 'Kỹ năng chuyên môn', required: false },
   { id: 'projects', name: 'Dự án tham gia', required: false },
-  { id: 'certificates', name: 'Chứng chỉ / Giải thưởng', required: false },
-  { id: 'activities', name: 'Hoạt động ngoại khóa', required: false }
+  { id: 'certificates', name: 'Chứng chỉ đạt được', required: false },
+  { id: 'awards', name: 'Giải thưởng nổi bật', required: false },
+  { id: 'activities', name: 'Hoạt động ngoại khóa', required: false },
+  { id: 'interests', name: 'Sở thích cá nhân', required: false },
+  { id: 'additional_info', name: 'Thông tin thêm', required: false }
 ];
 
 const fontMapping = {
@@ -162,13 +165,19 @@ const fontMapping = {
 };
 
 const EditableTextMini = ({ tag: Tag = 'div', html, className, style, onChange, placeholder }) => {
+  const displayClass = className && (className.includes('block') || className.includes('inline') || className.includes('flex')) ? '' : 'inline-block';
   return (
     <Tag
-      className={`outline-none border border-transparent hover:border-dashed hover:border-gray-300/80 rounded-[2px] px-0.5 transition-all min-w-[20px] cursor-text ${className || ''}`}
+      className={`outline-none border border-transparent hover:border-dashed hover:border-blue-400 hover:bg-blue-50/10 rounded px-1 transition-all min-h-[1.2em] min-w-[20px] ${displayClass} cursor-text focus:border-solid focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 empty:before:content-[attr(placeholder)] empty:before:text-gray-400/60 relative ${className || ''}`}
       style={style}
       contentEditable
       suppressContentEditableWarning
       onBlur={(e) => onChange(e.currentTarget.innerHTML)}
+      onPaste={(e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+      }}
       dangerouslySetInnerHTML={{ __html: html }}
       placeholder={placeholder}
     />
@@ -198,8 +207,14 @@ const getDefaultSectionItem = (code) => {
       return [{ name: 'Hệ thống E-Commerce core', date: '2022 - 2023', role: 'Technical Lead', description: 'Xây dựng kiến trúc microservices chịu tải cao, hỗ trợ hơn 500,000 người dùng hoạt động hàng ngày.' }];
     case 'CERTIFICATES':
       return [{ name: 'AWS Certified Solutions Architect – Associate', date: '2023' }];
+    case 'AWARDS':
+      return [{ name: 'Giải thưởng Nhân viên Xuất sắc nhất năm', date: '2023' }];
     case 'ACTIVITIES':
       return [{ name: 'Diễn giả tại VietDevConf', date: '2023', description: 'Trình bày chủ đề: "Tối ưu hóa tải và tài nguyên hệ thống cơ sở dữ liệu trong các dự án SaaS".' }];
+    case 'INTERESTS':
+      return [{ name: 'Đọc sách công nghệ' }, { name: 'Chạy bộ marathon' }, { name: 'Đóng góp Open Source' }];
+    case 'ADDITIONAL_INFO':
+      return [{ summary: 'Sẵn sàng đi công tác xa và làm việc ngoài giờ khi dự án yêu cầu.' }];
     default:
       return [];
   }
@@ -222,12 +237,10 @@ const CVTemplateForm = () => {
     if (!containerRef.current) return;
     const updateScale = () => {
       const width = containerRef.current.offsetWidth;
-      // 794px is our standard A4 design width
       setScale(width / 794);
     };
     updateScale();
     window.addEventListener('resize', updateScale);
-    // Also trigger on a slight timeout to ensure layout has mounted and ref has offsetWidth
     const timer = setTimeout(updateScale, 150);
     return () => {
       window.removeEventListener('resize', updateScale);
@@ -255,7 +268,10 @@ const CVTemplateForm = () => {
     skills: true,
     projects: false,
     certificates: true,
-    activities: false
+    awards: false,
+    activities: false,
+    interests: false,
+    additional_info: false
   });
 
   // Custom interactive sections list
@@ -356,7 +372,10 @@ const CVTemplateForm = () => {
           skills: false,
           projects: false,
           certificates: false,
-          activities: false
+          awards: false,
+          activities: false,
+          interests: false,
+          additional_info: false
         };
         editingTemplate.layoutConfig.sections.forEach(s => {
           if (s.sectionCode === 'PROFILE' || s.sectionCode === 'CONTACT') checked.personal_info = true;
@@ -366,7 +385,10 @@ const CVTemplateForm = () => {
           if (s.sectionCode === 'SKILLS') checked.skills = true;
           if (s.sectionCode === 'PROJECTS') checked.projects = true;
           if (s.sectionCode === 'CERTIFICATES') checked.certificates = true;
+          if (s.sectionCode === 'AWARDS') checked.awards = true;
           if (s.sectionCode === 'ACTIVITIES') checked.activities = true;
+          if (s.sectionCode === 'INTERESTS') checked.interests = true;
+          if (s.sectionCode === 'ADDITIONAL_INFO') checked.additional_info = true;
         });
         setCheckedSections(checked);
       }
@@ -376,7 +398,7 @@ const CVTemplateForm = () => {
   // Section Checkbox Toggle
   const handleSectionToggle = (sectionId) => {
     const section = initialSections.find(s => s.id === sectionId);
-    if (section && section.required) return; // Keep required disabled from changing
+    if (section && section.required) return;
 
     const isCurrentlyChecked = checkedSections[sectionId];
     setCheckedSections(prev => ({
@@ -410,7 +432,7 @@ const CVTemplateForm = () => {
           ...prev,
           {
             sectionCode: code,
-            column: selectedLayout === 'left-col' ? (['PROFILE', 'CONTACT', 'SKILLS'].includes(code) ? 'left' : 'right') : (selectedLayout === 'two-col-equal' ? (prev.length % 2 === 0 ? 'left' : 'right') : 'full'),
+            column: selectedLayout === 'left-col' ? (['PROFILE', 'CONTACT', 'SKILLS', 'INTERESTS'].includes(code) ? 'left' : 'right') : (selectedLayout === 'two-col-equal' ? (prev.length % 2 === 0 ? 'left' : 'right') : 'full'),
             order: prev.length + 1,
             items: defaultItem
           }
@@ -499,11 +521,11 @@ const CVTemplateForm = () => {
     setSections(prev => prev.map(s => {
       if (s.sectionCode === sectionCode) {
         let newItem = {};
-        if (s.sectionCode === 'SKILLS') newItem = { name: 'Kỹ năng mới' };
+        if (s.sectionCode === 'SKILLS' || s.sectionCode === 'INTERESTS') newItem = { name: 'Mục mới' };
         else if (s.sectionCode === 'EXPERIENCE') newItem = { company: 'Tên Công Ty', date: 'Thời gian', title: 'Chức danh', description: 'Mô tả công việc' };
         else if (s.sectionCode === 'EDUCATION') newItem = { school: 'Tên Trường', date: 'Thời gian', major: 'Chuyên ngành', gpa: 'GPA' };
         else if (s.sectionCode === 'PROJECTS') newItem = { name: 'Tên Dự Án', date: 'Thời gian', role: 'Vai trò', description: 'Mô tả dự án' };
-        else if (s.sectionCode === 'CERTIFICATES') newItem = { name: 'Tên chứng chỉ', date: 'Thời gian' };
+        else if (s.sectionCode === 'CERTIFICATES' || s.sectionCode === 'AWARDS') newItem = { name: 'Tên hạng mục', date: 'Thời gian' };
         else if (s.sectionCode === 'ACTIVITIES') newItem = { name: 'Tên hoạt động', date: 'Thời gian', description: 'Mô tả hoạt động' };
 
         return { ...s, items: [...s.items, newItem] };
@@ -529,7 +551,7 @@ const CVTemplateForm = () => {
       .sort((a, b) => a.order - b.order);
 
     const idx = sameColSections.findIndex(s => s.sectionCode === sectionCode);
-    if (idx <= 0) return; // already at top of this column
+    if (idx <= 0) return;
 
     const aboveSection = sameColSections[idx - 1];
     const targetOrder = targetSection.order;
@@ -550,7 +572,7 @@ const CVTemplateForm = () => {
       .sort((a, b) => a.order - b.order);
 
     const idx = sameColSections.findIndex(s => s.sectionCode === sectionCode);
-    if (idx === -1 || idx === sameColSections.length - 1) return; // already at bottom of this column
+    if (idx === -1 || idx === sameColSections.length - 1) return;
 
     const belowSection = sameColSections[idx + 1];
     const targetOrder = targetSection.order;
@@ -563,39 +585,35 @@ const CVTemplateForm = () => {
     }));
   };
 
-  const renderSection = (sec) => {
+  const renderSection = (sec, isCont = false) => {
     const { sectionCode, items } = sec;
-    const isProfile = sectionCode === 'PROFILE';
-    const isContact = sectionCode === 'CONTACT';
     const isObjective = sectionCode === 'OBJECTIVE';
+    const isContact = sectionCode === 'CONTACT';
     const isSkills = sectionCode === 'SKILLS';
+    const isInterests = sectionCode === 'INTERESTS';
+    const isAwards = sectionCode === 'AWARDS';
+    const isAdditionalInfo = sectionCode === 'ADDITIONAL_INFO';
     const isInSidebar = sec.column === 'left' && selectedLayout === 'left-col';
 
-    // Map fontSize styles dynamically for scaled 794px A4 canvas
-    let sizeName = 'text-[22px]';
-    let sizeTitle = 'text-[11.5px]';
+    // Map fontSize styles dynamically
     let sizeSec = 'text-[12.5px]';
     let sizeHeader = 'text-[11px]';
     let sizeText = 'text-[10px]';
     let iconSize = 11;
 
     if (fontSize === 'small') {
-      sizeName = 'text-[18px]';
-      sizeTitle = 'text-[9.5px]';
       sizeSec = 'text-[10.5px]';
       sizeHeader = 'text-[9px]';
       sizeText = 'text-[8.5px]';
       iconSize = 9;
     } else if (fontSize === 'large') {
-      sizeName = 'text-[26px]';
-      sizeTitle = 'text-[13.5px]';
       sizeSec = 'text-[14.5px]';
       sizeHeader = 'text-[13px]';
       sizeText = 'text-[12px]';
       iconSize = 13;
     }
 
-    // Map density/spacing styles dynamically for scaled 794px A4 canvas
+    // Map density/spacing styles
     let spacingClass = 'space-y-2';
     let containerPadding = 'py-2 px-5';
     if (density === 'compact') {
@@ -611,6 +629,7 @@ const CVTemplateForm = () => {
     const tagBg = isInSidebar ? 'bg-white/10 text-white border-transparent' : 'bg-gray-100 text-gray-800 border-transparent';
 
     const renderSectionHeader = (title) => {
+      if (isCont) return null;
       const isBg = titleStyle === 'accent-bg';
       const isLeftBorder = titleStyle === 'left-border';
       const isUnderline = titleStyle === 'underline';
@@ -654,7 +673,6 @@ const CVTemplateForm = () => {
       <div key={sectionCode} className={`group/sec relative border border-transparent hover:border-blue-300/60 hover:bg-blue-50/5 ${containerPadding} rounded-sm transition-all`}>
         {/* Section Hover toolbar */}
         <div className="absolute -top-3 right-0.5 bg-white border border-gray-200 shadow-md rounded px-1.5 py-0.5 hidden group-hover/sec:flex items-center gap-1.5 z-20 scale-[0.8] origin-top-right text-gray-800">
-          {/* Reordering Controls */}
           <div className="flex border-r pr-1.5 items-center gap-1 font-bold text-gray-500">
             <button
               type="button"
@@ -674,7 +692,6 @@ const CVTemplateForm = () => {
             </button>
           </div>
 
-          {/* Column Toggle (only if layout supports columns) */}
           {selectedLayout !== 'header-left' && (
             <div className="flex border-r pr-1.5 items-center gap-1">
               <button
@@ -695,8 +712,7 @@ const CVTemplateForm = () => {
               </button>
             </div>
           )}
-          {/* Add Item Button for multi-item sections */}
-          {!['PROFILE', 'CONTACT', 'OBJECTIVE'].includes(sectionCode) && (
+          {!['PROFILE', 'CONTACT', 'OBJECTIVE', 'ADDITIONAL_INFO'].includes(sectionCode) && (
             <button
               type="button"
               onClick={() => handleAddItem(sectionCode)}
@@ -708,7 +724,7 @@ const CVTemplateForm = () => {
         </div>
 
         {/* Section Header */}
-        {!isProfile && selectedLayout !== 'harvard-gsas' && renderSectionHeader(
+        {selectedLayout !== 'harvard-gsas' && renderSectionHeader(
           sectionCode === 'CONTACT' ? 'LIÊN HỆ' :
             sectionCode === 'EDUCATION' ? 'HỌC VẤN' :
               sectionCode === 'EXPERIENCE' ? 'KINH NGHIỆM' :
@@ -716,7 +732,10 @@ const CVTemplateForm = () => {
                   sectionCode === 'OBJECTIVE' ? 'MỤC TIÊU NGHỀ NGHIỆP' :
                     sectionCode === 'PROJECTS' ? 'DỰ ÁN' :
                       sectionCode === 'CERTIFICATES' ? 'CHỨNG CHỈ' :
-                        sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' : sectionCode
+                        sectionCode === 'AWARDS' ? 'GIẢI THƯỞNG' :
+                          sectionCode === 'INTERESTS' ? 'SỞ THÍCH' :
+                            sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' :
+                              sectionCode === 'ADDITIONAL_INFO' ? 'THÔNG TIN THÊM' : sectionCode
         )}
 
         {/* Section Content */}
@@ -765,206 +784,252 @@ const CVTemplateForm = () => {
           )}
 
           {/* Skills tags list */}
-          {isSkills && (
-            <div className="flex flex-wrap gap-1">
-              {items.map((it, idx) => (
-                <div key={idx} className={`group/tag relative px-1 py-0.5 rounded ${sizeText} flex items-center gap-0.5 ${tagBg} border`}>
-                  <EditableTextMini
-                    html={it.name || ''}
-                    onChange={(val) => handleUpdateItem('SKILLS', idx, 'name', val)}
-                    className="block font-sans"
-                    placeholder="Tag"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveItem('SKILLS', idx)}
-                    className="text-red-500 hover:text-red-700 opacity-0 group-hover/tag:opacity-100 scale-90 transition-opacity ml-0.5 font-bold"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+          {(isSkills || isInterests) && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {items.map((it, idx) => {
+                if (sec.renderItemRange) {
+                  const [start, end] = sec.renderItemRange;
+                  if (idx < start || idx >= end) return null;
+                }
+                return (
+                  <div key={idx} className={`group/tag relative px-2.5 py-0.5 rounded-full ${sizeText} flex items-center gap-0.5 ${tagBg} border`}>
+                    <EditableTextMini
+                      html={it.name || ''}
+                      onChange={(val) => handleUpdateItem(sectionCode, idx, 'name', val)}
+                      className="block font-sans"
+                      placeholder="Tag"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveItem(sectionCode, idx)}
+                      className="text-red-500 hover:text-red-700 opacity-0 group-hover/tag:opacity-100 scale-90 transition-opacity ml-0.5 font-bold"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* Experience list */}
-          {sectionCode === 'EXPERIENCE' && items.map((it, idx) => (
-            <div key={idx} className={`group/item relative space-y-0.5 py-0.5 ${ (selectedLayout === 'harvard-classic' || selectedLayout === 'harvard-gsas') ? '' : 'border-l-[1.5px] pl-2' }`} style={{ borderColor: isInSidebar ? 'rgba(255,255,255,0.3)' : `${primaryColor}50` }}>
-              <button
-                type="button"
-                onClick={() => handleRemoveItem('EXPERIENCE', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
-              >
-                ×
-              </button>
-              <div className="flex justify-between items-start gap-1">
+          {sectionCode === 'EXPERIENCE' && items.map((it, idx) => {
+            if (sec.renderItemRange) {
+              const [start, end] = sec.renderItemRange;
+              if (idx < start || idx >= end) return null;
+            }
+            return (
+              <div key={idx} className={`group/item relative space-y-0.5 py-0.5 ${ (selectedLayout === 'harvard-classic' || selectedLayout === 'harvard-gsas') ? '' : 'border-l-[1.5px] pl-2' }`} style={{ borderColor: isInSidebar ? 'rgba(255,255,255,0.3)' : `${primaryColor}50` }}>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem('EXPERIENCE', idx)}
+                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                >
+                  ×
+                </button>
+                <div className="flex justify-between items-start gap-1">
+                  <EditableTextMini
+                    html={it.company || ''}
+                    onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'company', val)}
+                    className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
+                    placeholder="Công ty"
+                  />
+                  <EditableTextMini
+                    html={it.date || ''}
+                    onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'date', val)}
+                    className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
+                    placeholder="Thời gian"
+                  />
+                </div>
                 <EditableTextMini
-                  html={it.company || ''}
-                  onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'company', val)}
-                  className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
-                  placeholder="Công ty"
+                  html={it.title || ''}
+                  onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'title', val)}
+                  className={`font-bold ${sizeText} block font-sans ${isInSidebar ? 'text-white/95' : ''}`}
+                  style={!isInSidebar ? { color: primaryColor } : {}}
+                  placeholder="Vị trí"
                 />
                 <EditableTextMini
-                  html={it.date || ''}
-                  onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'date', val)}
-                  className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
-                  placeholder="Thời gian"
+                  html={it.description || ''}
+                  onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'description', val)}
+                  className={`${sizeText} leading-normal block font-sans ${textColor}`}
+                  placeholder="Mô tả công việc"
                 />
               </div>
-              <EditableTextMini
-                html={it.title || ''}
-                onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'title', val)}
-                className={`font-bold ${sizeText} block font-sans ${isInSidebar ? 'text-white/95' : ''}`}
-                style={!isInSidebar ? { color: primaryColor } : {}}
-                placeholder="Vị trí"
-              />
-              <EditableTextMini
-                html={it.description || ''}
-                onChange={(val) => handleUpdateItem('EXPERIENCE', idx, 'description', val)}
-                className={`${sizeText} leading-normal block font-sans ${textColor}`}
-                placeholder="Mô tả công việc"
-              />
-            </div>
-          ))}
+            );
+          })}
 
           {/* Education list */}
-          {sectionCode === 'EDUCATION' && items.map((it, idx) => (
-            <div key={idx} className="group/item relative space-y-0.5 py-0.5">
-              <button
-                type="button"
-                onClick={() => handleRemoveItem('EDUCATION', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
-              >
-                ×
-              </button>
-              <div className="flex justify-between items-start gap-1">
-                <EditableTextMini
-                  html={it.school || ''}
-                  onChange={(val) => handleUpdateItem('EDUCATION', idx, 'school', val)}
-                  className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
-                  placeholder="Trường học"
-                />
-                <EditableTextMini
-                  html={it.date || ''}
-                  onChange={(val) => handleUpdateItem('EDUCATION', idx, 'date', val)}
-                  className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
-                  placeholder="Thời gian"
-                />
+          {sectionCode === 'EDUCATION' && items.map((it, idx) => {
+            if (sec.renderItemRange) {
+              const [start, end] = sec.renderItemRange;
+              if (idx < start || idx >= end) return null;
+            }
+            return (
+              <div key={idx} className="group/item relative space-y-0.5 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem('EDUCATION', idx)}
+                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                >
+                  ×
+                </button>
+                <div className="flex justify-between items-start gap-1">
+                  <EditableTextMini
+                    html={it.school || ''}
+                    onChange={(val) => handleUpdateItem('EDUCATION', idx, 'school', val)}
+                    className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
+                    placeholder="Trường học"
+                  />
+                  <EditableTextMini
+                    html={it.date || ''}
+                    onChange={(val) => handleUpdateItem('EDUCATION', idx, 'date', val)}
+                    className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
+                    placeholder="Thời gian"
+                  />
+                </div>
+                <div className={`flex justify-between items-center gap-2 ${sizeText}`}>
+                  <EditableTextMini
+                    html={it.major || ''}
+                    onChange={(val) => handleUpdateItem('EDUCATION', idx, 'major', val)}
+                    className={`font-semibold block font-sans ${textColor}`}
+                    placeholder="Ngành"
+                  />
+                  <EditableTextMini
+                    html={it.gpa || ''}
+                    onChange={(val) => handleUpdateItem('EDUCATION', idx, 'gpa', val)}
+                    className={`block font-sans shrink-0 ${subColor}`}
+                    placeholder="GPA"
+                  />
+                </div>
               </div>
-              <div className={`flex justify-between items-center gap-2 ${sizeText}`}>
-                <EditableTextMini
-                  html={it.major || ''}
-                  onChange={(val) => handleUpdateItem('EDUCATION', idx, 'major', val)}
-                  className={`font-semibold block font-sans ${textColor}`}
-                  placeholder="Ngành"
-                />
-                <EditableTextMini
-                  html={it.gpa || ''}
-                  onChange={(val) => handleUpdateItem('EDUCATION', idx, 'gpa', val)}
-                  className={`block font-sans shrink-0 ${subColor}`}
-                  placeholder="GPA"
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Projects list */}
-          {sectionCode === 'PROJECTS' && items.map((it, idx) => (
-            <div key={idx} className={`group/item relative space-y-0.5 py-0.5 ${ (selectedLayout === 'harvard-classic' || selectedLayout === 'harvard-gsas') ? '' : 'border-l-[1.5px] pl-2' }`} style={{ borderColor: isInSidebar ? 'rgba(255,255,255,0.3)' : `${primaryColor}50` }}>
-              <button
-                type="button"
-                onClick={() => handleRemoveItem('PROJECTS', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
-              >
-                ×
-              </button>
-              <div className="flex justify-between items-start gap-1">
+          {sectionCode === 'PROJECTS' && items.map((it, idx) => {
+            if (sec.renderItemRange) {
+              const [start, end] = sec.renderItemRange;
+              if (idx < start || idx >= end) return null;
+            }
+            return (
+              <div key={idx} className={`group/item relative space-y-0.5 py-0.5 ${ (selectedLayout === 'harvard-classic' || selectedLayout === 'harvard-gsas') ? '' : 'border-l-[1.5px] pl-2' }`} style={{ borderColor: isInSidebar ? 'rgba(255,255,255,0.3)' : `${primaryColor}50` }}>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem('PROJECTS', idx)}
+                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                >
+                  ×
+                </button>
+                <div className="flex justify-between items-start gap-1">
+                  <EditableTextMini
+                    html={it.name || ''}
+                    onChange={(val) => handleUpdateItem('PROJECTS', idx, 'name', val)}
+                    className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
+                    placeholder="Dự án"
+                  />
+                  <EditableTextMini
+                    html={it.date || ''}
+                    onChange={(val) => handleUpdateItem('PROJECTS', idx, 'date', val)}
+                    className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
+                    placeholder="Thời gian"
+                  />
+                </div>
+                <EditableTextMini
+                  html={it.role || ''}
+                  onChange={(val) => handleUpdateItem('PROJECTS', idx, 'role', val)}
+                  className={`font-semibold ${sizeText} block font-sans ${isInSidebar ? 'text-white/95' : ''}`}
+                  style={!isInSidebar ? { color: primaryColor } : {}}
+                  placeholder="Vai trò"
+                />
+                <EditableTextMini
+                  html={it.description || ''}
+                  onChange={(val) => handleUpdateItem('PROJECTS', idx, 'description', val)}
+                  className={`${sizeText} leading-normal block font-sans ${textColor}`}
+                  placeholder="Mô tả dự án"
+                />
+              </div>
+            );
+          })}
+
+          {/* Certificates and Awards list */}
+          {(sectionCode === 'CERTIFICATES' || isAwards) && items.map((it, idx) => {
+            if (sec.renderItemRange) {
+              const [start, end] = sec.renderItemRange;
+              if (idx < start || idx >= end) return null;
+            }
+            return (
+              <div key={idx} className={`group/item relative flex justify-between items-center ${sizeText} py-0.5`}>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem(sectionCode, idx)}
+                  className="absolute top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                >
+                  ×
+                </button>
                 <EditableTextMini
                   html={it.name || ''}
-                  onChange={(val) => handleUpdateItem('PROJECTS', idx, 'name', val)}
-                  className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
-                  placeholder="Dự án"
+                  onChange={(val) => handleUpdateItem(sectionCode, idx, 'name', val)}
+                  className={`font-semibold block font-sans ${textColor}`}
+                  placeholder="Nội dung"
                 />
                 <EditableTextMini
                   html={it.date || ''}
-                  onChange={(val) => handleUpdateItem('PROJECTS', idx, 'date', val)}
-                  className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
+                  onChange={(val) => handleUpdateItem(sectionCode, idx, 'date', val)}
+                  className={`block font-sans ${subColor}`}
                   placeholder="Thời gian"
                 />
               </div>
-              <EditableTextMini
-                html={it.role || ''}
-                onChange={(val) => handleUpdateItem('PROJECTS', idx, 'role', val)}
-                className={`font-semibold ${sizeText} block font-sans ${isInSidebar ? 'text-white/95' : ''}`}
-                style={!isInSidebar ? { color: primaryColor } : {}}
-                placeholder="Vai trò"
-              />
-              <EditableTextMini
-                html={it.description || ''}
-                onChange={(val) => handleUpdateItem('PROJECTS', idx, 'description', val)}
-                className={`${sizeText} leading-normal block font-sans ${textColor}`}
-                placeholder="Mô tả dự án"
-              />
-            </div>
-          ))}
-
-          {/* Certificates list */}
-          {sectionCode === 'CERTIFICATES' && items.map((it, idx) => (
-            <div key={idx} className={`group/item relative flex justify-between items-center ${sizeText} py-0.5`}>
-              <button
-                type="button"
-                onClick={() => handleRemoveItem('CERTIFICATES', idx)}
-                className="absolute top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
-              >
-                ×
-              </button>
-              <EditableTextMini
-                html={it.name || ''}
-                onChange={(val) => handleUpdateItem('CERTIFICATES', idx, 'name', val)}
-                className={`font-semibold block font-sans ${textColor}`}
-                placeholder="Chứng chỉ"
-              />
-              <EditableTextMini
-                html={it.date || ''}
-                onChange={(val) => handleUpdateItem('CERTIFICATES', idx, 'date', val)}
-                className={`block font-sans ${subColor}`}
-                placeholder="Thời gian"
-              />
-            </div>
-          ))}
+            );
+          })}
 
           {/* Activities list */}
-          {sectionCode === 'ACTIVITIES' && items.map((it, idx) => (
-            <div key={idx} className="group/item relative space-y-0.5 py-0.5">
-              <button
-                type="button"
-                onClick={() => handleRemoveItem('ACTIVITIES', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
-              >
-                ×
-              </button>
-              <div className="flex justify-between items-start gap-1">
+          {sectionCode === 'ACTIVITIES' && items.map((it, idx) => {
+            if (sec.renderItemRange) {
+              const [start, end] = sec.renderItemRange;
+              if (idx < start || idx >= end) return null;
+            }
+            return (
+              <div key={idx} className="group/item relative space-y-0.5 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem('ACTIVITIES', idx)}
+                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                >
+                  ×
+                </button>
+                <div className="flex justify-between items-start gap-1">
+                  <EditableTextMini
+                    html={it.name || ''}
+                    onChange={(val) => handleUpdateItem('ACTIVITIES', idx, 'name', val)}
+                    className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
+                    placeholder="Hoạt động"
+                  />
+                  <EditableTextMini
+                    html={it.date || ''}
+                    onChange={(val) => handleUpdateItem('ACTIVITIES', idx, 'date', val)}
+                    className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
+                    placeholder="Thời gian"
+                  />
+                </div>
                 <EditableTextMini
-                  html={it.name || ''}
-                  onChange={(val) => handleUpdateItem('ACTIVITIES', idx, 'name', val)}
-                  className={`font-bold ${sizeHeader} block font-sans ${textColor}`}
-                  placeholder="Hoạt động"
-                />
-                <EditableTextMini
-                  html={it.date || ''}
-                  onChange={(val) => handleUpdateItem('ACTIVITIES', idx, 'date', val)}
-                  className={`${sizeText} italic font-medium shrink-0 block font-sans ${subColor}`}
-                  placeholder="Thời gian"
+                  html={it.description || ''}
+                  onChange={(val) => handleUpdateItem('ACTIVITIES', idx, 'description', val)}
+                  className={`${sizeText} leading-normal block font-sans ${textColor}`}
+                  placeholder="Mô tả hoạt động"
                 />
               </div>
-              <EditableTextMini
-                html={it.description || ''}
-                onChange={(val) => handleUpdateItem('ACTIVITIES', idx, 'description', val)}
-                className={`${sizeText} leading-normal block font-sans ${textColor}`}
-                placeholder="Mô tả hoạt động"
-              />
-            </div>
-          ))}
+            );
+          })}
+
+          {/* Additional Info block */}
+          {isAdditionalInfo && items[0] && (
+            <EditableTextMini
+              html={items[0].summary || ''}
+              onChange={(val) => handleUpdateItem('ADDITIONAL_INFO', 0, 'summary', val)}
+              className={`${sizeText} leading-relaxed block font-sans ${textColor}`}
+              placeholder="Nhập thông tin thêm..."
+            />
+          )}
         </div>
       </div>
     );
@@ -998,7 +1063,10 @@ const CVTemplateForm = () => {
           avatarShape,
           defaultSectionCodes: Object.keys(checkedSections)
             .filter(k => checkedSections[k])
-            .map(k => sectionIdToCode(k)),
+            .flatMap(k => {
+              if (k === 'personal_info') return ['PROFILE', 'CONTACT'];
+              return [sectionIdToCode(k)];
+            }),
           sections: sections
         }
       };
@@ -1358,7 +1426,6 @@ const CVTemplateForm = () => {
                 }`}
             >
               {previewUrl ? (
-                // Selected file view
                 <div className="w-full h-full flex flex-col items-center justify-center space-y-4 relative group">
                   <img
                     src={previewUrl}
@@ -1379,14 +1446,13 @@ const CVTemplateForm = () => {
                     {previewImage ? previewImage.name : 'image_preview.png'}
                   </span>
                   <label
-                    htmlFor="previewImageUploader"
+                    documentFor="previewImageUploader"
                     className="text-xs font-bold text-[#0056b3] hover:underline cursor-pointer"
                   >
                     Thay đổi ảnh khác
                   </label>
                 </div>
               ) : (
-                // Empty state upload prompt
                 <div className="flex flex-col items-center justify-center space-y-3 p-4">
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
                     <span className="material-symbols-outlined text-[28px]">cloud_upload</span>
@@ -1399,7 +1465,6 @@ const CVTemplateForm = () => {
                   </span>
                 </div>
               )}
-              {/* Invisible File Input */}
               <input
                 id="previewImageUploader"
                 type="file"
@@ -1420,572 +1485,569 @@ const CVTemplateForm = () => {
               Click trực tiếp vào văn bản để chỉnh sửa. Di chuột vào mỗi section để thêm/xóa mục hoặc di chuyển cột.
             </p>
 
-            {/* Scrollable container for A4 Pages with ref to compute width */}
+            {/* Scrollable container for A4 Pages */}
             <div
               ref={containerRef}
               style={{
                 fontFamily: fontMapping[defaultFont] || 'Inter, sans-serif',
               }}
-              className="w-full flex flex-col gap-6 max-h-[780px] overflow-y-auto pr-1 pb-4 scrollbar-thin"
+              className="w-full flex flex-col gap-6 max-h-[780px] overflow-y-auto pr-1 pb-4 scrollbar-thin bg-gray-100 p-2 rounded-lg"
             >
               {(() => {
-                // Partitioning lists
-                const leftSecs = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE').sort((a, b) => a.order - b.order);
-                const rightSecs = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE').sort((a, b) => a.order - b.order);
+                const leftSections = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE');
+                const rightSections = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE');
 
-                // Helper to estimate section heights and find split index dynamically for 960px content height
-                const estimateSplitIndex = (secs, initialHeight = 0, maxHeight = 960) => {
+                const headerLeftSections = sections.filter(s => s.sectionCode !== 'PROFILE' && s.sectionCode !== 'CONTACT');
+                const contactSection = sections.find(s => s.sectionCode === 'CONTACT');
+                const profileSection = sections.find(s => s.sectionCode === 'PROFILE');
+
+                // Dynamic height-based split pagination
+                const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 960) => {
+                  const pages = [];
+                  let currentPageSecs = [];
                   let currentHeight = initialHeight;
+
                   const fontScale = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.15 : 1.0;
-                  const headerHeight = density === 'compact' ? 24 : density === 'comfortable' ? 40 : 30;
-                  const itemHeight = density === 'compact' ? 40 : density === 'comfortable' ? 75 : 60;
-                  const objectiveHeight = density === 'compact' ? 45 : density === 'comfortable' ? 80 : 60;
+                  const headerHeight = density === 'compact' ? 26 : density === 'comfortable' ? 44 : 34;
                   const gapBetweenSections = density === 'compact' ? 8 : density === 'comfortable' ? 24 : 16;
+
+                  const getItemHeight = (sectionCode, item) => {
+                    let h = 40;
+                    if (sectionCode === 'OBJECTIVE' || sectionCode === 'ADDITIONAL_INFO') {
+                      h = density === 'compact' ? 35 : density === 'comfortable' ? 65 : 50;
+                    } else if (sectionCode === 'CONTACT') {
+                      h = density === 'compact' ? 40 : density === 'comfortable' ? 70 : 55;
+                    } else if (sectionCode === 'SKILLS' || sectionCode === 'INTERESTS') {
+                      h = density === 'compact' ? 18 : density === 'comfortable' ? 32 : 24;
+                    } else if (sectionCode === 'CERTIFICATES' || sectionCode === 'AWARDS') {
+                      h = density === 'compact' ? 18 : density === 'comfortable' ? 30 : 22;
+                    } else if (sectionCode === 'EDUCATION') {
+                      h = density === 'compact' ? 30 : density === 'comfortable' ? 50 : 40;
+                    } else if (item) {
+                      const baseH = density === 'compact' ? 32 : density === 'comfortable' ? 50 : 40;
+                      let descLines = 0;
+                      if (item.description) {
+                        const text = item.description.replace(/<[^>]*>/g, '');
+                        descLines = Math.max(Math.ceil(text.length / 60), 1);
+                      }
+                      const descH = descLines * (density === 'compact' ? 12 : density === 'comfortable' ? 20 : 15);
+                      h = baseH + descH;
+                    }
+                    return h * fontScale;
+                  };
 
                   for (let i = 0; i < secs.length; i++) {
                     const sec = secs[i];
-                    let secHeight = headerHeight;
-                    if (sec.sectionCode === 'OBJECTIVE') {
-                      secHeight += objectiveHeight;
-                    } else if (sec.sectionCode === 'CONTACT') {
-                      secHeight += 60;
-                    } else if (sec.sectionCode === 'SKILLS') {
-                      secHeight += 45;
-                    } else {
-                      const itemsCount = sec.items?.length || 0;
-                      secHeight += itemsCount * itemHeight;
-                    }
-                    secHeight = secHeight * fontScale;
+                    const items = sec.items || [];
+                    const isObjective = sec.sectionCode === 'OBJECTIVE';
+                    const isContact = sec.sectionCode === 'CONTACT';
 
-                    if (i > 0) {
-                      currentHeight += gapBetweenSections;
+                    let secHeaderHeight = headerHeight * fontScale;
+                    const gap = currentPageSecs.length > 0 ? gapBetweenSections : 0;
+
+                    if (isObjective || isContact || sec.sectionCode === 'ADDITIONAL_INFO') {
+                      const itemH = getItemHeight(sec.sectionCode);
+                      const totalSecHeight = secHeaderHeight + itemH;
+
+                      if (currentPageSecs.length > 0 && currentHeight + gap + totalSecHeight > maxHeight) {
+                        pages.push(currentPageSecs);
+                        currentPageSecs = [{ ...sec, renderItemRange: [0, 1] }];
+                        currentHeight = totalSecHeight;
+                      } else {
+                        currentHeight += gap + totalSecHeight;
+                        currentPageSecs.push({ ...sec, renderItemRange: [0, 1] });
+                      }
+                      continue;
                     }
-                    if (currentHeight + secHeight > maxHeight) {
-                      return i;
+
+                    if (sec.sectionCode === 'SKILLS' || sec.sectionCode === 'INTERESTS') {
+                      const itemH = getItemHeight(sec.sectionCode);
+                      const rows = Math.max(Math.ceil(items.length / 5), 1);
+                      const addButtonH = (density === 'compact' ? 12 : density === 'comfortable' ? 20 : 16) * fontScale;
+                      const totalSecHeight = secHeaderHeight + rows * itemH + addButtonH;
+
+                      if (currentPageSecs.length > 0 && currentHeight + gap + totalSecHeight > maxHeight) {
+                        pages.push(currentPageSecs);
+                        currentPageSecs = [{ ...sec, renderItemRange: [0, items.length] }];
+                        currentHeight = totalSecHeight;
+                      } else {
+                        currentHeight += gap + totalSecHeight;
+                        currentPageSecs.push({ ...sec, renderItemRange: [0, items.length] });
+                      }
+                      continue;
                     }
-                    currentHeight += secHeight;
+
+                    if (items.length === 0) {
+                      const addButtonH = (density === 'compact' ? 12 : density === 'comfortable' ? 20 : 16) * fontScale;
+                      const emptySecHeight = secHeaderHeight + addButtonH;
+                      if (currentPageSecs.length > 0 && currentHeight + gap + emptySecHeight > maxHeight) {
+                        pages.push(currentPageSecs);
+                        currentPageSecs = [{ ...sec, renderItemRange: [0, 0] }];
+                        currentHeight = emptySecHeight;
+                      } else {
+                        currentHeight += gap + emptySecHeight;
+                        currentPageSecs.push({ ...sec, renderItemRange: [0, 0] });
+                      }
+                      continue;
+                    }
+
+                    let itemIdx = 0;
+                    let pageStartIdx = 0;
+                    let headerAdded = false;
+                    const addButtonH = (density === 'compact' ? 12 : density === 'comfortable' ? 20 : 16) * fontScale;
+
+                    while (itemIdx < items.length) {
+                      const item = items[itemIdx];
+                      if (!item) {
+                        itemIdx++;
+                        continue;
+                      }
+                      const itemH = getItemHeight(sec.sectionCode, item);
+                      const currentGap = (currentPageSecs.length > 0 || headerAdded) ? gapBetweenSections : 0;
+
+                      let heightNeeded = itemH;
+                      if (!headerAdded) {
+                        heightNeeded += secHeaderHeight;
+                      }
+                      if (itemIdx === items.length - 1) {
+                        heightNeeded += addButtonH;
+                      }
+
+                      if (currentHeight + currentGap + heightNeeded > maxHeight) {
+                        if (currentHeight === 0 && itemIdx === pageStartIdx) {
+                          itemIdx++;
+                          currentHeight += heightNeeded;
+                          headerAdded = true;
+                        } else {
+                          if (itemIdx > pageStartIdx) {
+                            currentPageSecs.push({ ...sec, renderItemRange: [pageStartIdx, itemIdx] });
+                          }
+                          if (currentPageSecs.length > 0) {
+                            pages.push(currentPageSecs);
+                          }
+                          currentPageSecs = [];
+                          currentHeight = 0;
+                          pageStartIdx = itemIdx;
+                          headerAdded = false;
+                        }
+                      } else {
+                        itemIdx++;
+                        currentHeight += currentGap + heightNeeded;
+                        headerAdded = true;
+                      }
+                    }
+
+                    if (itemIdx > pageStartIdx) {
+                      currentPageSecs.push({ ...sec, renderItemRange: [pageStartIdx, itemIdx] });
+                    }
                   }
-                  return secs.length;
+
+                  if (currentPageSecs.length > 0) {
+                    pages.push(currentPageSecs);
+                  }
+
+                  if (pages.length === 0) {
+                    pages.push([]);
+                  }
+
+                  return pages;
                 };
 
-                // left-col splits:
-                const leftSplitIdx = estimateSplitIndex(leftSecs, 120, 960);
-                const p1Left = leftSecs.slice(0, leftSplitIdx);
-                const p2Left = leftSecs.slice(leftSplitIdx);
+                const isSectionContinuation = (secCode, pageIndex, pagesArray) => {
+                  for (let p = 0; p < pageIndex; p++) {
+                    if (pagesArray[p]?.some(s => s.sectionCode === secCode)) {
+                      return true;
+                    }
+                  }
+                  return false;
+                };
 
-                const rightSplitIdx = estimateSplitIndex(rightSecs, 160, 960);
-                const p1Right = rightSecs.slice(0, rightSplitIdx);
-                const p2Right = rightSecs.slice(rightSplitIdx);
-                const hasPage2LeftCol = p2Left.length > 0 || p2Right.length > 0;
+                const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 960);
+                const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 960);
+                const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 960);
+                const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 960);
+                const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 960);
+                const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 960);
+                const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 960);
+                const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 960);
 
-                // header-left splits:
-                const headerLeftSecs = sections.filter(s => s.sectionCode !== 'PROFILE' && s.sectionCode !== 'CONTACT').sort((a, b) => a.order - b.order);
-                const headerLeftSplitIdx = estimateSplitIndex(headerLeftSecs, 140, 960);
-                const p1HeaderLeft = headerLeftSecs.slice(0, headerLeftSplitIdx);
-                const p2HeaderLeft = headerLeftSecs.slice(headerLeftSplitIdx);
-                const hasPage2HeaderLeft = p2HeaderLeft.length > 0;
+                let totalPages = 1;
+                if (selectedLayout === 'left-col') {
+                  totalPages = Math.max(leftPages.length, rightPages.length);
+                } else if (selectedLayout === 'header-left') {
+                  totalPages = headerLeftPages.length;
+                } else if (selectedLayout === 'two-col-equal') {
+                  totalPages = Math.max(equalLeftPages.length, equalRightPages.length);
+                } else if (selectedLayout === 'full-width') {
+                  totalPages = fullWidthPages.length;
+                } else if (selectedLayout === 'harvard-classic') {
+                  totalPages = harvardClassicPages.length;
+                } else if (selectedLayout === 'harvard-gsas') {
+                  totalPages = harvardGsasPages.length;
+                }
+                totalPages = Math.max(totalPages, 1);
 
-                // two-col-equal splits:
-                const equalLeftSecs = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE').sort((a, b) => a.order - b.order);
-                const equalRightSecs = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE').sort((a, b) => a.order - b.order);
-
-                const equalLeftSplitIdx = estimateSplitIndex(equalLeftSecs, 140, 960);
-                const p1EqualLeft = equalLeftSecs.slice(0, equalLeftSplitIdx);
-                const p2EqualLeft = equalLeftSecs.slice(equalLeftSplitIdx);
-
-                const equalRightSplitIdx = estimateSplitIndex(equalRightSecs, 140, 960);
-                const p1EqualRight = equalRightSecs.slice(0, equalRightSplitIdx);
-                const p2EqualRight = equalRightSecs.slice(equalRightSplitIdx);
-                const hasPage2Equal = p2EqualLeft.length > 0 || p2EqualRight.length > 0;
-
-                // full-width splits:
-                const fullWidthSecs = sections.filter(s => s.sectionCode !== 'PROFILE' && s.sectionCode !== 'CONTACT').sort((a, b) => a.order - b.order);
-                const fullWidthSplitIdx = estimateSplitIndex(fullWidthSecs, 180, 960);
-                const p1FullWidth = fullWidthSecs.slice(0, fullWidthSplitIdx);
-                const p2FullWidth = fullWidthSecs.slice(fullWidthSplitIdx);
-                const hasPage2FullWidth = p2FullWidth.length > 0;
-
-                // harvard-classic splits:
-                const harvardClassicSecs = sections.filter(s => s.sectionCode !== 'PROFILE' && s.sectionCode !== 'CONTACT').sort((a, b) => a.order - b.order);
-                const harvardClassicSplitIdx = estimateSplitIndex(harvardClassicSecs, 140, 960);
-                const p1HarvardClassic = harvardClassicSecs.slice(0, harvardClassicSplitIdx);
-                const p2HarvardClassic = harvardClassicSecs.slice(harvardClassicSplitIdx);
-                const hasPage2HarvardClassic = p2HarvardClassic.length > 0;
-
-                // harvard-gsas splits:
-                const harvardGsasSecs = sections.filter(s => s.sectionCode !== 'PROFILE' && s.sectionCode !== 'CONTACT').sort((a, b) => a.order - b.order);
-                const harvardGsasSplitIdx = estimateSplitIndex(harvardGsasSecs, 130, 960);
-                const p1HarvardGsas = harvardGsasSecs.slice(0, harvardGsasSplitIdx);
-                const p2HarvardGsas = harvardGsasSecs.slice(harvardGsasSplitIdx);
-                const hasPage2HarvardGsas = p2HarvardGsas.length > 0;
-
-                const showPage2 = selectedLayout === 'left-col'
-                  ? hasPage2LeftCol
-                  : (selectedLayout === 'header-left'
-                    ? hasPage2HeaderLeft
-                    : (selectedLayout === 'two-col-equal'
-                      ? hasPage2Equal
-                      : (selectedLayout === 'full-width'
-                        ? hasPage2FullWidth
-                        : (selectedLayout === 'harvard-classic'
-                          ? hasPage2HarvardClassic
-                          : hasPage2HarvardGsas))));
-                const totalPages = showPage2 ? 2 : 1;
-
-                // Dynamic values for header size
                 const sizeProfileName = fontSize === 'small' ? 'text-[21px]' : fontSize === 'large' ? 'text-[29px]' : 'text-[25px]';
                 const sizeProfileTitle = fontSize === 'small' ? 'text-[11px]' : fontSize === 'large' ? 'text-[15px]' : 'text-[13px]';
                 const sizeProfileSummary = fontSize === 'small' ? 'text-[9.5px]' : fontSize === 'large' ? 'text-[13.5px]' : 'text-[11.5px]';
 
                 return (
                   <>
-                    {/* ==================== PAGE 1 ==================== */}
-                    <div
-                      style={{
-                        width: '100%',
-                        height: `${1123 * scale}px`,
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                      className="rounded-lg shadow-md border border-gray-300"
-                    >
-                      <div
-                        style={{
-                          width: '794px',
-                          height: '1123px',
-                          transform: `scale(${scale})`,
-                          transformOrigin: 'top left',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0
-                        }}
-                        className="bg-white flex flex-col justify-between select-none pointer-events-auto"
-                      >
+                    {Array.from({ length: totalPages }).map((_, pageIdx) => {
+                      const pLeft = leftPages[pageIdx] || [];
+                      const pRight = rightPages[pageIdx] || [];
+                      const pHeaderLeft = headerLeftPages[pageIdx] || [];
+                      const pEqualLeft = equalLeftPages[pageIdx] || [];
+                      const pEqualRight = equalRightPages[pageIdx] || [];
+                      const pFullWidth = fullWidthPages[pageIdx] || [];
+                      const pHarvardClassic = harvardClassicPages[pageIdx] || [];
+                      const pHarvardGsas = harvardGsasPages[pageIdx] || [];
 
-                        {/* Content Area */}
-                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                          {selectedLayout === 'left-col' && (
-                            <div className="flex h-full text-left">
-                              {/* Left Sidebar */}
-                              <div style={{ backgroundColor: primaryColor }} className="w-[33%] flex-shrink-0 text-white flex flex-col">
-                                {/* Avatar in sidebar */}
-                                <div className="px-5 pt-8 pb-4 text-center">
-                                  {avatarShape !== 'hidden' && (
-                                    <div className={`w-20 h-20 bg-white/15 mx-auto flex items-center justify-center ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
-                                      }`}>
-                                      <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Sidebar Page 1 Sections */}
-                                <div className="px-5 pb-6 flex flex-col gap-0 flex-1">
-                                  {p1Left.map(sec => renderSection(sec))}
-                                </div>
-                              </div>
-
-                              {/* Right Main Content */}
-                              <div className="flex-1 flex flex-col">
-                                {/* Name + Title Header */}
-                                <div className="px-6 pt-8 pb-4 border-b" style={{ borderColor: `${primaryColor}15` }}>
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
-                                    className={`${sizeProfileName} font-extrabold text-gray-800 tracking-tight leading-none block`}
-                                    placeholder="Họ và Tên"
-                                  />
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
-                                    className={`${sizeProfileTitle} font-bold mt-2 uppercase tracking-widest block`}
-                                    style={{ color: primaryColor }}
-                                    placeholder="Vị trí ứng tuyển"
-                                  />
-                                  {sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.summary && (
-                                    <EditableTextMini
-                                      html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.summary || ''}
-                                      onChange={(val) => handleUpdateItem('PROFILE', 0, 'summary', val)}
-                                      className={`${sizeProfileSummary} text-gray-500 mt-2.5 leading-relaxed block`}
-                                      placeholder="Giới thiệu ngắn..."
-                                    />
-                                  )}
-                                </div>
-
-                                {/* Right Page 1 Sections */}
-                                <div className="px-6 py-5 flex flex-col gap-0 flex-1">
-                                  {p1Right.map(sec => renderSection(sec))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {selectedLayout === 'header-left' && (
-                            <div className="flex flex-col h-full text-left">
-                              {/* Full-width header band */}
-                              <div className="px-8 pt-8 pb-4 flex items-end justify-between gap-6 border-b-2" style={{ borderColor: primaryColor }}>
-                                <div className="flex items-center gap-4">
-                                  {avatarShape !== 'hidden' && (
-                                    <div className={`w-18 h-18 flex items-center justify-center text-white flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
-                                      }`} style={{ backgroundColor: primaryColor }}>
-                                      <span className="material-symbols-outlined text-[32px]">person</span>
-                                    </div>
-                                  )}
-                                  <div>
-                                    <EditableTextMini
-                                      html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
-                                      onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
-                                      className={`${sizeProfileName} font-extrabold text-gray-800 tracking-tight leading-none block`}
-                                      placeholder="Họ và Tên"
-                                    />
-                                    <EditableTextMini
-                                      html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
-                                      onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
-                                      className={`${sizeProfileTitle} font-bold mt-2 uppercase tracking-wider block`}
-                                      style={{ color: primaryColor }}
-                                      placeholder="Chức danh"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => renderSection(sec))}
-                                </div>
-                              </div>
-                              <div className="px-8 py-5 flex flex-col gap-0 flex-1">
-                                {p1HeaderLeft.map(sec => renderSection(sec))}
-                              </div>
-                            </div>
-                          )}
-
-                          {selectedLayout === 'two-col-equal' && (
-                            <div className="flex flex-col h-full text-left">
-                              {/* Header Banner */}
-                              <div className="px-8 py-5 text-white flex justify-between items-center" style={{ backgroundColor: primaryColor }}>
-                                <div>
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
-                                    className={`${sizeProfileName} font-extrabold tracking-tight block text-white`}
-                                    placeholder="Họ và Tên"
-                                  />
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
-                                    className={`${sizeProfileTitle} text-white/80 block mt-1 font-bold uppercase tracking-wider`}
-                                    placeholder="Vị trí ứng tuyển"
-                                  />
-                                </div>
-                                {avatarShape !== 'hidden' && (
-                                  <div className={`w-16 h-16 bg-white/15 flex items-center justify-center flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
-                                    }`}>
-                                    <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex-1 grid grid-cols-2 gap-0">
-                                <div className="px-6 py-5 flex flex-col gap-0 border-r" style={{ borderColor: `${primaryColor}12` }}>
-                                  {p1EqualLeft.map(sec => renderSection(sec))}
-                                </div>
-                                <div className="px-6 py-5 flex flex-col gap-0">
-                                  {p1EqualRight.map(sec => renderSection(sec))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {selectedLayout === 'full-width' && (
-                            <div className="flex flex-col h-full text-left">
-                              {/* Center Header Banner */}
-                              <div className="px-10 py-6 flex flex-col items-center justify-center border-b" style={{ borderColor: `${primaryColor}20` }}>
-                                {avatarShape !== 'hidden' && (
-                                  <div className={`w-20 h-20 mb-4 bg-gray-100 flex items-center justify-center flex-shrink-0 shadow-inner ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
-                                    <span className="material-symbols-outlined text-[32px] text-gray-400">person</span>
-                                  </div>
-                                )}
-                                <div className="text-center">
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
-                                    className={`${sizeProfileName} font-extrabold tracking-tight block leading-none`}
-                                    style={{ color: primaryColor }}
-                                    placeholder="Họ và Tên"
-                                  />
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
-                                    className={`${sizeProfileTitle} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`}
-                                    placeholder="Vị trí ứng tuyển"
-                                  />
-                                </div>
-                                <div className="mt-4 flex justify-center w-full max-w-sm">
-                                  {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => renderSection({ ...sec, column: 'full' }))}
-                                </div>
-                              </div>
-                              <div className="px-12 py-5 flex flex-col gap-0 flex-1">
-                                {p1FullWidth.map(sec => renderSection({ ...sec, column: 'full' }))}
-                              </div>
-                            </div>
-                          )}
-
-                          {selectedLayout === 'harvard-classic' && (
-                            <div className="flex flex-col h-full text-left">
-                              {/* Centered Harvard Header Banner */}
-                              <div className="px-10 py-6 flex flex-col items-center justify-center border-b-2" style={{ borderColor: primaryColor }}>
-                                <div className="text-center">
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
-                                    className={`${sizeProfileName} font-black tracking-tight block uppercase leading-none`}
-                                    style={{ color: primaryColor }}
-                                    placeholder="Họ và Tên"
-                                  />
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
-                                    className={`${sizeProfileTitle} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`}
-                                    placeholder="Vị trí ứng tuyển"
-                                  />
-                                </div>
-                                
-                                {/* Harvard contact line: Address | Phone | Email */}
-                                {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => {
-                                  const contactItem = sec.items[0] || {};
-                                  return (
-                                    <div key={sec.sectionCode} className="mt-3 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[10px] text-gray-600 font-medium font-sans">
-                                      {contactItem.address && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
-                                          <EditableTextMini
-                                            html={contactItem.address}
-                                            onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
-                                            placeholder="Địa chỉ"
-                                          />
+                      return (
+                        <div
+                          key={pageIdx}
+                          style={{
+                            width: '100%',
+                            height: `${1123 * scale}px`,
+                            position: 'relative',
+                            overflow: 'hidden'
+                          }}
+                          className="shadow-md border border-gray-200 bg-white rounded-none"
+                        >
+                          <div
+                            style={{
+                              width: '794px',
+                              height: '1123px',
+                              transform: `scale(${scale})`,
+                              transformOrigin: 'top left',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0
+                            }}
+                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left"
+                          >
+                            {/* Content Area */}
+                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                              {selectedLayout === 'left-col' && (
+                                <div className="flex h-full text-left">
+                                  {/* Left Sidebar */}
+                                  <div style={{ backgroundColor: primaryColor }} className="w-[33%] flex-shrink-0 text-white flex flex-col">
+                                    {pageIdx === 0 && avatarShape !== 'hidden' && (
+                                      <div className="px-5 pt-8 pb-4 text-center">
+                                        <div className={`w-20 h-20 bg-white/15 mx-auto flex items-center justify-center ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
+                                          <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
                                         </div>
-                                      )}
-                                      {(contactItem.address && contactItem.phone) && <span className="text-gray-400">|</span>}
-                                      {contactItem.phone && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="material-symbols-outlined text-[11px] opacity-75">phone</span>
-                                          <EditableTextMini
-                                            html={contactItem.phone}
-                                            onChange={(val) => handleUpdateItem('CONTACT', 0, 'phone', val)}
-                                            placeholder="Điện thoại"
-                                          />
-                                        </div>
-                                      )}
-                                      {(contactItem.phone && contactItem.email) && <span className="text-gray-400">|</span>}
-                                      {contactItem.email && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="material-symbols-outlined text-[11px] opacity-75">mail</span>
-                                          <EditableTextMini
-                                            html={contactItem.email}
-                                            onChange={(val) => handleUpdateItem('CONTACT', 0, 'email', val)}
-                                            placeholder="Email"
-                                          />
-                                        </div>
-                                      )}
+                                      </div>
+                                    )}
+                                    <div className="px-5 py-6 flex flex-col gap-0 flex-1">
+                                      {pLeft.map(sec => renderSection(sec, isSectionContinuation(sec.sectionCode, pageIdx, leftPages)))}
                                     </div>
-                                  );
-                                })}
-                              </div>
-                              <div className="px-12 py-5 flex flex-col gap-0 flex-1">
-                                {p1HarvardClassic.map(sec => renderSection({ ...sec, column: 'full' }))}
-                              </div>
-                            </div>
-                          )}
+                                  </div>
 
-                          {selectedLayout === 'harvard-gsas' && (
-                            <div className="flex flex-col h-full text-left">
-                              {/* Asymmetric Header: Profile on left, Contact on right */}
-                              <div className="px-12 py-6 flex justify-between items-start border-b" style={{ borderColor: `${primaryColor}20` }}>
-                                <div className="flex-1">
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
-                                    className={`${sizeProfileName} font-black tracking-tight block uppercase leading-none`}
-                                    style={{ color: primaryColor }}
-                                    placeholder="Họ và Tên"
-                                  />
-                                  <EditableTextMini
-                                    html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
-                                    onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
-                                    className={`${sizeProfileTitle} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`}
-                                    placeholder="Vị trí ứng tuyển"
-                                  />
-                                </div>
-                                <div className="shrink-0 text-right">
-                                  {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => {
-                                    const contactItem = sec.items[0] || {};
-                                    return (
-                                      <div key={sec.sectionCode} className="text-[10px] text-gray-600 font-medium font-sans flex flex-col gap-0.5 items-end">
-                                        {contactItem.phone && (
-                                          <div className="flex items-center gap-1 justify-end">
-                                            <EditableTextMini
-                                              html={contactItem.phone}
-                                              onChange={(val) => handleUpdateItem('CONTACT', 0, 'phone', val)}
-                                              placeholder="Điện thoại"
-                                            />
-                                            <span className="material-symbols-outlined text-[11px] opacity-75">phone</span>
-                                          </div>
-                                        )}
-                                        {contactItem.email && (
-                                          <div className="flex items-center gap-1 justify-end">
-                                            <EditableTextMini
-                                              html={contactItem.email}
-                                              onChange={(val) => handleUpdateItem('CONTACT', 0, 'email', val)}
-                                              placeholder="Email"
-                                            />
-                                            <span className="material-symbols-outlined text-[11px] opacity-75">mail</span>
-                                          </div>
-                                        )}
-                                        {contactItem.address && (
-                                          <div className="flex items-center gap-1 justify-end">
-                                            <EditableTextMini
-                                              html={contactItem.address}
-                                              onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
-                                              placeholder="Địa chỉ"
-                                            />
-                                            <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
-                                          </div>
+                                  {/* Right Main Content */}
+                                  <div className="flex-1 flex flex-col">
+                                    {pageIdx === 0 && (
+                                      <div className="px-6 pt-8 pb-4 border-b" style={{ borderColor: `${primaryColor}15` }}>
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
+                                          className={`${sizeProfileName} font-extrabold text-gray-800 tracking-tight leading-none block`}
+                                          placeholder="Họ và Tên"
+                                        />
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
+                                          className={`${sizeProfileTitle} font-bold mt-2 uppercase tracking-widest block`}
+                                          style={{ color: primaryColor }}
+                                          placeholder="Vị trí ứng tuyển"
+                                        />
+                                        {sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.summary && (
+                                          <EditableTextMini
+                                            html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.summary || ''}
+                                            onChange={(val) => handleUpdateItem('PROFILE', 0, 'summary', val)}
+                                            className={`${sizeProfileSummary} text-gray-500 mt-2.5 leading-relaxed block`}
+                                            placeholder="Giới thiệu ngắn..."
+                                          />
                                         )}
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                              <div className="px-12 py-5 flex flex-col gap-0 flex-1">
-                                {p1HarvardGsas.map(sec => (
-                                  <div key={sec.sectionCode} className="grid grid-cols-[1fr_3.5fr] gap-6 py-2 border-b border-gray-100 last:border-b-0">
-                                    <div className="text-right pr-2">
-                                      <h4 className="text-[11px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
-                                        {sec.sectionCode === 'EDUCATION' ? 'HỌC VẤN' :
-                                         sec.sectionCode === 'EXPERIENCE' ? 'KINH NGHIỆM' :
-                                         sec.sectionCode === 'SKILLS' ? 'KỸ NĂNG' :
-                                         sec.sectionCode === 'OBJECTIVE' ? 'MỤC TIÊU' :
-                                         sec.sectionCode === 'PROJECTS' ? 'DỰ ÁN' :
-                                         sec.sectionCode === 'CERTIFICATES' ? 'CHỨNG CHỈ' :
-                                         sec.sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' : sec.sectionCode}
-                                      </h4>
-                                    </div>
-                                    <div className="text-left">
-                                      {renderSection({ ...sec, column: 'full' })}
+                                    )}
+                                    <div className="px-6 py-5 flex flex-col gap-0 flex-1">
+                                      {pRight.map(sec => renderSection(sec, isSectionContinuation(sec.sectionCode, pageIdx, rightPages)))}
                                     </div>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
+
+                              {selectedLayout === 'header-left' && (
+                                <div className="flex flex-col h-full text-left">
+                                  {pageIdx === 0 && (
+                                    <div className="px-8 pt-8 pb-4 flex items-end justify-between gap-6 border-b-2" style={{ borderColor: primaryColor }}>
+                                      <div className="flex items-center gap-4">
+                                        {avatarShape !== 'hidden' && (
+                                          <div className={`w-18 h-18 flex items-center justify-center text-white flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`} style={{ backgroundColor: primaryColor }}>
+                                            <span className="material-symbols-outlined text-[32px]">person</span>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <EditableTextMini
+                                            html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
+                                            onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
+                                            className={`${sizeProfileName} font-extrabold text-gray-800 tracking-tight leading-none block`}
+                                            placeholder="Họ và Tên"
+                                          />
+                                          <EditableTextMini
+                                            html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
+                                            onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
+                                            className={`${sizeProfileTitle} font-bold mt-2 uppercase tracking-wider block`}
+                                            style={{ color: primaryColor }}
+                                            placeholder="Chức danh"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => renderSection(sec))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="px-8 py-5 flex flex-col gap-0 flex-1">
+                                    {pHeaderLeft.map(sec => renderSection(sec, isSectionContinuation(sec.sectionCode, pageIdx, headerLeftPages)))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedLayout === 'two-col-equal' && (
+                                <div className="flex flex-col h-full text-left">
+                                  {pageIdx === 0 && (
+                                    <div className="px-8 py-5 text-white flex justify-between items-center" style={{ backgroundColor: primaryColor }}>
+                                      <div>
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
+                                          className={`${sizeProfileName} font-extrabold tracking-tight block text-white`}
+                                          placeholder="Họ và Tên"
+                                        />
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
+                                          className={`${sizeProfileTitle} text-white/80 block mt-1 font-bold uppercase tracking-wider`}
+                                          placeholder="Vị trí ứng tuyển"
+                                        />
+                                      </div>
+                                      {avatarShape !== 'hidden' && (
+                                        <div className={`w-16 h-16 bg-white/15 flex items-center justify-center flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
+                                          <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  <div className="flex-1 grid grid-cols-2 gap-0">
+                                    <div className="px-6 py-5 flex flex-col gap-0 border-r" style={{ borderColor: `${primaryColor}12` }}>
+                                      {pEqualLeft.map(sec => renderSection(sec, isSectionContinuation(sec.sectionCode, pageIdx, equalLeftPages)))}
+                                    </div>
+                                    <div className="px-6 py-5 flex flex-col gap-0">
+                                      {pEqualRight.map(sec => renderSection(sec, isSectionContinuation(sec.sectionCode, pageIdx, equalRightPages)))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedLayout === 'full-width' && (
+                                <div className="flex flex-col h-full text-left">
+                                  {pageIdx === 0 && (
+                                    <div className="px-10 py-6 flex flex-col items-center justify-center border-b" style={{ borderColor: `${primaryColor}20` }}>
+                                      {avatarShape !== 'hidden' && (
+                                        <div className={`w-20 h-20 mb-4 bg-gray-100 flex items-center justify-center flex-shrink-0 shadow-inner ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
+                                          <span className="material-symbols-outlined text-[32px] text-gray-400">person</span>
+                                        </div>
+                                      )}
+                                      <div className="text-center">
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
+                                          className={`${sizeProfileName} font-extrabold tracking-tight block leading-none`}
+                                          style={{ color: primaryColor }}
+                                          placeholder="Họ và Tên"
+                                        />
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
+                                          className={`${sizeProfileTitle} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`}
+                                          placeholder="Vị trí ứng tuyển"
+                                        />
+                                      </div>
+                                      <div className="mt-4 flex justify-center w-full max-w-sm">
+                                        {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => renderSection({ ...sec, column: 'full' }))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="px-12 py-5 flex flex-col gap-0 flex-1">
+                                    {pFullWidth.map(sec => renderSection({ ...sec, column: 'full' }, isSectionContinuation(sec.sectionCode, pageIdx, fullWidthPages)))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedLayout === 'harvard-classic' && (
+                                <div className="flex flex-col h-full text-left">
+                                  {pageIdx === 0 && (
+                                    <div className="px-10 py-6 flex flex-col items-center justify-center border-b-2" style={{ borderColor: primaryColor }}>
+                                      <div className="text-center">
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
+                                          className={`${sizeProfileName} font-black tracking-tight block uppercase leading-none`}
+                                          style={{ color: primaryColor }}
+                                          placeholder="Họ và Tên"
+                                        />
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
+                                          className={`${sizeProfileTitle} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`}
+                                          placeholder="Vị trí ứng tuyển"
+                                        />
+                                      </div>
+                                      
+                                      {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => {
+                                        const contactItem = sec.items[0] || {};
+                                        return (
+                                          <div key={sec.sectionCode} className="mt-3 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[10px] text-gray-600 font-medium font-sans">
+                                            {contactItem.address && (
+                                              <div className="flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
+                                                <EditableTextMini
+                                                  html={contactItem.address}
+                                                  onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
+                                                  placeholder="Địa chỉ"
+                                                />
+                                              </div>
+                                            )}
+                                            {(contactItem.address && contactItem.phone) && <span className="text-gray-400">|</span>}
+                                            {contactItem.phone && (
+                                              <div className="flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[11px] opacity-75">phone</span>
+                                                <EditableTextMini
+                                                  html={contactItem.phone}
+                                                  onChange={(val) => handleUpdateItem('CONTACT', 0, 'phone', val)}
+                                                  placeholder="Điện thoại"
+                                                />
+                                              </div>
+                                            )}
+                                            {(contactItem.phone && contactItem.email) && <span className="text-gray-400">|</span>}
+                                            {contactItem.email && (
+                                              <div className="flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[11px] opacity-75">mail</span>
+                                                <EditableTextMini
+                                                  html={contactItem.email}
+                                                  onChange={(val) => handleUpdateItem('CONTACT', 0, 'email', val)}
+                                                  placeholder="Email"
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  <div className="px-12 py-5 flex flex-col gap-0 flex-1">
+                                    {pHarvardClassic.map(sec => renderSection({ ...sec, column: 'full' }, isSectionContinuation(sec.sectionCode, pageIdx, harvardClassicPages)))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedLayout === 'harvard-gsas' && (
+                                <div className="flex flex-col h-full text-left">
+                                  {pageIdx === 0 && (
+                                    <div className="px-12 py-6 flex justify-between items-start border-b" style={{ borderColor: `${primaryColor}20` }}>
+                                      <div className="flex-1">
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.name || 'NGUYỄN VĂN A'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'name', val)}
+                                          className={`${sizeProfileName} font-black tracking-tight block uppercase leading-none`}
+                                          style={{ color: primaryColor }}
+                                          placeholder="Họ và Tên"
+                                        />
+                                        <EditableTextMini
+                                          html={sections.find(s => s.sectionCode === 'PROFILE')?.items[0]?.title || 'SENIOR FULL-STACK DEVELOPER'}
+                                          onChange={(val) => handleUpdateItem('PROFILE', 0, 'title', val)}
+                                          className={`${sizeProfileTitle} text-gray-500 block mt-1.5 font-bold uppercase tracking-wider`}
+                                          placeholder="Vị trí ứng tuyển"
+                                        />
+                                      </div>
+                                      <div className="shrink-0 text-right">
+                                        {sections.filter(s => s.sectionCode === 'CONTACT').map(sec => {
+                                          const contactItem = sec.items[0] || {};
+                                          return (
+                                            <div key={sec.sectionCode} className="text-[10px] text-gray-600 font-medium font-sans flex flex-col gap-0.5 items-end">
+                                              {contactItem.phone && (
+                                                <div className="flex items-center gap-1 justify-end">
+                                                  <EditableTextMini
+                                                    html={contactItem.phone}
+                                                    onChange={(val) => handleUpdateItem('CONTACT', 0, 'phone', val)}
+                                                    placeholder="Điện thoại"
+                                                  />
+                                                  <span className="material-symbols-outlined text-[11px] opacity-75">phone</span>
+                                                </div>
+                                              )}
+                                              {contactItem.email && (
+                                                <div className="flex items-center gap-1 justify-end">
+                                                  <EditableTextMini
+                                                    html={contactItem.email}
+                                                    onChange={(val) => handleUpdateItem('CONTACT', 0, 'email', val)}
+                                                    placeholder="Email"
+                                                  />
+                                                  <span className="material-symbols-outlined text-[11px] opacity-75">mail</span>
+                                                </div>
+                                              )}
+                                              {contactItem.address && (
+                                                <div className="flex items-center gap-1 justify-end">
+                                                  <EditableTextMini
+                                                    html={contactItem.address}
+                                                    onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
+                                                    placeholder="Địa chỉ"
+                                                  />
+                                                  <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="px-12 py-5 flex flex-col gap-0 flex-1">
+                                    {pHarvardGsas.map(sec => (
+                                      <div key={sec.sectionCode} className="grid grid-cols-[1fr_3.5fr] gap-6 py-2 border-b border-gray-100 last:border-b-0">
+                                        <div className="text-right pr-2">
+                                          <h4 className="text-[11px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
+                                            {sec.sectionCode === 'EDUCATION' ? 'HỌC VẤN' :
+                                             sec.sectionCode === 'EXPERIENCE' ? 'KINH NGHIỆM' :
+                                             sec.sectionCode === 'SKILLS' ? 'KỸ NĂNG' :
+                                             sec.sectionCode === 'OBJECTIVE' ? 'MỤC TIÊU' :
+                                             sec.sectionCode === 'PROJECTS' ? 'DỰ ÁN' :
+                                             sec.sectionCode === 'CERTIFICATES' ? 'CHỨNG CHỈ' :
+                                             sec.sectionCode === 'AWARDS' ? 'GIẢI THƯỞNG' :
+                                             sec.sectionCode === 'INTERESTS' ? 'SỞ THÍCH' :
+                                             sec.sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' :
+                                             sec.sectionCode === 'ADDITIONAL_INFO' ? 'THÔNG TIN THÊM' : sec.sectionCode}
+                                          </h4>
+                                        </div>
+                                        <div className="text-left">
+                                          {renderSection({ ...sec, column: 'full' }, isSectionContinuation(sec.sectionCode, pageIdx, harvardGsasPages))}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        {/* Page Footer Watermark */}
-                        <div className="px-8 py-3 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider select-none pointer-events-none">
-                          <span>VietWorks - Mẫu CV Chuyên Nghiệp</span>
-                          <span>Trang 1 / {totalPages}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ==================== PAGE 2 (If content overflows) ==================== */}
-                    {showPage2 && (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: `${1123 * scale}px`,
-                          position: 'relative',
-                          overflow: 'hidden'
-                        }}
-                        className="rounded-lg shadow-md border border-gray-300"
-                      >
-                        <div
-                          style={{
-                            width: '794px',
-                            height: '1123px',
-                            transform: `scale(${scale})`,
-                            transformOrigin: 'top left',
-                            position: 'absolute',
-                            top: 0,
-                            left: 0
-                          }}
-                          className="bg-white flex flex-col justify-between select-none pointer-events-auto"
-                        >
-
-                          {/* Content Area */}
-                          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                            {selectedLayout === 'left-col' && (
-                              <div className="flex h-full text-left">
-                                {/* Left Sidebar */}
-                                <div style={{ backgroundColor: primaryColor }} className="w-[33%] flex-shrink-0 text-white flex flex-col">
-                                  <div className="px-5 py-6 flex flex-col gap-0 flex-1">
-                                    {p2Left.map(sec => renderSection(sec))}
-                                  </div>
-                                </div>
-
-                                {/* Right Main Content */}
-                                <div className="flex-1 flex flex-col px-6 py-6 gap-0">
-                                  {p2Right.map(sec => renderSection(sec))}
-                                </div>
-                              </div>
-                            )}
-
-                            {selectedLayout === 'header-left' && (
-                              <div className="flex flex-col h-full text-left px-8 py-6 gap-0">
-                                {p2HeaderLeft.map(sec => renderSection(sec))}
-                              </div>
-                            )}
-
-                            {selectedLayout === 'two-col-equal' && (
-                              <div className="flex-1 grid grid-cols-2 gap-0">
-                                <div className="px-6 py-6 flex flex-col gap-0 border-r" style={{ borderColor: `${primaryColor}12` }}>
-                                  {p2EqualLeft.map(sec => renderSection(sec))}
-                                </div>
-                                <div className="px-6 py-6 flex flex-col gap-5">
-                                  {p2EqualRight.map(sec => renderSection(sec))}
-                                </div>
-                              </div>
-                            )}
-
-                            {selectedLayout === 'full-width' && (
-                              <div className="flex flex-col h-full text-left px-12 py-6 gap-0">
-                                {p2FullWidth.map(sec => renderSection({ ...sec, column: 'full' }))}
-                              </div>
-                            )}
-
-                            {selectedLayout === 'harvard-classic' && (
-                              <div className="flex flex-col h-full text-left px-12 py-6 gap-0">
-                                {p2HarvardClassic.map(sec => renderSection({ ...sec, column: 'full' }))}
-                              </div>
-                            )}
-
-                            {selectedLayout === 'harvard-gsas' && (
-                              <div className="flex flex-col h-full text-left px-12 py-6 gap-0">
-                                {p2HarvardGsas.map(sec => (
-                                  <div key={sec.sectionCode} className="grid grid-cols-[1fr_3.5fr] gap-6 py-2 border-b border-gray-100 last:border-b-0">
-                                    <div className="text-right pr-2">
-                                      <h4 className="text-[11px] font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
-                                        {sec.sectionCode === 'EDUCATION' ? 'HỌC VẤN' :
-                                         sec.sectionCode === 'EXPERIENCE' ? 'KINH NGHIỆM' :
-                                         sec.sectionCode === 'SKILLS' ? 'KỸ NĂNG' :
-                                         sec.sectionCode === 'OBJECTIVE' ? 'MỤC TIÊU' :
-                                         sec.sectionCode === 'PROJECTS' ? 'DỰ ÁN' :
-                                         sec.sectionCode === 'CERTIFICATES' ? 'CHỨNG CHỈ' :
-                                         sec.sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' : sec.sectionCode}
-                                      </h4>
-                                    </div>
-                                    <div className="text-left">
-                                      {renderSection({ ...sec, column: 'full' })}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Page Footer Watermark */}
-                          <div className="px-8 py-3 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider select-none pointer-events-none">
-                            <span>VietWorks - Mẫu CV Chuyên Nghiệp</span>
-                            <span>Trang 2 / {totalPages}</span>
+                            {/* Page Footer Watermark */}
+                            <div className="px-12 py-3 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none">
+                              <span>© VietWorks</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })}
                   </>
                 );
               })()}
