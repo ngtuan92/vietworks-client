@@ -2,7 +2,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
-import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, FileText, Heart, CheckSquare, ThumbsUp, Sliders, EyeOff, Award, Bell } from 'lucide-react';
+import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 const Navbar = () => {
   const location = useLocation();
@@ -171,6 +171,7 @@ const Navbar = () => {
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-900 truncate">{profileLabel}</p>
                           <p className="text-xs text-slate-500 truncate">{profileEmail}</p>
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-primary">{roleLabel}</p>
                         </div>
                       </div>
                     </div>
@@ -252,5 +253,4 @@ const MenuLink = ({ to, icon, label, onClick }) => (
 );
 
 export default Navbar;
-
 
