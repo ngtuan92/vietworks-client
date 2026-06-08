@@ -44,8 +44,6 @@ const userMap = {
 const statusMap = {
   UNVERIFIED: 'bg-slate-100 text-slate-700',
   ACTIVE: 'bg-blue-100 text-blue-700',
-  BANNED: 'bg-blue-100 text-[#001a40]',
-  LOCKED: 'bg-blue-100 text-[#001a40]',
   PENDING: 'bg-blue-100 text-blue-800',
   VERIFIED: 'bg-blue-100 text-blue-700',
   REJECTED: 'bg-blue-100 text-[#001a40]',
@@ -63,7 +61,6 @@ const UserDetail = () => {
         actions={
           <>
             <ActionButton tone="soft">Gửi tin nhắn</ActionButton>
-            <ActionButton tone="danger">Khóa tài khoản</ActionButton>
           </>
         }
       />
@@ -133,5 +130,6 @@ const Quick = ({ title, value }) => (
 );
 
 export default UserDetail;
+
 
 

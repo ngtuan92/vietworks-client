@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
 import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, FileText, Heart, CheckSquare, ThumbsUp, Sliders, EyeOff, Award, Bell } from 'lucide-react';
-import logoImg from '../../assets/logo.jpg';
+import logoImg from '../../assets/logo.png';
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -252,4 +252,5 @@ const MenuLink = ({ to, icon, label, onClick }) => (
 );
 
 export default Navbar;
+
 

@@ -1,4 +1,4 @@
-﻿import { BarChart2, Table, Users, User, Building2, Ban } from 'lucide-react';
+﻿import { BarChart2, Table, Users, User, Building2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 const MOCK_USER_GROWTH = {
@@ -12,7 +12,6 @@ const MOCK_USER_GROWTH = {
     byStatus: {
       ACTIVE: 12890,
       UNVERIFIED: 2150,
-      BANNED: 200,
     },
   },
   growthData: [
@@ -77,7 +76,7 @@ const AdminUserGrowth = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-[#0056b3] to-blue-800 p-6 rounded-xl text-white">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
@@ -126,24 +125,7 @@ const AdminUserGrowth = () => {
           </p>
         </div>
 
-        <div className="bg-white p-6 rounded-[1.5rem] border border-slate-200/80 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <Ban className="w-6 h-6 text-[#001a40]" />
-            </div>
-            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Bị khóa</span>
-          </div>
-          <p className="text-2xl font-black text-[#001a40]">{MOCK_USER_GROWTH.summary.byStatus.BANNED.toLocaleString()}</p>
-          <div className="mt-2 w-full h-2 bg-blue-50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#0056B3] rounded-full"
-              style={{ width: `${(MOCK_USER_GROWTH.summary.byStatus.BANNED / MOCK_USER_GROWTH.summary.totalUsers) * 100}%` }}
-            ></div>
-          </div>
-          <p className="mt-1 text-xs text-slate-500">
-            {((MOCK_USER_GROWTH.summary.byStatus.BANNED / MOCK_USER_GROWTH.summary.totalUsers) * 100).toFixed(1)}%
-          </p>
-        </div>
+
       </div>
 
       {/* Growth Chart */}
@@ -241,4 +223,5 @@ const AdminUserGrowth = () => {
 };
 
 export default AdminUserGrowth;
+
 

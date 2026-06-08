@@ -10,7 +10,6 @@ const tabs = [
   'Tin tuyển dụng',
   'Giao dịch',
   'Lịch sử kiểm duyệt',
-  'Báo cáo vi phạm',
 ];
 
 const CompanyDetail = () => {
@@ -169,4 +168,5 @@ const Info = ({ label, value }) => (
 );
 
 export default CompanyDetail;
+
 

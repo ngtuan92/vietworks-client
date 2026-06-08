@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, GraduationCap } from 'lucide-react';
-import logoImg from '../../../assets/logo.jpg';
+import logoImg from '../../../assets/logo.png';
 
 const RoleSelection = () => {
   return (
@@ -61,3 +61,4 @@ const RoleSelection = () => {
 };
 
 export default RoleSelection;
+

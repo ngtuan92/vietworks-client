@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -60,8 +60,6 @@ import EmployerWallet from './pages/employer/wallet/EmployerWallet';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/dashboard/AdminDashboard';
-import UserManagement from './pages/admin/users/UserManagement';
-import UserDetail from './pages/admin/users/UserDetail';
 import CompanyVerification from './pages/admin/companies/CompanyVerification';
 import CompanyReview from './pages/admin/companies/CompanyReview';
 import CompanyDetailAdmin from './pages/admin/companies/CompanyDetail';
@@ -77,7 +75,6 @@ import InvoiceManagement from './pages/admin/billing/InvoiceManagement';
 import PackageManagement from './pages/admin/billing/PackageManagement';
 import NotificationCenter from './pages/admin/notifications/NotificationCenter';
 import AnalyticsDashboard from './pages/admin/dashboard/AnalyticsDashboard';
-import ViolationsManagement from './pages/admin/dashboard/ViolationsManagement';
 import AdminAccountSettings from './pages/admin/dashboard/AdminAccountSettings';
 
 // New Admin Pages from pull/merge
@@ -182,8 +179,6 @@ function App() {
 
               {/* User management routes */}
               <Route path="users" element={<AdminUsers />} />
-              <Route path="users-legacy" element={<UserManagement />} />
-              <Route path="users/:id" element={<UserDetail />} />
 
               <Route path="companies" element={<CompanyVerification />} />
               <Route path="companies/history" element={<CompanyModerationHistory />} />
@@ -222,7 +217,6 @@ function App() {
               <Route path="revenue-report" element={<AdminRevenueReport />} />
               <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
 
-              <Route path="violations" element={<ViolationsManagement />} />
               <Route path="account" element={<AdminAccountSettings />} />
             </Route>
           </Route>
@@ -233,6 +227,8 @@ function App() {
 }
 
 export default App;
+
+
 
 
 

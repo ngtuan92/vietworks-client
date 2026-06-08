@@ -1,12 +1,10 @@
 ﻿import { Link } from 'react-router-dom';
 import {
-  AlertTriangle,
   ArrowUpRight,
   Building2,
   CheckCircle2,
   Clock3,
   FileText,
-  ShieldCheck,
   Sparkles,
   TrendingUp,
   Users,
@@ -23,21 +21,18 @@ const queueItems = [
   { id: 'JOB-2481', title: 'Senior Backend Engineer', owner: 'TechNova Solutions', type: 'Tin tuyển dụng', priority: 'Cao', status: 'Chờ duyệt', time: '12 phút trước' },
   { id: 'COM-1022', title: 'FinTrust Group', owner: 'Mã số thuế: 0319***', type: 'Hồ sơ công ty', priority: 'Trung bình', status: 'Cần xác minh', time: '28 phút trước' },
   { id: 'JOB-2478', title: 'Product Designer UI/UX', owner: 'BrightSide Creative', type: 'Tin tuyển dụng', priority: 'Cao', status: 'Chờ duyệt', time: '42 phút trước' },
-  { id: 'REP-0881', title: 'Báo cáo tin nghi ngờ', owner: 'Ứng viên ẩn danh', type: 'Vi phạm', priority: 'Khẩn cấp', status: 'Cảnh báo', time: '1 giờ trước' },
 ];
 
 const stats = [
   { label: 'Người dùng', value: '15,240', note: '+12.8% tháng này', icon: Users, tone: 'blue' },
   { label: 'Job chờ duyệt', value: '45', note: '18 tin ưu tiên cao', icon: FileText, tone: 'sky' },
   { label: 'Công ty chờ duyệt', value: '12', note: 'Cần xác minh pháp lý', icon: Building2, tone: 'navy' },
-  { label: 'Vi phạm mới', value: '5', note: '7 ngày gần nhất', icon: AlertTriangle, tone: 'blueDark' },
 ];
 
 const quickLinks = [
   { to: '/admin/jobs', icon: FileText, title: 'Kiểm duyệt tin tuyển dụng', description: '45 tin đang chờ xử lý', tone: 'sky' },
   { to: '/admin/companies', icon: Building2, title: 'Xác minh công ty', description: '12 hồ sơ cần đối chiếu', tone: 'navy' },
   { to: '/admin/users', icon: Users, title: 'Quản lý tài khoản', description: 'Lọc theo vai trò và rủi ro', tone: 'blue' },
-  { to: '/admin/violations', icon: ShieldCheck, title: 'Trung tâm vi phạm', description: 'Theo dõi cảnh báo hệ thống', tone: 'blueDark' },
 ];
 
 const toneClass = {
@@ -310,7 +305,7 @@ const StatusBadge = ({ value }) => {
     'Cần xác minh': 'bg-blue-50 text-blue-800 ring-blue-200',
     'Cảnh báo': 'bg-blue-50 text-blue-800 ring-blue-200',
   };
-  const Icon = value === 'Cảnh báo' ? AlertTriangle : value === 'Cần xác minh' ? Clock3 : CheckCircle2;
+  const Icon = value === 'Cần xác minh' ? Clock3 : CheckCircle2;
   return (
     <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ring-1 ${classes[value] || 'bg-slate-50 text-slate-700 ring-slate-200'}`}>
       <Icon className="h-3.5 w-3.5" />
@@ -320,6 +315,8 @@ const StatusBadge = ({ value }) => {
 };
 
 export default AdminDashboard;
+
+
 
 
 

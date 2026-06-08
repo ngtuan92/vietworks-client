@@ -1,4 +1,4 @@
-﻿import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Scale, Settings, PlusCircle } from 'lucide-react';
+﻿import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Settings, PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
@@ -13,7 +13,6 @@ const navItems = [
       { label: 'Tất cả người dùng', to: '/admin/users' },
       { label: 'Ứng viên', to: '/admin/users?role=JOBSEEKER' },
       { label: 'Nhà tuyển dụng', to: '/admin/users?role=EMPLOYER' },
-      { label: 'Tài khoản bị khóa', to: '/admin/users?status=BANNED', isDanger: true },
     ],
   },
   {
@@ -76,11 +75,6 @@ const navItems = [
     icon: <Receipt className={iconClass} />,
     label: 'Yêu cầu hóa đơn',
     to: '/admin/invoices',
-  },
-  {
-    icon: <Scale className={iconClass} />,
-    label: 'Vi phạm',
-    children: [{ label: 'Quản lý báo cáo vi phạm', to: '/admin/violations' }],
   },
   {
     icon: <Settings className={iconClass} />,
@@ -249,5 +243,7 @@ const AdminSidebar = () => {
 };
 
 export default AdminSidebar;
+
+
 
 
