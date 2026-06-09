@@ -161,6 +161,105 @@ export const getApplicationStatus = async (applicationId) => {
   return response.data;
 };
 
+
+// ==================== ADMIN MASTER DATA MANAGEMENT ====================
+
+// --- 1. Quản lý Nhóm ngành nghề (Career Groups) ---
+export const createCareerGroup = async (groupData) => {
+  const response = await api.post('/admin/master-data/career-groups', groupData);
+  return response.data;
+};
+
+export const updateCareerGroup = async (id, groupData) => {
+  const response = await api.put(`/admin/master-data/career-groups/${id}`, groupData);
+  return response.data;
+};
+
+export const deleteCareerGroup = async (id) => {
+  const response = await api.delete(`/admin/master-data/career-groups/${id}`);
+  return response.data;
+};
+
+// --- 2. Quản lý Ngành nghề (Careers) ---
+export const createCareer = async (careerData) => {
+  const response = await api.post('/admin/master-data/careers', careerData);
+  return response.data;
+};
+
+export const updateCareer = async (id, careerData) => {
+  const response = await api.put(`/admin/master-data/careers/${id}`, careerData);
+  return response.data;
+};
+
+export const deleteCareer = async (id) => {
+  const response = await api.delete(`/admin/master-data/careers/${id}`);
+  return response.data;
+};
+
+// --- 3. Quản lý Vị trí chuyên môn (Career Positions) ---
+export const createCareerPosition = async (positionData) => {
+  const response = await api.post('/admin/master-data/career-positions', positionData);
+  return response.data;
+};
+
+export const updateCareerPosition = async (id, positionData) => {
+  const response = await api.put(`/admin/master-data/career-positions/${id}`, positionData);
+  return response.data;
+};
+
+export const deleteCareerPosition = async (id) => {
+  const response = await api.delete(`/admin/master-data/career-positions/${id}`);
+  return response.data;
+};
+
+// --- 4. Quản lý Cấp bậc công việc (Job Levels) ---
+export const createJobLevel = async (levelData) => {
+  const response = await api.post('/admin/master-data/job-levels', levelData);
+  return response.data;
+};
+
+export const updateJobLevel = async (id, levelData) => {
+  const response = await api.put(`/admin/master-data/job-levels/${id}`, levelData);
+  return response.data;
+};
+
+export const deleteJobLevel = async (id) => {
+  const response = await api.delete(`/admin/master-data/job-levels/${id}`);
+  return response.data;
+};
+
+// --- 5. Quản lý Kỹ năng (Skills) ---
+export const createSkill = async (skillData) => {
+  const response = await api.post('/admin/master-data/skills', skillData);
+  return response.data;
+};
+
+export const updateSkill = async (id, skillData) => {
+  const response = await api.put(`/admin/master-data/skills/${id}`, skillData);
+  return response.data;
+};
+
+export const deleteSkill = async (id) => {
+  const response = await api.delete(`/admin/master-data/skills/${id}`);
+  return response.data;
+};
+
+// --- 6. Quản lý Mức kinh nghiệm (Experience Levels) ---
+export const createExperienceLevel = async (expData) => {
+  const response = await api.post('/admin/master-data/experience-levels', expData);
+  return response.data;
+};
+
+export const updateExperienceLevel = async (id, expData) => {
+  const response = await api.put(`/admin/master-data/experience-levels/${id}`, expData);
+  return response.data;
+};
+
+export const deleteExperienceLevel = async (id) => {
+  const response = await api.delete(`/admin/master-data/experience-levels/${id}`);
+  return response.data;
+};
+
 export default {
   createJob,
   updateJob,
@@ -175,6 +274,7 @@ export default {
   getJobById,
   getJobs,
   getMyJobs,
+  getPublicJobDetail,
   
 
   getApplyOptions,
@@ -183,4 +283,33 @@ export default {
   checkDuplicateApplication,
   getMyApplications,
   getApplicationStatus,
+
+  createCareerGroup,
+  updateCareerGroup,
+  deleteCareerGroup,
+
+  // Admin Careers
+  createCareer,
+  updateCareer,
+  deleteCareer,
+
+  // Admin Career Positions
+  createCareerPosition,
+  updateCareerPosition,
+  deleteCareerPosition,
+
+  // Admin Job Levels
+  createJobLevel,
+  updateJobLevel,
+  deleteJobLevel,
+
+  // Admin Skills
+  createSkill,
+  updateSkill,
+  deleteSkill,
+
+  // Admin Experience Levels
+  createExperienceLevel,
+  updateExperienceLevel,
+  deleteExperienceLevel,
 };

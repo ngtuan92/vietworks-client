@@ -382,15 +382,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
               <>
                 <button onClick={() => setStep(1)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold">Chỉnh sửa lại</button>
                 <button onClick={handleSaveDraft} disabled={isLoading} className="px-4 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-900 font-semibold disabled:opacity-50">Lưu nháp</button>
-                <button
-                  onClick={handlePublishJob}
-                  disabled={!isCompanyVerified || isLoading}
-                  className={`px-5 py-2 rounded-xl font-semibold text-white shadow-sm transition-all ${
-                    isCompanyVerified ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-400 text-amber-900 cursor-not-allowed'
-                  } disabled:opacity-50`}
-                >
-                  {isLoading ? 'Đang gửi...' : 'Gửi duyệt tin'}
-                </button>
+             
               </>
             )}
           </div>
