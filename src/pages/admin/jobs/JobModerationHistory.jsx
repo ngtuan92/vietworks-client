@@ -1,7 +1,7 @@
 ﻿import { PageHeader, SectionCard, SimpleTable } from '../shared/AdminPrimitives';
 
 const JobModerationHistory = () => (
-  <div className="space-y-6">
+  <div className="space-y-7 animate-rise-in">
     <PageHeader title="Job Moderation History" description="Track approve/reject/ban actions across the platform." />
     <SectionCard>
       <SimpleTable headers={['Time', 'Job', 'Company', 'Old status', 'New status', 'Admin', 'Reason', 'Note']}>
@@ -13,3 +13,5 @@ const JobModerationHistory = () => (
 );
 
 export default JobModerationHistory;
+
+

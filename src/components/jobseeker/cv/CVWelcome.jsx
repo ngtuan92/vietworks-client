@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PlusCircle } from 'lucide-react';
 
 const CVWelcome = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ const CVWelcome = () => {
         onClick={() => navigate('/cv-templates/gallery')}
         className="flex items-center gap-stack-sm bg-primary text-on-secondary px-6 py-3 rounded-lg font-bold shadow-md hover:bg-primary-container transition-all active:scale-95"
       >
-        <span className="material-symbols-outlined">add_circle</span>
+        <PlusCircle className="w-5 h-5" />
         <span>Tạo CV Mới</span>
       </button>
     </section>

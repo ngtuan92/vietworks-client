@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import adminService from '../../../services/adminService';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -191,7 +191,7 @@ const CVTemplateList = () => {
                           {tpl.name}
                         </div>
                         <div className="text-xs text-gray-500 font-mono mt-0.5">Mã: {tpl.code}</div>
-                        {tpl.isPremium && <span className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded">PREMIUM</span>}
+                        {tpl.isPremium && <span className="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded">PREMIUM</span>}
                       </div>
                     </td>
 
@@ -286,3 +286,5 @@ const CVTemplateList = () => {
 };
 
 export default CVTemplateList;
+
+

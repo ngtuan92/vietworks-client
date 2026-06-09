@@ -6,7 +6,7 @@ const CompanyReview = () => {
   const [reason, setReason] = useState('');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader
         title="Company Verification Review"
         description="Compare company info with business license before marking VERIFIED."
@@ -66,10 +66,12 @@ const CompanyReview = () => {
 };
 
 const Info = ({ label, value }) => (
-  <div className="mb-3 rounded-xl border border-slate-200 p-3">
+  <div className="mb-3 rounded-[1.5rem] border border-slate-200/80 shadow-soft p-3">
     <div className="text-xs text-slate-500">{label}</div>
     <div className="font-semibold text-slate-900">{value}</div>
   </div>
 );
 
 export default CompanyReview;
+
+

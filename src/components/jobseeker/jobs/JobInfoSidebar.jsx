@@ -1,3 +1,5 @@
+import { Award, Signal, LayoutGrid, Briefcase, Calendar, Clock } from 'lucide-react';
+
 const formatDate = (date) => {
   if (!date) return '-';
   return new Date(date).toLocaleDateString('vi-VN');
@@ -11,7 +13,7 @@ const saturdayMap = {
 
 const InfoItem = ({ icon, label, value, danger = false }) => (
   <div className="flex gap-4">
-    <span className="material-symbols-outlined text-primary shrink-0">{icon}</span>
+    <span className="text-primary shrink-0">{icon}</span>
     <div>
       <p className="text-on-surface-variant font-body-sm text-body-sm">{label}</p>
       <p className={`font-semibold font-body-md ${danger ? 'text-error' : 'text-on-surface'}`}>
@@ -28,37 +30,37 @@ const JobInfoSidebar = ({ job }) => {
 
       <div className="space-y-6">
         <InfoItem
-          icon="military_tech"
+          icon={<Award className="w-5 h-5" />}
           label="Kinh nghiệm"
           value={job?.experienceLevelId?.name}
         />
 
         <InfoItem
-          icon="signal_cellular_alt"
+          icon={<Signal className="w-5 h-5" />}
           label="Cấp bậc"
           value={job?.jobLevelId?.name}
         />
 
         <InfoItem
-          icon="category"
+          icon={<LayoutGrid className="w-5 h-5" />}
           label="Ngành nghề"
           value={job?.careerId?.name}
         />
 
         <InfoItem
-          icon="badge"
+          icon={<Briefcase className="w-5 h-5" />}
           label="Vị trí"
           value={job?.careerPositionId?.name}
         />
 
         <InfoItem
-          icon="event_available"
+          icon={<Calendar className="w-5 h-5" />}
           label="Chính sách Thứ 7"
           value={saturdayMap[job?.saturdayPolicy]}
         />
 
         <InfoItem
-          icon="alarm_on"
+          icon={<Clock className="w-5 h-5" />}
           label="Hạn nộp hồ sơ"
           value={formatDate(job?.deadline)}
           danger

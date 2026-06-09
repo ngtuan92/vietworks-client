@@ -42,7 +42,7 @@ const JobPagination = ({
         disabled={currentPage === 1}
         className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className="material-symbols-outlined">chevron_left</span>
+        <ChevronLeft className="w-5 h-5" />
       </button>
 
       {visiblePages.map((page, index) => (
@@ -54,7 +54,7 @@ const JobPagination = ({
             onClick={() => onPageChange(page)}
             className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold transition-colors ${
               page === currentPage
-                ? 'bg-[#003f87] text-white'
+                ? 'bg-primary text-white'
                 : 'border border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -68,7 +68,7 @@ const JobPagination = ({
         disabled={currentPage === totalPages}
         className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className="material-symbols-outlined">chevron_right</span>
+        <ChevronRight className="w-5 h-5" />
       </button>
     </nav>
   );

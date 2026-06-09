@@ -3,6 +3,7 @@ import Hero from '../../../components/jobseeker/home/Hero';
 import JobGrid from '../../../components/jobseeker/jobs/JobGrid';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { Heart, UserPlus, ShieldCheck, MessageCircle } from 'lucide-react';
 
 const featuredJobs = [
   {
@@ -73,7 +74,7 @@ const Home = () => {
               </div>
               <button
                 onClick={() => navigate('/jobs')}
-                className="text-blue-700 font-semibold hover:underline"
+                className="text-primary font-semibold hover:underline"
               >
                 Xem tất cả
               </button>
@@ -84,16 +85,16 @@ const Home = () => {
                 <button
                   key={job.id}
                   onClick={() => navigate('/jobs')}
-                  className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow"
+                  className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
                 >
-                  <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                  <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
                     {job.badge}
                   </span>
                   <h3 className="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">{job.title}</h3>
                   <p className="mt-1 text-slate-600">{job.company}</p>
                   <div className="mt-4 flex items-center justify-between text-sm">
                     <span className="text-slate-500">{job.location}</span>
-                    <span className="font-semibold text-blue-700">{job.salary}</span>
+                    <span className="font-semibold text-primary">{job.salary}</span>
                   </div>
                 </button>
               ))}
@@ -113,7 +114,7 @@ const Home = () => {
                 </p>
                 <button
                   onClick={() => goProtected('/manage-cv')}
-                  className="mt-6 px-5 py-3 bg-white text-[#003f87] font-bold rounded-lg hover:opacity-90"
+                  className="mt-6 px-5 py-3 bg-white text-primary font-bold rounded-lg hover:opacity-90"
                 >
                   Bắt đầu tạo CV
                 </button>
@@ -144,7 +145,7 @@ const Home = () => {
               </div>
               <button
                 onClick={() => navigate('/companies')}
-                className="text-blue-700 font-semibold hover:underline"
+                className="text-primary font-semibold hover:underline"
               >
                 Xem tất cả công ty
               </button>
@@ -155,14 +156,14 @@ const Home = () => {
                 <button
                   key={company.id}
                   onClick={() => navigate(`/companies/${company.id}`)}
-                  className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow"
+                  className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 font-bold flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-primary/5 text-primary font-bold flex items-center justify-center">
                     {company.name.charAt(0)}
                   </div>
                   <h3 className="mt-3 text-base font-semibold text-slate-900">{company.name}</h3>
                   <p className="mt-1 text-sm text-slate-500">{company.industry}</p>
-                  <p className="mt-3 text-sm font-medium text-blue-700">{company.openings} vị trí đang tuyển</p>
+                  <p className="mt-3 text-sm font-medium text-primary">{company.openings} vị trí đang tuyển</p>
                 </button>
               ))}
             </div>
@@ -171,10 +172,10 @@ const Home = () => {
       </main>
 
       <div className="fixed right-6 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-2 z-40">
-        <FloatingActionButton onClick={() => goProtected('/jobs')} icon="favorite" label="Việc làm đã lưu" />
-        <FloatingActionButton onClick={() => goProtected('/manage-cv')} icon="person_add" label="Hồ sơ sự nghiệp" />
-        <FloatingActionButton onClick={() => goProtected('/profile')} icon="verified_user" label="Xác thực tài khoản" />
-        <FloatingActionButton onClick={() => navigate('/companies')} icon="chat" label="Trung tâm trợ giúp" isPrimary animate="animate-bounce hover:animate-none" />
+        <FloatingActionButton onClick={() => goProtected('/jobs')} icon={<Heart className="w-5 h-5" />} label="Việc làm đã lưu" />
+        <FloatingActionButton onClick={() => goProtected('/manage-cv')} icon={<UserPlus className="w-5 h-5" />} label="Hồ sơ sự nghiệp" />
+        <FloatingActionButton onClick={() => goProtected('/profile')} icon={<ShieldCheck className="w-5 h-5" />} label="Xác thực tài khoản" />
+        <FloatingActionButton onClick={() => navigate('/companies')} icon={<MessageCircle className="w-5 h-5" />} label="Trung tâm trợ giúp" isPrimary animate="animate-bounce hover:animate-none" />
       </div>
     </div>
   );

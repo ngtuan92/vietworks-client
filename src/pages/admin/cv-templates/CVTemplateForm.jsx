@@ -1,3 +1,4 @@
+﻿import { ChevronRight, Save, Info, Palette, Check, Plus, Database, Image, X, UploadCloud, Eye, User, MapPin, Phone, Mail } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import adminService from '../../../services/adminService';
@@ -700,7 +701,7 @@ const CVTemplateForm = () => {
             <button
               type="button"
               onClick={() => handleAddItem(sectionCode)}
-              className="text-green-600 hover:text-green-700 font-bold text-[9px] px-1"
+              className="text-blue-700 hover:text-blue-700 font-bold text-[9px] px-1"
             >
               + Thêm
             </button>
@@ -778,7 +779,7 @@ const CVTemplateForm = () => {
                   <button
                     type="button"
                     onClick={() => handleRemoveItem('SKILLS', idx)}
-                    className="text-red-500 hover:text-red-700 opacity-0 group-hover/tag:opacity-100 scale-90 transition-opacity ml-0.5 font-bold"
+                    className="text-[#0056B3] hover:text-[#004491] opacity-0 group-hover/tag:opacity-100 scale-90 transition-opacity ml-0.5 font-bold"
                   >
                     ×
                   </button>
@@ -793,7 +794,7 @@ const CVTemplateForm = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem('EXPERIENCE', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                className="absolute top-0 right-0 text-[#0056B3] hover:text-[#004491] opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
               >
                 ×
               </button>
@@ -833,7 +834,7 @@ const CVTemplateForm = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem('EDUCATION', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                className="absolute top-0 right-0 text-[#0056B3] hover:text-[#004491] opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
               >
                 ×
               </button>
@@ -874,7 +875,7 @@ const CVTemplateForm = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem('PROJECTS', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                className="absolute top-0 right-0 text-[#0056B3] hover:text-[#004491] opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
               >
                 ×
               </button>
@@ -914,7 +915,7 @@ const CVTemplateForm = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem('CERTIFICATES', idx)}
-                className="absolute top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                className="absolute top-0.5 right-0 text-[#0056B3] hover:text-[#004491] opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
               >
                 ×
               </button>
@@ -939,7 +940,7 @@ const CVTemplateForm = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem('ACTIVITIES', idx)}
-                className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                className="absolute top-0 right-0 text-[#0056B3] hover:text-[#004491] opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
               >
                 ×
               </button>
@@ -973,7 +974,7 @@ const CVTemplateForm = () => {
   // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) {
+    if (!name) {
       warning('Vui lòng nhập tên mẫu CV.');
       return;
     }
@@ -1031,9 +1032,9 @@ const CVTemplateForm = () => {
       {/* Top sticky action header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e5e7eb] pb-5">
         <div>
-          <span className="text-sm font-semibold text-gray-500 flex items-center gap-1.5 cursor-pointer hover:text-[#0056b3] transition-colors" onClick={() => navigate('/admin/cv-templates')}>
+          <span className="text-sm font-semibold text-gray-500 flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/admin/cv-templates')}>
             Mẫu CV
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <ChevronRight className="w-5 h-5 " />
             {isEditMode ? 'Cập nhật Mẫu CV' : 'Tạo mới Mẫu CV'}
           </span>
           <h1 className="text-3xl font-extrabold text-[#111827] tracking-tight mt-1">
@@ -1054,9 +1055,9 @@ const CVTemplateForm = () => {
           </button>
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-lg bg-[#0056b3] hover:bg-[#004085] text-white font-bold transition-all shadow-sm flex items-center gap-2"
+            className="px-5 py-2.5 rounded-lg bg-primary hover:bg-[#004085] text-white font-bold transition-all shadow-sm flex items-center gap-2"
           >
-            <span className="material-symbols-outlined text-[20px]">save</span>
+            <Save className="w-5 h-5 " />
             Lưu Mẫu CV
           </button>
         </div>
@@ -1070,7 +1071,7 @@ const CVTemplateForm = () => {
           {/* Card 1: Thông tin cơ bản */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-5">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">info</span>
+              <Info className="w-5 h-5 text-primary" />
               Thông tin cơ bản
             </h2>
 
@@ -1111,7 +1112,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => setIsActive(!isActive)}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[#0056b3]' : 'bg-gray-300'
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-primary' : 'bg-gray-300'
                     }`}
                 >
                   <span
@@ -1126,7 +1127,7 @@ const CVTemplateForm = () => {
           {/* Card 2: Cấu hình thiết kế */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">palette</span>
+              <Palette className="w-5 h-5 text-primary" />
               Cấu hình thiết kế
             </h2>
 
@@ -1140,7 +1141,7 @@ const CVTemplateForm = () => {
                     type="button"
                     onClick={() => setSelectedLayout(lay.id)}
                     className={`relative text-left p-3 rounded-xl border-2 transition-all flex flex-col justify-between gap-3 bg-white ${selectedLayout === lay.id
-                        ? 'border-[#0056b3] bg-blue-50/10 shadow-sm'
+                        ? 'border-primary bg-blue-50/10 shadow-sm'
                         : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
@@ -1151,7 +1152,7 @@ const CVTemplateForm = () => {
 
                     {/* Radio Button Indicator & Name */}
                     <div className="flex items-center gap-2 mt-1">
-                      <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center ${selectedLayout === lay.id ? 'border-[#0056b3] bg-[#0056b3]' : 'border-gray-300'
+                      <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center ${selectedLayout === lay.id ? 'border-primary bg-primary' : 'border-gray-300'
                         }`}>
                         {selectedLayout === lay.id && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
                       </div>
@@ -1200,7 +1201,7 @@ const CVTemplateForm = () => {
                       title={color.name}
                     >
                       {primaryColor === color.hex && (
-                        <span className="material-symbols-outlined text-white text-[18px]">done</span>
+                        <Check className="w-5 h-5 text-white" />
                       )}
                     </button>
                   ))}
@@ -1211,7 +1212,7 @@ const CVTemplateForm = () => {
                       className="w-9 h-9 rounded-full border-2 border-dashed border-gray-300 hover:border-gray-500 flex items-center justify-center cursor-pointer transition-colors"
                       title="Chọn màu khác"
                     >
-                      <span className="material-symbols-outlined text-gray-500 text-[18px]">add</span>
+                      <Plus className="w-5 h-5 text-gray-500" />
                     </label>
                     <input
                       id="customColorPicker"
@@ -1293,7 +1294,7 @@ const CVTemplateForm = () => {
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4">
             <div>
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#0056b3] text-[22px]">dns</span>
+                <Database className="w-5 h-5 text-primary" />
                 Danh sách Section Mặc định
               </h2>
               <p className="text-xs text-gray-500 mt-1">
@@ -1311,16 +1312,16 @@ const CVTemplateForm = () => {
                   className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${sec.required
                       ? 'bg-gray-100/50 border-gray-200 cursor-not-allowed opacity-80'
                       : checkedSections[sec.id]
-                        ? 'border-[#0056b3] bg-blue-50/5'
+                        ? 'border-primary bg-blue-50/5'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${checkedSections[sec.id]
-                      ? 'bg-[#0056b3] border-[#0056b3] text-white'
+                      ? 'bg-primary border-primary text-white'
                       : 'border-gray-300 bg-white'
                     }`}>
                     {checkedSections[sec.id] && (
-                      <span className="material-symbols-outlined text-[14px] font-bold">done</span>
+                      <Check className="w-5 h-5 font-bold" />
                     )}
                   </div>
                   <span className={`text-sm font-semibold ${sec.required ? 'text-gray-400' : 'text-gray-800'}`}>
@@ -1333,12 +1334,12 @@ const CVTemplateForm = () => {
         </div>
 
         {/* Right sidebar - Stacked Upload & Live Preview Cards */}
-        <div className="space-y-6">
+        <div className="space-y-7 animate-rise-in">
 
           {/* Card 1: Upload Ảnh Preview Tĩnh */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">image</span>
+              <Image className="w-5 h-5 text-primary" />
               Ảnh Preview Thiết Kế (Tĩnh)
             </h2>
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -1351,7 +1352,7 @@ const CVTemplateForm = () => {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={`border-2 border-dashed rounded-xl p-6 text-center transition-all relative flex flex-col items-center justify-center min-h-[250px] ${isDragging
-                  ? 'border-[#0056b3] bg-blue-50/20'
+                  ? 'border-primary bg-blue-50/20'
                   : previewUrl
                     ? 'border-gray-200 bg-gray-50'
                     : 'border-gray-300 hover:border-gray-400 bg-gray-50/30'
@@ -1369,10 +1370,10 @@ const CVTemplateForm = () => {
                     <button
                       type="button"
                       onClick={handleRemoveImage}
-                      className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md flex items-center justify-center transition-colors"
+                      className="bg-[#0056B3] hover:bg-[#004491] text-white rounded-full p-1.5 shadow-md flex items-center justify-center transition-colors"
                       title="Gỡ bỏ ảnh"
                     >
-                      <span className="material-symbols-outlined text-[18px]">close</span>
+                      <X className="w-5 h-5 " />
                     </button>
                   </div>
                   <span className="text-xs font-semibold text-gray-500 truncate max-w-full px-4">
@@ -1380,7 +1381,7 @@ const CVTemplateForm = () => {
                   </span>
                   <label
                     htmlFor="previewImageUploader"
-                    className="text-xs font-bold text-[#0056b3] hover:underline cursor-pointer"
+                    className="text-xs font-bold text-primary hover:underline cursor-pointer"
                   >
                     Thay đổi ảnh khác
                   </label>
@@ -1389,7 +1390,7 @@ const CVTemplateForm = () => {
                 // Empty state upload prompt
                 <div className="flex flex-col items-center justify-center space-y-3 p-4">
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
-                    <span className="material-symbols-outlined text-[28px]">cloud_upload</span>
+                    <UploadCloud className="w-5 h-5 " />
                   </div>
                   <div>
                     <span className="text-xs font-bold text-gray-800 block">Kéo thả ảnh hoặc click để chọn</span>
@@ -1413,7 +1414,7 @@ const CVTemplateForm = () => {
           {/* Card 2: Live Mockup Preview tương tác */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">visibility</span>
+              <Eye className="w-5 h-5 text-primary" />
               Thiết kế nội dung mẫu trực quan
             </h2>
             <p className="text-xs text-gray-500 leading-relaxed">
@@ -1573,7 +1574,7 @@ const CVTemplateForm = () => {
                                   {avatarShape !== 'hidden' && (
                                     <div className={`w-20 h-20 bg-white/15 mx-auto flex items-center justify-center ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
                                       }`}>
-                                      <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+                                      <User className="w-5 h-5 text-white/70" />
                                     </div>
                                   )}
                                 </div>
@@ -1626,7 +1627,7 @@ const CVTemplateForm = () => {
                                   {avatarShape !== 'hidden' && (
                                     <div className={`w-18 h-18 flex items-center justify-center text-white flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
                                       }`} style={{ backgroundColor: primaryColor }}>
-                                      <span className="material-symbols-outlined text-[32px]">person</span>
+                                      <User className="w-5 h-5 " />
                                     </div>
                                   )}
                                   <div>
@@ -1676,7 +1677,7 @@ const CVTemplateForm = () => {
                                 {avatarShape !== 'hidden' && (
                                   <div className={`w-16 h-16 bg-white/15 flex items-center justify-center flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
                                     }`}>
-                                    <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
+                                    <User className="w-5 h-5 text-white/80" />
                                   </div>
                                 )}
                               </div>
@@ -1697,7 +1698,7 @@ const CVTemplateForm = () => {
                               <div className="px-10 py-6 flex flex-col items-center justify-center border-b" style={{ borderColor: `${primaryColor}20` }}>
                                 {avatarShape !== 'hidden' && (
                                   <div className={`w-20 h-20 mb-4 bg-gray-100 flex items-center justify-center flex-shrink-0 shadow-inner ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
-                                    <span className="material-symbols-outlined text-[32px] text-gray-400">person</span>
+                                    <User className="w-5 h-5 text-gray-400" />
                                   </div>
                                 )}
                                 <div className="text-center">
@@ -1752,7 +1753,7 @@ const CVTemplateForm = () => {
                                     <div key={sec.sectionCode} className="mt-3 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[10px] text-gray-600 font-medium font-sans">
                                       {contactItem.address && (
                                         <div className="flex items-center gap-1">
-                                          <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
+                                          <MapPin className="w-5 h-5 opacity-75" />
                                           <EditableTextMini
                                             html={contactItem.address}
                                             onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
@@ -1763,7 +1764,7 @@ const CVTemplateForm = () => {
                                       {(contactItem.address && contactItem.phone) && <span className="text-gray-400">|</span>}
                                       {contactItem.phone && (
                                         <div className="flex items-center gap-1">
-                                          <span className="material-symbols-outlined text-[11px] opacity-75">phone</span>
+                                          <Phone className="w-5 h-5 opacity-75" />
                                           <EditableTextMini
                                             html={contactItem.phone}
                                             onChange={(val) => handleUpdateItem('CONTACT', 0, 'phone', val)}
@@ -1774,7 +1775,7 @@ const CVTemplateForm = () => {
                                       {(contactItem.phone && contactItem.email) && <span className="text-gray-400">|</span>}
                                       {contactItem.email && (
                                         <div className="flex items-center gap-1">
-                                          <span className="material-symbols-outlined text-[11px] opacity-75">mail</span>
+                                          <Mail className="w-5 h-5 opacity-75" />
                                           <EditableTextMini
                                             html={contactItem.email}
                                             onChange={(val) => handleUpdateItem('CONTACT', 0, 'email', val)}
@@ -1823,7 +1824,7 @@ const CVTemplateForm = () => {
                                               onChange={(val) => handleUpdateItem('CONTACT', 0, 'phone', val)}
                                               placeholder="Điện thoại"
                                             />
-                                            <span className="material-symbols-outlined text-[11px] opacity-75">phone</span>
+                                            <Phone className="w-5 h-5 opacity-75" />
                                           </div>
                                         )}
                                         {contactItem.email && (
@@ -1833,7 +1834,7 @@ const CVTemplateForm = () => {
                                               onChange={(val) => handleUpdateItem('CONTACT', 0, 'email', val)}
                                               placeholder="Email"
                                             />
-                                            <span className="material-symbols-outlined text-[11px] opacity-75">mail</span>
+                                            <Mail className="w-5 h-5 opacity-75" />
                                           </div>
                                         )}
                                         {contactItem.address && (
@@ -1843,7 +1844,7 @@ const CVTemplateForm = () => {
                                               onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
                                               placeholder="Địa chỉ"
                                             />
-                                            <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
+                                            <MapPin className="w-5 h-5 opacity-75" />
                                           </div>
                                         )}
                                       </div>
@@ -1998,3 +1999,5 @@ const CVTemplateForm = () => {
 };
 
 export default CVTemplateForm;
+
+

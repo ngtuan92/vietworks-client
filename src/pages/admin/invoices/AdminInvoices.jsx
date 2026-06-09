@@ -1,3 +1,4 @@
+﻿import { Receipt, Clock, CheckCircle2, FileText, Calendar, Send, Eye, X } from 'lucide-react';
 import React, { useState } from 'react';
 
 const MOCK_INVOICES = [
@@ -46,10 +47,10 @@ const MOCK_INVOICES = [
 ];
 
 const statusConfig = {
-  PENDING: { label: 'Chờ xử lý', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'pending' },
+  PENDING: { label: 'Chờ xử lý', bg: 'bg-blue-100', text: 'text-blue-800', icon: 'pending' },
   GENERATED: { label: 'Đã tạo', bg: 'bg-indigo-100', text: 'text-indigo-700', icon: 'description' },
-  SENT: { label: 'Đã gửi', bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'check_circle' },
-  CANCELLED: { label: 'Đã hủy', bg: 'bg-[#c2c6d4]', text: 'text-[#5e5e62]', icon: 'cancel' },
+  SENT: { label: 'Đã gửi', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'check_circle' },
+  CANCELLED: { label: 'Đã hủy', bg: 'bg-[#c2c6d4]', text: 'text-slate-500', icon: 'cancel' },
 };
 
 const formatPrice = (price) => {
@@ -76,20 +77,20 @@ const AdminInvoices = () => {
   };
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-7 pb-10 animate-rise-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#0056b3] flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-[#0056b3] rounded-full"></span>
+          <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-primary rounded-full"></span>
             Quản lý Yêu cầu Hóa đơn
           </h2>
-          <p className="text-sm text-[#5e5e62] mt-1">Xử lý và theo dõi yêu cầu hóa đơn từ khách hàng</p>
+          <p className="text-sm text-slate-500 mt-1">Xử lý và theo dõi yêu cầu hóa đơn từ khách hàng</p>
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+          className="px-4 py-2 rounded-2xl border border-slate-200/80 text-sm font-medium"
         >
           <option value="all">Tất cả trạng thái</option>
           <option value="PENDING">Chờ xử lý</option>
@@ -101,30 +102,30 @@ const AdminInvoices = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+        <div className="vw-card p-5 rounded-[1.5rem]">
           <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[#0056b3]">receipt_long</span>
-            <span className="text-sm font-bold text-[#5e5e62] uppercase">Tổng yêu cầu</span>
+            <Receipt className="w-5 h-5 text-primary" />
+            <span className="text-sm font-bold text-slate-500 uppercase">Tổng yêu cầu</span>
           </div>
-          <p className="text-3xl font-black text-[#1b1c1c]">{invoices.length}</p>
+          <p className="text-3xl font-black text-slate-900">{invoices.length}</p>
         </div>
-        <div className="bg-amber-50 p-5 rounded-xl border border-amber-200">
+        <div className="bg-blue-50 p-5 rounded-xl border border-blue-200">
           <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-amber-600">pending</span>
-            <span className="text-sm font-bold text-amber-600 uppercase">Chờ xử lý</span>
+            <Clock className="w-5 h-5 text-blue-800" />
+            <span className="text-sm font-bold text-blue-800 uppercase">Chờ xử lý</span>
           </div>
-          <p className="text-3xl font-black text-amber-600">{invoices.filter((i) => i.status === 'PENDING').length}</p>
+          <p className="text-3xl font-black text-blue-800">{invoices.filter((i) => i.status === 'PENDING').length}</p>
         </div>
-        <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200">
+        <div className="bg-blue-50 p-5 rounded-xl border border-blue-200">
           <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
-            <span className="text-sm font-bold text-emerald-600 uppercase">Đã gửi</span>
+            <CheckCircle2 className="w-5 h-5 text-blue-700" />
+            <span className="text-sm font-bold text-blue-700 uppercase">Đã gửi</span>
           </div>
-          <p className="text-3xl font-black text-emerald-600">{invoices.filter((i) => i.status === 'SENT').length}</p>
+          <p className="text-3xl font-black text-blue-700">{invoices.filter((i) => i.status === 'SENT').length}</p>
         </div>
         <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-200">
           <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-indigo-600">description</span>
+            <FileText className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-bold text-indigo-600 uppercase">Đã tạo</span>
           </div>
           <p className="text-3xl font-black text-indigo-600">{invoices.filter((i) => i.status === 'GENERATED').length}</p>
@@ -136,7 +137,7 @@ const AdminInvoices = () => {
         {filteredInvoices.map((invoice) => {
           const status = statusConfig[invoice.status] || statusConfig.PENDING;
           return (
-            <div key={invoice._id} className="bg-white rounded-xl border border-[#c2c6d4]/50 p-6 hover:shadow-md transition-all">
+            <div key={invoice._id} className="vw-card rounded-[1.5rem] p-6 hover:shadow-glow hover:-translate-y-0.5 transition-all">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${status.bg}`}>
@@ -144,32 +145,32 @@ const AdminInvoices = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-bold text-[#1b1c1c]">{invoice.buyerName}</h3>
+                      <h3 className="text-lg font-bold text-slate-900">{invoice.buyerName}</h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.text}`}>
                         {status.label}
                       </span>
                     </div>
-                    <p className="text-sm text-[#5e5e62]">{invoice.buyerEmail}</p>
+                    <p className="text-sm text-slate-500">{invoice.buyerEmail}</p>
                     {invoice.buyerTaxId && (
                       <p className="text-xs text-[#727784] mt-1">Mã số thuế: {invoice.buyerTaxId}</p>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-black text-[#0056b3]">{formatPrice(invoice.amount)}</p>
-                  <p className="text-xs text-[#5e5e62] mt-1">Mã hóa đơn: {invoice.invoiceNumber}</p>
+                  <p className="text-2xl font-black text-primary">{formatPrice(invoice.amount)}</p>
+                  <p className="text-xs text-slate-500 mt-1">Mã hóa đơn: {invoice.invoiceNumber}</p>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-[#c2c6d4]/30 flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-[#5e5e62]">
+              <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm text-slate-500">
                   <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[16px]">event</span>
+                    <Calendar className="w-4 h-4 " />
                     Ngày tạo: {new Date(invoice.issuedDate).toLocaleDateString('vi-VN')}
                   </span>
                   {invoice.sentAt && (
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px]">send</span>
+                      <Send className="w-4 h-4 " />
                       Đã gửi: {new Date(invoice.sentAt).toLocaleDateString('vi-VN')}
                     </span>
                   )}
@@ -177,10 +178,10 @@ const AdminInvoices = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setSelectedInvoice(invoice)}
-                    className="p-2 rounded-lg hover:bg-[#0056b3]/10 text-[#5e5e62] transition-all"
+                    className="p-2 rounded-lg hover:bg-blue-50 text-slate-500 transition-all"
                     title="Xem chi tiết"
                   >
-                    <span className="material-symbols-outlined text-[20px]">visibility</span>
+                    <Eye className="w-5 h-5 " />
                   </button>
                   {invoice.status === 'PENDING' && (
                     <>
@@ -192,7 +193,7 @@ const AdminInvoices = () => {
                       </button>
                       <button
                         onClick={() => handleUpdateStatus(invoice._id, 'CANCELLED')}
-                        className="px-3 py-1.5 rounded-lg bg-[#ffdad6] text-[#ba1a1a] text-sm font-bold hover:bg-red-200 transition-all"
+                        className="px-3 py-1.5 rounded-lg bg-blue-50 text-[#001a40] text-sm font-bold hover:bg-blue-200 transition-all"
                       >
                         Hủy
                       </button>
@@ -201,9 +202,9 @@ const AdminInvoices = () => {
                   {invoice.status === 'GENERATED' && (
                     <button
                       onClick={() => handleUpdateStatus(invoice._id, 'SENT')}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 text-sm font-bold hover:bg-emerald-200 transition-all flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 text-sm font-bold hover:bg-blue-200 transition-all flex items-center gap-1"
                     >
-                      <span className="material-symbols-outlined text-[16px]">send</span>
+                      <Send className="w-4 h-4 " />
                       Gửi hóa đơn
                     </button>
                   )}
@@ -214,9 +215,9 @@ const AdminInvoices = () => {
         })}
 
         {filteredInvoices.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border border-[#c2c6d4]/50">
-            <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">receipt_long</span>
-            <p className="text-[#5e5e62] mt-3 font-bold">Không có yêu cầu hóa đơn nào</p>
+          <div className="text-center py-12 vw-card rounded-[1.5rem]">
+            <Receipt className="w-16 h-16 text-slate-300" />
+            <p className="text-slate-500 mt-3 font-bold">Không có yêu cầu hóa đơn nào</p>
           </div>
         )}
       </div>
@@ -225,49 +226,49 @@ const AdminInvoices = () => {
       {selectedInvoice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="p-6 border-b border-[#c2c6d4] flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#0056b3]">Chi tiết hóa đơn</h2>
-              <button onClick={() => setSelectedInvoice(null)} className="p-2 hover:bg-[#f5f3f3] rounded-lg">
-                <span className="material-symbols-outlined">close</span>
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-primary">Chi tiết hóa đơn</h2>
+              <button onClick={() => setSelectedInvoice(null)} className="p-2 hover:bg-slate-50 rounded-lg">
+                <X className="w-5 h-5 " />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Mã hóa đơn</p>
-                  <p className="font-mono font-bold text-[#0056b3]">{selectedInvoice.invoiceNumber}</p>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase mb-1">Mã hóa đơn</p>
+                  <p className="font-mono font-bold text-primary">{selectedInvoice.invoiceNumber}</p>
                 </div>
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Số tiền</p>
-                  <p className="text-xl font-black text-emerald-600">{formatPrice(selectedInvoice.amount)}</p>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase mb-1">Số tiền</p>
+                  <p className="text-xl font-black text-blue-700">{formatPrice(selectedInvoice.amount)}</p>
                 </div>
               </div>
-              <div className="bg-[#f5f3f3] rounded-xl p-4">
-                <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Người mua</p>
-                <p className="font-bold text-[#1b1c1c]">{selectedInvoice.buyerName}</p>
-                <p className="text-sm text-[#5e5e62]">{selectedInvoice.buyerEmail}</p>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Người mua</p>
+                <p className="font-bold text-slate-900">{selectedInvoice.buyerName}</p>
+                <p className="text-sm text-slate-500">{selectedInvoice.buyerEmail}</p>
               </div>
               {selectedInvoice.buyerTaxId && (
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Mã số thuế</p>
-                  <p className="font-bold text-[#1b1c1c]">{selectedInvoice.buyerTaxId}</p>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase mb-1">Mã số thuế</p>
+                  <p className="font-bold text-slate-900">{selectedInvoice.buyerTaxId}</p>
                 </div>
               )}
               {selectedInvoice.buyerAddress && (
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Địa chỉ</p>
-                  <p className="text-sm text-[#1b1c1c]">{selectedInvoice.buyerAddress}</p>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="text-xs font-bold text-slate-500 uppercase mb-1">Địa chỉ</p>
+                  <p className="text-sm text-slate-900">{selectedInvoice.buyerAddress}</p>
                 </div>
               )}
-              <div className="bg-[#f5f3f3] rounded-xl p-4">
-                <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Trạng thái</p>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Trạng thái</p>
                 <span className={`px-3 py-1 rounded-full text-sm font-bold ${statusConfig[selectedInvoice.status].bg} ${statusConfig[selectedInvoice.status].text}`}>
                   {statusConfig[selectedInvoice.status].label}
                 </span>
               </div>
             </div>
-            <div className="p-6 border-t border-[#c2c6d4]">
-              <button onClick={() => setSelectedInvoice(null)} className="w-full py-3 rounded-xl font-bold border border-[#c2c6d4] hover:bg-[#f5f3f3]">
+            <div className="p-6 border-t border-slate-200">
+              <button onClick={() => setSelectedInvoice(null)} className="w-full py-3 rounded-xl font-bold border border-slate-200 hover:bg-slate-50">
                 Đóng
               </button>
             </div>
@@ -279,3 +280,5 @@ const AdminInvoices = () => {
 };
 
 export default AdminInvoices;
+
+

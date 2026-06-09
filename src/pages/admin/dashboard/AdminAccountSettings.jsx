@@ -9,7 +9,7 @@ const AdminAccountSettings = () => {
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Admin Account Settings" description="Manage admin profile and update password." />
       <SectionCard><Tabs tabs={tabs} active={active} onChange={setActive} /></SectionCard>
 
@@ -41,3 +41,5 @@ const AdminAccountSettings = () => {
 };
 
 export default AdminAccountSettings;
+
+

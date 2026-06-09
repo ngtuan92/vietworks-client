@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import LoginForm from '../../../components/jobseeker/auth/LoginForm';
 import SocialLogin from '../../../components/jobseeker/auth/SocialLogin';
+import { ArrowRight, Building2 } from 'lucide-react';
 
 const Login = () => {
   return (
@@ -8,7 +9,7 @@ const Login = () => {
       <main className="w-full max-w-[1520px] grid lg:grid-cols-[1.18fr_0.82fr] bg-white rounded-[28px] shadow-[0_20px_60px_rgba(2,25,56,0.12)] border border-slate-200 overflow-hidden">
         <section className="p-8 md:p-12 lg:p-14 xl:p-16">
           <div className="flex items-center justify-between gap-3">
-            <Link to="/" className="text-2xl font-extrabold tracking-tight text-[#003f87]">
+            <Link to="/" className="text-2xl font-extrabold tracking-tight text-primary">
               VietWorks
             </Link>
             <span className="hidden sm:inline-flex px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
@@ -44,23 +45,23 @@ const Login = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] whitespace-nowrap shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 whitespace-nowrap shadow-sm"
               >
                 Đăng ký ứng viên
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
+                <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 to="/employer/register"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold hover:bg-slate-50 whitespace-nowrap shadow-sm"
               >
                 Đăng ký Employer
-                <span className="material-symbols-outlined text-base">business</span>
+                <Building2 className="w-5 h-5" />
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="hidden lg:flex relative overflow-hidden bg-gradient-to-br from-[#022b5f] via-[#0a4b94] to-[#0e63bc] text-white p-10 xl:p-12 flex-col justify-between">
+        <section className="hidden lg:flex relative overflow-hidden hero-gradient text-white p-10 xl:p-12 flex-col justify-between">
           <div className="absolute inset-0 opacity-15 pointer-events-none">
             <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-white blur-3xl" />
             <div className="absolute -bottom-20 -left-16 w-80 h-80 rounded-full bg-cyan-300 blur-3xl" />

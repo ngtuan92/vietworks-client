@@ -1,7 +1,7 @@
 ﻿import { PageHeader, SectionCard, SimpleTable } from '../shared/AdminPrimitives';
 
 const PackageManagement = () => (
-  <div className="space-y-6">
+  <div className="space-y-7 animate-rise-in">
     <PageHeader title="Quản lý gói dịch vụ" description="Tạo/sửa/ẩn gói Employer và JobSeeker; không xóa gói đã có giao dịch." />
     <SectionCard>
       <SimpleTable headers={['Tên gói', 'Đối tượng', 'Loại gói', 'Giá', 'Thời hạn', 'Quyền lợi', 'Trạng thái', 'Hành động']}>
@@ -21,3 +21,5 @@ const PackageManagement = () => (
 );
 
 export default PackageManagement;
+
+

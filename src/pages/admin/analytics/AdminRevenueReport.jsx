@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 
 const MOCK_REVENUE = {
   summary: {
@@ -33,7 +33,7 @@ const AdminRevenueReport = () => {
   );
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-7 pb-10 animate-rise-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -47,14 +47,14 @@ const AdminRevenueReport = () => {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+            className="px-4 py-2 rounded-full border border-[#c2c6d4] text-sm font-medium"
           >
             <option value="7days">7 ngày qua</option>
             <option value="30days">30 ngày qua</option>
             <option value="90days">90 ngày qua</option>
             <option value="year">Năm nay</option>
           </select>
-          <button className="bg-[#0056b3] text-white px-5 py-2 rounded-lg font-bold hover:bg-[#0056b3]/90 transition-all flex items-center gap-2">
+          <button className="bg-[#0056b3] text-white px-5 py-2 rounded-full font-black hover:bg-[#0056b3]/90 transition-all flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px]">download</span>
             Xuất báo cáo
           </button>
@@ -79,12 +79,12 @@ const AdminRevenueReport = () => {
 
         <div className="bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px] text-emerald-600">add_card</span>
+            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-blue-700">add_card</span>
             </div>
             <span className="text-sm font-bold text-[#5e5e62] uppercase tracking-wider">Tiền nạp</span>
           </div>
-          <p className="text-2xl font-black text-emerald-600">{formatPrice(MOCK_REVENUE.summary.totalDeposits)}</p>
+          <p className="text-2xl font-black text-blue-700">{formatPrice(MOCK_REVENUE.summary.totalDeposits)}</p>
           <p className="mt-2 text-xs text-[#5e5e62]">{MOCK_REVENUE.summary.depositCount} giao dịch</p>
         </div>
 
@@ -101,12 +101,12 @@ const AdminRevenueReport = () => {
 
         <div className="bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px] text-amber-600">receipt_long</span>
+            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-blue-800">receipt_long</span>
             </div>
             <span className="text-sm font-bold text-[#5e5e62] uppercase tracking-wider">Tổng giao dịch</span>
           </div>
-          <p className="text-2xl font-black text-amber-600">{MOCK_REVENUE.summary.transactionCount}</p>
+          <p className="text-2xl font-black text-blue-800">{MOCK_REVENUE.summary.transactionCount}</p>
           <p className="mt-2 text-xs text-[#5e5e62]">Đã hoàn thành</p>
         </div>
       </div>
@@ -119,7 +119,7 @@ const AdminRevenueReport = () => {
             <h3 className="font-bold text-[#1b1c1c]">Doanh thu theo tháng</h3>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-emerald-500"></div>
+                <div className="w-3 h-3 rounded bg-[#0056B3]"></div>
                 <span className="text-xs font-medium text-[#5e5e62]">Tiền nạp</span>
               </div>
               <div className="flex items-center gap-2">
@@ -135,11 +135,11 @@ const AdminRevenueReport = () => {
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-2">
                   <div className="w-full flex items-end gap-1 justify-center h-48">
                     <div
-                      className="w-8 bg-emerald-500 rounded-t-sm transition-all hover:bg-emerald-600 relative"
+                      className="w-8 bg-[#0056B3] rounded-t-sm transition-all hover:bg-[#004491] relative"
                       style={{ height: `${(m.deposits / maxRevenue) * 100}%` }}
                       title={formatPrice(m.deposits)}
                     >
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-emerald-600 whitespace-nowrap">
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-blue-700 whitespace-nowrap">
                         {formatPrice(m.deposits)}
                       </div>
                     </div>
@@ -167,7 +167,7 @@ const AdminRevenueReport = () => {
             {Object.entries(MOCK_REVENUE.revenueByRole).map(([role, amount]) => {
               const percentage = (amount / MOCK_REVENUE.summary.totalRevenue) * 100;
               const colors = {
-                JOBSEEKER: { bg: 'bg-emerald-500', text: 'text-emerald-600', label: 'Ứng viên' },
+                JOBSEEKER: { bg: 'bg-[#0056B3]', text: 'text-blue-700', label: 'Ứng viên' },
                 EMPLOYER: { bg: 'bg-indigo-500', text: 'text-indigo-600', label: 'Nhà tuyển dụng' },
                 ADMIN: { bg: 'bg-[#0056b3]/20', text: 'text-[#0056b3]', label: 'Quản trị' },
               };
@@ -202,7 +202,7 @@ const AdminRevenueReport = () => {
       </div>
 
       {/* Transaction Table */}
-      <div className="bg-white rounded-xl border border-[#c2c6d4]/50 overflow-hidden">
+      <div className="vw-card rounded-[1.5rem] border border-[#c2c6d4]/50 overflow-hidden">
         <div className="p-6 border-b border-[#c2c6d4] flex items-center justify-between">
           <h3 className="font-bold text-[#1b1c1c]">Giao dịch gần đây</h3>
         </div>
@@ -222,7 +222,7 @@ const AdminRevenueReport = () => {
                 <td className="py-4 px-4 font-bold text-[#1b1c1c]">
                   {new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}
                 </td>
-                <td className="py-4 px-4 font-black text-emerald-600">{formatPrice(m.deposits)}</td>
+                <td className="py-4 px-4 font-black text-blue-700">{formatPrice(m.deposits)}</td>
                 <td className="py-4 px-4 font-black text-indigo-600">{formatPrice(m.payments)}</td>
                 <td className="py-4 px-4 text-center font-bold">{m.depositsCount}</td>
                 <td className="py-4 px-4 text-center font-bold">{m.paymentsCount}</td>
@@ -236,3 +236,4 @@ const AdminRevenueReport = () => {
 };
 
 export default AdminRevenueReport;
+

@@ -2,7 +2,7 @@
 
 const CompanyModerationHistory = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Lịch sử kiểm duyệt công ty" description="Theo dõi toàn bộ hoạt động duyệt/từ chối hồ sơ doanh nghiệp." />
       <SectionCard>
         <SimpleTable headers={['Thời gian', 'Công ty', 'Trạng thái cũ', 'Trạng thái mới', 'Admin xử lý', 'Lý do', 'Ghi chú']}>
@@ -31,3 +31,5 @@ const CompanyModerationHistory = () => {
 };
 
 export default CompanyModerationHistory;
+
+

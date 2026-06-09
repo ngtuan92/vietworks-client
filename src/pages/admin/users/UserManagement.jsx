@@ -16,15 +16,13 @@ import {
 const USERS = [
   { id: 1, name: 'Nguyễn Minh Anh', email: 'minhanh@gmail.com', phone: '0901234123', role: 'JobSeeker', status: 'ACTIVE', registeredAt: '2026-05-10', lastLogin: '2026-05-18 09:15', hasTransaction: true, hasViolation: false },
   { id: 2, name: 'Nguyễn Văn Hải', email: 'hr@abc.com', phone: '0912345678', role: 'Employer', status: 'UNVERIFIED', registeredAt: '2026-05-14', lastLogin: '2026-05-17 18:10', hasTransaction: true, hasViolation: false },
-  { id: 3, name: 'Trần Gia Huy', email: 'giahuy@gmail.com', phone: '0934567890', role: 'JobSeeker', status: 'LOCKED', registeredAt: '2026-04-20', lastLogin: '2026-05-15 11:00', hasTransaction: true, hasViolation: true },
+  { id: 3, name: 'Trần Gia Huy', email: 'giahuy@gmail.com', phone: '0934567890', role: 'JobSeeker', status: 'ACTIVE', registeredAt: '2026-04-20', lastLogin: '2026-05-15 11:00', hasTransaction: true, hasViolation: false },
   { id: 4, name: 'Admin Support', email: 'admin@vietworks.vn', phone: '0988111222', role: 'Admin', status: 'ACTIVE', registeredAt: '2026-03-02', lastLogin: '2026-05-18 07:45', hasTransaction: false, hasViolation: false },
 ];
 
 const statusMap = {
   UNVERIFIED: 'bg-slate-100 text-slate-700',
-  ACTIVE: 'bg-emerald-100 text-emerald-700',
-  BANNED: 'bg-red-100 text-red-700',
-  LOCKED: 'bg-red-100 text-red-700',
+  ACTIVE: 'bg-blue-100 text-blue-700',
 };
 
 const UserManagement = () => {
@@ -51,7 +49,7 @@ const UserManagement = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader
         title="Quản lý người dùng"
         description="Admin xem toàn bộ JobSeeker, Employer và Admin; có thể khóa hoặc mở khóa tài khoản theo nghiệp vụ."
@@ -76,7 +74,7 @@ const UserManagement = () => {
             label="Trạng thái"
             value={filters.status}
             onChange={(value) => setFilters((prev) => ({ ...prev, status: value }))}
-            options={['UNVERIFIED', 'ACTIVE', 'BANNED', 'LOCKED']}
+            options={['UNVERIFIED', 'ACTIVE']}
           />
           <SelectField
             label="Có giao dịch"
@@ -124,7 +122,7 @@ const UserManagement = () => {
                 >
                   Xem
                 </Link>
-                {user.status === 'LOCKED' || user.status === 'BANNED' ? (
+                {false ? (
                   <ActionButton tone="soft">Mở khóa</ActionButton>
                 ) : (
                   <ActionButton tone="danger" onClick={() => setLockTarget(user)}>
@@ -137,7 +135,7 @@ const UserManagement = () => {
         ))}
       </SimpleTable>
 
-      {lockTarget ? (
+      {false && lockTarget ? (
         <ModalShell
           title={`Khóa tài khoản: ${lockTarget.name}`}
           onClose={() => {
@@ -180,3 +178,5 @@ const UserManagement = () => {
 };
 
 export default UserManagement;
+
+

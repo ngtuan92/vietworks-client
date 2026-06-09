@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cvService from '../../../services/cvService';
-
+import { Edit, Trash2, Eye, Download, X, Loader2, AlertCircle, FileText, Upload, FileBox, File } from 'lucide-react';
 export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, fileType, onDelete, onDownload, onRename }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
@@ -28,9 +28,9 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
   const getFileIcon = (fileType, fileName) => {
     const ext = fileName?.split('.').pop()?.toLowerCase();
     const type = fileType || ext;
-    if (type === 'application/pdf' || ext === 'pdf') return { icon: 'picture_as_pdf', color: 'text-red-500' };
-    if (['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc', 'docx'].includes(type) || ['doc', 'docx'].includes(ext)) return { icon: 'description', color: 'text-blue-500' };
-    return { icon: 'insert_drive_file', color: 'text-gray-500' };
+    if (type === 'application/pdf' || ext === 'pdf') return { icon: <FileBox className="w-8 h-8 text-red-500" />, color: 'text-red-500' };
+    if (['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'doc', 'docx'].includes(type) || ['doc', 'docx'].includes(ext)) return { icon: <FileText className="w-8 h-8 text-blue-500" />, color: 'text-blue-500' };
+    return { icon: <File className="w-8 h-8 text-gray-500" />, color: 'text-gray-500' };
   };
 
   const { icon, color } = getFileIcon(fileType, fileName);
@@ -105,7 +105,7 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
         onClick={handleDownload}
       >
         <div className="w-16 h-20 bg-white rounded shadow-md flex items-center justify-center mb-3">
-          <span className={`material-symbols-outlined ${color} text-3xl`}>{icon}</span>
+          {icon}
         </div>
         <p className="text-xs text-slate-500 truncate w-full text-center">{fileName || 'document'}</p>
         <p className="text-xs text-slate-400 mt-1">{fileSize ? formatFileSize(fileSize) : 'N/A'}</p>
@@ -141,14 +141,14 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
               className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
               title="Đổi tên CV"
             >
-              <span className="material-symbols-outlined">edit</span>
+              <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={() => onDelete && onDelete(id, title)}
               className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
               title="Xóa CV"
             >
-              <span className="material-symbols-outlined">delete</span>
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -160,14 +160,14 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
             onClick={handleOpenPreview}
             className="flex-1 border border-outline text-on-surface font-bold py-2 rounded-lg hover:bg-surface-container-low transition-colors text-body-sm flex items-center justify-center gap-1"
           >
-            <span className="material-symbols-outlined text-base">visibility</span>
+            <Eye className="w-5 h-5" />
             Xem trước
           </button>
           <button
             onClick={handleDownload}
             className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm flex items-center justify-center gap-1"
           >
-            <span className="material-symbols-outlined text-base">download</span>
+            <Download className="w-5 h-5" />
             Tải về
           </button>
         </div>
@@ -186,14 +186,14 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
                   onClick={handleDownload}
                   className="flex items-center gap-1 px-3 py-2 border border-primary text-primary rounded-lg hover:bg-primary-fixed transition-colors text-body-sm"
                 >
-                  <span className="material-symbols-outlined text-base">download</span>
+                  <Download className="w-5 h-5" />
                   Tải về
                 </button>
                 <button
                   onClick={handleClosePreview}
                   className="p-2 hover:bg-surface-container-low rounded-full transition-colors"
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -202,18 +202,18 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
               {isPdf ? (
                 previewLoading ? (
                   <div className="flex flex-col items-center justify-center h-full py-20">
-                    <span className="material-symbols-outlined animate-spin text-4xl text-primary mb-3">progress_activity</span>
+                    <Loader2 className="animate-spin w-10 h-10 text-primary mb-3" />
                     <p className="text-on-surface-variant">Đang tải file...</p>
                   </div>
                 ) : previewError ? (
                   <div className="flex flex-col items-center justify-center h-full py-20 text-center px-8">
-                    <span className="material-symbols-outlined text-4xl text-error mb-3">error</span>
+                    <AlertCircle className="w-10 h-10 text-error mb-3" />
                     <p className="text-on-surface-variant mb-4">{previewError}</p>
                     <button
                       onClick={handleDownload}
                       className="px-6 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
                     >
-                      <span className="material-symbols-outlined">download</span>
+                      <Download className="w-5 h-5" />
                       Tải về để xem
                     </button>
                   </div>
@@ -228,7 +228,7 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
               ) : (
                 <div className="flex flex-col items-center justify-center h-full py-16 text-center px-8">
                   <div className="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-4xl text-on-surface-variant">description</span>
+                    <FileText className="w-10 h-10 text-on-surface-variant" />
                   </div>
                   <h4 className="font-headline-md text-on-surface mb-2">Không hỗ trợ xem trước</h4>
                   <p className="text-on-surface-variant text-body-sm mb-6">
@@ -238,7 +238,7 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
                     onClick={handleDownload}
                     className="px-6 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
                   >
-                    <span className="material-symbols-outlined">download</span>
+                    <Download className="w-5 h-5" />
                     Tải về để xem
                   </button>
                 </div>
@@ -258,7 +258,7 @@ export const UploadedCVPlaceholderCard = ({ onClick }) => {
       className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group"
     >
       <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
-        <span className="material-symbols-outlined text-primary group-hover:text-white text-headline-lg">upload</span>
+        <Upload className="text-primary group-hover:text-white w-8 h-8" />
       </div>
       <p className="font-bold text-on-surface">Tải CV lên</p>
       <p className="text-body-sm text-on-surface-variant">Định dạng: PDF (tối đa 10MB)</p>

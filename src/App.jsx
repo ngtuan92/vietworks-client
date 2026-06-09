@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -11,9 +11,11 @@ import CVBuilder from './pages/jobseeker/cv/CVBuilder';
 import CvPreview from './pages/jobseeker/cv/CvPreview';
 import AppliedJobs from './pages/jobseeker/jobs/AppliedJobs';
 import ApplicationStatusDetail from './pages/jobseeker/jobs/ApplicationStatusDetail';
+import AICvReview from './pages/jobseeker/cv/AICvReview';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
+import RoleSelection from './pages/jobseeker/auth/RoleSelection';
 import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
 import ResetPassword from './pages/jobseeker/auth/ResetPassword';
 import VerifyEmail from './pages/jobseeker/auth/VerifyEmail';
@@ -58,8 +60,6 @@ import EmployerWallet from './pages/employer/wallet/EmployerWallet';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/dashboard/AdminDashboard';
-import UserManagement from './pages/admin/users/UserManagement';
-import UserDetail from './pages/admin/users/UserDetail';
 import CompanyVerification from './pages/admin/companies/CompanyVerification';
 import CompanyReview from './pages/admin/companies/CompanyReview';
 import CompanyDetailAdmin from './pages/admin/companies/CompanyDetail';
@@ -75,7 +75,6 @@ import InvoiceManagement from './pages/admin/billing/InvoiceManagement';
 import PackageManagement from './pages/admin/billing/PackageManagement';
 import NotificationCenter from './pages/admin/notifications/NotificationCenter';
 import AnalyticsDashboard from './pages/admin/dashboard/AnalyticsDashboard';
-import ViolationsManagement from './pages/admin/dashboard/ViolationsManagement';
 import AdminAccountSettings from './pages/admin/dashboard/AdminAccountSettings';
 
 // New Admin Pages from pull/merge
@@ -120,12 +119,14 @@ function App() {
               <Route path="saved-jobs" element={<SavedJobs />} />
               <Route path="matched-jobs" element={<MatchedJobs />} />
               <Route path="privacy-settings" element={<PrivacySettings />} />
+              <Route path="ai-cv-review" element={<AICvReview />} />
             </Route>
           </Route>
 
           {/* Public authentication and helper routes */}
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<RoleSelection />} />
+          <Route path="/register-candidate" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
@@ -178,8 +179,6 @@ function App() {
 
               {/* User management routes */}
               <Route path="users" element={<AdminUsers />} />
-              <Route path="users-legacy" element={<UserManagement />} />
-              <Route path="users/:id" element={<UserDetail />} />
 
               <Route path="companies" element={<CompanyVerification />} />
               <Route path="companies/history" element={<CompanyModerationHistory />} />
@@ -218,7 +217,6 @@ function App() {
               <Route path="revenue-report" element={<AdminRevenueReport />} />
               <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
 
-              <Route path="violations" element={<ViolationsManagement />} />
               <Route path="account" element={<AdminAccountSettings />} />
             </Route>
           </Route>
@@ -229,6 +227,8 @@ function App() {
 }
 
 export default App;
+
+
 
 
 

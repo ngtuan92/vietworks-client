@@ -1,10 +1,11 @@
+import { LayoutDashboard, ChevronDown, Building2, Briefcase, Users, Wallet, MessageSquare, UserCircle, PlusCircle, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 
 const navItems = [
   {
-    icon: 'domain',
+    icon: <Building2 className="w-5 h-5" />,
     label: 'Công ty',
     children: [
       { label: 'Hồ sơ công ty', to: '/employer/company-profile' },
@@ -13,15 +14,15 @@ const navItems = [
     ],
   },
   {
-    icon: 'work',
+    icon: <Briefcase className="w-5 h-5" />,
     label: 'Tin tuyển dụng',
     children: [
       { label: 'Danh sách tin', to: '/employer/jobs' },
-      { label: 'Tạo tin mới', to: '/employer/jobs/create', isPrimary: true, icon: 'add_circle' },
+      { label: 'Tạo tin mới', to: '/employer/jobs/create', isPrimary: true, icon: <PlusCircle className="w-4 h-4" /> },
     ],
   },
   {
-    icon: 'person_search',
+    icon: <Users className="w-5 h-5" />,
     label: 'Ứng viên',
     children: [
       { label: 'Hồ sơ ứng tuyển', to: '/employer/candidates' },
@@ -30,7 +31,7 @@ const navItems = [
     ],
   },
   {
-    icon: 'account_balance_wallet',
+    icon: <Wallet className="w-5 h-5" />,
     label: 'Dịch vụ & Thanh toán',
     children: [
       { label: 'Mua gói dịch vụ', to: '/employer/packages' },
@@ -41,7 +42,7 @@ const navItems = [
     ],
   },
   {
-    icon: 'forum',
+    icon: <MessageSquare className="w-5 h-5" />,
     label: 'Tương tác',
     badge: 3,
     children: [
@@ -50,11 +51,11 @@ const navItems = [
     ],
   },
   {
-    icon: 'account_circle',
+    icon: <UserCircle className="w-5 h-5" />,
     label: 'Tài khoản',
     children: [
       { label: 'Cài đặt tài khoản', to: '/employer/account-settings' },
-      { label: 'Đăng xuất', to: '/employer/login', isDanger: true, icon: 'logout' },
+      { label: 'Đăng xuất', to: '/employer/login', isDanger: true, icon: <LogOut className="w-4 h-4" /> },
     ],
   },
 ];
@@ -75,12 +76,12 @@ const EmployerSidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[#f5f3f3] border-r border-[#c2c6d4] flex flex-col z-50">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-200 flex flex-col z-50">
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#0056b3] rounded-lg flex items-center justify-center text-white font-black text-xl">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-black text-xl">
           VW
         </div>
-        <span className="text-xl font-black text-[#0056b3] tracking-tight">VietWorks</span>
+        <span className="text-xl font-black text-primary tracking-tight">VietWorks</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-1 scrollbar-thin">
@@ -88,11 +89,11 @@ const EmployerSidebar = () => {
           to="/employer/dashboard"
           className={({ isActive }) =>
             `flex items-center gap-3 rounded-lg px-4 py-2.5 font-bold text-sm transition-all ${
-              isActive ? 'bg-[#0056b3]/10 text-[#0056b3]' : 'text-[#5e5e62] hover:bg-[#e4e2e2]'
+              isActive ? 'bg-blue-50 text-primary' : 'text-slate-600 hover:bg-slate-100'
             }`
           }
         >
-          <span className="material-symbols-outlined text-[20px]">dashboard</span>
+          <LayoutDashboard className="w-5 h-5" />
           Tổng quan
         </NavLink>
 
@@ -101,15 +102,15 @@ const EmployerSidebar = () => {
             <button
               type="button"
               onClick={() => toggle(item.label)}
-              className="w-full flex items-center justify-between text-[#5e5e62] px-4 py-2.5 hover:bg-[#e4e2e2] rounded-lg transition-all text-sm font-medium"
+              className="w-full flex items-center justify-between text-slate-600 px-4 py-2.5 hover:bg-slate-100 rounded-lg transition-all text-sm font-medium"
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                {item.icon}
                 <span>{item.label}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 {item.badge ? (
-                  <span className="bg-[#0056b3] text-white text-[10px] px-1.5 rounded-full">
+                  <span className="bg-primary text-white text-[10px] px-1.5 rounded-full">
                     {item.badge}
                   </span>
                 ) : null}
@@ -136,11 +137,9 @@ const EmployerSidebar = () => {
                       key={child.label}
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-1.5 py-2 text-sm transition-all text-left cursor-pointer text-[#ba1a1a] font-bold bg-transparent border-0 hover:text-[#ba1a1a]"
+                      className="w-full flex items-center gap-1.5 py-2 text-sm transition-all text-left cursor-pointer text-red-600 font-bold bg-transparent border-0 hover:text-red-600"
                     >
-                      {child.icon ? (
-                        <span className="material-symbols-outlined text-[16px]">{child.icon}</span>
-                      ) : null}
+                      {child.icon ? child.icon : null}
                       {child.label}
                     </button>
                   ) : (
@@ -150,18 +149,16 @@ const EmployerSidebar = () => {
                       className={({ isActive }) =>
                         `flex items-center gap-1.5 py-2 text-sm transition-all ${
                           child.isDanger
-                            ? 'text-[#ba1a1a] font-bold'
+                            ? 'text-red-600 font-bold'
                             : child.isPrimary
-                            ? 'text-[#0056b3] font-semibold'
+                            ? 'text-primary font-semibold'
                             : isActive
-                            ? 'text-[#0056b3] font-semibold'
-                            : 'text-[#5e5e62] hover:text-[#0056b3]'
+                            ? 'text-primary font-semibold'
+                            : 'text-slate-600 hover:text-primary'
                         }`
                       }
                     >
-                      {child.icon ? (
-                        <span className="material-symbols-outlined text-[16px]">{child.icon}</span>
-                      ) : null}
+                      {child.icon ? child.icon : null}
                       {child.label}
                     </NavLink>
                   )

@@ -1,7 +1,7 @@
 ﻿import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable } from '../shared/AdminPrimitives';
 
 const CVTemplateManagement = () => (
-  <div className="space-y-6">
+  <div className="space-y-7 animate-rise-in">
     <PageHeader title="Quản lý mẫu CV" description="Quản lý mẫu CV, font/màu hỗ trợ và trạng thái hiển thị." />
     <SectionCard title="Bộ lọc">
       <FilterGrid>
@@ -19,3 +19,5 @@ const CVTemplateManagement = () => (
 );
 
 export default CVTemplateManagement;
+
+

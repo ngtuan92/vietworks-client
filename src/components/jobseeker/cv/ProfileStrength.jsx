@@ -1,4 +1,6 @@
 
+import { Lightbulb, CheckCircle } from 'lucide-react';
+
 
 const ProfileStrength = () => {
   return (
@@ -19,7 +21,7 @@ const ProfileStrength = () => {
       </div>
       <div className="space-y-stack-md">
         <div className="flex items-start gap-stack-sm p-stack-md bg-tertiary-fixed rounded-lg border border-tertiary-container/20">
-          <span className="material-symbols-outlined text-tertiary">tips_and_updates</span>
+          <Lightbulb className="text-tertiary w-5 h-5" />
           <div>
             <p className="font-bold text-on-tertiary-fixed text-body-sm">Cải thiện nhanh</p>
             <p className="text-on-tertiary-fixed-variant text-body-sm">Thêm ảnh đại diện chuyên nghiệp để tăng 3x lượt xem.</p>
@@ -28,11 +30,11 @@ const ProfileStrength = () => {
         </div>
         <div className="flex items-center justify-between text-body-sm">
           <span className="text-on-surface-variant">Học vấn</span>
-          <span className="material-symbols-outlined text-green-600" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          <CheckCircle className="text-green-600 w-5 h-5" />
         </div>
         <div className="flex items-center justify-between text-body-sm">
           <span className="text-on-surface-variant">Kinh nghiệm làm việc</span>
-          <span className="material-symbols-outlined text-green-600" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          <CheckCircle className="text-green-600 w-5 h-5" />
         </div>
         <div className="flex items-center justify-between text-body-sm">
           <span className="text-on-surface-variant">Chứng chỉ</span>
