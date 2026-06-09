@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import jobApi from '../../../services/jobService'; 
 
 const MasterDataManagement = () => {
@@ -33,7 +33,7 @@ const MasterDataManagement = () => {
   });
 
   // ==================== FETCH DATA FUNCTIONS ====================
-  const loadGlobalData = async () => {
+  const loadGlobalData = useCallback(async () => {
     try {
       setLoading(true);
       const resGroups = await jobApi.getCareerGroups();
@@ -43,26 +43,31 @@ const MasterDataManagement = () => {
       if (resExp?.success) setExperienceLevels(resExp.data);
     } catch (err) { console.error(err); } 
     finally { setLoading(false); }
-  };
+  }, []);
 
-  const loadDependentData = async () => {
-    if (!selectedCareerGroupId) {
+  const loadDependentData = useCallback(async (careerGroupId = selectedCareerGroupId) => {
+    if (!careerGroupId) {
       setCareers([]); setPositions([]); setSkills([]); setJobLevels([]); return;
     }
     try {
-      const resCareers = await jobApi.getCareersByGroup(selectedCareerGroupId);
+      const resCareers = await jobApi.getCareersByGroup(careerGroupId);
       if (resCareers?.success) setCareers(resCareers.data);
 
-      const resSkills = await jobApi.getSkillsByCareerGroup(selectedCareerGroupId);
+      const resSkills = await jobApi.getSkillsByCareerGroup(careerGroupId);
       if (resSkills?.success) setSkills(resSkills.data);
 
-      const resLevels = await jobApi.getJobLevels(selectedCareerGroupId);
+      const resLevels = await jobApi.getJobLevels(careerGroupId);
       if (resLevels?.success) setJobLevels(resLevels.data);
     } catch (err) { console.error(err); }
-  };
+  }, [selectedCareerGroupId]);
 
-  useEffect(() => { loadGlobalData(); }, []);
-  useEffect(() => { loadDependentData(); setSelectedCareerId(''); }, [selectedCareerGroupId]);
+  useEffect(() => {
+    queueMicrotask(() => { loadGlobalData(); });
+  }, [loadGlobalData]);
+
+  useEffect(() => {
+    queueMicrotask(() => { loadDependentData(selectedCareerGroupId); });
+  }, [loadDependentData, selectedCareerGroupId]);
 
   useEffect(() => {
     const loadPositions = async () => {
@@ -302,7 +307,7 @@ const MasterDataManagement = () => {
         {['Danh mục', 'Cấp bậc', 'Kỹ năng / Tags'].includes(tab) && (
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Lọc theo Nhóm ngành nghề (C1)</label>
-            <select className="w-full border border-slate-200 rounded-md p-2 text-xs bg-white text-slate-700 focus:outline-none" value={selectedCareerGroupId} onChange={(e) => setSelectedCareerGroupId(e.target.value)}>
+            <select className="w-full border border-slate-200 rounded-md p-2 text-xs bg-white text-slate-700 focus:outline-none" value={selectedCareerGroupId} onChange={(e) => { setSelectedCareerGroupId(e.target.value); setSelectedCareerId(''); }}>
               <option value="">-- Tất cả nhóm ngành --</option>
               {careerGroups.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
             </select>
