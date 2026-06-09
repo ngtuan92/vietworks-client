@@ -27,7 +27,7 @@ const JobDetail = () => {
         setLoading(true);
         setError('');
 
-        const res = await jobService.getJobById(jobId);
+        const res = await jobService.getPublicJobDetail(jobId);
         if (res.success) {
           setJob(res.data || null);
           setCanApply(res.canApply !== undefined ? res.canApply : true);
