@@ -1,5 +1,14 @@
-﻿import { Edit, FileSearch, CheckCircle2, X, Plus, Package, ToggleLeft, CreditCard, ToggleRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Edit, FileSearch, CheckCircle2, X, Plus, Package, ToggleLeft, CreditCard, ToggleRight, ChevronUp, ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
+import {
+  PageHeader,
+  SectionCard,
+  StatCard,
+  ModalShell,
+  ActionButton,
+  InputField,
+  SelectField
+} from '../shared/AdminPrimitives';
 
 const MOCK_PACKAGES = [
   {
@@ -72,93 +81,86 @@ const PackageCard = ({ pkg, onEdit, onToggleStatus }) => {
   const [showFeatures, setShowFeatures] = useState(false);
 
   return (
-    <div className={`vw-card rounded-[1.5rem] border transition-all hover:shadow-glow hover:-translate-y-0.5 ${pkg.isActive ? 'border-slate-200' : 'border-blue-300/50 bg-blue-50/10'}`}>
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-bold text-slate-900">{pkg.name}</h3>
-              {!pkg.isActive && (
-                <span className="bg-[#0056B3]/10 text-[#001a40] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                  Tạm ngưng
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-slate-500">{pkg.description}</p>
+    <SectionCard className={`h-full transition-all duration-300 ${!pkg.isActive ? 'opacity-80 grayscale-[20%]' : ''}`}>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-black text-slate-900">{pkg.name}</h3>
+            {!pkg.isActive && (
+              <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Tạm ngưng
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onEdit(pkg)}
-              className="p-2 rounded-lg hover:bg-slate-50 text-slate-500 transition-all"
-            >
-              <Edit className="w-5 h-5 " />
-            </button>
-            <button
-              onClick={() => onToggleStatus(pkg)}
-              className={`p-2 rounded-lg transition-all ${pkg.isActive ? 'hover:bg-blue-50 text-[#001a40]' : 'hover:bg-blue-100 text-blue-700'}`}
-            >
-              {pkg.isActive ? <ToggleLeft className="w-5 h-5 " /> : <ToggleRight className="w-5 h-5 " />}
-            </button>
-          </div>
+          <p className="text-xs font-semibold text-slate-500 line-clamp-2">{pkg.description}</p>
         </div>
-
-        {/* Price */}
-        <div className="mb-4">
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black text-primary">{formatPrice(pkg.price)}</span>
-            {pkg.price > 0 && <span className="text-slate-500 text-sm">/ {pkg.duration} ngày</span>}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-slate-50 rounded-lg p-3 text-center">
-            <p className="text-xl font-black text-slate-900">{pkg.jobPostsAllowed}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase">Tin đăng</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3 text-center">
-            <p className="text-xl font-black text-slate-900">{pkg.featuredDays}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase">Ngày nổi bật</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3 text-center">
-            <p className="text-xl font-black text-slate-900">{pkg.cvAccessLimit}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase">CV được xem</p>
-          </div>
-        </div>
-
-        {/* Features Toggle */}
-        <button
-          onClick={() => setShowFeatures(!showFeatures)}
-          className="flex items-center gap-1 text-sm font-bold text-primary mb-2"
-        >
-          <FileSearch className="w-5 h-5 " />
-          Tính năng ({pkg.features.length})
-          {showFeatures ? <ChevronUp className="w-4 h-4 " /> : <ChevronDown className="w-4 h-4 " />}
-        </button>
-
-        {showFeatures && (
-          <div className="space-y-1.5 mb-4 pl-2">
-            {pkg.features.map((feature, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-sm text-slate-500">
-                <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                {feature}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-          <span className="text-[10px] text-[#727784]">
-            Tạo: {new Date(pkg.createdAt).toLocaleDateString('vi-VN')}
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-500">Thứ tự: {pkg.sortOrder}</span>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onEdit(pkg)}
+            className="p-1.5 rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-700 transition-all shadow-sm active:scale-95 bg-white"
+            title="Sửa"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onToggleStatus(pkg)}
+            className={`p-1.5 rounded-lg border shadow-sm transition-all active:scale-95 ${pkg.isActive ? 'border-red-200 hover:bg-red-50 text-red-600 bg-white' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-600 bg-white'}`}
+            title={pkg.isActive ? 'Tạm ngưng' : 'Kích hoạt'}
+          >
+            {pkg.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+          </button>
         </div>
       </div>
-    </div>
+
+      <div className="mb-5">
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-black text-primary">{formatPrice(pkg.price)}</span>
+          {pkg.price > 0 && <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">/ {pkg.duration} ngày</span>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3 text-center shadow-sm">
+          <p className="text-lg font-black text-slate-900">{pkg.jobPostsAllowed}</p>
+          <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Tin đăng</p>
+        </div>
+        <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3 text-center shadow-sm">
+          <p className="text-lg font-black text-slate-900">{pkg.featuredDays}</p>
+          <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Ngày nổi bật</p>
+        </div>
+        <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3 text-center shadow-sm">
+          <p className="text-lg font-black text-slate-900">{pkg.cvAccessLimit}</p>
+          <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">CV được xem</p>
+        </div>
+      </div>
+
+      <button
+        onClick={() => setShowFeatures(!showFeatures)}
+        className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary mb-3 hover:text-blue-700 transition-colors"
+      >
+        <FileSearch className="w-4 h-4" />
+        Tính năng ({pkg.features.length})
+        {showFeatures ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+
+      {showFeatures && (
+        <div className="space-y-2 mb-5 pl-2">
+          {pkg.features.map((feature, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-xs font-bold text-slate-600">
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+              {feature}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          Tạo: {new Date(pkg.createdAt).toLocaleDateString('vi-VN')}
+        </span>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thứ tự: {pkg.sortOrder}</span>
+      </div>
+    </SectionCard>
   );
 };
 
@@ -195,150 +197,115 @@ const PackageModal = ({ pkg, onSave, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-primary">{pkg ? 'Sửa gói dịch vụ' : 'Thêm gói dịch vụ mới'}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-lg transition-all">
-            <X className="w-5 h-5 " />
-          </button>
-        </div>
+    <ModalShell
+      title={pkg ? 'Chỉnh sửa gói dịch vụ' : 'Thêm gói dịch vụ mới'}
+      onClose={onClose}
+      footer={
+        <>
+          <ActionButton onClick={onClose}>Hủy</ActionButton>
+          <ActionButton tone="primary" onClick={handleSubmit}>
+            {pkg ? 'Lưu thay đổi' : 'Tạo gói mới'}
+          </ActionButton>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <InputField
+              label="Tên gói"
+              required
+              value={form.name}
+              onChange={(val) => setForm({ ...form, name: val })}
+            />
+          </div>
+          <div className="col-span-2">
+            <InputField
+              label="Mô tả"
+              value={form.description}
+              onChange={(val) => setForm({ ...form, description: val })}
+            />
+          </div>
+          <div>
+            <InputField
+              type="number"
+              label="Giá (VND)"
+              required
+              value={form.price}
+              onChange={(val) => setForm({ ...form, price: Number(val) })}
+            />
+          </div>
+          <div>
+            <InputField
+              type="number"
+              label="Thời hạn (ngày)"
+              required
+              value={form.duration}
+              onChange={(val) => setForm({ ...form, duration: Number(val) })}
+            />
+          </div>
+          <div>
+            <InputField
+              type="number"
+              label="Số tin được đăng"
+              value={form.jobPostsAllowed}
+              onChange={(val) => setForm({ ...form, jobPostsAllowed: Number(val) })}
+            />
+          </div>
+          <div>
+            <InputField
+              type="number"
+              label="Ngày nổi bật"
+              value={form.featuredDays}
+              onChange={(val) => setForm({ ...form, featuredDays: Number(val) })}
+            />
+          </div>
+          <div>
+            <InputField
+              type="number"
+              label="Số CV được xem"
+              value={form.cvAccessLimit}
+              onChange={(val) => setForm({ ...form, cvAccessLimit: Number(val) })}
+            />
+          </div>
+          <div>
+            <InputField
+              type="number"
+              label="Thứ tự hiển thị"
+              value={form.sortOrder}
+              onChange={(val) => setForm({ ...form, sortOrder: Number(val) })}
+            />
+          </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Tên gói</label>
+          <div className="col-span-2">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Tính năng</label>
+            <div className="flex gap-2 mb-3">
               <input
                 type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-                required
+                value={featureInput}
+                onChange={(e) => setFeatureInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
+                placeholder="Nhập tính năng..."
+                className="flex-1 w-full min-h-[44px] rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-2.5 text-sm font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-medium transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 outline-none"
               />
+              <ActionButton type="button" tone="soft" onClick={handleAddFeature}>
+                <Plus className="w-5 h-5" />
+              </ActionButton>
             </div>
-
-            <div className="col-span-2">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Mô tả</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none resize-none"
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Giá (VND)</label>
-              <input
-                type="number"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Thời hạn (ngày)</label>
-              <input
-                type="number"
-                value={form.duration}
-                onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Số tin được đăng</label>
-              <input
-                type="number"
-                value={form.jobPostsAllowed}
-                onChange={(e) => setForm({ ...form, jobPostsAllowed: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Ngày nổi bật</label>
-              <input
-                type="number"
-                value={form.featuredDays}
-                onChange={(e) => setForm({ ...form, featuredDays: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Số CV được xem</label>
-              <input
-                type="number"
-                value={form.cvAccessLimit}
-                onChange={(e) => setForm({ ...form, cvAccessLimit: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Thứ tự hiển thị</label>
-              <input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Tính năng</label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  value={featureInput}
-                  onChange={(e) => setFeatureInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
-                  placeholder="Nhập tính năng..."
-                  className="flex-1 px-4 py-2.5 rounded-2xl border border-slate-200/80 focus:border-primary focus:ring-2 focus:ring-blue-50 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddFeature}
-                  className="px-4 py-2.5 bg-blue-50 text-primary rounded-full font-black hover:bg-primary/20 transition-all"
-                >
-                  <Plus className="w-5 h-5 " />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {form.features.map((f, i) => (
-                  <span key={i} className="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-full text-sm">
-                    {f}
-                    <button type="button" onClick={() => handleRemoveFeature(i)} className="text-[#001a40]">
-                      <X className="w-5 h-5 " />
-                    </button>
-                  </span>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {form.features.map((f, i) => (
+                <span key={i} className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1 rounded-md text-[11px] font-bold text-slate-700 shadow-sm">
+                  {f}
+                  <button type="button" onClick={() => handleRemoveFeature(i)} className="text-slate-400 hover:text-red-500 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
-
-          <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-            <button
-              type="submit"
-              className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-all"
-            >
-              {pkg ? 'Lưu thay đổi' : 'Tạo gói mới'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
-            >
-              Hủy
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </ModalShell>
   );
 };
 
@@ -346,10 +313,10 @@ const AdminPackages = () => {
   const [packages, setPackages] = useState(MOCK_PACKAGES);
   const [showModal, setShowModal] = useState(false);
   const [editingPkg, setEditingPkg] = useState(null);
-  const [filterActive, setFilterActive] = useState('all');
+  const [filterActive, setFilterActive] = useState('');
 
   const filteredPackages = packages.filter((pkg) => {
-    if (filterActive === 'all') return true;
+    if (!filterActive) return true;
     if (filterActive === 'active') return pkg.isActive;
     if (filterActive === 'inactive') return !pkg.isActive;
     return true;
@@ -376,73 +343,40 @@ const AdminPackages = () => {
 
   return (
     <div className="space-y-7 pb-10 animate-rise-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-primary rounded-full"></span>
-            Quản lý Gói dịch vụ
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">Tạo và quản lý các gói dịch vụ cho nhà tuyển dụng</p>
-        </div>
-        <div className="flex gap-3">
-          <select
-            value={filterActive}
-            onChange={(e) => setFilterActive(e.target.value)}
-            className="px-4 py-2 rounded-2xl border border-slate-200/80 text-sm font-medium"
-          >
-            <option value="all">Tất cả</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="inactive">Tạm ngưng</option>
-          </select>
-          <button
-            onClick={() => {
-              setEditingPkg(null);
-              setShowModal(true);
-            }}
-            className="vw-btn-primary !min-h-0 px-5 py-2 rounded-full font-black hover:bg-primary/90 transition-all flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5 " />
-            Thêm gói mới
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý Gói dịch vụ"
+        description="Tạo và quản lý các gói dịch vụ cao cấp cho nhà tuyển dụng"
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="w-48">
+              <SelectField
+                label=""
+                value={filterActive}
+                onChange={setFilterActive}
+                options={[['active', 'Đang hoạt động'], ['inactive', 'Tạm ngưng']]}
+                placeholder="Tất cả trạng thái"
+              />
+            </div>
+            <ActionButton
+              tone="primary"
+              onClick={() => {
+                setEditingPkg(null);
+                setShowModal(true);
+              }}
+            >
+              <span className="flex items-center gap-1.5"><Plus className="w-4 h-4" /> Thêm gói mới</span>
+            </ActionButton>
+          </div>
+        }
+      />
 
-      {/* Stats Summary */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-[#0056b3] to-blue-800 p-5 rounded-xl text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Package className="w-5 h-5 text-blue-200" />
-            <span className="text-sm font-bold text-blue-200 uppercase">Tổng gói</span>
-          </div>
-          <p className="text-3xl font-black">{packages.length}</p>
-        </div>
-        <div className="vw-card p-5 rounded-[1.5rem]">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="w-5 h-5 text-blue-700" />
-            <span className="text-sm font-bold text-blue-700 uppercase">Đang hoạt động</span>
-          </div>
-          <p className="text-3xl font-black text-slate-900">{packages.filter((p) => p.isActive).length}</p>
-        </div>
-        <div className="vw-card p-5 rounded-[1.5rem]">
-          <div className="flex items-center gap-2 mb-2">
-            <ToggleLeft className="w-5 h-5 text-[#001a40]" />
-            <span className="text-sm font-bold text-[#001a40] uppercase">Tạm ngưng</span>
-          </div>
-          <p className="text-3xl font-black text-slate-900">{packages.filter((p) => !p.isActive).length}</p>
-        </div>
-        <div className="vw-card p-5 rounded-[1.5rem]">
-          <div className="flex items-center gap-2 mb-2">
-            <CreditCard className="w-5 h-5 text-blue-800" />
-            <span className="text-sm font-bold text-blue-800 uppercase">Giá trung bình</span>
-          </div>
-          <p className="text-3xl font-black text-slate-900">
-            {formatPrice(Math.round(packages.filter((p) => p.price > 0).reduce((sum, p) => sum + p.price, 0) / packages.filter((p) => p.price > 0).length))}
-          </p>
-        </div>
+        <StatCard icon={<Package className="w-6 h-6" />} label="Tổng gói" value={packages.length} tone="blue" />
+        <StatCard icon={<CheckCircle2 className="w-6 h-6" />} label="Đang hoạt động" value={packages.filter((p) => p.isActive).length} tone="emerald" />
+        <StatCard icon={<ToggleLeft className="w-6 h-6" />} label="Tạm ngưng" value={packages.filter((p) => !p.isActive).length} tone="amber" />
+        <StatCard icon={<CreditCard className="w-6 h-6" />} label="Giá trung bình" value={formatPrice(Math.round(packages.filter((p) => p.price > 0).reduce((sum, p) => sum + p.price, 0) / (packages.filter((p) => p.price > 0).length || 1)))} tone="indigo" />
       </div>
 
-      {/* Package Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredPackages.map((pkg) => (
           <PackageCard key={pkg._id} pkg={pkg} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
@@ -450,19 +384,19 @@ const AdminPackages = () => {
       </div>
 
       {filteredPackages.length === 0 && (
-        <div className="text-center py-12 vw-card rounded-[1.5rem]">
-          <Package className="w-16 h-16 text-slate-300" />
-          <p className="text-slate-500 mt-3 font-bold">Chưa có gói dịch vụ nào</p>
-          <button
+        <SectionCard className="text-center py-16">
+          <Package className="w-16 h-16 text-slate-300 mx-auto" />
+          <p className="mt-4 font-black text-slate-500 text-lg">Chưa có gói dịch vụ nào</p>
+          <ActionButton
+            tone="soft"
             onClick={() => setShowModal(true)}
-            className="mt-4 text-primary font-bold hover:underline"
+            className="mt-4"
           >
             Tạo gói đầu tiên
-          </button>
-        </div>
+          </ActionButton>
+        </SectionCard>
       )}
 
-      {/* Modal */}
       {showModal && (
         <PackageModal
           pkg={editingPkg}
@@ -478,5 +412,3 @@ const AdminPackages = () => {
 };
 
 export default AdminPackages;
-
-

@@ -69,7 +69,7 @@ const CompanyVerification = () => {
       <SectionCard title="Bộ lọc">
         <FilterGrid>
           <InputField label="Từ khóa" value={filters.keyword} onChange={(v) => setFilters((p) => ({ ...p, keyword: v }))} placeholder="Tên công ty, mã số thuế, email" />
-          <SelectField label="Trạng thái xác minh" value={filters.status} onChange={(v) => setFilters((p) => ({ ...p, status: v }))} options={['PENDING']} />
+          <SelectField label="Trạng thái xác minh" value={filters.status} onChange={(v) => setFilters((p) => ({ ...p, status: v }))} options={[['PENDING', 'Đang chờ duyệt']]} />
           <SelectField label="Lĩnh vực" value={filters.field} onChange={(v) => setFilters((p) => ({ ...p, field: v }))} options={fieldOptions} />
           <SelectField label="Quy mô công ty" value={filters.size} onChange={(v) => setFilters((p) => ({ ...p, size: v }))} options={sizeOptions} />
         </FilterGrid>

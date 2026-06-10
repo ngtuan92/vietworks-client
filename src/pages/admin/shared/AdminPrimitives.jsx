@@ -113,8 +113,26 @@ export const StatusBadge = ({ value, map = {} }) => {
     'ACTIVE': 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     'INACTIVE': 'bg-slate-50 text-slate-700 border-slate-200',
   };
+
+  const labelMap = {
+    'PENDING': 'ĐANG CHỜ',
+    'PUBLISHED': 'ĐÃ DUYỆT',
+    'BANNED': 'BỊ KHÓA',
+    'CLOSED': 'ĐÃ ĐÓNG',
+    'DRAFT': 'BẢN NHÁP',
+    'EXPIRED': 'HẾT HẠN',
+    'ACTIVE': 'HOẠT ĐỘNG',
+    'INACTIVE': 'ĐÃ TẮT',
+    'VERIFIED': 'ĐÃ XÁC MINH',
+    'REJECTED': 'ĐÃ TỪ CHỐI',
+    'SUCCESS': 'THÀNH CÔNG',
+    'FAILED': 'THẤT BẠI'
+  };
+
   const tone = map[value] || defaultMap[value] || 'bg-blue-50 text-blue-700 border-blue-200/60';
-  return <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}>{value}</span>;
+  const displayLabel = labelMap[value] || value;
+  
+  return <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}>{displayLabel}</span>;
 };
 
 export const ActionButton = ({ children, tone = 'default', className = '', ...props }) => {

@@ -63,7 +63,7 @@ const JobModeration = () => {
   return (
     <div className="space-y-7 animate-rise-in">
       <PageHeader 
-        title="Job Moderation" 
+        title="Quản lý Tin Tuyển Dụng" 
         description="Quản lý, phê duyệt, từ chối hoặc cấm các tin tuyển dụng trên toàn hệ thống." 
       />
       
@@ -84,7 +84,15 @@ const JobModeration = () => {
                 setPagination(p => ({ ...p, page: 1 })); // Reset về trang 1 khi đổi trạng thái
               }} 
               // Option đầu tiên để trống tương ứng lấy tất cả trạng thái như backend xử lý
-              options={['', 'PENDING', 'PUBLISHED', 'CLOSED', 'BANNED', 'DRAFT', 'EXPIRED']} 
+              options={[
+                ['', 'Tất cả trạng thái'],
+                ['PENDING', 'Đang chờ duyệt'],
+                ['PUBLISHED', 'Đã duyệt/Đang mở'],
+                ['CLOSED', 'Đã đóng'],
+                ['BANNED', 'Bị khóa'],
+                ['DRAFT', 'Bản nháp'],
+                ['EXPIRED', 'Hết hạn']
+              ]} 
             />
             {/* Nút trigger tìm kiếm theo từ khóa văn bản */}
             <div className="flex items-end pb-1.5">

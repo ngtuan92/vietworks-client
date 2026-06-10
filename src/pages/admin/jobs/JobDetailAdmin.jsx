@@ -4,7 +4,7 @@ import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs, StatusBadge }
 // Nhập hàm API từ file service của bạn
 import jobAdminService from '../../../services/jobAdminService'; 
 
-const tabs = ['Job Content', 'Company', 'Applicants', 'Service Package', 'Review History', 'Violation Reports'];
+const tabs = ['Nội dung tin', 'Công ty', 'Ứng viên', 'Gói dịch vụ', 'Lịch sử duyệt', 'Báo cáo vi phạm'];
 
 // Cấu hình màu sắc cho trạng thái tin tuyển dụng
 const statusMap = {
@@ -101,9 +101,9 @@ const JobDetailAdmin = () => {
         } 
         actions={
           <>
-            <ActionButton tone="primary" onClick={() => console.log('Duyệt job', job._id)}>Approve</ActionButton>
-            <ActionButton tone="soft" onClick={() => console.log('Từ chối job', job._id)}>Reject</ActionButton>
-            <ActionButton tone="danger" onClick={() => console.log('Khóa job', job._id)}>Ban</ActionButton>
+            <ActionButton tone="primary" onClick={() => console.log('Duyệt job', job._id)}>Phê duyệt</ActionButton>
+            <ActionButton tone="soft" onClick={() => console.log('Từ chối job', job._id)}>Từ chối</ActionButton>
+            <ActionButton tone="danger" onClick={() => console.log('Khóa job', job._id)}>Khóa tin</ActionButton>
           </>
         } 
       />
@@ -114,7 +114,7 @@ const JobDetailAdmin = () => {
       </SectionCard>
 
       {/* TAB 1: NỘI DUNG TIN TUYỂN DỤNG */}
-      {active === 'Job Content' && (
+      {active === 'Nội dung tin' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SectionCard title="Thông tin chung tin tuyển dụng">
             <div className="space-y-3 text-sm text-slate-700">
@@ -187,7 +187,7 @@ const JobDetailAdmin = () => {
       )}
 
       {/* TAB 2: THÔNG TIN CÔNG TY ĐĂNG TIN */}
-      {active === 'Company' && (
+      {active === 'Công ty' && (
         <SectionCard title="Thông tin công ty đối tác">
           {job.companyId ? (
             <div className="flex flex-col md:flex-row gap-6">
@@ -224,7 +224,7 @@ const JobDetailAdmin = () => {
       )}
 
       {/* TAB 5: LỊCH SỬ KIỂM DUYỆT TIN */}
-      {active === 'Review History' && (
+      {active === 'Lịch sử duyệt' && (
         <SectionCard title="Lịch sử phê duyệt hệ thống">
           <SimpleTable headers={['Admin thực hiện', 'Email liên hệ', 'Trạng thái sau duyệt']}>
             {job.reviewedBy ? (
@@ -247,7 +247,7 @@ const JobDetailAdmin = () => {
       )}
 
       {/* CÁC TAB KHÁC CHỜ GHÉP API THÊM */}
-      {active !== 'Job Content' && active !== 'Company' && active !== 'Review History' && (
+      {active !== 'Nội dung tin' && active !== 'Công ty' && active !== 'Lịch sử duyệt' && (
         <SectionCard title={active}>
           <div className="text-slate-500 italic py-4">
             Dữ liệu của mục <b>{active}</b> cần được populate hoặc gọi từ API truy vấn riêng biệt (Ví dụ: dữ liệu Applicants từ `Application` model).
