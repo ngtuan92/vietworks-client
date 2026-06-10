@@ -38,13 +38,13 @@ const Transactions = () => {
         <p className="text-slate-600 mt-1">Dữ liệu lịch sử giao dịch là dữ liệu đóng, không cho phép chỉnh sửa hoặc xóa.</p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5 space-y-4">
         <div className="flex flex-wrap gap-2">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setActive(t.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold ${active === t.key ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold ${active === t.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
             >
               {t.label}
             </button>
@@ -57,19 +57,19 @@ const Transactions = () => {
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
               placeholder="Mã giao dịch, ghi chú..."
             />
           </div>
           <div className="flex items-end">
-            <button className="w-full px-4 py-3 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+            <button className="w-full px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
               Tìm kiếm
             </button>
           </div>
         </div>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600">

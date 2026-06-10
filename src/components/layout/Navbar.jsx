@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -81,6 +81,7 @@ const Navbar = () => {
         <div className="flex items-center gap-10">
           <Link to="/" className="flex items-center gap-2 mr-2">
             <img src={logoImg} alt="VietWorks Logo" className="h-9 w-auto object-contain rounded" />
+            <span className="text-xl font-black text-primary tracking-tight">VietWorks</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-2">

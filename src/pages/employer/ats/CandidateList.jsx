@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 
 const MOCK_JOBS = [
   { id: 1, title: 'Senior Backend Developer' },
@@ -83,6 +84,7 @@ const CandidateList = () => {
   const [keyword, setKeyword] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [selectedApp, setSelectedApp] = useState(null);
 
   const filtered = useMemo(() => {
     return MOCK_APPS.filter((app) => {
@@ -114,21 +116,21 @@ const CandidateList = () => {
           </Link>
           <button
             onClick={() => navigate('/employer/jobs/1/applications')}
-            className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]"
+            className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all"
           >
             Xem theo từng Job
           </button>
         </div>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl p-5">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Tin tuyển dụng</label>
             <select
               value={jobId}
               onChange={(e) => setJobId(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
             >
               <option value="">Tất cả</option>
               {MOCK_JOBS.map((job) => (
@@ -141,7 +143,7 @@ const CandidateList = () => {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
             >
               <option value="">Tất cả</option>
               <option value="UNREAD">Chưa xem</option>
@@ -156,87 +158,123 @@ const CandidateList = () => {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Tên ứng viên, kỹ năng, job..."
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Từ ngày</label>
-              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]" />
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Đến ngày</label>
-              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]" />
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary" />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      {/* TABLE LIST LAYOUT */}
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
               <tr>
-                {['Ứng viên', 'Job ứng tuyển', 'CV', 'Kinh nghiệm', 'Địa điểm mong muốn', 'Ngày nộp', 'Trạng thái', 'Hành động'].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>
+                {['Ứng viên', 'Job đã ứng tuyển', 'Kinh nghiệm', 'Khu vực', 'Ngày nộp', 'Trạng thái', 'Hành động'].map((head) => (
+                  <th key={head} className="text-left px-5 py-3.5 font-semibold whitespace-nowrap">{head}</th>
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr key={row.id} className="border-t border-slate-100 align-top">
-                  <td className="px-4 py-4 min-w-[220px]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 font-bold flex items-center justify-center">
-                        {row.avatar}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900">{row.candidateName}</div>
-                        <div className="text-xs text-slate-500">ID: {row.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 min-w-[220px]">{row.jobTitle}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{row.cvName}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{row.experience}</td>
-                  <td className="px-4 py-4 min-w-[220px]">{row.desiredLocation}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{row.appliedAt}</td>
-                  <td className="px-4 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[row.status]}`}>
-                      {STATUS_LABEL[row.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 min-w-[220px]">
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        to={`/employer/applications/${row.id}`}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
-                      >
-                        Xem CV
-                      </Link>
-                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">
-                        Chat
-                      </button>
-                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">
-                        Duyệt
-                      </button>
-                      <button className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 font-medium hover:bg-red-50">
-                        Từ chối
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
+            <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-slate-500">Không có hồ sơ phù hợp.</td>
+                  <td colSpan="7" className="text-center py-8 text-slate-500">Không có hồ sơ nào phù hợp.</td>
                 </tr>
-              ) : null}
+              ) : (
+                filtered.map(app => (
+                  <tr key={app.id} className="hover:bg-slate-50/80 transition-colors cursor-pointer" onClick={() => setSelectedApp(app)}>
+                    <td className="px-5 py-4 min-w-[200px]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 text-primary font-bold flex items-center justify-center shrink-0">
+                          {app.avatar}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900">{app.candidateName}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">{app.cvName}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 font-medium text-slate-700">{app.jobTitle}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-slate-600">{app.experience}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-slate-600">{app.desiredLocation}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-slate-500">{app.appliedAt}</td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[app.status]}`}>
+                        {STATUS_LABEL[app.status]}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedApp(app); }}
+                        title="Xem chi tiết"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </section>
+
+      {/* SLIDE-OUT DRAWER (CV QUICK VIEW) */}
+      {selectedApp && (
+        <>
+          <div 
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity" 
+            onClick={() => setSelectedApp(null)}
+          />
+          <div className="fixed top-0 right-0 h-full w-full md:w-[600px] xl:w-[700px] bg-white shadow-2xl z-50 flex flex-col animate-slide-in">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-primary text-xl font-bold flex items-center justify-center">
+                  {selectedApp.avatar}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{selectedApp.candidateName}</h2>
+                  <p className="text-sm text-slate-500">Ứng tuyển: <span className="font-semibold text-slate-700">{selectedApp.jobTitle}</span></p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedApp(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+                ✕
+              </button>
+            </div>
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex gap-3">
+              <button className="flex-1 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/95 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                Chấp nhận / Duyệt
+              </button>
+              <button className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all">
+                Chat
+              </button>
+              <button className="px-6 py-2.5 bg-white border border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-all">
+                Từ chối
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+              <div className="bg-white rounded-2xl border border-slate-200/60 premium-shadow h-full flex flex-col items-center justify-center text-slate-400">
+                <p className="font-medium mb-2">[Khu vực hiển thị PDF/Trình xem CV]</p>
+                <p className="text-sm">{selectedApp.cvName}</p>
+                <a href={`/employer/applications/${selectedApp.id}`} className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors">
+                  Mở toàn màn hình
+                </a>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

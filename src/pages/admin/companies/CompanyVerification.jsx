@@ -1,13 +1,13 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import adminCompanyVerificationService from '../../../services/adminCompanyVerificationService';
 import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, StatusBadge } from '../shared/AdminPrimitives';
 
 const statusMap = {
-  PENDING: 'bg-blue-100 text-blue-800',
-  VERIFIED: 'bg-blue-100 text-blue-700',
-  REJECTED: 'bg-blue-100 text-[#001a40]',
-  UNVERIFIED: 'bg-slate-100 text-slate-700',
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  VERIFIED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  REJECTED: 'bg-red-50 text-red-700 border-red-200/60',
+  UNVERIFIED: 'bg-slate-50 text-slate-700 border-slate-200',
 };
 
 const CompanyVerification = () => {
@@ -99,8 +99,8 @@ const CompanyVerification = () => {
             <td className="px-4 py-3">{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString('vi-VN') : '-'}</td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
-                <Link to={`/admin/companies/${company.id}`} className="rounded-[1.5rem] border border-slate-200/80 shadow-soft px-3 py-2">Xem</Link>
-                <Link to={`/admin/companies/${company.id}/review`} className="rounded-xl bg-primary px-3 py-2 text-white">Duyệt</Link>
+                <Link to={`/admin/companies/${company.id}`} className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95">Chi tiết</Link>
+                <Link to={`/admin/companies/${company.id}/review`} className="rounded-xl bg-primary shadow-sm px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition active:scale-95">Duyệt</Link>
               </div>
             </td>
           </tr>

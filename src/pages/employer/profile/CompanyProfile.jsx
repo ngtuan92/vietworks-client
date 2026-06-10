@@ -345,7 +345,7 @@ useEffect(() => {
           <button
   onClick={handleSubmitForApproval}
   disabled={submittingVerification || verificationStatus === 'PENDING' || verificationStatus === 'VERIFIED'}
-  className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] disabled:opacity-60"
+  className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-60"
 >
   {submittingVerification ? 'Đang gửi...' : 'Gửi duyệt'}
 </button>
@@ -364,22 +364,28 @@ useEffect(() => {
         </div>
       ) : null}
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-wrap gap-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              activeTab === tab.key ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Vertical Sidebar Navigation */}
+        <div className="w-full lg:w-64 shrink-0 sticky top-6 bg-white border border-slate-200/60 premium-shadow rounded-2xl p-3 flex flex-col gap-1">
+          <h3 className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Thiết lập hồ sơ</h3>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeTab === tab.key ? 'bg-primary/10 text-primary' : 'bg-transparent text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
 
       {activeTab === 'general' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <h2 className="text-lg font-bold text-slate-900">Thông tin chung</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -433,13 +439,13 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'locations' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Địa điểm làm việc</h2>
               <p className="text-sm text-slate-600 mt-1">Thêm nhiều chi nhánh để dùng trong tin tuyển dụng.</p>
             </div>
-            <button onClick={openCreateLocation} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+            <button onClick={openCreateLocation} className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
               Thêm địa điểm
             </button>
           </div>
@@ -533,7 +539,7 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'description' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <h2 className="text-lg font-bold text-slate-900">Mô tả công ty</h2>
 
           <RichTextEditor
@@ -564,7 +570,7 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'images' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <h2 className="text-lg font-bold text-slate-900">Hình ảnh công ty</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <FileField label="Logo" accept="image/*" onChange={(e) => setImages((p) => ({ ...p, logo: e.target.files?.[0] || null }))} hint="PNG/JPG, vuông" />
@@ -602,7 +608,7 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'legal' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Xác thực pháp lý</h2>
@@ -643,7 +649,7 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
       href={legal.businessLicenseFile.fileUrl}
       target="_blank"
       rel="noreferrer"
-      className="text-sm text-[#003f87] font-semibold hover:underline"
+      className="text-sm text-primary font-semibold hover:underline"
     >
       {legal.businessLicenseFile.fileName || 'Xem giấy đăng ký doanh nghiệp'}
     </a>
@@ -662,7 +668,7 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
             <div className="mt-4">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Ghi chú gửi Admin</label>
               <textarea
-                className="w-full min-h-28 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+                className="w-full min-h-28 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
                 value={legal.noteToAdmin}
                 onChange={(e) => setLegal((p) => ({ ...p, noteToAdmin: e.target.value }))}
                 placeholder="Ghi chú thêm để Admin dễ đối chiếu..."
@@ -682,6 +688,8 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
           </div>
         </section>
       ) : null}
+        </div>
+      </div>
     </div>
   );
 };
@@ -697,7 +705,7 @@ const Field = ({ label, id, value, onChange, placeholder, required = false, type
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
       required={required}
     />
   </div>
@@ -712,7 +720,7 @@ const Select = ({ label, id, value, onChange, options, required = false }) => (
       id={id}
       value={value}
       onChange={onChange}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
       required={required}
     >
       <option value="">Chọn...</option>
@@ -730,12 +738,15 @@ const FileField = ({ label, id, onChange, accept, hint }) => (
     <label className="block text-sm font-semibold text-slate-700 mb-2">
       {label}
     </label>
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-800 truncate">{hint || 'Chọn file để upload'}</p>
-        <p className="text-xs text-slate-500 mt-1">Chọn file để tải lên.</p>
+    <div className="relative rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all p-8 flex flex-col items-center justify-center gap-3 text-center cursor-pointer group">
+      <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+        <span className="material-symbols-outlined text-2xl">cloud_upload</span>
       </div>
-      <input id={id} type="file" accept={accept} onChange={onChange} />
+      <div>
+        <p className="text-sm font-bold text-slate-800">Kéo thả file vào đây hoặc <span className="text-primary">Chọn file</span></p>
+        <p className="text-xs text-slate-500 mt-1">{hint || 'Hỗ trợ PNG, JPG, PDF (Tối đa 5MB)'}</p>
+      </div>
+      <input id={id} type="file" accept={accept} onChange={onChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
     </div>
   </div>
 );
@@ -998,7 +1009,7 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
       <div className="min-h-full flex items-start justify-center p-4 sm:p-6">
-        <div className="w-full max-w-xl my-6 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+        <div className="w-full max-w-xl my-6 bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all shadow-xl overflow-hidden">
           <div className="p-5 flex items-center justify-between border-b border-slate-200">
             <h3 className="font-bold text-slate-900">{title}</h3>
             <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
@@ -1066,7 +1077,7 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
 
           <div className="sticky bottom-0 p-5 flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700">Hủy</button>
-            <button type="button" onClick={handleSubmit} disabled={saving} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold disabled:opacity-60">
+            <button type="button" onClick={handleSubmit} disabled={saving} className="px-4 py-2 rounded-xl bg-primary text-white font-semibold disabled:opacity-60">
               {saving ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>

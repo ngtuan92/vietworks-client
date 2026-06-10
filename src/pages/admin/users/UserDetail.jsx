@@ -1,4 +1,4 @@
-﻿import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, StatusBadge } from '../shared/AdminPrimitives';
 
 const userMap = {
@@ -42,11 +42,11 @@ const userMap = {
 };
 
 const statusMap = {
-  UNVERIFIED: 'bg-slate-100 text-slate-700',
-  ACTIVE: 'bg-blue-100 text-blue-700',
-  PENDING: 'bg-blue-100 text-blue-800',
-  VERIFIED: 'bg-blue-100 text-blue-700',
-  REJECTED: 'bg-blue-100 text-[#001a40]',
+  UNVERIFIED: 'bg-slate-50 text-slate-700 border-slate-200',
+  ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  VERIFIED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  REJECTED: 'bg-red-50 text-red-700 border-red-200/60',
 };
 
 const UserDetail = () => {
@@ -100,7 +100,7 @@ const UserDetail = () => {
         </SectionCard>
       </div>
 
-      <SectionCard title="Nhật ký hoạt động" right={<Link to="/admin/transactions" className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Xem giao dịch</Link>}>
+      <SectionCard title="Nhật ký hoạt động" right={<Link to="/admin/transactions" className="rounded-xl border border-slate-200/60 shadow-sm bg-white hover:bg-slate-50 hover:shadow-md px-4 py-2 text-xs font-bold text-slate-700 transition-all active:scale-95">Xem giao dịch</Link>}>
         <SimpleTable headers={['Thời gian', 'Hành động', 'Nguồn']}>
           {user.logs.map(([time, action, source]) => (
             <tr key={`${time}-${action}`} className="border-t border-slate-100">
@@ -116,16 +116,16 @@ const UserDetail = () => {
 };
 
 const Info = ({ label, value }) => (
-  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-    <div className="text-sm text-slate-500">{label}</div>
-    <div className="mt-2 font-semibold text-slate-900">{value}</div>
+  <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
+    <div className="mt-1.5 font-black text-slate-900">{value}</div>
   </div>
 );
 
 const Quick = ({ title, value }) => (
-  <div className="rounded-2xl border border-slate-200 p-4">
-    <div className="text-sm text-slate-500">{title}</div>
-    <div className="mt-2 text-xl font-bold text-slate-900">{value}</div>
+  <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
+    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</div>
+    <div className="mt-1.5 text-2xl font-black text-slate-900">{value}</div>
   </div>
 );
 

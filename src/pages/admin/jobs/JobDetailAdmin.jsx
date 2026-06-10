@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs, StatusBadge } from '../shared/AdminPrimitives';
 // Nhập hàm API từ file service của bạn
@@ -8,12 +8,12 @@ const tabs = ['Job Content', 'Company', 'Applicants', 'Service Package', 'Review
 
 // Cấu hình màu sắc cho trạng thái tin tuyển dụng
 const statusMap = {
-  PENDING: 'bg-blue-100 text-blue-800',
-  PUBLISHED: 'bg-blue-100 text-blue-700',
-  BANNED: 'bg-blue-100 text-[#001a40]',
-  CLOSED: 'bg-slate-100 text-slate-700',
-  DRAFT: 'bg-gray-100 text-gray-600',
-  EXPIRED: 'bg-blue-100 text-[#001a40]'
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  BANNED: 'bg-red-50 text-red-700 border-red-200/60',
+  CLOSED: 'bg-slate-50 text-slate-700 border-slate-200',
+  DRAFT: 'bg-slate-50 text-slate-700 border-slate-200',
+  EXPIRED: 'bg-rose-50 text-rose-700 border-rose-200/60'
 };
 
 const JobDetailAdmin = () => {

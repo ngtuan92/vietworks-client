@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField } from '../shared/AdminPrimitives';
 import jobAdminService from '../../../services/jobAdminService'; 
@@ -137,7 +137,7 @@ const JobReview = () => {
         
         {/* KHU VỰC PREVIEW DỮ LIỆU ĐỘNG TỪ BACKEND */}
         <SectionCard title="Candidate-side preview">
-          <div className="space-y-4 rounded-2xl border border-slate-200 p-6 bg-white">
+          <div className="space-y-4 rounded-[2rem] border border-slate-200/60 shadow-sm p-6 bg-white">
             <div className="flex justify-between items-start">
               <h3 className="text-2xl font-bold text-slate-900">{job.title}</h3>
               {job.salary && (
@@ -175,10 +175,10 @@ const JobReview = () => {
 
         {/* BẢNG ĐIỀU KHIỂN & CHECKLIST MODERATION */}
         <SectionCard title="Moderation checklist">
-          <p className="text-xs text-slate-400 mb-3 italic">Lưu ý: Bạn phải tích xác nhận toàn bộ checklist mới có thể kích hoạt quyền Approve tin này lên hệ thống.</p>
+          <p className="text-xs text-slate-400 mb-4 font-medium italic">Lưu ý: Bạn phải tích xác nhận toàn bộ checklist mới có thể kích hoạt quyền Approve tin này lên hệ thống.</p>
           <div className="space-y-3">
             {checks.map((item) => (
-              <label key={item} className="flex items-start gap-3 rounded-[1.5rem] border border-slate-200/80 shadow-soft px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition">
+              <label key={item} className="flex items-start gap-3 rounded-xl border border-slate-200/60 shadow-sm px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:shadow-md cursor-pointer transition-all active:scale-[0.98]">
                 <input 
                   type="checkbox" 
                   checked={checked[item]} 

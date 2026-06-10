@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { ActionButton, ModalShell, PageHeader, SectionCard, SelectField, TextAreaField } from '../shared/AdminPrimitives';
 
 const CompanyReview = () => {
@@ -66,9 +66,9 @@ const CompanyReview = () => {
 };
 
 const Info = ({ label, value }) => (
-  <div className="mb-3 rounded-[1.5rem] border border-slate-200/80 shadow-soft p-3">
-    <div className="text-xs text-slate-500">{label}</div>
-    <div className="font-semibold text-slate-900">{value}</div>
+  <div className="mb-3 rounded-xl border border-slate-200/60 bg-slate-50/50 shadow-sm p-3.5 hover:shadow-md transition-shadow">
+    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{label}</div>
+    <div className="text-sm font-black text-slate-900">{value}</div>
   </div>
 );
 

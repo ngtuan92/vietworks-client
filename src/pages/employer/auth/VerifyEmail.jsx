@@ -141,7 +141,7 @@ const EmployerVerifyEmail = () => {
     <div className="min-h-screen bg-slate-100 px-4 py-8 md:px-6">
       <main className="mx-auto grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg lg:grid-cols-[1.1fr_0.9fr]">
         <section className="p-7 md:p-10 lg:p-12">
-          <Link to="/" className="text-2xl font-bold text-[#003f87]">
+          <Link to="/" className="text-2xl font-bold text-primary">
             VietWorks
           </Link>
 
@@ -186,7 +186,7 @@ const EmployerVerifyEmail = () => {
                     onChange={(event) => handleOtpChange(index, event)}
                     onKeyDown={(event) => handleOtpKeyDown(index, event)}
                     onFocus={(event) => event.target.select()}
-                    className="h-14 w-11 rounded-xl border border-slate-300 bg-white text-center text-xl font-bold text-slate-900 outline-none transition focus:border-[#003f87] focus:ring-4 focus:ring-blue-100 sm:h-16 sm:w-14"
+                    className="h-14 w-11 rounded-xl border border-slate-300 bg-white text-center text-xl font-bold text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-blue-100 sm:h-16 sm:w-14"
                     aria-label={`OTP digit ${index + 1}`}
                   />
                 ))}
@@ -197,7 +197,7 @@ const EmployerVerifyEmail = () => {
             <button
               type="submit"
               disabled={!isOtpComplete || isVerifying}
-              className="w-full rounded-xl bg-[#003f87] px-5 py-3.5 text-base font-semibold text-white transition hover:bg-[#0b4e9f] disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-primary px-5 py-3.5 text-base font-semibold text-white transition hover:bg-primary/95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isVerifying ? 'Đang xác thực...' : 'Xác thực OTP'}
             </button>
@@ -209,7 +209,7 @@ const EmployerVerifyEmail = () => {
               type="button"
               onClick={handleResend}
               disabled={cooldown > 0 || isResending}
-              className="text-sm font-semibold text-[#003f87] disabled:text-slate-400"
+              className="text-sm font-semibold text-primary disabled:text-slate-400"
             >
               {isResending ? 'Đang gửi...' : cooldown > 0 ? `Gửi lại sau 00:${String(cooldown).padStart(2, '0')}` : 'Gửi lại mã OTP'}
             </button>
