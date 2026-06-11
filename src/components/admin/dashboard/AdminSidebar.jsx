@@ -1,7 +1,8 @@
-﻿import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Settings, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Settings, PlusCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+import logoImg from '../../../assets/logo.png';
 
 const iconClass = 'w-5 h-5';
 
@@ -119,10 +120,7 @@ const AdminSidebar = () => {
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-white/70 bg-white/82 shadow-[18px_0_55px_rgba(15,23,42,.08)] backdrop-blur-2xl">
       <div className="p-5 flex items-center gap-3 border-b border-slate-100/80">
-        <div className="relative grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#004491] to-[#0056B3] text-white font-black shadow-glow">
-          VW
-          <span className="absolute inset-0 rounded-2xl vw-shimmer opacity-40" />
-        </div>
+        <img src={logoImg} alt="VietWorks Logo" className="h-10 w-auto object-contain" />
         <div>
           <span className="block text-xl font-black tracking-tight vw-gradient-text">VietWorks</span>
           <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Admin Suite</span>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import adminCompanyVerificationService from '../../../services/adminCompanyVerificationService';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs } from '../shared/AdminPrimitives';
@@ -86,7 +86,7 @@ const CompanyDetail = () => {
       />
 
       {message ? (
-        <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/86 shadow-soft backdrop-blur-xl px-4 py-3 text-sm font-semibold text-slate-700">
+        <div className="rounded-xl border border-blue-100 bg-blue-50/80 shadow-sm px-4 py-3 text-sm font-bold text-blue-800">
           {message}
         </div>
       ) : null}
@@ -161,9 +161,9 @@ const CompanyDetail = () => {
 };
 
 const Info = ({ label, value }) => (
-  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-    <div className="text-sm text-slate-500">{label}</div>
-    <div className="mt-2 font-semibold text-slate-900">{value || '-'}</div>
+  <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
+    <div className="mt-1.5 text-sm font-black text-slate-900">{value || '-'}</div>
   </div>
 );
 

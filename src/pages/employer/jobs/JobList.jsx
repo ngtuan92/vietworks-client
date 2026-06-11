@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Eye, Send, Trash2, Plus } from 'lucide-react';
 import jobService from '../../../services/jobService'; // Đường dẫn tới file API của bạn
 import JobDetailModal from './JobDetailModal';
 
@@ -140,26 +141,27 @@ const JobList = () => {
           <h1 className="text-2xl font-bold text-slate-900">Danh sách tin tuyển dụng</h1>
           <p className="text-slate-600 mt-1">Quản lý toàn bộ Job của công ty theo trạng thái và hiệu quả tuyển dụng.</p>
         </div>
-        <button className="px-5 py-2.5 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f] transition-all">
+        <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+          <Plus className="w-5 h-5" />
           Tạo tin mới
         </button>
       </div>
 
       {/* Khu vực Bộ lọc (Filters) */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Từ khóa</label>
             <input 
               type="text" value={filters.search} onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Tên job..." className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87]" 
+              placeholder="Tên job..." className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary" 
             />
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Trạng thái</label>
             <select 
               value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] bg-white text-slate-800"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary bg-white text-slate-800"
             >
               <option value="">Tất cả trạng thái</option>
               {Object.keys(statusMeta).map(st => (
@@ -171,7 +173,7 @@ const JobList = () => {
             <label className="block text-sm font-semibold text-slate-700 mb-2">Địa điểm</label>
             <select 
               value={filters.location} onChange={(e) => handleFilterChange('location', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] bg-white text-slate-800"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary bg-white text-slate-800"
             >
               <option value="">Chọn địa điểm...</option>
               <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
@@ -183,7 +185,7 @@ const JobList = () => {
             <label className="block text-sm font-semibold text-slate-700 mb-2">Loại tin</label>
             <select 
               value={filters.package} onChange={(e) => handleFilterChange('package', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] bg-white text-slate-800"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary bg-white text-slate-800"
             >
               <option value="">Chọn loại tin...</option>
               <option value="Thường">Thường</option>
@@ -202,7 +204,7 @@ const JobList = () => {
       </section>
 
       {/* Bảng danh sách Job */}
-      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
@@ -250,10 +252,11 @@ const JobList = () => {
                         <div className="flex items-center gap-2">
                           {/* Nút Xem chi tiết luôn xuất hiện ở mọi status */}
                           <button 
-                            onClick={() => setSelectedJobId(job._id)} 
-                            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors"
+                            onClick={() => setSelectedJobId(job._id)}
+                            title="Xem chi tiết"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
                           >
-                            Xem chi tiết
+                            <Eye className="w-4 h-4" />
                           </button>
 
                           {/* Các hành động đặc quyền cho DRAFT */}
@@ -261,15 +264,17 @@ const JobList = () => {
                             <>
                               <button 
                                 onClick={() => handleSubmitReview(job._id)}
-                                className="px-3 py-1.5 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition-colors"
+                                title="Gửi duyệt"
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
                               >
-                                Gửi duyệt
+                                <Send className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => handleDeleteJob(job._id)}
-                                className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 font-medium hover:bg-red-50 transition-colors"
+                                title="Xóa"
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
                               >
-                                Xóa
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </>
                           )}

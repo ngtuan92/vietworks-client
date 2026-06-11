@@ -1,4 +1,4 @@
-﻿import { ChevronRight, Save, Info, Palette, Check, Plus, Database, Image, X, UploadCloud, Eye, User, MapPin, Phone, Mail } from 'lucide-react';
+import { ChevronRight, Save, Info, Palette, Check, Plus, Database, Image, X, UploadCloud, Eye, User, MapPin, Phone, Mail } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import adminService from '../../../services/adminService';
@@ -241,6 +241,7 @@ const CVTemplateForm = () => {
   const [industry, setIndustry] = useState('');
   const [careerGroups, setCareerGroups] = useState([]);
   const [isActive, setIsActive] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState('left-col');
   const [defaultFont, setDefaultFont] = useState('Inter');
   const [primaryColor, setPrimaryColor] = useState('#0056b3');
@@ -332,6 +333,7 @@ const CVTemplateForm = () => {
       setName(editingTemplate.name || '');
       setIndustry(editingTemplate.careerGroupId?._id || editingTemplate.careerGroupId || '');
       setIsActive(editingTemplate.status === 'ACTIVE' || editingTemplate.isActive);
+      setIsPremium(editingTemplate.isPremium || false);
 
       const matchedLayout = defaultLayouts.find(l => l.id === editingTemplate.templateCode);
       if (matchedLayout) setSelectedLayout(matchedLayout.id);
@@ -988,6 +990,7 @@ const CVTemplateForm = () => {
         name,
         careerGroupId: industry,
         status: isActive ? 'ACTIVE' : 'INACTIVE',
+        isPremium: isPremium,
         templateCode: selectedLayout,
         layoutConfig: {
           columns: selectedLayout === 'two-col-equal' ? 2 : 1,
@@ -1117,6 +1120,25 @@ const CVTemplateForm = () => {
                 >
                   <span
                     className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                  />
+                </button>
+              </div>
+
+              {/* Premium Toggle Switch */}
+              <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-xl border border-amber-200/60 mt-4">
+                <div>
+                  <label className="block text-sm font-bold text-amber-900 flex items-center gap-1.5">Mẫu Premium <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider">VIP</span></label>
+                  <span className="text-xs text-amber-700/80 block mt-0.5">Yêu cầu người dùng nâng cấp gói dịch vụ để sử dụng mẫu này.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPremium(!isPremium)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isPremium ? 'bg-amber-500' : 'bg-amber-200/60'
+                    }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isPremium ? 'translate-x-5' : 'translate-x-0'
                       }`}
                   />
                 </button>

@@ -36,20 +36,20 @@ const JobApplications = () => {
           <button className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50">
             Từ chối nhiều CV
           </button>
-          <button className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+          <button className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
             Xuất danh sách
           </button>
         </div>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl p-5">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
         <div className="flex flex-wrap gap-2">
           {QUICK_FILTERS.map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-                filter === f ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                filter === f ? 'bg-primary text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
               }`}
             >
               {LABEL[f]}
@@ -60,7 +60,7 @@ const JobApplications = () => {
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {candidates.map((candidate) => (
-          <div key={candidate.id} className="bg-white border border-slate-200 rounded-2xl p-5">
+          <div key={candidate.id} className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 font-bold flex items-center justify-center">

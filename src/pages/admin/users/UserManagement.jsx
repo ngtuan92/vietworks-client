@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ActionButton,
@@ -21,8 +21,9 @@ const USERS = [
 ];
 
 const statusMap = {
-  UNVERIFIED: 'bg-slate-100 text-slate-700',
-  ACTIVE: 'bg-blue-100 text-blue-700',
+  UNVERIFIED: 'bg-slate-50 text-slate-700 border-slate-200',
+  ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  BANNED: 'bg-red-50 text-red-700 border-red-200/60'
 };
 
 const UserManagement = () => {
@@ -118,9 +119,9 @@ const UserManagement = () => {
               <div className="flex flex-wrap gap-2">
                 <Link
                   to={`/admin/users/${user.id}`}
-                  className="rounded-2xl border border-slate-200 px-3 py-2 font-semibold text-slate-700"
+                  className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95"
                 >
-                  Xem
+                  Chi tiết
                 </Link>
                 {false ? (
                   <ActionButton tone="soft">Mở khóa</ActionButton>
@@ -135,7 +136,7 @@ const UserManagement = () => {
         ))}
       </SimpleTable>
 
-      {false && lockTarget ? (
+      {lockTarget ? (
         <ModalShell
           title={`Khóa tài khoản: ${lockTarget.name}`}
           onClose={() => {
@@ -167,9 +168,9 @@ const UserManagement = () => {
             options={['Vĩnh viễn', '1 ngày', '7 ngày', '30 ngày', 'Tùy chọn ngày']}
             placeholder="Chọn thời hạn"
           />
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
-            <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />
-            Gửi email / notification cho người dùng sau khi khóa
+          <label className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-700 cursor-pointer shadow-sm">
+            <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="rounded border-slate-300 text-primary focus:ring-primary/20 w-4 h-4" />
+            Gửi email thông báo khóa tài khoản
           </label>
         </ModalShell>
       ) : null}
