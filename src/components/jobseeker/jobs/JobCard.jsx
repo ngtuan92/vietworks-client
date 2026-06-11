@@ -2,6 +2,9 @@
 
 import { useNavigate } from 'react-router-dom';
 import { BookmarkPlus, Banknote, MapPin, Clock, Award, Briefcase, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
+import JobseekerAuthModal from '../../common/JobseekerAuthModal';
 
 const JobCard = ({
   id,
@@ -21,15 +24,15 @@ const JobCard = ({
   showExtra = false,
 }) => {
   const navigate = useNavigate();
+  const { guard, modalState, closeModal } = useJobseekerAuth();
   const avatarSrc = companyAvatar || logo || 'https://placehold.co/64x64/png?text=C';
 
-  const handleClick = () => {
-    if (id) {
-      navigate(`/jobs/${id}`);
-    }
-  };
+  const handleClick = () => { if (id) navigate(`/jobs/${id}`); };
+  const handleSave = guard((e) => { e.stopPropagation(); console.log('save', id); }, 'save_job');
 
   return (
+    <>
+
     <div
       className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover-3d hover:border-primary transition-all group cursor-pointer"
       onClick={handleClick}
@@ -47,7 +50,7 @@ const JobCard = ({
             </div>
             <button
               className="text-gray-400 hover:text-primary transition-colors"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleSave}
             >
               <BookmarkPlus className="w-6 h-6" />
             </button>
@@ -112,6 +115,9 @@ const JobCard = ({
         </div>
       </div>
     </div>
+
+      <JobseekerAuthModal open={modalState.open} action={modalState.action} onClose={closeModal} />
+    </>
   );
 };
 
