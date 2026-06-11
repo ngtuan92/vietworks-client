@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import adminService from '../../../services/adminService';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
+import uploadService from '../../../services/uploadService';
 
 const defaultLayouts = [
   {
@@ -220,6 +222,18 @@ const getDefaultSectionItem = (code) => {
   }
 };
 
+const base64ToFile = (base64String, filename = 'avatar.jpg') => {
+  const arr = base64String.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
+
 const CVTemplateForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -232,12 +246,79 @@ const CVTemplateForm = () => {
   // Scaling state for fixed width A4 preview canvas (794px design)
   const containerRef = useRef(null);
   const [scale, setScale] = useState(0.5);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [zoomMode, setZoomMode] = useState('auto'); // 'auto' | 'manual'
+  const [zoomScale, setZoomScale] = useState(0.5);
+  const [mockAvatarUrl, setMockAvatarUrl] = useState(null);
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarX, setAvatarX] = useState(0);
+  const [avatarY, setAvatarY] = useState(0);
+
+  const [croppingImage, setCroppingImage] = useState(null);
+
+  const handleAvatarClick = () => {
+    const uploader = document.getElementById('mockAvatarUploader');
+    if (uploader) uploader.click();
+  };
+
+  const handleMockAvatarChange = (e) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      const file = files[0];
+      if (!file.type.startsWith('image/')) {
+        alert('Vui lòng chọn tệp hình ảnh hợp lệ.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhẹ hơn.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCroppingImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+      // Reset input value to allow uploading the same file again if needed
+      e.target.value = '';
+    }
+  };
+
+  const handleCropConfirm = async (croppedBase64) => {
+    try {
+      const file = base64ToFile(croppedBase64);
+      const res = await uploadService.uploadAvatar(file);
+      if (res.success && res.data?.fileUrl) {
+        setMockAvatarUrl(res.data.fileUrl);
+      } else {
+        setMockAvatarUrl(croppedBase64);
+      }
+    } catch (err) {
+      console.error('Cloudinary upload error, using base64 fallback:', err);
+      setMockAvatarUrl(croppedBase64);
+    } finally {
+      setAvatarZoom(1);
+      setAvatarX(0);
+      setAvatarY(0);
+      setCroppingImage(null);
+    }
+  };
+
+  const handleCropDelete = () => {
+    setMockAvatarUrl(null);
+    setCroppingImage(null);
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
     const updateScale = () => {
-      const width = containerRef.current.offsetWidth;
-      setScale(width / 794);
+      if (zoomMode === 'auto') {
+        const width = containerRef.current.offsetWidth;
+        const availableWidth = width - 24; // padding & scrollbar buffer
+        const computed = availableWidth / 794;
+        setScale(Math.min(computed, 1.2)); // Cap at 1.2x
+      } else {
+        setScale(zoomScale);
+      }
     };
     updateScale();
     window.addEventListener('resize', updateScale);
@@ -246,7 +327,27 @@ const CVTemplateForm = () => {
       window.removeEventListener('resize', updateScale);
       clearTimeout(timer);
     };
-  }, []);
+  }, [zoomMode, zoomScale, isFocusMode]);
+
+  const handleZoomIn = () => {
+    setZoomMode('manual');
+    setZoomScale(prev => {
+      const currentVal = zoomMode === 'auto' ? scale : prev;
+      return Math.min(Math.round((currentVal + 0.1) * 10) / 10, 2.0);
+    });
+  };
+
+  const handleZoomOut = () => {
+    setZoomMode('manual');
+    setZoomScale(prev => {
+      const currentVal = zoomMode === 'auto' ? scale : prev;
+      return Math.max(Math.round((currentVal - 0.1) * 10) / 10, 0.4);
+    });
+  };
+
+  const handleZoomFit = () => {
+    setZoomMode('auto');
+  };
 
   // Form states
   const [name, setName] = useState('');
@@ -357,6 +458,12 @@ const CVTemplateForm = () => {
       setDensity(editingTemplate.layoutConfig?.density || 'normal');
       setTitleStyle(editingTemplate.layoutConfig?.titleStyle || 'underline');
       setAvatarShape(editingTemplate.layoutConfig?.avatarShape || 'circle');
+      if (editingTemplate.layoutConfig?.mockAvatarUrl) {
+        setMockAvatarUrl(editingTemplate.layoutConfig.mockAvatarUrl);
+        setAvatarZoom(editingTemplate.layoutConfig.avatarZoom || 1);
+        setAvatarX(editingTemplate.layoutConfig.avatarX || 0);
+        setAvatarY(editingTemplate.layoutConfig.avatarY || 0);
+      }
 
       if (editingTemplate.previewImageUrl) {
         setPreviewUrl(editingTemplate.previewImageUrl);
@@ -1061,6 +1168,10 @@ const CVTemplateForm = () => {
           density,
           titleStyle,
           avatarShape,
+          mockAvatarUrl,
+          avatarZoom,
+          avatarX,
+          avatarY,
           defaultSectionCodes: Object.keys(checkedSections)
             .filter(k => checkedSections[k])
             .flatMap(k => {
@@ -1130,66 +1241,151 @@ const CVTemplateForm = () => {
         </div>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left & Middle Column (Form properties) */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Top Grid Row: Basic Info & Static Preview Upload */}
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${isFocusMode ? 'hidden' : ''}`}>
+        {/* Left: Thông tin cơ bản */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#0056b3] text-[22px]">info</span>
+            Thông tin cơ bản
+          </h2>
 
-          {/* Card 1: Thông tin cơ bản */}
-          <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-5">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">info</span>
-              Thông tin cơ bản
-            </h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Tên mẫu CV *</label>
+              <input
+                type="text"
+                required
+                placeholder="VD: Modern Professional, Creative Minimal..."
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none"
+              />
+            </div>
 
-            <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Ngành nghề phù hợp *</label>
+              <select
+                required
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none cursor-pointer"
+              >
+                <option value="">Chọn ngành nghề</option>
+                {careerGroups.map(group => (
+                  <option key={group._id} value={group._id}>{group.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Toggle Switch */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Tên mẫu CV *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="VD: Modern Professional, Creative Minimal..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none"
-                />
+                <label className="block text-sm font-bold text-gray-900">Trạng thái hoạt động</label>
+                <span className="text-xs text-gray-500 block mt-0.5">Hiển thị mẫu CV này cho ứng viên lựa chọn sử dụng.</span>
               </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Ngành nghề phù hợp *</label>
-                <select
-                  required
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none cursor-pointer"
-                >
-                  <option value="">Chọn ngành nghề</option>
-                  {careerGroups.map(group => (
-                    <option key={group._id} value={group._id}>{group.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Status Toggle Switch */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-                <div>
-                  <label className="block text-sm font-bold text-gray-900">Trạng thái hoạt động</label>
-                  <span className="text-xs text-gray-500 block mt-0.5">Hiển thị mẫu CV này cho ứng viên lựa chọn sử dụng.</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsActive(!isActive)}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[#0056b3]' : 'bg-gray-300'
+              <button
+                type="button"
+                onClick={() => setIsActive(!isActive)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[#0056b3]' : 'bg-gray-300'
+                  }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'
                     }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                  />
-                </button>
-              </div>
+                />
+              </button>
             </div>
           </div>
+        </div>
+
+        {/* Right: Upload Ảnh Preview Tĩnh */}
+        <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">image</span>
+              Ảnh Preview Thiết Kế (Tĩnh)
+            </h2>
+            <p className="text-xs text-gray-500 leading-relaxed mt-1">
+              Hình ảnh thiết kế chính thức (PNG, JPG) sẽ hiển thị trong thư viện Mẫu CV để người dùng có thể xem trước.
+            </p>
+          </div>
+
+          {/* Drag & Drop Area styled as A4 */}
+          <div className="flex-1 flex items-center justify-center py-2">
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              style={{ aspectRatio: '1 / 1.414' }}
+              className={`w-40 border-2 border-dashed rounded-lg text-center transition-all relative flex flex-col items-center justify-center bg-white shadow-sm hover:shadow-md ${isDragging
+                  ? 'border-[#0056b3] bg-blue-50/20'
+                  : previewUrl
+                    ? 'border-gray-200 bg-gray-50'
+                    : 'border-gray-300 hover:border-gray-400 bg-gray-50/30'
+                }`}
+            >
+              {previewUrl ? (
+                <div className="w-full h-full flex flex-col items-center justify-center relative group p-1.5">
+                  <img
+                    src={previewUrl}
+                    alt="CV template preview"
+                    className="w-full h-full rounded object-contain"
+                  />
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-md flex items-center justify-center transition-colors"
+                      title="Gỡ bỏ ảnh"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center space-y-2 p-3">
+                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
+                    <span className="material-symbols-outlined text-[20px]">cloud_upload</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-800 block leading-tight">Kéo thả ảnh hoặc click</span>
+                  </div>
+                  <span className="text-[8px] text-gray-400 leading-normal max-w-[100px] block">
+                    Hỗ trợ JPG, PNG (Tối đa 5MB)
+                  </span>
+                </div>
+              )}
+              <input
+                id="previewImageUploader"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className={previewUrl ? "hidden" : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"}
+              />
+            </div>
+          </div>
+
+          <div className="text-center">
+            {previewUrl && (
+              <span className="text-[10px] font-semibold text-gray-500 truncate max-w-full px-2 block">
+                {previewImage ? previewImage.name : 'image_preview.png'}
+              </span>
+            )}
+            <label
+              htmlFor="previewImageUploader"
+              className="text-[11px] font-bold text-[#0056b3] hover:underline cursor-pointer"
+            >
+              {previewUrl ? 'Thay đổi ảnh khác' : 'Chọn tệp hình ảnh'}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column (Form properties) */}
+        <div className={`space-y-6 ${isFocusMode ? 'hidden' : ''}`}>
 
           {/* Card 2: Cấu hình thiết kế */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6">
@@ -1355,6 +1551,8 @@ const CVTemplateForm = () => {
                 </select>
               </div>
             </div>
+
+
           </div>
 
           {/* Card 3: Danh sách Section Mặc định */}
@@ -1400,90 +1598,82 @@ const CVTemplateForm = () => {
           </div>
         </div>
 
-        {/* Right sidebar - Stacked Upload & Live Preview Cards */}
-        <div className="space-y-6">
-
-          {/* Card 1: Upload Ảnh Preview Tĩnh */}
-          <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">image</span>
-              Ảnh Preview Thiết Kế (Tĩnh)
-            </h2>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Hình ảnh thiết kế chính thức (PNG, JPG) sẽ hiển thị trong thư viện Mẫu CV để người dùng có thể xem trước.
-            </p>
-
-            {/* Drag & Drop Area */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all relative flex flex-col items-center justify-center min-h-[250px] ${isDragging
-                  ? 'border-[#0056b3] bg-blue-50/20'
-                  : previewUrl
-                    ? 'border-gray-200 bg-gray-50'
-                    : 'border-gray-300 hover:border-gray-400 bg-gray-50/30'
-                }`}
-            >
-              {previewUrl ? (
-                <div className="w-full h-full flex flex-col items-center justify-center space-y-4 relative group">
-                  <img
-                    src={previewUrl}
-                    alt="CV template preview"
-                    className="max-h-[280px] rounded-lg shadow-sm border border-gray-300 object-contain max-w-full"
-                  />
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md flex items-center justify-center transition-colors"
-                      title="Gỡ bỏ ảnh"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">close</span>
-                    </button>
-                  </div>
-                  <span className="text-xs font-semibold text-gray-500 truncate max-w-full px-4">
-                    {previewImage ? previewImage.name : 'image_preview.png'}
-                  </span>
-                  <label
-                    documentFor="previewImageUploader"
-                    className="text-xs font-bold text-[#0056b3] hover:underline cursor-pointer"
-                  >
-                    Thay đổi ảnh khác
-                  </label>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center space-y-3 p-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
-                    <span className="material-symbols-outlined text-[28px]">cloud_upload</span>
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-gray-800 block">Kéo thả ảnh hoặc click để chọn</span>
-                  </div>
-                  <span className="text-[10px] text-gray-400 leading-normal max-w-[200px] block pt-1">
-                    Hỗ trợ JPG, PNG (Tối đa 5MB).
-                  </span>
-                </div>
-              )}
-              <input
-                id="previewImageUploader"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className={previewUrl ? "hidden" : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"}
-              />
-            </div>
-          </div>
+        {/* Right column - Live Preview Card */}
+        <div className={`space-y-6 ${isFocusMode ? 'lg:col-span-2 max-w-5xl mx-auto w-full' : 'lg:sticky lg:top-6 self-start'}`}>
 
           {/* Card 2: Live Mockup Preview tương tác */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">visibility</span>
-              Thiết kế nội dung mẫu trực quan
-            </h2>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Click trực tiếp vào văn bản để chỉnh sửa. Di chuột vào mỗi section để thêm/xóa mục hoặc di chuyển cột.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+              <div className="sm:w-1/2 space-y-1">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#0056b3] text-[22px]">visibility</span>
+                  Thiết kế nội dung mẫu trực quan
+                </h2>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Click trực tiếp vào văn bản để chỉnh sửa. Di chuột vào mỗi section để thêm/xóa mục hoặc di chuyển cột.
+                </p>
+              </div>
+              
+              {/* Zoom & View Controls Toolbar */}
+              <div className="sm:w-1/2 flex sm:justify-end">
+                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 shrink-0 w-fit">
+                  <div className="flex items-center border-r border-gray-200 pr-2 mr-1">
+                    <button
+                      type="button"
+                      onClick={handleZoomOut}
+                      className="p-1 rounded hover:bg-gray-200 text-gray-600 disabled:opacity-40 transition-colors flex items-center justify-center"
+                      disabled={scale <= 0.4}
+                      title="Thu nhỏ"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">zoom_out</span>
+                    </button>
+                    
+                    <span className="text-xs font-bold text-gray-700 min-w-[48px] text-center select-none">
+                      {Math.round(scale * 100)}%
+                    </span>
+                    
+                    <button
+                      type="button"
+                      onClick={handleZoomIn}
+                      className="p-1 rounded hover:bg-gray-200 text-gray-600 disabled:opacity-40 transition-colors flex items-center justify-center"
+                      disabled={scale >= 2.0}
+                      title="Phóng to"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={handleZoomFit}
+                      className={`ml-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${
+                        zoomMode === 'auto'
+                          ? 'bg-[#0056b3] text-white'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                      title="Tự động vừa khít"
+                    >
+                      Tự động
+                    </button>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setIsFocusMode(!isFocusMode)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                      isFocusMode
+                        ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-sm'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                    }`}
+                    title={isFocusMode ? "Trở lại màn hình thiết lập" : "Phóng to khu vực soạn thảo"}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {isFocusMode ? 'fullscreen_exit' : 'open_in_full'}
+                    </span>
+                    {isFocusMode ? 'Thu nhỏ' : 'Tập trung'}
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Scrollable container for A4 Pages */}
             <div
@@ -1491,7 +1681,9 @@ const CVTemplateForm = () => {
               style={{
                 fontFamily: fontMapping[defaultFont] || 'Inter, sans-serif',
               }}
-              className="w-full flex flex-col gap-6 max-h-[780px] overflow-y-auto pr-1 pb-4 scrollbar-thin bg-gray-100 p-2 rounded-lg"
+              className={`w-full flex flex-col gap-6 overflow-auto pr-1 pb-4 scrollbar-thin bg-gray-100 p-4 rounded-lg transition-all ${
+                isFocusMode ? 'max-h-[calc(100vh-220px)]' : 'max-h-[780px]'
+              }`}
             >
               {(() => {
                 const leftSections = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE');
@@ -1707,12 +1899,12 @@ const CVTemplateForm = () => {
                         <div
                           key={pageIdx}
                           style={{
-                            width: '100%',
+                            width: `${794 * scale}px`,
                             height: `${1123 * scale}px`,
                             position: 'relative',
                             overflow: 'hidden'
                           }}
-                          className="shadow-md border border-gray-200 bg-white rounded-none"
+                          className="shadow-md border border-gray-200 bg-white rounded-none mx-auto flex-shrink-0"
                         >
                           <div
                             style={{
@@ -1734,8 +1926,20 @@ const CVTemplateForm = () => {
                                   <div style={{ backgroundColor: primaryColor }} className="w-[33%] flex-shrink-0 text-white flex flex-col">
                                     {pageIdx === 0 && avatarShape !== 'hidden' && (
                                       <div className="px-5 pt-8 pb-4 text-center">
-                                        <div className={`w-20 h-20 bg-white/15 mx-auto flex items-center justify-center ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
-                                          <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+                                        <div
+                                          onClick={handleAvatarClick}
+                                          className={`w-20 h-20 bg-white/15 mx-auto flex items-center justify-center cursor-pointer hover:bg-white/25 border-2 border-transparent hover:border-blue-400 transition-all overflow-hidden ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}
+                                          title="Click để thay đổi ảnh đại diện mẫu"
+                                        >
+                                          {mockAvatarUrl ? (
+                                            <img
+                                              src={mockAvatarUrl}
+                                              className="w-full h-full object-cover"
+                                              alt="Avatar mẫu"
+                                            />
+                                          ) : (
+                                            <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+                                          )}
                                         </div>
                                       </div>
                                     )}
@@ -1784,8 +1988,21 @@ const CVTemplateForm = () => {
                                     <div className="px-8 pt-8 pb-4 flex items-end justify-between gap-6 border-b-2" style={{ borderColor: primaryColor }}>
                                       <div className="flex items-center gap-4">
                                         {avatarShape !== 'hidden' && (
-                                          <div className={`w-18 h-18 flex items-center justify-center text-white flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`} style={{ backgroundColor: primaryColor }}>
-                                            <span className="material-symbols-outlined text-[32px]">person</span>
+                                          <div
+                                            onClick={handleAvatarClick}
+                                            style={{ backgroundColor: primaryColor }}
+                                            className={`w-18 h-18 flex items-center justify-center text-white flex-shrink-0 cursor-pointer hover:opacity-95 border-2 border-transparent hover:border-blue-400 transition-all overflow-hidden ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}
+                                            title="Click để thay đổi ảnh đại diện mẫu"
+                                          >
+                                            {mockAvatarUrl ? (
+                                              <img
+                                                src={mockAvatarUrl}
+                                                className="w-full h-full object-cover"
+                                                alt="Avatar mẫu"
+                                              />
+                                            ) : (
+                                              <span className="material-symbols-outlined text-[32px]">person</span>
+                                            )}
                                           </div>
                                         )}
                                         <div>
@@ -1834,8 +2051,20 @@ const CVTemplateForm = () => {
                                         />
                                       </div>
                                       {avatarShape !== 'hidden' && (
-                                        <div className={`w-16 h-16 bg-white/15 flex items-center justify-center flex-shrink-0 ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}>
-                                          <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
+                                        <div
+                                          onClick={handleAvatarClick}
+                                          className={`w-16 h-16 bg-white/15 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-white/25 border-2 border-transparent hover:border-blue-400 transition-all overflow-hidden ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}
+                                          title="Click để thay đổi ảnh đại diện mẫu"
+                                        >
+                                          {mockAvatarUrl ? (
+                                            <img
+                                              src={mockAvatarUrl}
+                                              className="w-full h-full object-cover"
+                                              alt="Avatar mẫu"
+                                            />
+                                          ) : (
+                                            <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -2055,6 +2284,21 @@ const CVTemplateForm = () => {
           </div>
         </div>
       </div>
+      {croppingImage && (
+        <AvatarCropModal
+          imageUrl={croppingImage}
+          onClose={() => setCroppingImage(null)}
+          onConfirm={handleCropConfirm}
+          onDelete={handleCropDelete}
+        />
+      )}
+      <input
+        id="mockAvatarUploader"
+        type="file"
+        accept="image/*"
+        onChange={handleMockAvatarChange}
+        className="hidden"
+      />
     </form>
   );
 };

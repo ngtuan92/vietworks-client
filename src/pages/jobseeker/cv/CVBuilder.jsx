@@ -13,6 +13,20 @@ import { SortableItem } from '../../../components/jobseeker/cv/builder/SortableI
 import { BuilderToolbar } from '../../../components/jobseeker/cv/builder/BuilderToolbar';
 // Sections
 import { renderSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
+import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
+import uploadService from '../../../services/uploadService';
+
+const base64ToFile = (base64String, filename = 'avatar.jpg') => {
+  const arr = base64String.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
 
 const CVBuilder = () => {
   const { id } = useParams();
@@ -28,7 +42,10 @@ const CVBuilder = () => {
     fontSize: 'medium',
     density: 'normal',
     titleStyle: 'underline',
-    avatarShape: 'circle'
+    avatarShape: 'circle',
+    avatarZoom: 1,
+    avatarX: 0,
+    avatarY: 0
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,7 +71,10 @@ const CVBuilder = () => {
             fontSize: res.data.style?.fontSize || 'medium',
             density: res.data.style?.density || 'normal',
             titleStyle: res.data.style?.titleStyle || 'underline',
-            avatarShape: res.data.style?.avatarShape || 'circle'
+            avatarShape: res.data.style?.avatarShape || 'circle',
+            avatarZoom: res.data.style?.avatarZoom || 1,
+            avatarX: res.data.style?.avatarX || 0,
+            avatarY: res.data.style?.avatarY || 0
           });
         }
       } catch (err) {
@@ -107,10 +127,26 @@ const CVBuilder = () => {
     }
   };
 
+  const handleMultipleStyleChange = (updates, shouldSave = true) => {
+    setStyle(prev => {
+      const newStyle = { ...prev, ...updates };
+      if (shouldSave) {
+        saveCvConfig(sections, newStyle);
+      }
+      return newStyle;
+    });
+  };
+
   const handleStyleChange = (key, value) => {
-    const newStyle = { ...style, [key]: value };
-    setStyle(newStyle);
-    saveCvConfig(sections, newStyle);
+    handleMultipleStyleChange({ [key]: value }, true);
+  };
+
+  const [croppingImage, setCroppingImage] = useState(null);
+  const [onCropComplete, setOnCropComplete] = useState(null);
+
+  const handleOpenCropModal = (imageSrc, callback) => {
+    setCroppingImage(imageSrc);
+    setOnCropComplete(() => callback);
   };
 
   const handleTemplateChange = async (newTemplate) => {
@@ -505,32 +541,45 @@ const CVBuilder = () => {
                               {pageIdx === 0 && style.avatarShape !== 'hidden' && (
                                 <div className="px-5 pt-4 pb-2 text-center shrink-0">
                                   <div
-                                    className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
+                                    className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
                                       }`}
+                                    title="Click để tải ảnh đại diện lên"
                                   >
                                     {profileSection?.items[0]?.avatar ? (
-                                      <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                      <img 
+                                        src={profileSection.items[0].avatar} 
+                                        alt="Avatar" 
+                                        className="w-full h-full object-cover" 
+                                      />
                                     ) : (
                                       <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
                                     )}
                                     <label
                                       data-html2canvas-ignore="true"
                                       className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                                      title="Click để tải ảnh đại diện lên"
                                     >
                                       <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
                                       <input
                                         type="file"
                                         accept="image/*"
                                         className="sr-only"
-                                        onChange={async (e) => {
+                                        onChange={(e) => {
                                           const file = e.target.files[0];
                                           if (file) {
                                             const reader = new FileReader();
                                             reader.onload = () => {
-                                              const updatedItems = [...(profileSection.items || [])];
-                                              if (!updatedItems[0]) updatedItems[0] = {};
-                                              updatedItems[0].avatar = reader.result;
-                                              handleSectionContentUpdate('PROFILE', updatedItems);
+                                              handleOpenCropModal(reader.result, (croppedBase64) => {
+                                                const updatedItems = [...(profileSection.items || [])];
+                                                if (!updatedItems[0]) updatedItems[0] = {};
+                                                updatedItems[0].avatar = croppedBase64;
+                                                handleSectionContentUpdate('PROFILE', updatedItems);
+                                                handleMultipleStyleChange({
+                                                  avatarZoom: 1,
+                                                  avatarX: 0,
+                                                  avatarY: 0
+                                                });
+                                              });
                                             };
                                             reader.readAsDataURL(file);
                                           }
@@ -545,11 +594,11 @@ const CVBuilder = () => {
                                 const isCont = isSectionContinuation(sec.sectionCode, pageIdx, leftPages);
                                 return isCont ? (
                                   <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'left', selectedLayout, true)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'left', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                   </div>
                                 ) : (
                                   <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'left', selectedLayout, false)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'left', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                   </SortableItem>
                                 );
                               })}
@@ -561,7 +610,7 @@ const CVBuilder = () => {
                               {pageIdx === 0 && profileSection && (
                                 <div className="border-b pb-4" style={{ borderColor: `${style.themeColorId}20` }}>
                                   <SortableItem id="PROFILE">
-                                    {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                    {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                   </SortableItem>
                                 </div>
                               )}
@@ -571,11 +620,11 @@ const CVBuilder = () => {
                                   const isCont = isSectionContinuation(sec.sectionCode, pageIdx, rightPages);
                                   return isCont ? (
                                     <div key={sec.sectionCode} className="w-full">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                     </div>
                                   ) : (
                                     <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   );
                                 })}
@@ -593,14 +642,14 @@ const CVBuilder = () => {
                                 {profileSection && (
                                   <div className="flex-1">
                                     <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
                                 {contactSection && (
                                   <div className="text-right shrink-0">
                                     <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
@@ -613,11 +662,11 @@ const CVBuilder = () => {
                                 const isCont = isSectionContinuation(sec.sectionCode, pageIdx, headerLeftPages);
                                 return isCont ? (
                                   <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                   </div>
                                 ) : (
                                   <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                   </SortableItem>
                                 );
                               })}
@@ -633,7 +682,7 @@ const CVBuilder = () => {
                               <div className="p-6 rounded-xl text-white flex justify-between items-center" style={{ backgroundColor: style.themeColorId }}>
                                 <div className="flex-1">
                                   <SortableItem id="PROFILE">
-                                    {renderSection(profileSection, style, handleSectionContentUpdate, 'left', selectedLayout, false)}
+                                    {renderSection(profileSection, style, handleSectionContentUpdate, 'left', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                   </SortableItem>
                                 </div>
                               </div>
@@ -647,11 +696,11 @@ const CVBuilder = () => {
                                   const isCont = isSectionContinuation(sec.sectionCode, pageIdx, equalLeftPages);
                                   return isCont ? (
                                     <div key={sec.sectionCode} className="w-full">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                     </div>
                                   ) : (
                                     <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   );
                                 })}
@@ -663,11 +712,11 @@ const CVBuilder = () => {
                                   const isCont = isSectionContinuation(sec.sectionCode, pageIdx, equalRightPages);
                                   return isCont ? (
                                     <div key={sec.sectionCode} className="w-full">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                     </div>
                                   ) : (
                                     <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   );
                                 })}
@@ -685,14 +734,14 @@ const CVBuilder = () => {
                                 {profileSection && (
                                   <div className="text-center w-full">
                                     <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
                                 {contactSection && (
                                   <div className="mt-4 flex justify-center w-full max-w-sm">
                                     <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
@@ -705,11 +754,11 @@ const CVBuilder = () => {
                                 const isCont = isSectionContinuation(sec.sectionCode, pageIdx, fullWidthPages);
                                 return isCont ? (
                                   <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                   </div>
                                 ) : (
                                   <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                   </SortableItem>
                                 );
                               })}
@@ -726,14 +775,14 @@ const CVBuilder = () => {
                                 {profileSection && (
                                   <div className="text-center w-full">
                                     <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
                                 {contactSection && (
                                   <div className="mt-3 flex justify-center w-full">
                                     <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
@@ -746,11 +795,11 @@ const CVBuilder = () => {
                                 const isCont = isSectionContinuation(sec.sectionCode, pageIdx, harvardClassicPages);
                                 return isCont ? (
                                   <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                   </div>
                                 ) : (
                                   <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                   </SortableItem>
                                 );
                               })}
@@ -767,14 +816,14 @@ const CVBuilder = () => {
                                 {profileSection && (
                                   <div className="flex-1">
                                     <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
                                 {contactSection && (
                                   <div className="text-right shrink-0">
                                     <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                     </SortableItem>
                                   </div>
                                 )}
@@ -799,7 +848,7 @@ const CVBuilder = () => {
                                       </h4>
                                     </div>
                                     <div className="text-left">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true)}
+                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
                                     </div>
                                   </div>
                                 ) : (
@@ -817,7 +866,7 @@ const CVBuilder = () => {
                                         </h4>
                                       </div>
                                       <div className="text-left">
-                                        {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false)}
+                                        {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
                                       </div>
                                     </div>
                                   </SortableItem>
@@ -840,6 +889,47 @@ const CVBuilder = () => {
           </div>
         </DndContext>
       </div>
+      {croppingImage && (
+        <AvatarCropModal
+          imageUrl={croppingImage}
+          onClose={() => {
+            setCroppingImage(null);
+            setOnCropComplete(null);
+          }}
+          onConfirm={async (croppedBase64) => {
+            try {
+              setSaving(true);
+              const file = base64ToFile(croppedBase64);
+              const res = await uploadService.uploadAvatar(file);
+              if (res.success && res.data?.fileUrl) {
+                if (onCropComplete) {
+                  onCropComplete(res.data.fileUrl);
+                }
+              } else {
+                if (onCropComplete) {
+                  onCropComplete(croppedBase64);
+                }
+              }
+            } catch (err) {
+              console.error('Cloudinary upload failed, falling back to base64:', err);
+              if (onCropComplete) {
+                onCropComplete(croppedBase64);
+              }
+            } finally {
+              setSaving(false);
+              setCroppingImage(null);
+              setOnCropComplete(null);
+            }
+          }}
+          onDelete={() => {
+            if (onCropComplete) {
+              onCropComplete(null);
+            }
+            setCroppingImage(null);
+            setOnCropComplete(null);
+          }}
+        />
+      )}
     </div>
   );
 };

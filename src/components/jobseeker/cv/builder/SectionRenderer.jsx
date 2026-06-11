@@ -21,7 +21,7 @@ const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, plac
 };
 
 
-export const renderSection = (section, style, onUpdate, columnContext, layoutCode, isContinuation) => {
+export const renderSection = (section, style, onUpdate, columnContext, layoutCode, isContinuation, onStyleChange, openCropModal) => {
   const code = section.sectionCode;
   const items = section.items || [];
   
@@ -180,30 +180,42 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
             {style.avatarShape !== 'hidden' && (
               <div className="relative group/avatar shrink-0">
                 <div 
-                  className={`w-16 h-16 bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner ${
+                  className={`w-16 h-16 bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${
                     style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
                   }`}
+                  title="Click để tải ảnh đại diện lên"
                 >
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={profile.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <span className="material-symbols-outlined text-[28px] text-white/80">person</span>
                   )}
                   <label 
                     data-html2canvas-ignore="true"
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                    title="Click để tải ảnh đại diện lên"
                   >
                     <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
                     <input 
                       type="file" 
                       accept="image/*" 
                       className="sr-only" 
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = () => {
-                            updateItem(0, 'avatar', reader.result);
+                            if (openCropModal) {
+                              openCropModal(reader.result, (croppedBase64) => {
+                                updateItem(0, 'avatar', croppedBase64);
+                              });
+                            } else {
+                              updateItem(0, 'avatar', reader.result);
+                            }
                           };
                           reader.readAsDataURL(file);
                         }
@@ -223,31 +235,43 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
             {style.avatarShape !== 'hidden' && (
               <div className="relative group/avatar shrink-0 mb-4">
                 <div 
-                  className={`w-20 h-20 bg-gray-100 border flex items-center justify-center overflow-hidden relative shadow-inner ${
+                  className={`w-20 h-20 bg-gray-100 border flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${
                     style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
                   }`}
                   style={{ borderColor: `${style.themeColorId}20` }}
+                  title="Click để tải ảnh đại diện lên"
                 >
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={profile.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <span className="material-symbols-outlined text-[32px] text-gray-400">person</span>
                   )}
                   <label 
                     data-html2canvas-ignore="true"
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                    title="Click để tải ảnh đại diện lên"
                   >
                     <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
                     <input 
                       type="file" 
                       accept="image/*" 
                       className="sr-only" 
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = () => {
-                            updateItem(0, 'avatar', reader.result);
+                            if (openCropModal) {
+                              openCropModal(reader.result, (croppedBase64) => {
+                                updateItem(0, 'avatar', croppedBase64);
+                              });
+                            } else {
+                              updateItem(0, 'avatar', reader.result);
+                            }
                           };
                           reader.readAsDataURL(file);
                         }
@@ -309,13 +333,18 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
           {style.avatarShape !== 'hidden' && layoutCode !== 'harvard-classic' && layoutCode !== 'harvard-gsas' && (
             <div className={`relative group/avatar shrink-0 ${isLeft ? 'mx-auto' : 'mx-auto sm:mx-0'}`}>
               <div 
-                className={`w-16 h-16 bg-gray-200 border flex items-center justify-center overflow-hidden relative shadow-inner ${
+                className={`w-16 h-16 bg-gray-200 border flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${
                   style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
                 }`}
                 style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}
+                title="Click để tải ảnh đại diện lên"
               >
                 {profile.avatar ? (
-                  <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  <img 
+                    src={profile.avatar} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <span className="material-symbols-outlined text-[32px]" style={{ color: isLeft ? '#ffffffaa' : '#9ca3af' }}>person</span>
                 )}
@@ -323,18 +352,25 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 <label 
                   data-html2canvas-ignore="true"
                   className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                  title="Click để tải ảnh đại diện lên"
                 >
                   <span className="material-symbols-outlined text-white text-[18px]">cloud_upload</span>
                   <input 
                     type="file" 
                     accept="image/*" 
                     className="sr-only" 
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files[0];
                       if (file) {
                         const reader = new FileReader();
                         reader.onload = () => {
-                          updateItem(0, 'avatar', reader.result);
+                          if (openCropModal) {
+                            openCropModal(reader.result, (croppedBase64) => {
+                              updateItem(0, 'avatar', croppedBase64);
+                            });
+                          } else {
+                            updateItem(0, 'avatar', reader.result);
+                          }
                         };
                         reader.readAsDataURL(file);
                       }
