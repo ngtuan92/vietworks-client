@@ -104,13 +104,13 @@ const CVSearch = () => {
           <div className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700">
             Số dư ví: {walletBalance.toLocaleString('vi-VN')} VNĐ
           </div>
-          <Link to="/employer/unlocked-candidates" className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+          <Link to="/employer/unlocked-candidates" className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
             Ứng viên đã mở khóa
           </Link>
         </div>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl p-5">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Field label="Từ khóa" value={keyword} onChange={setKeyword} placeholder="Vị trí, kỹ năng..." />
           <Select label="Địa điểm" value={location} onChange={setLocation} options={['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng']} />
@@ -120,7 +120,7 @@ const CVSearch = () => {
           <Select label="Mức lương mong muốn" value={salary} onChange={setSalary} options={['18 - 25 triệu', '20 - 28 triệu', '30 - 40 triệu']} />
           <Select label="Cấp bậc" value={level} onChange={setLevel} options={['Nhân viên', 'Junior', 'Senior']} />
           <div className="flex items-end">
-            <button className="w-full px-4 py-3 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+            <button className="w-full px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
               Tìm kiếm
             </button>
           </div>
@@ -131,7 +131,7 @@ const CVSearch = () => {
         {candidates.map((candidate) => {
           const unlocked = unlockedIds.includes(candidate.id);
           return (
-            <div key={candidate.id} className="bg-white border border-slate-200 rounded-2xl p-5">
+            <div key={candidate.id} className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">{candidate.name}</h3>
@@ -204,7 +204,7 @@ const UnlockCVModal = ({ candidate, balance, onClose, onConfirm, onTopUp }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+      <div className="w-full max-w-lg bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all shadow-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <h3 className="font-bold text-slate-900">Mở khóa CV ứng viên</h3>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
@@ -226,7 +226,7 @@ const UnlockCVModal = ({ candidate, balance, onClose, onConfirm, onTopUp }) => {
         <div className="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700">Hủy</button>
           {insufficient ? (
-            <button onClick={onTopUp} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold">
+            <button onClick={onTopUp} className="px-4 py-2 rounded-xl bg-primary text-white font-semibold">
               Nạp tiền ngay
             </button>
           ) : (
@@ -247,7 +247,7 @@ const Field = ({ label, value, onChange, placeholder = '' }) => (
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
     />
   </div>
 );
@@ -258,7 +258,7 @@ const Select = ({ label, value, onChange, options }) => (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
     >
       <option value="">Tất cả</option>
       {options.map((opt) => (

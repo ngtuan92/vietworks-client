@@ -12,7 +12,7 @@ const CandidateDetail = () => {
         <p className="text-slate-600 mt-1">Ứng viên #{id}</p>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl p-6">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
           <Info label="Họ tên" value={unlocked ? 'Lê Gia Huy' : 'Lê G*** H**'} />
           <Info label="Email" value={unlocked ? 'legiahuy@gmail.com' : 'legi****@gmail.com'} />

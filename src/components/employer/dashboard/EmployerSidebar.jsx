@@ -1,7 +1,8 @@
 import { LayoutDashboard, ChevronDown, Building2, Briefcase, Users, Wallet, MessageSquare, UserCircle, PlusCircle, LogOut } from 'lucide-react';
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+import logoImg from '../../../assets/logo.png';
 
 const navItems = [
   {
@@ -62,8 +63,27 @@ const navItems = [
 
 const EmployerSidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
-  const [openGroup, setOpenGroup] = useState('Tin tuyển dụng');
+
+  const isActive = (to) => {
+    if (!to) return false;
+    if (to.includes('?')) {
+      return location.pathname + location.search === to;
+    }
+    return location.pathname === to;
+  };
+
+  const [openGroup, setOpenGroup] = useState(() => {
+    for (const item of navItems) {
+      if (item.children) {
+        if (item.children.some(child => isActive(child.to))) {
+          return item.label;
+        }
+      }
+    }
+    return 'Tin tuyển dụng';
+  });
 
   const toggle = (label) => {
     setOpenGroup(openGroup === label ? null : label);
@@ -76,20 +96,22 @@ const EmployerSidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-200 flex flex-col z-50">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-200/80 flex flex-col z-50">
+      {/* Brand logo */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-black text-xl">
-          VW
-        </div>
+        <img src={logoImg} alt="VietWorks Logo" className="h-10 w-auto object-contain" />
         <span className="text-xl font-black text-primary tracking-tight">VietWorks</span>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-1 scrollbar-thin">
+      {/* Navigation menu */}
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-1 custom-scrollbar">
         <NavLink
           to="/employer/dashboard"
           className={({ isActive }) =>
-            `flex items-center gap-3 rounded-lg px-4 py-2.5 font-bold text-sm transition-all ${
-              isActive ? 'bg-blue-50 text-primary' : 'text-slate-600 hover:bg-slate-100'
+            `flex items-center gap-3 rounded-xl px-4 py-2.5 font-bold text-sm transition-all mb-4 ${
+              isActive
+                ? 'bg-blue-50 text-primary premium-shadow'
+                : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
             }`
           }
         >
@@ -98,28 +120,26 @@ const EmployerSidebar = () => {
         </NavLink>
 
         {navItems.map((item) => (
-          <div key={item.label}>
+          <div key={item.label} className="mb-1">
             <button
               type="button"
               onClick={() => toggle(item.label)}
-              className="w-full flex items-center justify-between text-slate-600 px-4 py-2.5 hover:bg-slate-100 rounded-lg transition-all text-sm font-medium"
+              className="w-full flex items-center justify-between text-slate-600 px-4 py-2.5 hover:bg-slate-100/80 hover:text-slate-900 rounded-xl transition-all text-sm font-bold"
             >
               <div className="flex items-center gap-3">
-                {item.icon}
+                <span className="text-slate-400 group-hover:text-slate-600">{item.icon}</span>
                 <span>{item.label}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 {item.badge ? (
-                  <span className="bg-primary text-white text-[10px] px-1.5 rounded-full">
+                  <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
                     {item.badge}
                   </span>
                 ) : null}
-                <span
-                  className="material-symbols-outlined text-[18px] transition-transform duration-200"
+                <ChevronDown
+                  className="w-4 h-4 text-slate-400 transition-transform duration-200"
                   style={{ transform: openGroup === item.label ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                >
-                  expand_more
-                </span>
+                />
               </div>
             </button>
 
@@ -127,39 +147,40 @@ const EmployerSidebar = () => {
               style={{
                 maxHeight: openGroup === item.label ? '500px' : '0',
                 overflow: 'hidden',
-                transition: 'max-height 0.3s ease-out',
+                transition: 'max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
             >
-              <div className="pl-9 space-y-0.5 py-1">
+              <div className="pl-9 space-y-1 py-1">
                 {item.children.map((child) => (
                   child.label === 'Đăng xuất' ? (
                     <button
                       key={child.label}
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-1.5 py-2 text-sm transition-all text-left cursor-pointer text-red-600 font-bold bg-transparent border-0 hover:text-red-600"
+                      className="w-full flex items-center gap-2 py-2 text-sm transition-all text-left cursor-pointer text-red-600 font-bold bg-transparent border-0 hover:text-red-700 hover:translate-x-0.5"
                     >
                       {child.icon ? child.icon : null}
-                      {child.label}
+                      <span>{child.label}</span>
                     </button>
                   ) : (
                     <NavLink
                       key={child.label}
                       to={child.to}
-                      className={({ isActive }) =>
-                        `flex items-center gap-1.5 py-2 text-sm transition-all ${
+                      className={() => {
+                        const active = isActive(child.to);
+                        return `flex items-center gap-2 py-2 text-sm transition-all hover:translate-x-0.5 ${
                           child.isDanger
-                            ? 'text-red-600 font-bold'
+                            ? 'text-red-600 font-bold hover:text-red-700'
                             : child.isPrimary
-                            ? 'text-primary font-semibold'
-                            : isActive
-                            ? 'text-primary font-semibold'
-                            : 'text-slate-600 hover:text-primary'
-                        }`
-                      }
+                            ? 'text-primary font-bold hover:text-primary'
+                            : active
+                            ? 'text-primary font-bold'
+                            : 'text-slate-500 hover:text-primary'
+                        }`;
+                      }}
                     >
                       {child.icon ? child.icon : null}
-                      {child.label}
+                      <span>{child.label}</span>
                     </NavLink>
                   )
                 ))}
@@ -168,6 +189,11 @@ const EmployerSidebar = () => {
           </div>
         ))}
       </nav>
+      
+      {/* Footer in Sidebar */}
+      <div className="border-t border-slate-200/60 p-4 text-[11px] font-bold text-slate-400">
+        Nhà tuyển dụng chuyên nghiệp
+      </div>
     </aside>
   );
 };

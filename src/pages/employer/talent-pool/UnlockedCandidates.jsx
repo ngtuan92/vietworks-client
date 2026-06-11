@@ -1,3 +1,4 @@
+import { Eye, MessageCircle, Download } from 'lucide-react';
 
 
 const rows = [
@@ -13,7 +14,7 @@ const UnlockedCandidates = () => {
         <p className="text-slate-600 mt-1">Quản lý danh sách ứng viên đã trả phí để xem đầy đủ thông tin.</p>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600">
@@ -34,9 +35,24 @@ const UnlockedCandidates = () => {
                   <td className="px-4 py-4">{r.unlockedBy}</td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-2">
-                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Xem CV</button>
-                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Chat</button>
-                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Tải CV</button>
+                      <button 
+                        title="Xem CV"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button 
+                        title="Chat"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                      <button 
+                        title="Tải CV"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-200 hover:text-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>

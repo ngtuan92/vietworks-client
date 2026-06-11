@@ -1,3 +1,4 @@
+import { Eye } from 'lucide-react';
 
 
 const rows = [
@@ -14,7 +15,7 @@ const ActivePackages = () => {
         <p className="text-slate-600 mt-1">Theo dõi các gói dịch vụ đang active hoặc đã hết hạn.</p>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600">
@@ -33,12 +34,17 @@ const ActivePackages = () => {
                   <td className="px-4 py-3 whitespace-nowrap">{r.end}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${r.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
-                      {r.status}
+                      {r.status === 'ACTIVE' ? 'Đang hoạt động' : 'Hết hạn'}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">{r.cost}</td>
                   <td className="px-4 py-3">
-                    <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Xem chi tiết</button>
+                    <button 
+                      title="Xem chi tiết"
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}

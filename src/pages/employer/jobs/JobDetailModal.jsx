@@ -393,7 +393,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                 disabled={!isEditable}
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50"
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
               />
             </div>
             <div className="flex items-center h-12 pb-1">
@@ -421,7 +421,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   disabled={!isEditable}
                   value={formData.careerGroupId}
                   onChange={(e) => handleCareerGroupChange(e.target.value)}
-                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-[#003f87] disabled:bg-slate-100"
+                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
                 >
                   <option value="">-- Chọn nhóm ngành --</option>
                   {masterData.careerGroups.map(g => (
@@ -436,7 +436,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   disabled={!isEditable || !formData.careerGroupId}
                   value={formData.careerId}
                   onChange={(e) => handleCareerChange(e.target.value)}
-                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-[#003f87] disabled:bg-slate-100"
+                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
                 >
                   <option value="">-- Chọn ngành nghề --</option>
                   {masterData.careers.map(c => (
@@ -451,7 +451,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   disabled={!isEditable || !formData.careerId}
                   value={formData.careerPositionId}
                   onChange={(e) => handleInputChange('careerPositionId', e.target.value)}
-                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-[#003f87] disabled:bg-slate-100"
+                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
                 >
                   <option value="">-- Chọn vị trí --</option>
                   {masterData.positions.map(p => (
@@ -468,7 +468,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   disabled={!isEditable || !formData.careerGroupId}
                   value={formData.jobLevelId}
                   onChange={(e) => handleInputChange('jobLevelId', e.target.value)}
-                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-[#003f87] disabled:bg-slate-100"
+                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
                 >
                   <option value="">-- Chọn cấp bậc --</option>
                   {masterData.jobLevels.map(l => (
@@ -483,7 +483,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   disabled={!isEditable}
                   value={formData.experienceLevelId}
                   onChange={(e) => handleInputChange('experienceLevelId', e.target.value)}
-                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-[#003f87] disabled:bg-slate-100"
+                  className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
                 >
                   <option value="">-- Chọn mức kinh nghiệm --</option>
                   {masterData.experienceLevels.map(e => (
@@ -515,7 +515,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                         onClick={() => handleToggleSkill(skill._id)}
                         className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${
                           isSelected 
-                            ? 'bg-blue-600 text-white shadow-sm' 
+                            ? 'bg-primary text-white shadow-sm' 
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         } disabled:opacity-80`}
                       >
@@ -537,14 +537,14 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   type="number" placeholder="Min" disabled={!isEditable}
                   value={formData.salary?.minMillion ?? ''}
                   onChange={(e) => handleSalaryChange('minMillion', e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#003f87] disabled:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary disabled:bg-slate-50"
                 />
                 <span className="text-slate-400">—</span>
                 <input
                   type="number" placeholder="Max" disabled={!isEditable}
                   value={formData.salary?.maxMillion ?? ''}
                   onChange={(e) => handleSalaryChange('maxMillion', e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#003f87] disabled:bg-slate-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary disabled:bg-slate-50"
                 />
               </div>
               <p className="text-xs text-slate-400 mt-1">Hiển thị: {formatSalaryText(formData.salary)}</p>
@@ -556,7 +556,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                 type="date" disabled={!isEditable}
                 value={formData.deadline}
                 onChange={(e) => handleInputChange('deadline', e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50"
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
               />
             </div>
 
@@ -566,7 +566,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                 disabled={!isEditable}
                 value={formData.saturdayPolicy}
                 onChange={(e) => handleInputChange('saturdayPolicy', e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none bg-white focus:border-[#003f87] disabled:bg-slate-50"
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none bg-white focus:border-primary disabled:bg-slate-50"
               >
                 <option value="OFF">Nghỉ Thứ 7 & Chủ Nhật (OFF)</option>
                 <option value="FULL">Làm việc cả ngày Thứ 7 (FULL)</option>
@@ -612,7 +612,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
       key={location._id}
       className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
         selected
-          ? 'border-[#003f87] bg-blue-50'
+          ? 'border-primary bg-blue-50'
           : 'border-slate-200 bg-white hover:bg-slate-50'
       }`}
     >
@@ -695,7 +695,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               disabled={!isEditable}
               value={formData.workingTime}
               onChange={(e) => handleInputChange('workingTime', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
             />
           </div>
 
@@ -705,7 +705,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               rows="3" disabled={!isEditable}
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50 text-sm"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
             ></textarea>
           </div>
 
@@ -715,7 +715,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               rows="3" disabled={!isEditable}
               value={formData.requirements}
               onChange={(e) => handleInputChange('requirements', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50 text-sm"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
             ></textarea>
           </div>
 
@@ -725,7 +725,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               rows="3" disabled={!isEditable}
               value={formData.benefits}
               onChange={(e) => handleInputChange('benefits', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50 text-sm"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
             ></textarea>
           </div>
 
@@ -735,7 +735,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               rows="2" disabled={!isEditable}
               value={formData.applyInstruction}
               onChange={(e) => handleInputChange('applyInstruction', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-[#003f87] disabled:bg-slate-50 text-sm"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
             ></textarea>
           </div>
 
