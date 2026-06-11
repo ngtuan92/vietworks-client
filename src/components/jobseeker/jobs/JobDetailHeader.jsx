@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApplyJobModal from './ApplyJobModal';
-import useAuth from '../../../hooks/useAuth';
-import { useNotification } from '../../../contexts/NotificationContext';
+import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
+import JobseekerAuthModal from '../../common/JobseekerAuthModal';
 import { Banknote, MapPin, Clock, CheckCircle, BookmarkPlus } from 'lucide-react';
 
 const DEFAULT_LOGO =
@@ -53,8 +53,7 @@ const JobDetailHeader = ({
   onApplySuccess
 }) => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const { confirm } = useNotification();
+  const { guard, modalState, closeModal } = useJobseekerAuth();
   const [showApplyModal, setShowApplyModal] = useState(false);
 
   const company = job?.companyId;
@@ -62,41 +61,13 @@ const JobDetailHeader = ({
   const companyName = company?.name || 'Công ty không xác định';
   const isVerified = company?.verificationStatus === 'VERIFIED';
 
-  const handleApply = () => {
-    if (!isAuthenticated) {
-      confirm(
-        'Bạn cần đăng nhập để ứng tuyển việc làm. Vui lòng đăng nhập để tiếp tục.',
-        () => {
-          navigate('/login', { state: { from: `/jobs/${job._id}` } });
-        },
-        null,
-        'Yêu cầu đăng nhập',
-        'Đăng nhập',
-        'Hủy'
-      );
-      return;
-    }
-    if (canApply) {
-      setShowApplyModal(true);
-    }
-  };
+  const handleApply = guard(() => {
+    if (canApply) setShowApplyModal(true);
+  }, 'apply_job');
 
-  const handleSave = () => {
-    if (!isAuthenticated) {
-      confirm(
-        'Bạn cần đăng nhập để lưu việc làm. Vui lòng đăng nhập để tiếp tục.',
-        () => {
-          navigate('/login', { state: { from: `/jobs/${job._id}` } });
-        },
-        null,
-        'Yêu cầu đăng nhập',
-        'Đăng nhập',
-        'Hủy'
-      );
-      return;
-    }
+  const handleSave = guard(() => {
     console.log('Save job:', job._id);
-  };
+  }, 'save_job');
 
   return (
     <>
@@ -211,6 +182,12 @@ const JobDetailHeader = ({
           onSuccess={onApplySuccess}
         />
       )}
+
+      <JobseekerAuthModal
+        open={modalState.open}
+        action={modalState.action}
+        onClose={closeModal}
+      />
     </>
   );
 };

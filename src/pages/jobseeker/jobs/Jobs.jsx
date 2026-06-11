@@ -498,13 +498,7 @@ const Jobs = () => {
                   const cardJob = mapJobToCard(job);
 
                   return (
-                    <button
-                      key={job._id}
-                      onClick={() => navigate(`/jobs/${job._id}`)}
-                      className="block w-full text-left"
-                    >
-                      <JobCard {...cardJob} />
-                    </button>
+                    <JobCard key={job._id} {...cardJob} />
                   );
                 })
               ) : (
