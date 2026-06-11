@@ -8,6 +8,7 @@ import companyLocationService from '../../../services/companyLocationService.js'
 import employerCompanyService from '../../../services/employerCompanyService.js';
 import uploadService from '../../../services/uploadService.js';
 import companyMasterDataService from '../../../services/companyMasterDataService.js';
+import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn';
 const TABS = [
   { key: 'general', label: 'Thông tin chung' },
   { key: 'locations', label: 'Địa điểm làm việc' },
@@ -42,6 +43,7 @@ const [legalPreview, setLegalPreview] = useState('');
 const [industries, setIndustries] = useState([]);
 const [sizes, setSizes] = useState([]);
 const [savingCompany, setSavingCompany] = useState(false);
+const [submittingVerification, setSubmittingVerification] = useState(false);
 const [logoPreview, setLogoPreview] = useState('');
 const [coverPreview, setCoverPreview] = useState('');
 
@@ -218,6 +220,7 @@ const handleLegalFileChange = (event) => {
       description: description.intro,
       businessLicenseFile,
     });
+    
 
     setGeneral((prev) => ({
       ...prev,
@@ -249,10 +252,29 @@ const handleLegalFileChange = (event) => {
   }
 };
 
-  const handleSubmitForApproval = () => {
-    setBanner({ type: 'success', message: 'Đã gửi hồ sơ để Admin kiểm duyệt.' });
+  const handleSubmitForApproval = async () => {
+  try {
+    setSubmittingVerification(true);
+
+    const res = await employerCompanyService.submitMyCompanyForVerification();
+
+    setVerificationStatus(res.data?.verificationStatus || 'PENDING');
+
+    setBanner({
+      type: 'success',
+      message: res.message || 'Đã gửi hồ sơ để Admin kiểm duyệt.'
+    });
+
     setTimeout(() => setBanner(null), 2500);
-  };
+  } catch (error) {
+    setBanner({
+      type: 'error',
+      message: error.response?.data?.message || 'Gửi duyệt hồ sơ công ty thất bại.'
+    });
+  } finally {
+    setSubmittingVerification(false);
+  }
+};
 
   const openCreateLocation = () => setLocationModal({ open: true, mode: 'create', data: null });
   const openEditLocation = (loc) => setLocationModal({ open: true, mode: 'edit', data: loc });
@@ -320,9 +342,13 @@ useEffect(() => {
 >
   {savingCompany ? 'Đang lưu...' : 'Lưu thay đổi'}
 </button>
-          <button onClick={handleSubmitForApproval} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
-            Gửi duyệt
-          </button>
+          <button
+  onClick={handleSubmitForApproval}
+  disabled={submittingVerification || verificationStatus === 'PENDING' || verificationStatus === 'VERIFIED'}
+  className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-60"
+>
+  {submittingVerification ? 'Đang gửi...' : 'Gửi duyệt'}
+</button>
         </div>
       </header>
 
@@ -338,22 +364,28 @@ useEffect(() => {
         </div>
       ) : null}
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-wrap gap-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              activeTab === tab.key ? 'bg-[#003f87] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Vertical Sidebar Navigation */}
+        <div className="w-full lg:w-64 shrink-0 sticky top-6 bg-white border border-slate-200/60 premium-shadow rounded-2xl p-3 flex flex-col gap-1">
+          <h3 className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Thiết lập hồ sơ</h3>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeTab === tab.key ? 'bg-primary/10 text-primary' : 'bg-transparent text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
 
       {activeTab === 'general' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <h2 className="text-lg font-bold text-slate-900">Thông tin chung</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -407,13 +439,13 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'locations' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Địa điểm làm việc</h2>
               <p className="text-sm text-slate-600 mt-1">Thêm nhiều chi nhánh để dùng trong tin tuyển dụng.</p>
             </div>
-            <button onClick={openCreateLocation} className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+            <button onClick={openCreateLocation} className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
               Thêm địa điểm
             </button>
           </div>
@@ -507,7 +539,7 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'description' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <h2 className="text-lg font-bold text-slate-900">Mô tả công ty</h2>
 
           <RichTextEditor
@@ -538,7 +570,7 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'images' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <h2 className="text-lg font-bold text-slate-900">Hình ảnh công ty</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <FileField label="Logo" accept="image/*" onChange={(e) => setImages((p) => ({ ...p, logo: e.target.files?.[0] || null }))} hint="PNG/JPG, vuông" />
@@ -576,7 +608,7 @@ useEffect(() => {
       ) : null}
 
       {activeTab === 'legal' ? (
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5">
+        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Xác thực pháp lý</h2>
@@ -617,7 +649,7 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
       href={legal.businessLicenseFile.fileUrl}
       target="_blank"
       rel="noreferrer"
-      className="text-sm text-[#003f87] font-semibold hover:underline"
+      className="text-sm text-primary font-semibold hover:underline"
     >
       {legal.businessLicenseFile.fileName || 'Xem giấy đăng ký doanh nghiệp'}
     </a>
@@ -636,7 +668,7 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
             <div className="mt-4">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Ghi chú gửi Admin</label>
               <textarea
-                className="w-full min-h-28 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+                className="w-full min-h-28 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
                 value={legal.noteToAdmin}
                 onChange={(e) => setLegal((p) => ({ ...p, noteToAdmin: e.target.value }))}
                 placeholder="Ghi chú thêm để Admin dễ đối chiếu..."
@@ -656,6 +688,8 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
           </div>
         </section>
       ) : null}
+        </div>
+      </div>
     </div>
   );
 };
@@ -671,7 +705,7 @@ const Field = ({ label, id, value, onChange, placeholder, required = false, type
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
       required={required}
     />
   </div>
@@ -686,7 +720,7 @@ const Select = ({ label, id, value, onChange, options, required = false }) => (
       id={id}
       value={value}
       onChange={onChange}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
       required={required}
     >
       <option value="">Chọn...</option>
@@ -704,12 +738,15 @@ const FileField = ({ label, id, onChange, accept, hint }) => (
     <label className="block text-sm font-semibold text-slate-700 mb-2">
       {label}
     </label>
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-800 truncate">{hint || 'Chọn file để upload'}</p>
-        <p className="text-xs text-slate-500 mt-1">Chọn file để tải lên.</p>
+    <div className="relative rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all p-8 flex flex-col items-center justify-center gap-3 text-center cursor-pointer group">
+      <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+        <span className="material-symbols-outlined text-2xl">cloud_upload</span>
       </div>
-      <input id={id} type="file" accept={accept} onChange={onChange} />
+      <div>
+        <p className="text-sm font-bold text-slate-800">Kéo thả file vào đây hoặc <span className="text-primary">Chọn file</span></p>
+        <p className="text-xs text-slate-500 mt-1">{hint || 'Hỗ trợ PNG, JPG, PDF (Tối đa 5MB)'}</p>
+      </div>
+      <input id={id} type="file" accept={accept} onChange={onChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
     </div>
   </div>
 );
@@ -846,78 +883,115 @@ const normalizeVietMapPlace = (item, detail) => {
 };
 
 const LocationModal = ({ title, initial, onClose, onSubmit }) => {
-  const [keyword, setKeyword] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // 1. Khởi tạo danh sách địa lý từ sub-vn
+  const [provinces] = useState(() => getProvinces() || []);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
 
+  // 2. Cấu trúc State Form đầy đủ 3 cấp
   const [data, setData] = useState({
     name: initial?.name || '',
     addressLine: initial?.addressLine || '',
     province: initial?.province || '',
+    provinceCode: '', 
     district: initial?.district || '',
+    districtCode: '',
     ward: initial?.ward || '',
     latitude: initial?.latitude || null,
     longitude: initial?.longitude || null,
     isPrimary: Boolean(initial?.isPrimary),
   });
 
+  // 3. Tự động đổ lại dữ liệu cũ khi Mở Modal để Sửa địa điểm (Nếu có)
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (keyword.trim().length < 3) {
-        setSuggestions([]);
-        return;
+    if (initial && provinces.length > 0) {
+      // Tìm Tỉnh cũ
+      const foundProv = provinces.find(p => String(p.name).trim() === String(initial.province).trim());
+      if (foundProv) {
+        const provCode = String(foundProv.code);
+        const listDistricts = getDistrictsByProvinceCode(provCode) || [];
+        setDistricts(listDistricts);
+
+        // Tìm Huyện cũ
+        const foundDist = listDistricts.find(d => String(d.name).trim() === String(initial.district).trim());
+        let distCode = '';
+        if (foundDist) {
+          distCode = String(foundDist.code);
+          setWards(getWardsByDistrictCode(distCode) || []);
+        }
+
+        setData(prev => ({
+          ...prev,
+          provinceCode: provCode,
+          districtCode: distCode
+        }));
       }
-
-      try {
-        setSearching(true);
-        const results = await searchVietMapPlaces(keyword);
-        setSuggestions(results);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [keyword]);
-
-  const handleSelectPlace = async (item) => {
-    try {
-      const detail = await getVietMapPlaceDetail(item.ref_id);
-      const normalized = normalizeVietMapPlace(item, detail);
-
-      setData((prev) => ({
-        ...prev,
-        ...normalized,
-      }));
-
-      setKeyword(detail.display || item.display || normalized.addressLine);
-      setSuggestions([]);
-    } catch {
-      setSuggestions([]);
     }
+  }, [initial, provinces]);
+
+  // 4. Xử lý khi thay đổi Tỉnh thành
+  const handleProvinceChange = (e) => {
+    const code = e.target.value;
+    const matched = provinces.find((p) => String(p.code) === String(code));
+
+    // Lấy ngay danh sách Huyện, đồng thời reset danh sách Xã
+    const nextDistricts = code ? getDistrictsByProvinceCode(code) : [];
+    setDistricts(nextDistricts);  
+    setWards([]);
+
+    setData((prev) => ({
+      ...prev,
+      provinceCode: code ? String(code) : '',
+      province: matched ? matched.name : '',
+      district: '',
+      districtCode: '',
+      ward: '', 
+    }));
   };
 
+  // 5. Xử lý khi thay đổi Quận/Huyện
+  const handleDistrictChange = (e) => {
+    const code = e.target.value;
+    const matched = districts.find((d) => String(d.code) === String(code));
+
+    // Lấy ngay danh sách Phường/Xã dựa theo mã Huyện vừa chọn
+    const nextWards = code ? getWardsByDistrictCode(code) : [];
+    setWards(nextWards);
+
+    setData((prev) => ({
+      ...prev,
+      districtCode: code ? String(code) : '',
+      district: matched ? matched.name : '',
+      ward: '', // Reset xã khi đổi huyện
+    }));
+  };
+
+  // 6. Xử lý thay đổi các ô nhập liệu thông thường công thức chung
   const handleChange = (event) => {
     const { id, value, type, checked } = event.target;
-
     setData((prev) => ({
       ...prev,
       [id]: type === 'checkbox' ? checked : value,
     }));
   };
 
+  // 7. Xử lý lưu Form lên Database
   const handleSubmit = async () => {
+    if (!data.name || !data.province || !data.district || !data.ward || !data.addressLine) {
+      window.alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
+      return;
+    }
+
     const payload = {
       name: data.name,
       addressLine: data.addressLine,
       province: data.province,
-      district: data.district,
-      ward: data.ward,
-      latitude: data.latitude === '' ? null : Number(data.latitude),
-      longitude: data.longitude === '' ? null : Number(data.longitude),
+      district: data.district, 
+      ward: data.ward,     
+      latitude: data.latitude === '' || data.latitude === null ? null : Number(data.latitude),
+      longitude: data.longitude === '' || data.longitude === null ? null : Number(data.longitude),
       isPrimary: data.isPrimary,
     };
 
@@ -925,6 +999,8 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
       setSaving(true);
       await companyLocationService.createMyCompanyLocation(payload);
       onSubmit?.(payload);
+    } catch (error) {
+      window.alert(error.response?.data?.message || 'Lưu địa điểm thất bại.');
     } finally {
       setSaving(false);
     }
@@ -933,12 +1009,10 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
       <div className="min-h-full flex items-start justify-center p-4 sm:p-6">
-        <div className="w-full max-w-xl my-6 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+        <div className="w-full max-w-xl my-6 bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all shadow-xl overflow-hidden">
           <div className="p-5 flex items-center justify-between border-b border-slate-200">
             <h3 className="font-bold text-slate-900">{title}</h3>
-            <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700">
-              ✕
-            </button>
+            <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
           </div>
 
           <div className="p-5 space-y-4">
@@ -948,75 +1022,62 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
               value={data.name}
               onChange={handleChange}
               required
-              placeholder="VD: Chi nhánh Hà Nội"
+              placeholder="VD: Chi nhánh chính"
             />
 
-            <div className="relative">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Tìm địa chỉ <span className="text-red-600">*</span>
-              </label>
-              <input
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Nhập số nhà, đường, phường, thành phố..."
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
-              />
+            {/* CẤP 1: TỈNH / THÀNH PHỐ */}
+            <Select
+              label="Tỉnh/Thành phố"
+              id="provinceCode"
+              value={data.provinceCode} 
+              onChange={handleProvinceChange}
+              required
+              options={provinces.map((p) => ({ value: String(p.code), label: p.name }))}
+            />
 
-              {suggestions.length > 0 ? (
-                <div className="absolute z-20 mt-2 w-full max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                  {suggestions.map((item) => (
-                    <button
-                      key={item.ref_id}
-                      type="button"
-                      onClick={() => handleSelectPlace(item)}
-                      className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
-                    >
-                      <p className="font-semibold text-sm text-slate-900">
-                        {item.name || item.address || item.display}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {item.display || item.address}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+            {/* CẤP 2: QUẬN / HUYỆN */}
+            <Select
+              label="Quận/Huyện"
+              id="districtCode"
+              value={data.districtCode}
+              onChange={handleDistrictChange}
+              required
+              options={districts.map((d) => ({ value: String(d.code), label: d.name }))}
+              disabled={!data.provinceCode} 
+            />
 
-              {searching ? (
-                <p className="text-xs text-slate-500 mt-2">Đang tìm địa chỉ...</p>
-              ) : null}
-            </div>
+            {/* CẤP 3: PHƯỜNG / XÃ */}
+            <Select
+              label="Phường/Xã"
+              id="ward"
+              value={data.ward}
+              onChange={handleChange}
+              required
+              // Value lưu thẳng tên ward để đồng bộ với state lưu trữ dữ liệu chuỗi của bạn
+              options={wards.map((w) => ({ value: w.name, label: w.name }))}
+              disabled={!data.districtCode} 
+            />
 
-            <Field label="Địa chỉ chi tiết" id="addressLine" value={data.addressLine} onChange={handleChange} required />
-            <Field label="Tỉnh/Thành phố" id="province" value={data.province} onChange={handleChange} required />
-            <Field label="Quận/Huyện" id="district" value={data.district} onChange={handleChange} />
-            <Field label="Phường/Xã" id="ward" value={data.ward} onChange={handleChange} />
+            <Field 
+              label="Địa chỉ chi tiết (Số nhà, tên đường...)" 
+              id="addressLine" 
+              value={data.addressLine} 
+              onChange={handleChange} 
+              required 
+              placeholder="VD: Số 456 Đường Lê Lợi"
+            />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Vĩ độ" id="latitude" value={data.latitude || ''} onChange={handleChange} />
-              <Field label="Kinh độ" id="longitude" value={data.longitude || ''} onChange={handleChange} />
-            </div>
+            
 
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
               <input id="isPrimary" type="checkbox" checked={data.isPrimary} onChange={handleChange} />
               Đặt làm trụ sở chính
             </label>
           </div>
 
           <div className="sticky bottom-0 p-5 flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={saving}
-              className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold disabled:opacity-60"
-            >
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700">Hủy</button>
+            <button type="button" onClick={handleSubmit} disabled={saving} className="px-4 py-2 rounded-xl bg-primary text-white font-semibold disabled:opacity-60">
               {saving ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>

@@ -1,5 +1,6 @@
 
 import JobCard from './JobCard';
+import { ArrowRight } from 'lucide-react';
 
 const JobGrid = () => {
   const jobs = [
@@ -59,7 +60,7 @@ const JobGrid = () => {
             <button className="bg-white border border-outline-variant px-3 py-1.5 rounded-lg text-sm font-semibold text-on-surface hover:text-primary hover:border-primary whitespace-nowrap transition-colors">Lương cao</button>
             <button className="bg-white border border-outline-variant px-3 py-1.5 rounded-lg text-sm font-semibold text-on-surface hover:text-primary hover:border-primary whitespace-nowrap transition-colors">Làm từ xa</button>
             <button className="px-3 py-1.5 text-sm text-primary font-bold flex items-center gap-1 whitespace-nowrap">
-              Xem tất cả <span className="material-symbols-outlined text-base">arrow_forward</span>
+              Xem tất cả <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </div>

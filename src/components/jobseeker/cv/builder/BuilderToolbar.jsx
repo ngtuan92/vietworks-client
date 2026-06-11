@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import cvService from '../../../../services/cvService';
+import { FileBox, ArrowLeft, Palette, LayoutDashboard, BookOpen, X, Pipette, ChevronDown, FileText, Check } from 'lucide-react';
 
 const colors = [
   '#003f87', // VietWorks Blue (Primary)
@@ -154,7 +155,7 @@ export const BuilderToolbar = ({
             className="w-10 h-10 rounded-xl bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm disabled:bg-slate-800/50 disabled:text-slate-600"
             title="Tải PDF nhanh"
           >
-            <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+            <FileBox className="w-5 h-5"  />
           </button>
 
           {/* Back Button */}
@@ -163,7 +164,7 @@ export const BuilderToolbar = ({
             className="w-10 h-10 rounded-xl bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
             title="Quay lại danh sách"
           >
-            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            <ArrowLeft className="w-5 h-5"  />
           </button>
         </div>
       </div>
@@ -179,19 +180,19 @@ export const BuilderToolbar = ({
           <h3 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
             {activeTab === 'design' && (
               <>
-                <span className="material-symbols-outlined text-slate-500 text-[18px]">palette</span>
+                <Palette className="text-slate-500 w-5 h-5"  />
                 Thiết kế & Font
               </>
             )}
             {activeTab === 'sections' && (
               <>
-                <span className="material-symbols-outlined text-slate-500 text-[18px]">dashboard_customize</span>
+                <LayoutDashboard className="text-slate-500 w-5 h-5"  />
                 Ẩn / Hiện mục
               </>
             )}
             {activeTab === 'templates' && (
               <>
-                <span className="material-symbols-outlined text-slate-500 text-[18px]">auto_stories</span>
+                <BookOpen className="text-slate-500 w-5 h-5"  />
                 Thư viện mẫu CV
               </>
             )}
@@ -201,7 +202,7 @@ export const BuilderToolbar = ({
             onClick={() => setIsOpen(false)}
             className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">close</span>
+            <X className="w-5 h-5"  />
           </button>
         </div>
 
@@ -221,7 +222,7 @@ export const BuilderToolbar = ({
                       style={{ backgroundColor: color }}
                       className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 cursor-pointer ${
                         style.themeColorId === color 
-                          ? 'border-white shadow-md ring-2 ring-[#003f87]' 
+                          ? 'border-white shadow-md ring-2 ring-primary' 
                           : 'border-transparent hover:ring-2 hover:ring-slate-300'
                       }`}
                     />
@@ -229,7 +230,7 @@ export const BuilderToolbar = ({
                   
                   {/* Custom color picker */}
                   <div className="relative w-7 h-7 rounded-full border border-slate-200 bg-white flex items-center justify-center cursor-pointer overflow-hidden hover:scale-110 transition-transform shadow-sm">
-                    <span className="material-symbols-outlined text-slate-500 text-[16px] pointer-events-none">colorize</span>
+                    <Pipette className="text-slate-500 w-5 h-5 pointer-events-none"  />
                     <input 
                       type="color" 
                       value={style.themeColorId} 
@@ -247,13 +248,13 @@ export const BuilderToolbar = ({
                   <select
                     value={style.fontId || 'Inter'}
                     onChange={(e) => onStyleChange('fontId', e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3 pr-10 outline-none cursor-pointer focus:border-[#003f87] focus:ring-4 focus:ring-[#003f87]/10 transition-all font-semibold appearance-none"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3 pr-10 outline-none cursor-pointer focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-semibold appearance-none"
                   >
                     {fonts.map(font => (
                       <option key={font} value={font}>{font}</option>
                     ))}
                   </select>
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[18px]">keyboard_arrow_down</span>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5"  />
                 </div>
               </div>
 
@@ -272,7 +273,7 @@ export const BuilderToolbar = ({
                       onClick={() => onStyleChange('fontSize', sz.id)}
                       className={`flex-1 text-center py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                         (style.fontSize || 'medium') === sz.id
-                          ? 'bg-white text-[#003f87] shadow-xs'
+                          ? 'bg-white text-primary shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -297,7 +298,7 @@ export const BuilderToolbar = ({
                       onClick={() => onStyleChange('density', den.id)}
                       className={`flex-1 text-center py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                         (style.density || 'normal') === den.id
-                          ? 'bg-white text-[#003f87] shadow-xs'
+                          ? 'bg-white text-primary shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -314,14 +315,14 @@ export const BuilderToolbar = ({
                   <select
                     value={style.titleStyle || 'underline'}
                     onChange={(e) => onStyleChange('titleStyle', e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3 pr-10 outline-none cursor-pointer focus:border-[#003f87] focus:ring-4 focus:ring-[#003f87]/10 transition-all font-semibold appearance-none"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3 pr-10 outline-none cursor-pointer focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-semibold appearance-none"
                   >
                     <option value="underline">Gạch chân (Underline)</option>
                     <option value="accent-bg">Nền màu chủ đề (Accent Banner)</option>
                     <option value="left-border">Viền dọc bên trái (Left Border)</option>
                     <option value="minimal">Tối giản chữ trần (Minimal)</option>
                   </select>
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[18px]">keyboard_arrow_down</span>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none w-5 h-5"  />
                 </div>
               </div>
 
@@ -340,7 +341,7 @@ export const BuilderToolbar = ({
                       onClick={() => onStyleChange('avatarShape', sh.id)}
                       className={`flex-1 text-center py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                         (style.avatarShape || 'circle') === sh.id
-                          ? 'bg-white text-[#003f87] shadow-xs'
+                          ? 'bg-white text-primary shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -411,12 +412,12 @@ export const BuilderToolbar = ({
                           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <span className="material-symbols-outlined text-slate-300 text-[32px]">description</span>
+                        <FileText className="text-slate-300 w-5 h-5"  />
                       )}
                       
                       {currentTemplateId === tpl._id && (
                         <div className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md">
-                          <span className="material-symbols-outlined text-[10px] font-black">check</span>
+                          <Check className="w-5 h-5 font-black"  />
                         </div>
                       )}
                     </div>
@@ -450,9 +451,9 @@ export const BuilderToolbar = ({
           <button
             onClick={onExport}
             disabled={isSaving}
-            className="w-full bg-[#003f87] hover:bg-[#002f6b] disabled:bg-slate-300 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 text-xs"
+            className="w-full bg-primary hover:bg-[#002f6b] disabled:bg-slate-300 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 text-xs"
           >
-            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+            <FileBox className="w-5 h-5"  />
             Tải bản PDF
           </button>
         </div>

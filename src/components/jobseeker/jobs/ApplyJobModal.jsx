@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
 import cvService from '../../../services/cvService';
+import { Check, X, Loader2, AlertCircle, FileText, LayoutDashboard, Paperclip, MapPin, Eye, Send } from 'lucide-react';
 
 const ApplyJobModal = ({ job, onClose, onSuccess }) => {
   const navigate = useNavigate();
@@ -148,7 +149,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-surface rounded-2xl w-full max-w-md p-8 text-center animate-[fade-in-scale_0.25s_ease-out]">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-4xl text-green-600">check</span>
+            <Check className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Ứng tuyển thành công!</h2>
           <p className="text-on-surface-variant mb-6">
@@ -162,7 +163,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleGoToMyApplications}
-              className="w-full py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all"
             >
               Xem việc đã ứng tuyển
             </button>
@@ -182,8 +183,8 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-surface rounded-2xl w-full max-w-md p-8 text-center animate-[fade-in-scale_0.25s_ease-out]">
-          <div className="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-4xl text-on-primary-container">check</span>
+          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-10 h-10 text-white" />
           </div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Đã ứng tuyển!</h2>
           <p className="text-on-surface-variant mb-6">
@@ -197,7 +198,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleGoToMyApplications}
-              className="w-full py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all"
             >
               Xem việc đã ứng tuyển
             </button>
@@ -227,7 +228,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
             onClick={onClose}
             className="p-2 hover:bg-surface-container-low rounded-full transition-colors"
           >
-            <span className="material-symbols-outlined">close</span>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -235,13 +236,13 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <span className="material-symbols-outlined animate-spin text-2xl text-on-surface-variant">progress_activity</span>
+              <Loader2 className="animate-spin w-6 h-6 text-on-surface-variant" />
               <span className="ml-3 text-on-surface-variant">Đang tải...</span>
             </div>
           ) : error && !applyOptions ? (
             <div className="p-6">
               <div className="bg-error-container rounded-lg p-4 text-center">
-                <span className="material-symbols-outlined text-2xl text-error mb-2">error</span>
+                <AlertCircle className="w-6 h-6 text-error mb-2" />
                 <p className="text-error font-medium">{error}</p>
                 <button
                   onClick={fetchApplyOptions}
@@ -257,7 +258,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
               {applyOptions.cvs.length === 0 && (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="material-symbols-outlined text-3xl text-on-surface-variant">description</span>
+                    <FileText className="w-8 h-8 text-on-surface-variant" />
                   </div>
                   <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Bạn chưa có CV</h3>
                   <p className="text-on-surface-variant text-body-sm mb-6">
@@ -266,7 +267,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={handleGoToCreateCV}
-                      className="px-6 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                      className="px-6 py-3 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all"
                     >
                       + Tạo CV Online
                     </button>
@@ -292,7 +293,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
                         key={`${cv.type}-${cv.id}`}
                         onClick={() => setSelectedCv(cv)}
                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedCv?.id === cv.id && selectedCv?.type === cv.type
-                          ? 'border-primary bg-primary-container/10'
+                          ? 'border-primary bg-primary/10'
                           : 'border-outline-variant hover:border-primary/50'
                           }`}
                       >
@@ -302,27 +303,27 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
                             : 'border-outline'
                             }`}>
                             {selectedCv?.id === cv.id && selectedCv?.type === cv.type && (
-                              <span className="material-symbols-outlined text-sm text-white">check</span>
+                              <Check className="w-4 h-4 text-white" />
                             )}
                           </div>
                           <div className="flex-grow overflow-hidden">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-on-surface overflow-hidden text-ellipsis whitespace-nowrap">{cv.title}</span>
                               {cv.isMain && (
-                                <span className="px-2 py-0.5 bg-primary-container text-on-primary-container text-label-sm rounded-full shrink-0">Mặc định</span>
+                                <span className="px-2 py-0.5 bg-primary text-white text-label-sm rounded-full shrink-0">Mặc định</span>
                               )}
                             </div>
                             <p className="text-body-sm text-on-surface-variant mt-1">
                               {cv.type === 'ONLINE' ? (
                                 <span className="flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-base shrink-0">dashboard</span>
+                                  <LayoutDashboard className="w-5 h-5 shrink-0" />
                                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                                     CV Online{cv.templateName && ` - ${cv.templateName}`}
                                   </span>
                                 </span>
                               ) : (
                                 <span className="flex items-center gap-1">
-                                  <span className="material-symbols-outlined text-base shrink-0">attach_file</span>
+                                  <Paperclip className="w-5 h-5 shrink-0" />
                                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cv.fileName}</span>
                                 </span>
                               )}
@@ -373,7 +374,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
                 <div className="bg-surface-container-low rounded-lg p-4">
                   <p className="text-body-sm text-on-surface-variant mb-1">Địa điểm làm việc</p>
                   <p className="font-semibold text-on-surface flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">location_on</span>
+                    <MapPin className="text-primary w-5 h-5" />
                     {applyOptions.workLocations[0].detailAddress
                       ? `${applyOptions.workLocations[0].detailAddress}, ${applyOptions.workLocations[0].districtName}, ${applyOptions.workLocations[0].provinceName}`
                       : `${applyOptions.workLocations[0].districtName}, ${applyOptions.workLocations[0].provinceName}`}
@@ -388,7 +389,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 ${agreedToTerms ? 'border-primary bg-primary' : 'border-outline'
                       }`}>
                       {agreedToTerms && (
-                        <span className="material-symbols-outlined text-sm text-white">check</span>
+                        <Check className="w-4 h-4 text-white" />
                       )}
                     </div>
                     <input
@@ -407,7 +408,7 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
               {/* Error Message */}
               {error && (
                 <div className="bg-error-container text-error text-body-sm p-3 rounded-lg flex items-center gap-2">
-                  <span className="material-symbols-outlined">error</span>
+                  <AlertCircle className="w-5 h-5" />
                   {error}
                 </div>
               )}
@@ -424,23 +425,23 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
                   onClick={handlePreviewCv}
                   className="flex-1 py-3 border border-outline text-on-surface font-semibold rounded-lg hover:bg-surface-container-low transition-all flex items-center justify-center gap-2"
                 >
-                  <span className="material-symbols-outlined">visibility</span>
+                  <Eye className="w-5 h-5" />
                   Xem trước CV
                 </button>
               )}
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !selectedCv || (applyOptions.requireLocationSelection && !selectedLocation) || !agreedToTerms}
-                className="flex-1 py-3 bg-primary-container text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
-                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                    <Loader2 className="animate-spin w-5 h-5" />
                     Đang xử lý...
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined">send</span>
+                    <Send className="w-5 h-5" />
                     Nộp hồ sơ
                   </>
                 )}
@@ -463,19 +464,19 @@ const ApplyJobModal = ({ job, onClose, onSuccess }) => {
               onClick={() => setShowCvPreview(false)}
               className="p-2 hover:bg-surface-container-low rounded-full transition-colors"
             >
-              <span className="material-symbols-outlined">close</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="flex-1 overflow-hidden" style={{ minHeight: '75vh' }}>
             {previewLoading ? (
               <div className="flex flex-col items-center justify-center h-full py-20">
-                <span className="material-symbols-outlined animate-spin text-4xl text-primary mb-3">progress_activity</span>
+                <Loader2 className="animate-spin w-10 h-10 text-primary mb-3" />
                 <p className="text-on-surface-variant">Đang tải file...</p>
               </div>
             ) : previewError ? (
               <div className="flex flex-col items-center justify-center h-full py-20 text-center px-8">
-                <span className="material-symbols-outlined text-4xl text-error mb-3">error</span>
+                <AlertCircle className="w-10 h-10 text-error mb-3" />
                 <p className="text-on-surface-variant">{previewError}</p>
               </div>
             ) : previewBlobUrl ? (

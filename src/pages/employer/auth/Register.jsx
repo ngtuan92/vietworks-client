@@ -166,7 +166,7 @@ const EmployerRegister = () => {
               {success ? <div className="rounded-xl bg-emerald-50 text-emerald-700 p-3 text-sm">{success}</div> : null}
 
               <div className="rounded-2xl border border-slate-200 p-6">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-[#003f87] mb-4">Thông tin bảo mật</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin bảo mật</h2>
                 <div className="space-y-4">
                   <Field label="Email" id="email" type="email" value={formData.email} onChange={handleChange} placeholder="hr@company.com" required />
 
@@ -194,7 +194,7 @@ const EmployerRegister = () => {
               </div>
 
               <div className="rounded-2xl border border-slate-200 p-6">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-[#003f87] mb-4">Thông tin người đại diện</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin người đại diện</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Họ tên người đại diện" id="representativeName" value={formData.representativeName} onChange={handleChange} placeholder="Nguyễn Văn A" required />
                   <Field label="Số điện thoại" id="phone" value={formData.phone} onChange={handleChange} placeholder="09xx xxx xxx" required />
@@ -203,7 +203,7 @@ const EmployerRegister = () => {
               </div>
 
               <div className="rounded-2xl border border-slate-200 p-6">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-[#003f87] mb-4">Thông tin công ty</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin công ty</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Tên công ty" id="companyName" value={formData.companyName} onChange={handleChange} placeholder="Tên doanh nghiệp" required />
                   
@@ -216,7 +216,7 @@ const EmployerRegister = () => {
                       value={selectedProvinceCode}
                       onChange={handleProvinceChange}
                       required
-                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87] bg-white text-slate-700"
+                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary bg-white text-slate-700"
                     >
                       <option value="">Chọn Tỉnh/Thành phố...</option>
                       {provinces.map((p) => (
@@ -236,7 +236,7 @@ const EmployerRegister = () => {
                       value={selectedDistrictCode}
                       onChange={handleDistrictChange}
                       disabled={!selectedProvinceCode}
-                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87] bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Chọn Quận/Huyện...</option>
                       {districts.map((d) => (
@@ -256,7 +256,7 @@ const EmployerRegister = () => {
                       value={selectedWardCode}
                       onChange={handleWardChange}
                       disabled={!selectedDistrictCode}
-                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87] bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Chọn Phường/Xã...</option>
                       {wards.map((w) => (
@@ -284,12 +284,12 @@ const EmployerRegister = () => {
                 <span>Tôi đồng ý với Chính sách dữ liệu cá nhân.</span>
               </label>
 
-              <button type="submit" className="w-full rounded-xl bg-[#003f87] text-white py-3 font-semibold hover:bg-[#0b4e9f]">
+              <button type="submit" className="w-full rounded-xl bg-primary text-white py-3 font-semibold hover:bg-primary/95">
                 Tạo tài khoản Nhà tuyển dụng
               </button>
 
               <p className="text-center text-sm text-slate-600">
-                Bạn đã có tài khoản? <Link to="/employer/login" className="font-semibold text-[#003f87]">Đăng nhập tại đây</Link>
+                Bạn đã có tài khoản? <Link to="/employer/login" className="font-semibold text-primary">Đăng nhập tại đây</Link>
               </p>
             </form>
           </section>
@@ -309,14 +309,14 @@ const EmployerRegister = () => {
 const Field = ({ label, id, ...props }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-2">{label}</label>
-    <input id={id} {...props} className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87]" />
+    <input id={id} {...props} className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary" />
   </div>
 );
 
 const SelectField = ({ label, id, value, onChange, options }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-2">{label}</label>
-    <select id={id} value={value} onChange={onChange} className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87]">
+    <select id={id} value={value} onChange={onChange} className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary">
       <option value="">Chọn</option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>{option.label}</option>
@@ -336,7 +336,7 @@ const PasswordField = ({ id, label, value, onChange, placeholder, showPassword, 
         onChange={onChange}
         placeholder={placeholder}
         required
-        className="w-full rounded-xl border border-slate-200 px-5 py-4 pr-12 text-base outline-none focus:border-[#003f87]"
+        className="w-full rounded-xl border border-slate-200 px-5 py-4 pr-12 text-base outline-none focus:border-primary"
       />
       <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-3.5 text-slate-500">
         <span className="material-symbols-outlined">{showPassword ? 'visibility' : 'visibility_off'}</span>

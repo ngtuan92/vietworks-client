@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ActionButton,
@@ -16,15 +16,14 @@ import {
 const USERS = [
   { id: 1, name: 'Nguyễn Minh Anh', email: 'minhanh@gmail.com', phone: '0901234123', role: 'JobSeeker', status: 'ACTIVE', registeredAt: '2026-05-10', lastLogin: '2026-05-18 09:15', hasTransaction: true, hasViolation: false },
   { id: 2, name: 'Nguyễn Văn Hải', email: 'hr@abc.com', phone: '0912345678', role: 'Employer', status: 'UNVERIFIED', registeredAt: '2026-05-14', lastLogin: '2026-05-17 18:10', hasTransaction: true, hasViolation: false },
-  { id: 3, name: 'Trần Gia Huy', email: 'giahuy@gmail.com', phone: '0934567890', role: 'JobSeeker', status: 'LOCKED', registeredAt: '2026-04-20', lastLogin: '2026-05-15 11:00', hasTransaction: true, hasViolation: true },
+  { id: 3, name: 'Trần Gia Huy', email: 'giahuy@gmail.com', phone: '0934567890', role: 'JobSeeker', status: 'ACTIVE', registeredAt: '2026-04-20', lastLogin: '2026-05-15 11:00', hasTransaction: true, hasViolation: false },
   { id: 4, name: 'Admin Support', email: 'admin@vietworks.vn', phone: '0988111222', role: 'Admin', status: 'ACTIVE', registeredAt: '2026-03-02', lastLogin: '2026-05-18 07:45', hasTransaction: false, hasViolation: false },
 ];
 
 const statusMap = {
-  UNVERIFIED: 'bg-slate-100 text-slate-700',
-  ACTIVE: 'bg-emerald-100 text-emerald-700',
-  BANNED: 'bg-red-100 text-red-700',
-  LOCKED: 'bg-red-100 text-red-700',
+  UNVERIFIED: 'bg-slate-50 text-slate-700 border-slate-200',
+  ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  BANNED: 'bg-red-50 text-red-700 border-red-200/60'
 };
 
 const UserManagement = () => {
@@ -51,7 +50,7 @@ const UserManagement = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader
         title="Quản lý người dùng"
         description="Admin xem toàn bộ JobSeeker, Employer và Admin; có thể khóa hoặc mở khóa tài khoản theo nghiệp vụ."
@@ -76,7 +75,7 @@ const UserManagement = () => {
             label="Trạng thái"
             value={filters.status}
             onChange={(value) => setFilters((prev) => ({ ...prev, status: value }))}
-            options={['UNVERIFIED', 'ACTIVE', 'BANNED', 'LOCKED']}
+            options={['UNVERIFIED', 'ACTIVE']}
           />
           <SelectField
             label="Có giao dịch"
@@ -120,11 +119,11 @@ const UserManagement = () => {
               <div className="flex flex-wrap gap-2">
                 <Link
                   to={`/admin/users/${user.id}`}
-                  className="rounded-2xl border border-slate-200 px-3 py-2 font-semibold text-slate-700"
+                  className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95"
                 >
-                  Xem
+                  Chi tiết
                 </Link>
-                {user.status === 'LOCKED' || user.status === 'BANNED' ? (
+                {false ? (
                   <ActionButton tone="soft">Mở khóa</ActionButton>
                 ) : (
                   <ActionButton tone="danger" onClick={() => setLockTarget(user)}>
@@ -169,9 +168,9 @@ const UserManagement = () => {
             options={['Vĩnh viễn', '1 ngày', '7 ngày', '30 ngày', 'Tùy chọn ngày']}
             placeholder="Chọn thời hạn"
           />
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
-            <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />
-            Gửi email / notification cho người dùng sau khi khóa
+          <label className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-slate-50/50 px-4 py-3 text-sm font-bold text-slate-700 cursor-pointer shadow-sm">
+            <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="rounded border-slate-300 text-primary focus:ring-primary/20 w-4 h-4" />
+            Gửi email thông báo khóa tài khoản
           </label>
         </ModalShell>
       ) : null}
@@ -180,3 +179,5 @@ const UserManagement = () => {
 };
 
 export default UserManagement;
+
+

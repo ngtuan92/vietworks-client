@@ -1,19 +1,19 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs, StatusBadge } from '../shared/AdminPrimitives';
 // Nhập hàm API từ file service của bạn
 import jobAdminService from '../../../services/jobAdminService'; 
 
-const tabs = ['Job Content', 'Company', 'Applicants', 'Service Package', 'Review History', 'Violation Reports'];
+const tabs = ['Nội dung tin', 'Công ty', 'Ứng viên', 'Gói dịch vụ', 'Lịch sử duyệt', 'Báo cáo vi phạm'];
 
 // Cấu hình màu sắc cho trạng thái tin tuyển dụng
 const statusMap = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PUBLISHED: 'bg-emerald-100 text-emerald-700',
-  BANNED: 'bg-red-100 text-red-700',
-  CLOSED: 'bg-slate-100 text-slate-700',
-  DRAFT: 'bg-gray-100 text-gray-600',
-  EXPIRED: 'bg-rose-100 text-rose-700'
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  BANNED: 'bg-red-50 text-red-700 border-red-200/60',
+  CLOSED: 'bg-slate-50 text-slate-700 border-slate-200',
+  DRAFT: 'bg-slate-50 text-slate-700 border-slate-200',
+  EXPIRED: 'bg-rose-50 text-rose-700 border-rose-200/60'
 };
 
 const JobDetailAdmin = () => {
@@ -81,14 +81,14 @@ const JobDetailAdmin = () => {
   if (error || !job) {
     return (
       <div className="text-center py-20 space-y-4">
-        <div className="text-red-500 font-medium">{error || 'Không tìm thấy dữ liệu'}</div>
+        <div className="text-[#0056B3] font-medium">{error || 'Không tìm thấy dữ liệu'}</div>
         <button onClick={() => navigate(-1)} className="text-sm text-slate-600 underline">Quay lại danh sách</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       {/* Tiêu đề trang tích hợp dữ liệu động (Đã đổi div sang span để sửa lỗi lồng thẻ HTML) */}
       <PageHeader 
         title={`Chi tiết: ${job.title}`} 
@@ -101,9 +101,9 @@ const JobDetailAdmin = () => {
         } 
         actions={
           <>
-            <ActionButton tone="primary" onClick={() => console.log('Duyệt job', job._id)}>Approve</ActionButton>
-            <ActionButton tone="soft" onClick={() => console.log('Từ chối job', job._id)}>Reject</ActionButton>
-            <ActionButton tone="danger" onClick={() => console.log('Khóa job', job._id)}>Ban</ActionButton>
+            <ActionButton tone="primary" onClick={() => console.log('Duyệt job', job._id)}>Phê duyệt</ActionButton>
+            <ActionButton tone="soft" onClick={() => console.log('Từ chối job', job._id)}>Từ chối</ActionButton>
+            <ActionButton tone="danger" onClick={() => console.log('Khóa job', job._id)}>Khóa tin</ActionButton>
           </>
         } 
       />
@@ -114,7 +114,7 @@ const JobDetailAdmin = () => {
       </SectionCard>
 
       {/* TAB 1: NỘI DUNG TIN TUYỂN DỤNG */}
-      {active === 'Job Content' && (
+      {active === 'Nội dung tin' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SectionCard title="Thông tin chung tin tuyển dụng">
             <div className="space-y-3 text-sm text-slate-700">
@@ -187,7 +187,7 @@ const JobDetailAdmin = () => {
       )}
 
       {/* TAB 2: THÔNG TIN CÔNG TY ĐĂNG TIN */}
-      {active === 'Company' && (
+      {active === 'Công ty' && (
         <SectionCard title="Thông tin công ty đối tác">
           {job.companyId ? (
             <div className="flex flex-col md:flex-row gap-6">
@@ -224,7 +224,7 @@ const JobDetailAdmin = () => {
       )}
 
       {/* TAB 5: LỊCH SỬ KIỂM DUYỆT TIN */}
-      {active === 'Review History' && (
+      {active === 'Lịch sử duyệt' && (
         <SectionCard title="Lịch sử phê duyệt hệ thống">
           <SimpleTable headers={['Admin thực hiện', 'Email liên hệ', 'Trạng thái sau duyệt']}>
             {job.reviewedBy ? (
@@ -247,7 +247,7 @@ const JobDetailAdmin = () => {
       )}
 
       {/* CÁC TAB KHÁC CHỜ GHÉP API THÊM */}
-      {active !== 'Job Content' && active !== 'Company' && active !== 'Review History' && (
+      {active !== 'Nội dung tin' && active !== 'Công ty' && active !== 'Lịch sử duyệt' && (
         <SectionCard title={active}>
           <div className="text-slate-500 italic py-4">
             Dữ liệu của mục <b>{active}</b> cần được populate hoặc gọi từ API truy vấn riêng biệt (Ví dụ: dữ liệu Applicants từ `Application` model).
@@ -259,3 +259,4 @@ const JobDetailAdmin = () => {
 };
 
 export default JobDetailAdmin;
+

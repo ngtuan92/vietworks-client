@@ -39,10 +39,10 @@ const BuyFeaturedPackage = () => {
         <p className="text-slate-600 mt-1">Gắn gói premium cho một Job cụ thể.</p>
       </div>
 
-      <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-4">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Chọn Job</label>
-          <select value={jobId} onChange={(e) => setJobId(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white">
+          <select value={jobId} onChange={(e) => setJobId(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white">
             {jobs.map((job) => (
               <option key={job.id} value={job.id}>
                 {job.title} ({job.status}) - Hạn nộp: {job.deadline}
@@ -59,11 +59,11 @@ const BuyFeaturedPackage = () => {
                 key={pkg.id}
                 type="button"
                 onClick={() => setPackageId(pkg.id)}
-                className={`text-left rounded-2xl border p-4 ${packageId === pkg.id ? 'border-[#003f87] bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}
+                className={`text-left rounded-2xl border p-4 ${packageId === pkg.id ? 'border-primary bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}
               >
                 <div className="font-bold text-slate-900">{pkg.label}</div>
                 <div className="text-sm text-slate-600 mt-1">{pkg.days} ngày</div>
-                <div className="text-lg font-bold text-[#003f87] mt-2">{pkg.price.toLocaleString('vi-VN')} VNĐ</div>
+                <div className="text-lg font-bold text-primary mt-2">{pkg.price.toLocaleString('vi-VN')} VNĐ</div>
               </button>
             ))}
           </div>
@@ -89,7 +89,7 @@ const BuyFeaturedPackage = () => {
         <div className="flex justify-end">
           <button
             disabled={!canBuy}
-            className={`px-4 py-2 rounded-xl font-semibold ${canBuy ? 'bg-[#003f87] text-white hover:bg-[#0b4e9f]' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+            className={`px-4 py-2 rounded-xl font-semibold ${canBuy ? 'bg-primary text-white hover:bg-primary/95' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
           >
             Mua gói
           </button>

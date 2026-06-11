@@ -1,7 +1,7 @@
 ﻿import { PageHeader, SectionCard, SimpleTable } from '../shared/AdminPrimitives';
 
 const InvoiceManagement = () => (
-  <div className="space-y-6">
+  <div className="space-y-7 animate-rise-in">
     <PageHeader title="Quản lý hóa đơn" description="Quản lý yêu cầu xuất hóa đơn cho các giao dịch dịch vụ." />
     <SectionCard>
       <SimpleTable headers={['Mã hóa đơn', 'Giao dịch', 'Người yêu cầu', 'Tên công ty', 'MST', 'Số tiền', 'Trạng thái', 'Ngày yêu cầu', 'Hành động']}>
@@ -22,3 +22,5 @@ const InvoiceManagement = () => (
 );
 
 export default InvoiceManagement;
+
+

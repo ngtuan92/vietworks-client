@@ -1,4 +1,16 @@
+import { Receipt, CheckCircle2, CreditCard, Eye, SearchX, WalletCards, RotateCcw, Landmark } from 'lucide-react';
 import React, { useState } from 'react';
+import {
+  PageHeader,
+  SectionCard,
+  SimpleTable,
+  FilterGrid,
+  InputField,
+  SelectField,
+  ModalShell,
+  ActionButton,
+  StatCard,
+} from '../shared/AdminPrimitives';
 
 const MOCK_TRANSACTIONS = [
   {
@@ -61,17 +73,17 @@ const MOCK_TRANSACTIONS = [
 ];
 
 const typeConfig = {
-  DEPOSIT: { label: 'Nạp tiền', bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
-  PAYMENT: { label: 'Thanh toán', bg: 'bg-indigo-100', text: 'text-indigo-700', icon: 'payments' },
-  REFUND: { label: 'Hoàn tiền', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'replay' },
-  WITHDRAW: { label: 'Rút tiền', bg: 'bg-purple-100', text: 'text-purple-700', icon: 'account_balance' },
+  DEPOSIT: { label: 'Nạp tiền', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/60', icon: <WalletCards className="w-3.5 h-3.5" /> },
+  PAYMENT: { label: 'Thanh toán', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200/60', icon: <CreditCard className="w-3.5 h-3.5" /> },
+  REFUND: { label: 'Hoàn tiền', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/60', icon: <RotateCcw className="w-3.5 h-3.5" /> },
+  WITHDRAW: { label: 'Rút tiền', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200/60', icon: <Landmark className="w-3.5 h-3.5" /> },
 };
 
 const statusConfig = {
-  SUCCESS: { label: 'Thành công', bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  PENDING: { label: 'Đang chờ', bg: 'bg-amber-100', text: 'text-amber-700' },
-  FAILED: { label: 'Thất bại', bg: 'bg-[#ffdad6]', text: 'text-[#ba1a1a]' },
-  CANCELLED: { label: 'Đã hủy', bg: 'bg-[#c2c6d4]', text: 'text-[#5e5e62]' },
+  SUCCESS: { label: 'Thành công', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/60' },
+  PENDING: { label: 'Đang chờ', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/60' },
+  FAILED: { label: 'Thất bại', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/60' },
+  CANCELLED: { label: 'Đã hủy', bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
 };
 
 const formatPrice = (price) => {
@@ -81,8 +93,8 @@ const formatPrice = (price) => {
 const AdminTransactions = () => {
   const [transactions] = useState(MOCK_TRANSACTIONS);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [selectedTx, setSelectedTx] = useState(null);
 
   const filteredTx = transactions.filter((tx) => {
@@ -91,10 +103,18 @@ const AdminTransactions = () => {
       tx.userId.fullName.toLowerCase().includes(search.toLowerCase()) ||
       tx.userId.email.toLowerCase().includes(search.toLowerCase()) ||
       tx.description.toLowerCase().includes(search.toLowerCase());
-    const matchType = filterType === 'all' || tx.type === filterType;
-    const matchStatus = filterStatus === 'all' || tx.status === filterStatus;
+    const matchType = !filterType || tx.type === filterType;
+    const matchStatus = !filterStatus || tx.status === filterStatus;
     return matchSearch && matchType && matchStatus;
   });
+
+  const activeFilterCount = [search, filterType, filterStatus].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterType('');
+    setFilterStatus('');
+  };
 
   const totalRevenue = transactions
     .filter((tx) => tx.status === 'SUCCESS' && tx.type === 'DEPOSIT')
@@ -104,220 +124,143 @@ const AdminTransactions = () => {
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
-    <div className="space-y-6 pb-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-[#0056b3] flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-[#0056b3] rounded-full"></span>
-            Quản lý Giao dịch
-          </h2>
-          <p className="text-sm text-[#5e5e62] mt-1">Theo dõi tất cả giao dịch trong hệ thống</p>
-        </div>
-      </div>
+    <div className="space-y-7 pb-10 animate-rise-in">
+      <PageHeader
+        title="Quản lý Giao dịch"
+        description="Theo dõi tất cả giao dịch trong hệ thống"
+        actions={
+          <ActionButton tone="primary">Xuất báo cáo</ActionButton>
+        }
+      />
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-[#0056b3] to-blue-800 p-5 rounded-xl text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-blue-200">receipt_long</span>
-            <span className="text-sm font-bold text-blue-200 uppercase">Tổng giao dịch</span>
-          </div>
-          <p className="text-3xl font-black">{transactions.length}</p>
-        </div>
-        <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
-            <span className="text-sm font-bold text-emerald-600 uppercase">Thành công</span>
-          </div>
-          <p className="text-3xl font-black text-emerald-600">
-            {transactions.filter((tx) => tx.status === 'SUCCESS').length}
-          </p>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[#0056b3]">add_card</span>
-            <span className="text-sm font-bold text-[#5e5e62] uppercase">Tổng nạp tiền</span>
-          </div>
-          <p className="text-2xl font-black text-[#0056b3]">{formatPrice(totalRevenue)}</p>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-indigo-600">payments</span>
-            <span className="text-sm font-bold text-[#5e5e62] uppercase">Tổng thanh toán</span>
-          </div>
-          <p className="text-2xl font-black text-indigo-600">{formatPrice(totalPayments)}</p>
-        </div>
+        <StatCard icon={<Receipt className="w-6 h-6" />} label="Tổng giao dịch" value={transactions.length} tone="blue" />
+        <StatCard icon={<CheckCircle2 className="w-6 h-6" />} label="Thành công" value={transactions.filter((tx) => tx.status === 'SUCCESS').length} tone="emerald" />
+        <StatCard icon={<CreditCard className="w-6 h-6" />} label="Tổng nạp tiền" value={formatPrice(totalRevenue)} tone="indigo" />
+        <StatCard icon={<CreditCard className="w-6 h-6" />} label="Tổng thanh toán" value={formatPrice(totalPayments)} tone="amber" />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-xl border border-[#c2c6d4]/50 flex flex-wrap items-center gap-3">
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5e5e62]">search</span>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên, email, mô tả..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] focus:border-[#0056b3] focus:ring-2 focus:ring-[#0056b3]/10 outline-none"
-            />
-          </div>
+      <SectionCard 
+        title="Danh sách giao dịch" 
+        description="Lịch sử chi tiết dòng tiền"
+        right={activeFilterCount > 0 && (
+          <ActionButton tone="soft" onClick={clearFilters}>Xóa bộ lọc ({activeFilterCount})</ActionButton>
+        )}
+      >
+        <div className="mb-6">
+          <FilterGrid>
+            <InputField label="Tìm kiếm" value={search} onChange={setSearch} placeholder="Tên, email, mô tả..." />
+            <SelectField label="Loại giao dịch" value={filterType} onChange={setFilterType} options={[['DEPOSIT', 'Nạp tiền'], ['PAYMENT', 'Thanh toán'], ['REFUND', 'Hoàn tiền'], ['WITHDRAW', 'Rút tiền']]} placeholder="Tất cả loại" />
+            <SelectField label="Trạng thái" value={filterStatus} onChange={setFilterStatus} options={[['SUCCESS', 'Thành công'], ['PENDING', 'Đang chờ'], ['FAILED', 'Thất bại'], ['CANCELLED', 'Đã hủy']]} placeholder="Tất cả trạng thái" />
+          </FilterGrid>
         </div>
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
-        >
-          <option value="all">Tất cả loại</option>
-          <option value="DEPOSIT">Nạp tiền</option>
-          <option value="PAYMENT">Thanh toán</option>
-          <option value="REFUND">Hoàn tiền</option>
-          <option value="WITHDRAW">Rút tiền</option>
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="SUCCESS">Thành công</option>
-          <option value="PENDING">Đang chờ</option>
-          <option value="FAILED">Thất bại</option>
-          <option value="CANCELLED">Đã hủy</option>
-        </select>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-[#c2c6d4]/50 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-[#f5f3f3] border-b border-[#c2c6d4]">
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Mã GD</th>
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Người dùng</th>
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Loại</th>
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Số tiền</th>
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Trạng thái</th>
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Ngày</th>
-              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTx.map((tx) => {
+        <SimpleTable headers={['Mã GD', 'Người dùng', 'Loại', 'Số tiền', 'Trạng thái', 'Ngày', 'Thao tác']}>
+          {filteredTx.length > 0 ? (
+            filteredTx.map((tx) => {
               const type = typeConfig[tx.type] || typeConfig.PAYMENT;
               const status = statusConfig[tx.status] || statusConfig.PENDING;
               return (
-                <tr key={tx._id} className="border-b border-[#c2c6d4]/30 hover:bg-[#f5f3f3]/50 transition-colors">
-                  <td className="py-4 px-4">
-                    <span className="font-mono text-sm font-bold text-[#0056b3]">{tx._id.slice(-8).toUpperCase()}</span>
+                <tr key={tx._id} className="border-t border-slate-100 transition-colors">
+                  <td className="px-6 py-4">
+                    <span className="font-mono text-sm font-bold text-slate-700">{tx._id.slice(-8).toUpperCase()}</span>
                   </td>
-                  <td className="py-4 px-4">
-                    <p className="font-bold text-[#1b1c1c]">{tx.userId.fullName}</p>
-                    <p className="text-xs text-[#5e5e62]">{tx.userId.email}</p>
+                  <td className="px-6 py-4">
+                    <p className="font-bold text-slate-900">{tx.userId.fullName}</p>
+                    <p className="text-xs font-medium text-slate-500">{tx.userId.email}</p>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold w-fit ${type.bg} ${type.text}`}>
-                      <span className="material-symbols-outlined text-[14px]">{type.icon}</span>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${type.bg} ${type.text} ${type.border}`}>
+                      {type.icon}
                       {type.label}
                     </span>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className={`font-black ${tx.status === 'SUCCESS' ? 'text-emerald-600' : 'text-[#5e5e62]'}`}>
+                  <td className="px-6 py-4">
+                    <span className={`font-black ${tx.status === 'SUCCESS' ? 'text-emerald-600' : 'text-slate-500'}`}>
                       {formatPrice(tx.amount)}
                     </span>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.text}`}>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${status.bg} ${status.text} ${status.border}`}>
                       {status.label}
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-sm text-[#5e5e62]">
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-600">
                     {new Date(tx.createdAt).toLocaleDateString('vi-VN')}
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="px-6 py-4">
                     <button
                       onClick={() => setSelectedTx(tx)}
-                      className="p-2 rounded-lg hover:bg-[#0056b3]/10 text-[#5e5e62] transition-all"
+                      className="rounded-xl border border-transparent p-2 text-slate-400 transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:text-slate-900 hover:shadow-sm"
+                      title="Xem chi tiết"
                     >
-                      <span className="material-symbols-outlined text-[20px]">visibility</span>
+                      <Eye className="h-5 w-5" />
                     </button>
                   </td>
                 </tr>
               );
-            })}
-          </tbody>
-        </table>
+            })
+          ) : (
+            <tr>
+              <td colSpan={7} className="py-12 text-center">
+                <SearchX className="mx-auto h-16 w-16 text-slate-300" />
+                <p className="mt-3 font-bold text-slate-500">Không tìm thấy giao dịch nào</p>
+              </td>
+            </tr>
+          )}
+        </SimpleTable>
+      </SectionCard>
 
-        {filteredTx.length === 0 && (
-          <div className="text-center py-12">
-            <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">receipt_long</span>
-            <p className="text-[#5e5e62] mt-3 font-bold">Không có giao dịch nào</p>
-          </div>
-        )}
-      </div>
-
-      {/* Detail Modal */}
       {selectedTx && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="p-6 border-b border-[#c2c6d4] flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#0056b3]">Chi tiết giao dịch</h2>
-              <button onClick={() => setSelectedTx(null)} className="p-2 hover:bg-[#f5f3f3] rounded-lg">
-                <span className="material-symbols-outlined">close</span>
-              </button>
+        <ModalShell
+          title="Chi tiết giao dịch"
+          onClose={() => setSelectedTx(null)}
+          footer={<ActionButton onClick={() => setSelectedTx(null)}>Đóng</ActionButton>}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Mã giao dịch</p>
+              <p className="font-mono font-black text-slate-900 mt-1">{selectedTx._id.slice(-8).toUpperCase()}</p>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Mã giao dịch</p>
-                  <p className="font-mono font-bold text-[#0056b3]">{selectedTx._id.slice(-8).toUpperCase()}</p>
-                </div>
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Loại giao dịch</p>
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold ${typeConfig[selectedTx.type].bg} ${typeConfig[selectedTx.type].text}`}>
-                    {typeConfig[selectedTx.type].label}
-                  </span>
-                </div>
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Số tiền</p>
-                  <p className="text-xl font-black text-emerald-600">{formatPrice(selectedTx.amount)}</p>
-                </div>
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Trạng thái</p>
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold ${statusConfig[selectedTx.status].bg} ${statusConfig[selectedTx.status].text}`}>
-                    {statusConfig[selectedTx.status].label}
-                  </span>
-                </div>
-              </div>
-              <div className="bg-[#f5f3f3] rounded-xl p-4">
-                <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Người dùng</p>
-                <p className="font-bold text-[#1b1c1c]">{selectedTx.userId.fullName}</p>
-                <p className="text-sm text-[#5e5e62]">{selectedTx.userId.email}</p>
-              </div>
-              <div className="bg-[#f5f3f3] rounded-xl p-4">
-                <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Mô tả</p>
-                <p className="text-sm text-[#1b1c1c]">{selectedTx.description}</p>
-              </div>
-              {selectedTx.payosTransactionId && (
-                <div className="bg-[#f5f3f3] rounded-xl p-4">
-                  <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">PayOS Transaction ID</p>
-                  <p className="font-mono text-sm text-[#1b1c1c]">{selectedTx.payosTransactionId}</p>
-                </div>
-              )}
-              <div className="bg-[#f5f3f3] rounded-xl p-4">
-                <p className="text-xs font-bold text-[#5e5e62] uppercase mb-1">Ngày tạo</p>
-                <p className="text-sm text-[#1b1c1c]">
-                  {new Date(selectedTx.createdAt).toLocaleString('vi-VN')}
-                </p>
-              </div>
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Loại giao dịch</p>
+              <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mt-1.5 ${typeConfig[selectedTx.type].bg} ${typeConfig[selectedTx.type].text} ${typeConfig[selectedTx.type].border}`}>
+                {typeConfig[selectedTx.type].label}
+              </span>
             </div>
-            <div className="p-6 border-t border-[#c2c6d4]">
-              <button onClick={() => setSelectedTx(null)} className="w-full py-3 rounded-xl font-bold border border-[#c2c6d4] hover:bg-[#f5f3f3]">
-                Đóng
-              </button>
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Số tiền</p>
+              <p className="text-xl font-black text-blue-700 mt-1">{formatPrice(selectedTx.amount)}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Trạng thái</p>
+              <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mt-1.5 ${statusConfig[selectedTx.status].bg} ${statusConfig[selectedTx.status].text} ${statusConfig[selectedTx.status].border}`}>
+                {statusConfig[selectedTx.status].label}
+              </span>
             </div>
           </div>
-        </div>
+          <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Người dùng</p>
+            <p className="font-black text-slate-900 mt-1">{selectedTx.userId.fullName}</p>
+            <p className="text-sm font-medium text-slate-500">{selectedTx.userId.email}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Mô tả</p>
+            <p className="text-sm font-black text-slate-900 mt-1">{selectedTx.description}</p>
+          </div>
+          {selectedTx.payosTransactionId && (
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">PayOS Transaction ID</p>
+              <p className="font-mono text-sm font-black text-slate-900 mt-1">{selectedTx.payosTransactionId}</p>
+            </div>
+          )}
+          <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ngày tạo</p>
+            <p className="text-sm font-black text-slate-900 mt-1">
+              {new Date(selectedTx.createdAt).toLocaleString('vi-VN')}
+            </p>
+          </div>
+        </ModalShell>
       )}
     </div>
   );

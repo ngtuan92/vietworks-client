@@ -12,7 +12,7 @@ const ViolationsManagement = () => {
   const [note, setNote] = useState('');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Báo cáo vi phạm" description="Xem xét báo cáo cho Job/Công ty/Người dùng; lưu log và hành động xử lý." />
       <SectionCard title="Bộ lọc báo cáo">
         <FilterGrid>
@@ -56,3 +56,5 @@ const ViolationsManagement = () => {
 };
 
 export default ViolationsManagement;
+
+

@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Download, MessageCircle, CheckCircle2, XCircle } from 'lucide-react';
 
 const statusMap = {
-  UNREAD: { label: 'UNREAD/APPLIED', color: 'bg-slate-100 text-slate-700' },
-  VIEWED: { label: 'VIEWED', color: 'bg-amber-100 text-amber-800' },
-  APPROVED: { label: 'APPROVED', color: 'bg-emerald-100 text-emerald-800' },
-  REJECTED: { label: 'REJECTED', color: 'bg-red-100 text-red-700' },
+  UNREAD: { label: 'CHƯA XEM', color: 'bg-slate-100 text-slate-700' },
+  VIEWED: { label: 'ĐÃ XEM', color: 'bg-amber-100 text-amber-800' },
+  APPROVED: { label: 'CHẤP NHẬN', color: 'bg-emerald-100 text-emerald-800' },
+  REJECTED: { label: 'TỪ CHỐI', color: 'bg-red-100 text-red-700' },
 };
 
 const ApplicationDetail = () => {
@@ -41,10 +42,11 @@ const ApplicationDetail = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <section className="xl:col-span-8 bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <section className="xl:col-span-8 bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
             <h2 className="font-bold text-slate-900">Preview CV</h2>
-            <button className="px-3 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-50 hover:shadow-sm transition-all">
+              <Download className="w-4 h-4" />
               Tải CV
             </button>
           </div>
@@ -54,7 +56,7 @@ const ApplicationDetail = () => {
         </section>
 
         <section className="xl:col-span-4 space-y-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+          <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
             <h3 className="font-bold text-slate-900">Thông tin ứng tuyển</h3>
             <div className="mt-3 space-y-2 text-sm">
               <Info label="Ứng viên" value="Nguyễn Minh Anh" />
@@ -69,7 +71,7 @@ const ApplicationDetail = () => {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+          <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
             <h3 className="font-bold text-slate-900">Lịch sử xử lý</h3>
             <div className="mt-3 space-y-3">
               {log.map((item, idx) => (
@@ -81,15 +83,23 @@ const ApplicationDetail = () => {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+          <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5 space-y-3">
             <h3 className="font-bold text-slate-900">Hành động</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <button className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Chat</button>
-              <button className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Tải CV</button>
-              <button onClick={() => setShowApprove(true)} className="px-3 py-2 rounded-xl border border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50">
-                Đồng ý/Hẹn PV
+            <div className="grid grid-cols-2 gap-3">
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl bg-blue-50 text-blue-700 font-bold hover:bg-blue-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all text-sm">
+                <MessageCircle className="w-4 h-4" />
+                Chat
               </button>
-              <button onClick={() => setShowReject(true)} className="px-3 py-2 rounded-xl border border-red-200 text-red-700 font-semibold hover:bg-red-50">
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 font-bold hover:bg-slate-200 hover:text-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all text-sm">
+                <Download className="w-4 h-4" />
+                Tải CV
+              </button>
+              <button onClick={() => setShowApprove(true)} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold hover:bg-emerald-500 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                Đồng ý
+              </button>
+              <button onClick={() => setShowReject(true)} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 font-bold hover:bg-red-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all text-sm">
+                <XCircle className="w-4 h-4" />
                 Từ chối
               </button>
             </div>
@@ -99,7 +109,7 @@ const ApplicationDetail = () => {
               <textarea
                 value={internalNote}
                 onChange={(e) => setInternalNote(e.target.value)}
-                className="w-full min-h-24 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+                className="w-full min-h-24 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
                 placeholder="Ghi chú cho HR nội bộ..."
               />
             </div>
@@ -176,7 +186,7 @@ const RejectModal = ({ onClose, onSubmit }) => {
               setReasonTemplate(e.target.value);
               setReason(e.target.value);
             }}
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
           >
             <option value="">Chọn mẫu...</option>
             {quick.map((item) => (
@@ -208,7 +218,7 @@ const RejectModal = ({ onClose, onSubmit }) => {
 
 const Modal = ({ title, onClose, children }) => (
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-    <div className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+    <div className="w-full max-w-2xl bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all shadow-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
         <h3 className="font-bold text-slate-900">{title}</h3>
         <button onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
@@ -228,7 +238,7 @@ const Field = ({ id, label, value, onChange, required = false, type = 'text' }) 
       type={type}
       value={value}
       onChange={onChange}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
       required={required}
     />
   </div>
@@ -243,7 +253,7 @@ const TextArea = ({ id, label, value, onChange, required = false }) => (
       id={id}
       value={value}
       onChange={onChange}
-      className="w-full min-h-24 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87]"
+      className="w-full min-h-24 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
       required={required}
     />
   </div>
@@ -256,7 +266,7 @@ const Select = ({ id, label, value, onChange, options }) => (
       id={id}
       value={value}
       onChange={onChange}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#003f87] bg-white"
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
     >
       <option value="">Chọn...</option>
       {options.map((opt) => (

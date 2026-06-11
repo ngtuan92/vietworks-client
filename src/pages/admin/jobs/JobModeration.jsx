@@ -1,16 +1,16 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, StatusBadge } from '../shared/AdminPrimitives';
 // Giả định đây là file chứa hàm getAllJobs của bạn
 import jobAdminService from '../../../services/jobAdminService'; 
 
 const statusMap = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PUBLISHED: 'bg-emerald-100 text-emerald-700',
-  BANNED: 'bg-red-100 text-red-700',
-  CLOSED: 'bg-slate-100 text-slate-700',
-  DRAFT: 'bg-gray-100 text-gray-600',
-  EXPIRED: 'bg-rose-100 text-rose-700'
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  BANNED: 'bg-red-50 text-red-700 border-red-200/60',
+  CLOSED: 'bg-slate-50 text-slate-700 border-slate-200',
+  DRAFT: 'bg-slate-50 text-slate-700 border-slate-200',
+  EXPIRED: 'bg-rose-50 text-rose-700 border-rose-200/60'
 };
 
 const JobModeration = () => {
@@ -61,9 +61,9 @@ const JobModeration = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader 
-        title="Job Moderation" 
+        title="Quản lý Tin Tuyển Dụng" 
         description="Quản lý, phê duyệt, từ chối hoặc cấm các tin tuyển dụng trên toàn hệ thống." 
       />
       
@@ -84,13 +84,21 @@ const JobModeration = () => {
                 setPagination(p => ({ ...p, page: 1 })); // Reset về trang 1 khi đổi trạng thái
               }} 
               // Option đầu tiên để trống tương ứng lấy tất cả trạng thái như backend xử lý
-              options={['', 'PENDING', 'PUBLISHED', 'CLOSED', 'BANNED', 'DRAFT', 'EXPIRED']} 
+              options={[
+                ['', 'Tất cả trạng thái'],
+                ['PENDING', 'Đang chờ duyệt'],
+                ['PUBLISHED', 'Đã duyệt/Đang mở'],
+                ['CLOSED', 'Đã đóng'],
+                ['BANNED', 'Bị khóa'],
+                ['DRAFT', 'Bản nháp'],
+                ['EXPIRED', 'Hết hạn']
+              ]} 
             />
             {/* Nút trigger tìm kiếm theo từ khóa văn bản */}
-            <div className="flex items-end pb-1">
+            <div className="flex items-end pb-1.5">
               <button 
                 type="submit" 
-                className="w-full bg-slate-800 text-white rounded-xl py-2 px-4 font-medium text-sm hover:bg-slate-700 transition"
+                className="w-full bg-slate-900 text-white rounded-xl h-[44px] px-4 font-bold text-sm hover:bg-slate-800 transition active:scale-95 shadow-sm"
               >
                 Tìm kiếm
               </button>
@@ -150,20 +158,19 @@ const JobModeration = () => {
                     <StatusBadge value={job.status} map={statusMap} />
                   </td>
                   
-                  {/* Cột Hành động */}
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <Link 
                         to={`/admin/jobs/${job._id}`} 
-                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95"
                       >
-                        Xem chi tiết
+                        Chi tiết
                       </Link>
                       <Link 
                         to={`/admin/jobs/${job._id}/review`} 
-                        className="rounded-xl bg-[#0056b3] px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                        className="rounded-xl bg-primary shadow-sm px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition active:scale-95"
                       >
-                        Kiểm duyệt
+                        Duyệt
                       </Link>
                     </div>
                   </td>
@@ -208,3 +215,4 @@ const JobModeration = () => {
 };
 
 export default JobModeration;
+

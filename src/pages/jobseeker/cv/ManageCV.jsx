@@ -9,6 +9,7 @@ import CVExpertReview from '../../../components/jobseeker/cv/CVExpertReview';
 import CareerResources from '../../../components/jobseeker/cv/CareerResources';
 import cvService from '../../../services/cvService';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { HelpCircle, MessageSquare, X, Loader2, UploadCloud, FileBox, FileText, File } from 'lucide-react';
 
 const ManageCV = () => {
   const navigate = useNavigate();
@@ -24,9 +25,9 @@ const ManageCV = () => {
 
   const getFileIcon = (fileName) => {
     const ext = fileName?.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return { icon: 'picture_as_pdf', color: 'text-red-500', bgColor: 'bg-red-100' };
-    if (['doc', 'docx'].includes(ext)) return { icon: 'description', color: 'text-blue-500', bgColor: 'bg-blue-100' };
-    return { icon: 'insert_drive_file', color: 'text-gray-500', bgColor: 'bg-gray-100' };
+    if (ext === 'pdf') return { icon: <FileBox className="w-6 h-6 text-red-500" />, color: 'text-red-500', bgColor: 'bg-red-100' };
+    if (['doc', 'docx'].includes(ext)) return { icon: <FileText className="w-6 h-6 text-blue-500" />, color: 'text-blue-500', bgColor: 'bg-blue-100' };
+    return { icon: <File className="w-6 h-6 text-gray-500" />, color: 'text-gray-500', bgColor: 'bg-gray-100' };
   };
 
   const fetchCvs = async () => {
@@ -293,11 +294,11 @@ const ManageCV = () => {
       {/* Floating Action for Help */}
       <div className="fixed bottom-gutter right-gutter flex flex-col gap-stack-md items-end z-40">
         <button className="bg-surface-container-lowest shadow-lg border border-outline-variant p-stack-md rounded-full text-on-surface-variant hover:text-primary transition-all group relative">
-          <span className="material-symbols-outlined">help_center</span>
+          <HelpCircle className="w-5 h-5" />
           <span className="absolute right-full mr-stack-md whitespace-nowrap bg-on-surface text-on-secondary px-3 py-1 rounded text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Support</span>
         </button>
         <button className="bg-primary text-on-secondary shadow-lg p-stack-md rounded-full hover:scale-105 active:scale-95 transition-all">
-          <span className="material-symbols-outlined">chat</span>
+          <MessageSquare className="w-5 h-5" />
         </button>
       </div>
 
@@ -314,7 +315,7 @@ const ManageCV = () => {
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="bg-[#003f87] text-white px-6 py-4 flex items-center justify-between">
+            <div className="bg-primary text-white px-6 py-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Tải CV lên</h3>
               <button
                 onClick={() => {
@@ -324,7 +325,7 @@ const ManageCV = () => {
                 }}
                 className="hover:bg-white/20 rounded-full p-1"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6">
@@ -335,7 +336,7 @@ const ManageCV = () => {
                       const { icon, color, bgColor } = getFileIcon(uploadFile?.name);
                       return (
                         <div className={`w-12 h-12 ${bgColor} rounded-lg flex items-center justify-center`}>
-                          <span className={`material-symbols-outlined ${color}`}>{icon}</span>
+                          {icon}
                         </div>
                       );
                     })()}
@@ -362,16 +363,16 @@ const ManageCV = () => {
                 <button
                   onClick={handleUploadSubmit}
                   disabled={uploading || !uploadFile}
-                  className="flex-1 px-4 py-2.5 bg-[#003f87] text-white font-semibold rounded-lg hover:bg-[#002a5c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {uploading ? (
                     <>
-                      <span className="animate-spin material-symbols-outlined">progress_activity</span>
+                      <Loader2 className="animate-spin w-5 h-5" />
                       Đang tải...
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined">cloud_upload</span>
+                      <UploadCloud className="w-5 h-5" />
                       Tải lên
                     </>
                   )}

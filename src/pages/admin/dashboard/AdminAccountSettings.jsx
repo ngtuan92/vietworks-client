@@ -1,7 +1,7 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { ActionButton, InputField, PageHeader, SectionCard, SelectField, Tabs } from '../shared/AdminPrimitives';
 
-const tabs = ['Admin Profile', 'Change Password'];
+const tabs = ['Thông tin cá nhân', 'Đổi mật khẩu'];
 
 const AdminAccountSettings = () => {
   const [active, setActive] = useState(tabs[0]);
@@ -9,31 +9,42 @@ const AdminAccountSettings = () => {
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' });
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Admin Account Settings" description="Manage admin profile and update password." />
-      <SectionCard><Tabs tabs={tabs} active={active} onChange={setActive} /></SectionCard>
+    <div className="space-y-7 pb-10 animate-rise-in max-w-5xl mx-auto">
+      <PageHeader 
+        title="Cài đặt Tài khoản Quản trị" 
+        description="Quản lý thông tin hồ sơ và bảo mật tài khoản cá nhân." 
+      />
+      <SectionCard className="p-4">
+        <Tabs tabs={tabs} active={active} onChange={setActive} />
+      </SectionCard>
 
-      {active === 'Admin Profile' ? (
-        <SectionCard title="Profile information">
-          <div className="grid gap-4 md:grid-cols-2">
-            <InputField label="Full name" required value={profile.name} onChange={(v) => setProfile((p) => ({ ...p, name: v }))} />
-            <InputField label="Email" required value={profile.email} onChange={(v) => setProfile((p) => ({ ...p, email: v }))} />
-            <InputField label="Phone" value={profile.phone} onChange={(v) => setProfile((p) => ({ ...p, phone: v }))} />
-            <SelectField label="Role" value="ADMIN" onChange={() => {}} options={['ADMIN']} placeholder="ADMIN" />
+      {active === 'Thông tin cá nhân' ? (
+        <SectionCard title="Thông tin hồ sơ">
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField label="Họ và tên" required value={profile.name} onChange={(v) => setProfile((p) => ({ ...p, name: v }))} />
+            <InputField label="Email liên hệ" required value={profile.email} onChange={(v) => setProfile((p) => ({ ...p, email: v }))} />
+            <InputField label="Số điện thoại" value={profile.phone} onChange={(v) => setProfile((p) => ({ ...p, phone: v }))} />
+            <SelectField label="Vai trò hệ thống" value="ADMIN" onChange={() => {}} options={['ADMIN']} placeholder="QUẢN TRỊ VIÊN" />
           </div>
-          <div className="mt-5 flex justify-end"><ActionButton tone="primary">Save changes</ActionButton></div>
+          <div className="mt-8 flex justify-end pt-4 border-t border-slate-100">
+            <ActionButton tone="primary">Lưu thay đổi</ActionButton>
+          </div>
         </SectionCard>
       ) : null}
 
-      {active === 'Change Password' ? (
-        <SectionCard title="Change password">
-          <div className="grid gap-4 md:grid-cols-2">
-            <InputField label="Current password" required type="password" value={pwd.current} onChange={(v) => setPwd((p) => ({ ...p, current: v }))} />
+      {active === 'Đổi mật khẩu' ? (
+        <SectionCard title="Cập nhật mật khẩu">
+          <div className="grid gap-6 md:grid-cols-2">
+            <InputField label="Mật khẩu hiện tại" required type="password" value={pwd.current} onChange={(v) => setPwd((p) => ({ ...p, current: v }))} />
             <div className="hidden md:block" />
-            <InputField label="New password" required type="password" value={pwd.next} onChange={(v) => setPwd((p) => ({ ...p, next: v }))} />
-            <InputField label="Confirm new password" required type="password" value={pwd.confirm} onChange={(v) => setPwd((p) => ({ ...p, confirm: v }))} />
+            <InputField label="Mật khẩu mới" required type="password" value={pwd.next} onChange={(v) => setPwd((p) => ({ ...p, next: v }))} />
+            <InputField label="Xác nhận mật khẩu mới" required type="password" value={pwd.confirm} onChange={(v) => setPwd((p) => ({ ...p, confirm: v }))} />
           </div>
-          <div className="mt-5 flex justify-end"><ActionButton tone="primary" disabled={!pwd.current || !pwd.next || pwd.next !== pwd.confirm}>Update password</ActionButton></div>
+          <div className="mt-8 flex justify-end pt-4 border-t border-slate-100">
+            <ActionButton tone="primary" disabled={!pwd.current || !pwd.next || pwd.next !== pwd.confirm}>
+              Cập nhật mật khẩu
+            </ActionButton>
+          </div>
         </SectionCard>
       ) : null}
     </div>

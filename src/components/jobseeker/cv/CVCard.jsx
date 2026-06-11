@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Edit, Trash2, CheckCircle, Download, Plus } from 'lucide-react';
 
 export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, onRename, onSetMain }) => {
   const navigate = useNavigate();
@@ -82,14 +83,14 @@ export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, o
               className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
               title="Đổi tên CV"
             >
-              <span className="material-symbols-outlined">edit</span>
+              <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={() => onDelete && onDelete(id, title)}
               className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
               title="Xóa CV"
             >
-              <span className="material-symbols-outlined">delete</span>
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -101,7 +102,7 @@ export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, o
             onClick={(e) => { e.stopPropagation(); onSetMain?.(id); }}
             className="w-full mb-stack-sm bg-surface-container border border-outline-variant text-on-surface hover:bg-primary hover:text-white font-bold py-1.5 rounded-lg transition-all text-body-sm flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+            <CheckCircle className="w-5 h-5" />
             Dùng làm CV chính
           </button>
         )}
@@ -118,7 +119,7 @@ export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, o
             className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
             title="Tải PDF"
           >
-            <span className="material-symbols-outlined">download</span>
+            <Download className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -134,7 +135,7 @@ export const CVPlaceholderCard = () => {
       className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group cursor-pointer"
     >
       <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
-        <span className="material-symbols-outlined text-primary text-headline-lg">add</span>
+        <Plus className="text-primary w-8 h-8" />
       </div>
       <p className="font-bold text-on-surface">Tạo CV Mới</p>
       <p className="text-body-sm text-on-surface-variant">Chọn từ 20+ mẫu thiết kế</p>

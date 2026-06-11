@@ -1,39 +1,35 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField } from '../shared/AdminPrimitives';
 import jobAdminService from '../../../services/jobAdminService'; 
 
 const checks = [
-  'Company is verified',
-  'Job title is clear',
-  'Salary looks reasonable',
-  'Description is complete',
-  'Requirements are acceptable',
-  'Location is clear',
-  'No scam / MLM signal',
-  'No platform policy violation',
+  'Công ty đã được xác minh',
+  'Tiêu đề công việc rõ ràng',
+  'Mức lương hợp lý',
+  'Mô tả công việc đầy đủ',
+  'Yêu cầu công việc phù hợp',
+  'Địa điểm làm việc rõ ràng',
+  'Không có dấu hiệu lừa đảo / Đa cấp',
+  'Không vi phạm chính sách nền tảng',
 ];
 
 const JobReview = () => {
-  const { jobId } = useParams(); // Lấy ID từ URL tuyến đường /admin/jobs/:jobId/review
+  const { jobId } = useParams();
   const navigate = useNavigate();
 
-  // Quản lý checklists và modals
   const [checked, setChecked] = useState(() => Object.fromEntries(checks.map((item) => [item, false])));
   const [rejectOpen, setRejectOpen] = useState(false);
   const [banOpen, setBanOpen] = useState(false);
   
-  // Quản lý nội dung text nhập vào
   const [reason, setReason] = useState('');
   const [reviewNote, setReviewNote] = useState('');
 
-  // Quản lý dữ liệu tin tuyển dụng cần preview
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // 1. Tự động tải dữ liệu thực tế của job lên màn hình preview
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
@@ -57,10 +53,8 @@ const JobReview = () => {
 
   const toggle = (item) => setChecked((prev) => ({ ...prev, [item]: !prev[item] }));
 
-  // Kiểm tra xem người kiểm duyệt đã tích chọn toàn bộ checklist chưa
   const isAllChecked = checks.every((item) => checked[item]);
 
-  // 2. Xử lý hành động PHÊ DUYỆT (Approve)
   const handleApprove = async () => {
     if (!isAllChecked) return;
     try {
@@ -68,7 +62,7 @@ const JobReview = () => {
       const response = await jobAdminService.approveJob(jobId, 'Đạt yêu cầu qua bảng danh sách kiểm duyệt hệ thống.');
       if (response.success) {
         alert('Phê duyệt tin tuyển dụng thành công!');
-        navigate('/admin/jobs'); // Điều hướng về trang danh sách kiểm duyệt
+        navigate('/admin/jobs');
       }
     } catch (err) {
       alert('Lỗi phê duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
@@ -77,7 +71,6 @@ const JobReview = () => {
     }
   };
 
-  // 3. Xử lý hành động TỪ CHỐI (Reject)
   const handleRejectSubmit = async () => {
     if (!reason) return;
     try {
@@ -95,7 +88,6 @@ const JobReview = () => {
     }
   };
 
-  // 4. Xử lý hành động KHÓA TIN (Ban)
   const handleBanSubmit = async () => {
     if (!reason) return;
     try {
@@ -120,28 +112,27 @@ const JobReview = () => {
   if (error || !job) {
     return (
       <div className="text-center py-20 space-y-4">
-        <div className="text-red-500 font-medium">{error || 'Không tồn tại tin tuyển dụng.'}</div>
+        <div className="text-primary font-medium">{error || 'Không tồn tại tin tuyển dụng.'}</div>
         <button onClick={() => navigate(-1)} className="text-sm text-slate-600 underline">Quay lại</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 pb-10 animate-rise-in max-w-7xl mx-auto">
       <PageHeader 
-        title="Review Job Posting" 
+        title="Duyệt Tin Tuyển Dụng" 
         description={`Đang kiểm duyệt hồ sơ: ID ${job._id} • Trạng thái hiện tại: ${job.status}`} 
       />
       
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         
-        {/* KHU VỰC PREVIEW DỮ LIỆU ĐỘNG TỪ BACKEND */}
-        <SectionCard title="Candidate-side preview">
-          <div className="space-y-4 rounded-2xl border border-slate-200 p-6 bg-white">
+        <SectionCard title="Xem trước giao diện Ứng viên">
+          <div className="space-y-4 rounded-2xl border border-slate-200/60 shadow-sm p-6 bg-white">
             <div className="flex justify-between items-start">
               <h3 className="text-2xl font-bold text-slate-900">{job.title}</h3>
               {job.salary && (
-                <span className="text-emerald-600 font-semibold text-lg">
+                <span className="text-blue-700 font-semibold text-lg">
                   {job.salary.type === 'NEGOTIABLE' 
                     ? 'Thỏa thuận' 
                     : `${job.salary.minMillion} - ${job.salary.maxMillion} triệu VND`}
@@ -173,12 +164,11 @@ const JobReview = () => {
           </div>
         </SectionCard>
 
-        {/* BẢNG ĐIỀU KHIỂN & CHECKLIST MODERATION */}
-        <SectionCard title="Moderation checklist">
-          <p className="text-xs text-slate-400 mb-3 italic">Lưu ý: Bạn phải tích xác nhận toàn bộ checklist mới có thể kích hoạt quyền Approve tin này lên hệ thống.</p>
+        <SectionCard title="Danh sách kiểm duyệt">
+          <p className="text-xs text-slate-400 mb-4 font-medium italic">Lưu ý: Bạn phải tích xác nhận toàn bộ checklist mới có thể kích hoạt quyền Phê duyệt tin này lên hệ thống.</p>
           <div className="space-y-3">
             {checks.map((item) => (
-              <label key={item} className="flex items-start gap-3 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition">
+              <label key={item} className="flex items-start gap-3 rounded-xl border border-slate-200/60 shadow-sm px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:shadow-md cursor-pointer transition-all active:scale-[0.98]">
                 <input 
                   type="checkbox" 
                   checked={checked[item]} 
@@ -190,13 +180,13 @@ const JobReview = () => {
             ))}
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-slate-100">
             <ActionButton 
               tone="primary" 
               disabled={!isAllChecked || submitting} 
               onClick={handleApprove}
             >
-              {submitting ? 'Processing...' : 'Approve'}
+              {submitting ? 'Đang xử lý...' : 'Phê duyệt'}
             </ActionButton>
             
             <ActionButton 
@@ -204,7 +194,7 @@ const JobReview = () => {
               disabled={submitting} 
               onClick={() => { setReason(''); setRejectOpen(true); }}
             >
-              Reject
+              Từ chối duyệt
             </ActionButton>
             
             <ActionButton 
@@ -212,22 +202,21 @@ const JobReview = () => {
               disabled={submitting} 
               onClick={() => { setReason(''); setBanOpen(true); }}
             >
-              Ban Job
+              Khóa tin vi phạm
             </ActionButton>
           </div>
         </SectionCard>
       </div>
 
-      {/* MODAL TỪ CHỐI DUYỆT (REJECT) */}
       {rejectOpen && (
         <ModalShell 
-          title="Reject Job Posting" 
+          title="Từ chối đăng tin" 
           onClose={() => setRejectOpen(false)} 
           footer={
             <>
-              <ActionButton onClick={() => setRejectOpen(false)}>Cancel</ActionButton>
+              <ActionButton onClick={() => setRejectOpen(false)}>Hủy</ActionButton>
               <ActionButton tone="danger" disabled={!reason || submitting} onClick={handleRejectSubmit}>
-                Confirm reject
+                Xác nhận từ chối
               </ActionButton>
             </>
           }
@@ -250,16 +239,15 @@ const JobReview = () => {
         </ModalShell>
       )}
 
-      {/* MODAL KHÓA TIN (BAN) */}
       {banOpen && (
         <ModalShell 
-          title="Ban Job (Violation Violation)" 
+          title="Khóa tin vi phạm nền tảng" 
           onClose={() => setBanOpen(false)} 
           footer={
             <>
-              <ActionButton onClick={() => setBanOpen(false)}>Cancel</ActionButton>
+              <ActionButton onClick={() => setBanOpen(false)}>Hủy</ActionButton>
               <ActionButton tone="danger" disabled={!reason || submitting} onClick={handleBanSubmit}>
-                Confirm ban
+                Xác nhận khóa
               </ActionButton>
             </>
           }

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
@@ -10,7 +10,6 @@ const STEPS = [
   'Yêu cầu ứng viên',
   'Quyền lợi',
   'Địa điểm & hạn nộp',
-  'Xem trước & gửi duyệt',
 ];
 
 const CreateEditJob = () => {
@@ -196,33 +195,35 @@ const [companyLocations, setCompanyLocations] = useState([]);
     return true;
   }, [form, step]);
 
-  const next = () => canNext && setStep((p) => Math.min(7, p + 1));
+  const next = () => canNext && setStep((p) => Math.min(6, p + 1));
   const prev = () => setStep((p) => Math.max(1, p - 1));
 
   // --- Chuẩn hóa Payload chuẩn cấu trúc Model trước khi API Call ---
   const preparePayload = () => {
-    const payload = { ...form };
-    
-    if (form.salaryType === 'NEGOTIABLE') {
-      payload.salary = { type: 'NEGOTIABLE' };
-    } else {
-      payload.salary = {
-        type: form.salaryType,
-        from: form.salaryFrom ? Number(form.salaryFrom) : undefined,
-        to: form.salaryTo ? Number(form.salaryTo) : undefined,
-      };
-    }
-    
-    // Vì form.workLocations lúc này ĐÃ LÀ cấu trúc dạng mảng object snapshot chuẩn 
-    // có đầy đủ text từ bộ chọn mới nên ta có thể gửi trực tiếp sang backend, không cần map() thủ công qua FIXED_LOCATIONS nữa.
-    
-    // Loại bỏ các trường phục vụ giao diện tính toán mức lương trước khi POST/PATCH
-    delete payload.salaryType;
-    delete payload.salaryFrom;
-    delete payload.salaryTo;
+  const payload = { ...form };
 
-    return payload;
-  };
+  if (form.salaryType === 'NEGOTIABLE') {
+    payload.salary = {
+      type: 'NEGOTIABLE',
+      minMillion: null,
+      maxMillion: null,
+      currency: 'VND',
+    };
+  } else {
+    payload.salary = {
+      type: form.salaryType,
+      minMillion: form.salaryFrom ? Number(form.salaryFrom) : null,
+      maxMillion: form.salaryTo ? Number(form.salaryTo) : null,
+      currency: 'VND',
+    };
+  }
+
+  delete payload.salaryType;
+  delete payload.salaryFrom;
+  delete payload.salaryTo;
+
+  return payload;
+};
 
   // --- Chức năng 1: Lưu Nháp (DRAFT) ---
   const handleSaveDraft = async () => {
@@ -271,7 +272,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4 opacity-100 transition-opacity">
+    <div className="space-y-6 max-w-[1600px] mx-auto p-4 opacity-100 transition-opacity">
       {/* Toast Message Báo lỗi / Thành công */}
       {message.text && (
         <div className={`fixed top-5 right-5 z-50 p-4 rounded-xl shadow-lg border text-white font-medium ${
@@ -287,18 +288,32 @@ const [companyLocations, setCompanyLocations] = useState([]);
           <h1 className="text-2xl font-bold text-slate-900">Tạo tin tuyển dụng mới</h1>
           <p className="text-slate-600 mt-1">Hoàn thành bảng thông tin động bên dưới để tiếp cận các ứng viên tiềm năng.</p>
         </div>
-        <button 
-          onClick={handleSaveDraft}
-          disabled={isLoading}
-          className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50 shadow-sm disabled:opacity-50"
-        >
-          {isLoading ? 'Đang xử lý...' : 'Lưu nháp hệ thống'}
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleSaveDraft}
+            disabled={isLoading}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50 shadow-sm disabled:opacity-50"
+          >
+            {isLoading ? 'Đang xử lý...' : 'Lưu nháp hệ thống'}
+          </button>
+          <button 
+            onClick={handlePublishJob}
+            disabled={isLoading || !canNext || step < 6}
+            className="px-5 py-2.5 rounded-xl border border-transparent bg-primary font-bold text-white hover:bg-primary/95 shadow-sm disabled:opacity-50 transition-all hover:shadow-lg hover:-translate-y-0.5"
+          >
+            {isLoading ? 'Đang gửi...' : 'Hoàn tất & Gửi duyệt'}
+          </button>
+        </div>
       </div>
 
+      {/* GRID LAYOUT CHIA ĐÔI */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Cột trái: Form */}
+        <div className="lg:col-span-7 space-y-6">
+
       {/* Khối hiển thị các bước dạng Tab trực quan trên cùng */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
+      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-4 shadow-sm">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
           {STEPS.map((label, idx) => {
             const current = idx + 1;
             const active = current === step;
@@ -307,7 +322,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
               <div 
                 key={label} 
                 className={`rounded-xl px-3 py-2.5 text-xs font-bold text-center border transition-all ${
-                  active ? 'bg-[#003f87] text-white border-[#003f87] shadow-sm' : 
+                  active ? 'bg-primary text-white border-primary shadow-sm' : 
                   done ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
                   'bg-slate-50 text-slate-500 border-slate-100'
                 }`}
@@ -320,7 +335,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
       </div>
 
       {/* Render các Form phân mảnh theo từng Step */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-h-[400px]">
+      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 shadow-sm min-h-[400px]">
         {step === 1 && (
           <StepBasicInfo 
             form={form} 
@@ -343,19 +358,6 @@ const [companyLocations, setCompanyLocations] = useState([]);
   companyLocations={companyLocations}
           />
         )}        
-        {step === 7 && (
-          <StepPreview 
-            form={form} 
-            isCompanyVerified={isCompanyVerified} 
-            careerGroups={careerGroups}
-            careers={careers}
-            positions={positions}
-            jobLevels={jobLevels}
-            experienceLevels={experienceLevels}
-            skills={skills}
-          />
-        )}
-
         {/* Footer Buttons xử lý chuyển bước nội bộ */}
         <div className="pt-6 mt-8 border-t border-slate-200 flex items-center justify-between">
           <button 
@@ -366,34 +368,46 @@ const [companyLocations, setCompanyLocations] = useState([]);
           </button>
           
           <div className="flex items-center gap-2">
-            {step < 7 ? (
+            {step < 6 ? (
               <button
                 onClick={next}
                 disabled={!canNext}
                 className={`px-6 py-2 rounded-xl font-semibold transition-all ${
-                  canNext ? 'bg-[#003f87] text-white hover:bg-[#0b4e9f]' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  canNext ? 'bg-primary text-white hover:bg-primary/95 hover:shadow-lg hover:-translate-y-0.5' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 }`}
               >
                 Tiếp tục
               </button>
             ) : (
-              <>
-                <button onClick={() => setStep(1)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold">Chỉnh sửa lại</button>
-                <button onClick={handleSaveDraft} disabled={isLoading} className="px-4 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-900 font-semibold disabled:opacity-50">Lưu nháp</button>
-                <button
-                  onClick={handlePublishJob}
-                  disabled={!isCompanyVerified || isLoading}
-                  className={`px-5 py-2 rounded-xl font-semibold text-white shadow-sm transition-all ${
-                    isCompanyVerified ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-400 text-amber-900 cursor-not-allowed'
-                  } disabled:opacity-50`}
-                >
-                  {isLoading ? 'Đang gửi...' : 'Gửi duyệt tin'}
-                </button>
-              </>
+              <button
+                onClick={handlePublishJob}
+                disabled={isLoading || !canNext}
+                className={`px-6 py-2 rounded-xl font-bold transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${
+                  canNext ? 'bg-primary text-white hover:bg-primary/95 hover:shadow-primary/20' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                Gửi duyệt
+              </button>
             )}
           </div>
         </div>
       </section>
+        </div>
+
+        {/* Cột phải: Live Preview Sticky */}
+        <div className="hidden lg:block lg:col-span-5 sticky top-6">
+          <StepPreview 
+            form={form} 
+            isCompanyVerified={isCompanyVerified} 
+            careerGroups={careerGroups}
+            careers={careers}
+            positions={positions}
+            jobLevels={jobLevels}
+            experienceLevels={experienceLevels}
+            skills={skills}
+          />
+        </div>
+      </div>
     </div>
   );
 };
@@ -514,7 +528,7 @@ const StepRequirements = ({ form, setField, skills, toggleMulti }) => (
                 type="button"
                 onClick={() => toggleMulti('skills', s._id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                  isSelected ? 'bg-[#003f87] text-white border-[#003f87]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                  isSelected ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {s.name}
@@ -604,7 +618,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
                   key={location._id}
                   className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-all ${
                     checked
-                      ? 'border-[#003f87] bg-blue-50'
+                      ? 'border-primary bg-blue-50'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
@@ -691,15 +705,21 @@ const StepPreview = ({ form, isCompanyVerified, careerGroups, careers, positions
   const locationLabels = form.workLocations.map(loc => loc.address || loc.provinceName).filter(Boolean);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-bold text-slate-900">Bước 7: Kiểm tra cấu trúc hiển thị tin tuyển dụng</h2>
+    <div className="space-y-4 bg-slate-50 p-5 rounded-3xl border-4 border-slate-200/50 shadow-inner max-h-[85vh] overflow-y-auto custom-scrollbar">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
+          Live Preview
+        </h2>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giao diện ứng viên</span>
+      </div>
       {!isCompanyVerified && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 text-sm font-medium">
-          🔒 Tài khoản doanh nghiệp chưa được hệ thống định danh. Vui lòng hoàn thành hồ sơ xác thực công ty để kích hoạt tính năng "Gửi duyệt".
+          🔒 Tài khoản doanh nghiệp chưa xác thực.
         </div>
       )}
 
-      <div className="rounded-2xl border-2 border-dashed border-slate-300 p-6 bg-white space-y-6 shadow-sm">
+      <div className="rounded-2xl border border-slate-200/60 p-6 bg-white space-y-6 premium-shadow">
         <div className="flex justify-between items-start gap-4 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
@@ -708,8 +728,11 @@ const StepPreview = ({ form, isCompanyVerified, careerGroups, careers, positions
             </div>
             <p className="text-sm font-semibold text-slate-500 mt-1">Phân loại danh mục: {groupLabel} ➜ {careerLabel} ({positionLabel})</p>
           </div>
-          <div className="text-right">
-            <span className="text-xs font-bold text-[#003f87] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">TRẠNG THÁI: BẢN NHÁP DRAFT</span>
+          <div className="text-right shrink-0">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+              BẢN NHÁP
+            </span>
           </div>
         </div>
 
@@ -756,7 +779,7 @@ const Field = ({ label, value, onChange, placeholder = '', required = false, typ
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none font-medium text-slate-800 transition-all text-sm focus:border-[#003f87] focus:ring-1 focus:ring-[#003f87]"
+      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none font-medium text-slate-800 transition-all text-sm focus:border-primary focus:ring-1 focus:ring-[#003f87]"
     />
   </div>
 );
@@ -770,7 +793,7 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-[#003f87] bg-white disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
+      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-primary bg-white disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
     >
       <option value="">-- Vui lòng click chọn --</option>
       {options.map((opt) => (
@@ -788,7 +811,7 @@ const TextArea = ({ label, value, onChange, required = false, placeholder = '' }
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full min-h-[120px] rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-[#003f87] whitespace-pre-line"
+      className="w-full min-h-[120px] rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-primary whitespace-pre-line"
       placeholder={placeholder}
     />
   </div>

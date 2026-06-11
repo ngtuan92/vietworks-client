@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import authService from '../../../services/authService';
 
 const LoginForm = () => {
@@ -67,7 +68,7 @@ const LoginForm = () => {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="ví dụ: ban@example.com"
           required
-          className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-[#003f87]"
+          className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary"
         />
       </div>
 
@@ -83,10 +84,10 @@ const LoginForm = () => {
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Nhập mật khẩu"
             required
-            className="w-full rounded-xl border border-slate-200 px-5 py-4 pr-12 text-base outline-none focus:border-[#003f87]"
+            className="w-full rounded-xl border border-slate-200 px-5 py-4 pr-12 text-base outline-none focus:border-primary"
           />
-          <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-3.5 text-slate-500">
-            <span className="material-symbols-outlined">{showPassword ? 'visibility' : 'visibility_off'}</span>
+          <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-4 top-4 text-slate-500 hover:text-primary transition-colors">
+            {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -96,12 +97,12 @@ const LoginForm = () => {
           <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
           <span>Ghi nhớ đăng nhập</span>
         </label>
-        <Link to="/forgot-password" className="text-[#003f87] font-medium hover:underline">
+        <Link to="/forgot-password" className="text-primary font-medium hover:underline">
           Quên mật khẩu?
         </Link>
       </div>
 
-      <button type="submit" className="w-full rounded-xl bg-[#003f87] text-white py-4 text-lg font-semibold hover:bg-[#0b4e9f]">
+      <button type="submit" className="w-full rounded-xl bg-primary text-white py-4 text-lg font-semibold hover:bg-primary/90">
         Đăng nhập
       </button>
     </form>

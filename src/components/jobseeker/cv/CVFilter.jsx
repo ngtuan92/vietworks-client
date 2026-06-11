@@ -1,4 +1,6 @@
 
+import { Info } from 'lucide-react';
+
 
 const CVFilter = ({ currentFilter = 'all', onFilterChange, counts = { all: 0, active: 0, draft: 0 } }) => {
   return (
@@ -36,7 +38,7 @@ const CVFilter = ({ currentFilter = 'all', onFilterChange, counts = { all: 0, ac
         </button>
       </div>
       <div className="flex items-center gap-stack-sm text-on-surface-variant font-body-sm">
-        <span className="material-symbols-outlined text-[18px]">info</span>
+        <Info className="w-5 h-5" />
         <span>Tối đa 5 CV được phép</span>
       </div>
     </div>

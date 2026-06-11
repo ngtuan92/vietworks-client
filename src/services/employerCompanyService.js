@@ -6,6 +6,10 @@ const employerCompanyService = {
     const response = await api.get('/employer/company/profile');
     return response.data;
   },
+  submitMyCompanyForVerification: async () => {
+  const response = await api.post('/employer/company/profile/submit-verification');
+  return response.data;
+},
 
   updateMyCompanyProfile: async ({
     name,

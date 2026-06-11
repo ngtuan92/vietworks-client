@@ -4,6 +4,21 @@ export const companyLocationService = {
     const response = await api.get('/employer/company/locations');
     return response.data;
   },
+getProvinces: async () => {
+    const response = await api.get('/provinces');
+    return response.data || []; 
+  },
+
+  // 2. Lấy thẳng danh sách Phường/Xã từ mã Tỉnh
+  getCommunes: async (provinceCode) => {
+    const response = await api.get(`/provinces/${provinceCode}/communes`);
+    return response.data || [];
+  },
+  // --- Các hàm quản lý địa điểm công ty cũ ---
+  getMyCompanyLocations: async () => {
+    const response = await api.get('/employer/company/locations');
+    return response.data;
+  },
   createMyCompanyLocation: async ({
     name,
     addressLine,
@@ -28,5 +43,9 @@ export const companyLocationService = {
     return response.data;
   }
 };
+
+
+
+
 
 export default companyLocationService;

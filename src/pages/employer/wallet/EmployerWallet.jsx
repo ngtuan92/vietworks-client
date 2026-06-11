@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { History } from 'lucide-react';
 
 const typeConfig = {
   DEPOSIT: { label: 'Nạp tiền', bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
@@ -124,37 +125,48 @@ const EmployerWallet = () => {
           </h2>
           <p className="text-sm text-[#5e5e62] mt-1">Quản lý số dư và giao dịch</p>
         </div>
-        <button
-          onClick={() => setShowDepositModal(true)}
+        <Link
+          to="/employer/wallet/top-up"
           className="bg-[#0056b3] text-white px-5 py-2 rounded-lg font-bold hover:bg-[#0056b3]/90 transition-all flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add_card</span>
           Nạp tiền
-        </button>
+        </Link>
       </div>
 
       {/* Balance Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gradient-to-br from-[#0056b3] to-blue-800 p-8 rounded-2xl text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div className="lg:col-span-2 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-400/20 blur-3xl -z-10 rounded-full" />
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl text-white relative overflow-hidden premium-shadow border border-slate-700/50 hover-3d transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+            
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/20 blur-3xl rounded-full translate-y-1/2 -translate-x-1/2"></div>
 
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="material-symbols-outlined text-blue-200">account_balance_wallet</span>
-              <span className="text-sm font-bold text-blue-200 uppercase tracking-wider">Số dư khả dụng</span>
-            </div>
-            {wallet && (
-            <p className="text-5xl font-black mb-6">{formatPrice(wallet.balance)}</p>
-          )}
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 rounded-xl px-4 py-2">
-                <p className="text-xs text-blue-200 font-bold uppercase">Đã nạp</p>
-                <p className="text-lg font-black">{formatPrice(totalDeposits)}</p>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <div className="w-12 h-9 bg-gradient-to-br from-amber-200 to-amber-500 rounded-md opacity-80 shadow-inner" />
+                <span className="font-bold text-slate-300 tracking-widest uppercase">VietWorks Business</span>
               </div>
-              <div className="bg-white/20 rounded-xl px-4 py-2">
-                <p className="text-xs text-blue-200 font-bold uppercase">Đã tiêu</p>
-                <p className="text-lg font-black">{formatPrice(totalSpent)}</p>
+              
+              <div className="mb-6">
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-widest block mb-2">Số dư khả dụng</span>
+                <p className="text-5xl font-black tracking-tight drop-shadow-lg">
+                  {wallet ? formatPrice(wallet.balance) : '0 đ'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-6 mt-8">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Tổng nạp</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatPrice(totalDeposits)}</p>
+                </div>
+                <div className="w-px h-8 bg-slate-700" />
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Tổng tiêu</p>
+                  <p className="text-lg font-bold text-slate-200">{formatPrice(totalSpent)}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -176,7 +188,7 @@ const EmployerWallet = () => {
               </button>
               <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left">
                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-indigo-600">history</span>
+                  <History className="w-5 h-5 text-slate-400" />
                 </div>
                 <div>
                   <p className="font-bold text-[#1b1c1c]">Lịch sử giao dịch</p>
@@ -245,10 +257,11 @@ const EmployerWallet = () => {
         </table>
       </div>
 
-      {/* Deposit Modal - SePay Checkout */}
+      {/* Deposit Drawer - SePay Checkout */}
       {showDepositModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <>
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity" onClick={handleCloseModal} />
+          <div className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-white shadow-2xl z-50 flex flex-col animate-slide-in">
             <div className="p-6 border-b border-[#c2c6d4] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
@@ -264,7 +277,7 @@ const EmployerWallet = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
               {!depositData ? (
                 <>
                   <div>
@@ -369,7 +382,7 @@ const EmployerWallet = () => {
               )}
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

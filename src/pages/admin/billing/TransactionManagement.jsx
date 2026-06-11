@@ -7,7 +7,7 @@ const TransactionManagement = () => {
   const [active, setActive] = useState(tabs[0]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise-in">
       <PageHeader title="Quản lý giao dịch" description="Theo dõi giao dịch immutable: Pending, Success, Failed; hỗ trợ đối soát thủ công." />
       <SectionCard>
         <Tabs tabs={tabs} active={active} onChange={setActive} />
@@ -44,3 +44,5 @@ const TransactionManagement = () => {
 };
 
 export default TransactionManagement;
+
+

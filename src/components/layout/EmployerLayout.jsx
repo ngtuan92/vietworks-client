@@ -4,7 +4,7 @@ import EmployerHeader from '../employer/dashboard/EmployerHeader';
 
 const EmployerLayout = () => {
   return (
-    <div className="bg-[#fbf9f8] text-gray-900 min-h-screen flex overflow-hidden">
+    <div className="bg-slate-50 text-gray-900 min-h-screen flex overflow-hidden">
       {/* Sidebar cố định */}
       <EmployerSidebar />
 

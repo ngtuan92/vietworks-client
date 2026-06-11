@@ -9,7 +9,7 @@ const PaymentResult = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-slate-200 rounded-2xl p-6">
+      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6">
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${success ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
             <span className="material-symbols-outlined text-3xl">{success ? 'check_circle' : 'cancel'}</span>
@@ -30,7 +30,7 @@ const PaymentResult = () => {
           <Link to="/employer/wallet" className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50">
             Quay lại ví
           </Link>
-          <Link to="/employer/transactions" className="px-4 py-2 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
+          <Link to="/employer/transactions" className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
             Xem lịch sử giao dịch
           </Link>
         </div>

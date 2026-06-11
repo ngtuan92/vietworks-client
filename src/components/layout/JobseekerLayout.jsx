@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import useAuth from '../../hooks/useAuth';
+import { Handshake } from 'lucide-react';
 
 const JobseekerLayout = () => {
   const navigate = useNavigate();
@@ -26,11 +27,11 @@ const JobseekerLayout = () => {
 
       {/* Banner cập nhật nhu cầu công việc - chỉ hiện với Jobseeker đã đăng nhập */}
       {isAuthenticated && isJobseeker && location.pathname !== '/job-preferences' && (
-        <div className="bg-[#003f87]">
+        <div className="bg-primary">
           <div className="max-w-[900px] mx-auto px-gutter py-2.5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-white text-base">handshake</span>
+                <Handshake className="text-white w-4 h-4" />
               </div>
               <p className="text-white text-sm">
                 Hãy chia sẻ nhu cầu công việc để nhận gợi ý việc làm tốt nhất
