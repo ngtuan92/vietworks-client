@@ -49,8 +49,17 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
-    await logout();
-    navigate('/');
+    confirm(
+      'Bạn có chắc chắn muốn đăng xuất?',
+      async () => {
+        await logout();
+        navigate('/', { replace: true });
+      },
+      null,
+      'Xác nhận đăng xuất',
+      'Đăng xuất',
+      'Hủy'
+    );
   };
 
   const handleAccountSettings = () => {

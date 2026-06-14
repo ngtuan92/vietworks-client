@@ -2,6 +2,7 @@ import { LayoutDashboard, ChevronDown, Building2, Briefcase, Users, Wallet, Mess
 import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+import { useNotification } from '../../../contexts/NotificationContext';
 import logoImg from '../../../assets/logo.png';
 
 const navItems = [
@@ -65,7 +66,7 @@ const EmployerSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-
+  const { confirm } = useNotification();
   const isActive = (to) => {
     if (!to) return false;
     if (to.includes('?')) {
@@ -91,8 +92,17 @@ const EmployerSidebar = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    await logout();
-    navigate('/employer/login');
+    confirm(
+      'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nhà tuyển dụng?',
+      async () => {
+        await logout();
+        navigate('/employer/login', { replace: true });
+      },
+      null,
+      'Xác nhận đăng xuất',
+      'Đăng xuất',
+      'Hủy'
+    );
   };
 
   return (

@@ -2,6 +2,7 @@ import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, Fi
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
+import { useNotification } from '../../../contexts/NotificationContext';
 import logoImg from '../../../assets/logo.png';
 
 const iconClass = 'w-5 h-5';
@@ -88,8 +89,10 @@ const navItems = [
 ];
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const { confirm } = useNotification();
 
   const isActive = (to) => {
     if (!to) return false;
@@ -113,8 +116,17 @@ const AdminSidebar = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    confirm(
+      'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản quản trị?',
+      async () => {
+        await logout();
+        navigate('/login', { replace: true });
+      },
+      null,
+      'Xác nhận đăng xuất',
+      'Đăng xuất',
+      'Hủy'
+    );
   };
 
   return (

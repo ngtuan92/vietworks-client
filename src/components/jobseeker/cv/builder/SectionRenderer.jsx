@@ -2,20 +2,27 @@ import React from 'react';
 import { User, UploadCloud, Trash2, Plus } from 'lucide-react';
 
 const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, placeholder }) => {
+  const displayClass = className && (className.includes('block') || className.includes('inline') || className.includes('flex')) ? '' : 'inline-block';
   return (
     <Tag
-      className={`outline-none border border-transparent hover:border-gray-300 hover:bg-gray-50 hover:!text-gray-900 focus:border-blue-500 focus:bg-white focus:!text-gray-900 focus:ring-1 focus:ring-blue-500 rounded px-1 transition-all min-h-[1.5em] empty:before:content-[attr(placeholder)] empty:before:text-gray-400 ${className || ''}`}
+      className={`outline-none border border-transparent hover:border-dashed hover:border-gray-300 rounded px-1 transition-all min-h-[1.5em] min-w-[30px] ${displayClass} focus:border-solid focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 empty:before:content-[attr(placeholder)] empty:before:text-gray-400/70 ${className || ''}`}
       style={style}
       contentEditable
       suppressContentEditableWarning
       onBlur={(e) => onChange(e.currentTarget.innerHTML)}
+      onPaste={(e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+      }}
       dangerouslySetInnerHTML={{ __html: html }}
       placeholder={placeholder}
     />
   );
 };
 
-export const renderSection = (section, style, onUpdate, columnContext, layoutCode, isContinuation) => {
+
+export const renderSection = (section, style, onUpdate, columnContext, layoutCode, isContinuation, onStyleChange, openCropModal) => {
   const code = section.sectionCode;
   const items = section.items || [];
   
@@ -174,30 +181,42 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
             {style.avatarShape !== 'hidden' && (
               <div className="relative group/avatar shrink-0">
                 <div 
-                  className={`w-16 h-16 bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner ${
+                  className={`w-16 h-16 bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${
                     style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
                   }`}
+                  title="Click để tải ảnh đại diện lên"
                 >
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={profile.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <User className="w-5 h-5 text-white/80"  />
                   )}
                   <label 
                     data-html2canvas-ignore="true"
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                    title="Click để tải ảnh đại diện lên"
                   >
                     <UploadCloud className="text-white w-5 h-5"  />
                     <input 
                       type="file" 
                       accept="image/*" 
                       className="sr-only" 
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = () => {
-                            updateItem(0, 'avatar', reader.result);
+                            if (openCropModal) {
+                              openCropModal(reader.result, (croppedBase64) => {
+                                updateItem(0, 'avatar', croppedBase64);
+                              });
+                            } else {
+                              updateItem(0, 'avatar', reader.result);
+                            }
                           };
                           reader.readAsDataURL(file);
                         }
@@ -217,31 +236,43 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
             {style.avatarShape !== 'hidden' && (
               <div className="relative group/avatar shrink-0 mb-4">
                 <div 
-                  className={`w-20 h-20 bg-gray-100 border flex items-center justify-center overflow-hidden relative shadow-inner ${
+                  className={`w-20 h-20 bg-gray-100 border flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${
                     style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'
                   }`}
                   style={{ borderColor: `${style.themeColorId}20` }}
+                  title="Click để tải ảnh đại diện lên"
                 >
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={profile.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <User className="w-5 h-5 text-gray-400"  />
                   )}
                   <label 
                     data-html2canvas-ignore="true"
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                    title="Click để tải ảnh đại diện lên"
                   >
                     <UploadCloud className="text-white w-5 h-5"  />
                     <input 
                       type="file" 
                       accept="image/*" 
                       className="sr-only" 
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = () => {
-                            updateItem(0, 'avatar', reader.result);
+                            if (openCropModal) {
+                              openCropModal(reader.result, (croppedBase64) => {
+                                updateItem(0, 'avatar', croppedBase64);
+                              });
+                            } else {
+                              updateItem(0, 'avatar', reader.result);
+                            }
                           };
                           reader.readAsDataURL(file);
                         }
@@ -303,13 +334,18 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
           {style.avatarShape !== 'hidden' && layoutCode !== 'harvard-classic' && layoutCode !== 'harvard-gsas' && (
             <div className={`relative group/avatar shrink-0 ${isLeft ? 'mx-auto' : 'mx-auto sm:mx-0'}`}>
               <div 
-                className={`w-16 h-16 bg-gray-200 border flex items-center justify-center overflow-hidden relative shadow-inner ${
+                className={`w-16 h-16 bg-gray-200 border flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${
                   style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
                 }`}
                 style={{ borderColor: isLeft ? 'rgba(255,255,255,0.2)' : `${style.themeColorId}20` }}
+                title="Click để tải ảnh đại diện lên"
               >
                 {profile.avatar ? (
-                  <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  <img 
+                    src={profile.avatar} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <User className="w-5 h-5"  style={{ color: isLeft ? '#ffffffaa' : '#9ca3af' }} />
                 )}
@@ -317,18 +353,25 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 <label 
                   data-html2canvas-ignore="true"
                   className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                  title="Click để tải ảnh đại diện lên"
                 >
                   <UploadCloud className="text-white w-5 h-5"  />
                   <input 
                     type="file" 
                     accept="image/*" 
                     className="sr-only" 
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files[0];
                       if (file) {
                         const reader = new FileReader();
                         reader.onload = () => {
-                          updateItem(0, 'avatar', reader.result);
+                          if (openCropModal) {
+                            openCropModal(reader.result, (croppedBase64) => {
+                              updateItem(0, 'avatar', croppedBase64);
+                            });
+                          } else {
+                            updateItem(0, 'avatar', reader.result);
+                          }
                         };
                         reader.readAsDataURL(file);
                       }
@@ -708,6 +751,104 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
               </button>
             )}
           </div>
+        </div>
+      );
+
+    case 'AWARDS':
+      return (
+        <div className={marginClass}>
+          <SectionHeader title="Giải Thưởng" />
+          <div className={itemGapClass}>
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className="relative group/item flex justify-between items-center py-0.5">
+                  <EditableText className={`font-semibold ${bodySize}`} style={{ color: textColor }} html={item.name || 'Tên giải thưởng'} onChange={v => updateItem(i, 'name', v)} />
+                  <EditableText className={`${bodySize} font-medium italic`} style={{ color: subtextColor }} html={item.date || 'Thời gian'} onChange={v => updateItem(i, 'date', v)} />
+                  
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -left-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
+                </div>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ name: 'Tên giải thưởng', date: 'Thời gian' })} 
+                className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">add</span> Thêm giải thưởng
+              </button>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'INTERESTS':
+      return (
+        <div className={marginClass}>
+          <SectionHeader title="Sở Thích" />
+          <div className="flex flex-wrap gap-1.5">
+            {items.map((item, i) => {
+              if (section.renderItemRange) {
+                const [start, end] = section.renderItemRange;
+                if (i < start || i >= end) return null;
+              }
+              return (
+                <div key={i} className="relative group/item">
+                  <EditableText 
+                    className={`px-2 py-0.5 rounded ${bodySize} font-medium border transition-colors ${
+                      isLeft 
+                        ? 'bg-white/10 hover:bg-white/20 border-white/10 text-white' 
+                        : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                    }`} 
+                    style={{ color: textColor }} 
+                    html={item.name || 'Sở thích'} 
+                    onChange={v => updateItem(i, 'name', v)} 
+                  />
+                  <button 
+                    data-html2canvas-ignore="true"
+                    onClick={() => removeItem(i)} 
+                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover/item:opacity-100 text-[10px] shadow transition-opacity"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+            {(!section.renderItemRange || section.renderItemRange[1] === items.length) && (
+              <button 
+                data-html2canvas-ignore="true"
+                onClick={() => addItem({ name: 'Sở thích mới' })} 
+                className={`px-2 py-0.5 rounded ${bodySize} border border-dashed flex items-center gap-0.5 ${isLeft ? 'border-white/40 text-white/70 hover:bg-white/5' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}
+              >
+                + Thêm
+              </button>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'ADDITIONAL_INFO':
+      const info = items[0] || { summary: 'Nhập thông tin thêm...' };
+      return (
+        <div className={marginClass}>
+          {layoutCode !== 'harvard-gsas' && <SectionHeader title="Thông Tin Thêm" />}
+          <EditableText 
+            className={`${bodySize} leading-relaxed`} 
+            style={{ color: textColor }}
+            html={info.summary} 
+            onChange={v => updateItem(0, 'summary', v)} 
+            placeholder="Nhập thông tin thêm..."
+          />
         </div>
       );
 

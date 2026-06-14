@@ -60,6 +60,9 @@ export const BuilderToolbar = ({
   const [templates, setTemplates] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
 
+  const profileSection = sections.find(s => s.sectionCode === 'PROFILE');
+  const hasAvatar = profileSection?.items[0]?.avatar;
+
   // Fetch templates when 'templates' tab is opened
   useEffect(() => {
     if (activeTab === 'templates' && templates.length === 0) {
@@ -347,6 +350,8 @@ export const BuilderToolbar = ({
                   ))}
                 </div>
               </div>
+
+
             </div>
           )}
 
