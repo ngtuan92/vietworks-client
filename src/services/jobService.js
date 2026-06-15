@@ -47,6 +47,14 @@ export const submitJobForReview = async (jobId) => {
 };
 
 /**
+ * Đóng job (chỉ cho phép khi đang là PUBLISHED)
+ */
+export const closeJob = async (jobId) => {
+  const response = await api.post(`/jobs/${jobId}/close`);
+  return response.data;
+};
+
+/**
  * Xóa job (chỉ cho phép khi đang là DRAFT)
  */
 export const deleteJob = async (jobId) => {
@@ -264,6 +272,7 @@ export default {
   createJob,
   updateJob,
   submitJobForReview,
+  closeJob,
   deleteJob,
   getCareerGroups,
   getCareersByGroup,
