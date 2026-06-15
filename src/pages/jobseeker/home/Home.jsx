@@ -1,48 +1,53 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from '../../../components/jobseeker/home/Hero';
 import JobGrid from '../../../components/jobseeker/jobs/JobGrid';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { getPublicJobs } from '../../../services/jobService';
+import { getPublicCompanies } from '../../../services/jobseekerService';
 import { Heart, UserPlus, ShieldCheck, MessageCircle } from 'lucide-react';
 
-const featuredJobs = [
-  {
-    id: 1,
-    title: 'Senior Backend Engineer (Node.js)',
-    company: 'TechNova Solutions',
-    location: 'Hồ Chí Minh',
-    salary: '35 - 50 triệu',
-    badge: 'Nổi bật',
-  },
-  {
-    id: 2,
-    title: 'Product Designer (UI/UX)',
-    company: 'BrightSide Creative',
-    location: 'Đà Nẵng',
-    salary: '25 - 35 triệu',
-    badge: 'GẤP',
-  },
-  {
-    id: 3,
-    title: 'Digital Marketing Lead',
-    company: 'FinTrust Group',
-    location: 'Hà Nội',
-    salary: 'Thỏa thuận',
-    badge: 'Top Employer',
-  },
-];
+const formatSalary = (salary) => {
+  if (!salary || salary.type === 'NEGOTIABLE') return 'Thỏa thuận';
+  if (salary.minMillion && salary.maxMillion) return `${salary.minMillion} - ${salary.maxMillion} triệu`;
+  if (salary.minMillion) return `Từ ${salary.minMillion} triệu`;
+  if (salary.maxMillion) return `Đến ${salary.maxMillion} triệu`;
+  return 'Thỏa thuận';
+};
 
-const featuredCompanies = [
-  { id: 1, name: 'TechNova Solutions', industry: 'Công nghệ', openings: 24 },
-  { id: 2, name: 'FinTrust Group', industry: 'Tài chính - Ngân hàng', openings: 12 },
-  { id: 3, name: 'BrightSide Creative', industry: 'Thiết kế - Sáng tạo', openings: 8 },
-  { id: 4, name: 'GreenLogistics', industry: 'Logistics', openings: 10 },
-];
+const formatJobLocation = (job) => {
+  const first = job.workLocations?.[0];
+  return (
+    first?.address ||
+    [first?.districtName, first?.provinceName].filter(Boolean).join(', ') ||
+    'Không xác định'
+  );
+};
+
+const getJobBadge = (job) => {
+  if (job.isUrgent) return 'GẤP';
+  if (job.premium?.isActive) return 'Nổi bật';
+  return 'Mới';
+};
 
 const Home = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { confirm } = useNotification();
+
+  const [featuredJobs, setFeaturedJobs] = useState([]);
+  const [featuredCompanies, setFeaturedCompanies] = useState([]);
+
+  useEffect(() => {
+    getPublicJobs({ limit: 3, sortBy: 'publishedAt', sortOrder: 'desc' })
+      .then((res) => setFeaturedJobs(res.data || []))
+      .catch(() => setFeaturedJobs([]));
+
+    getPublicCompanies({ limit: 4 })
+      .then((res) => setFeaturedCompanies(res.data || []))
+      .catch(() => setFeaturedCompanies([]));
+  }, []);
 
   const goProtected = (path) => {
     if (!isAuthenticated) {
@@ -80,25 +85,29 @@ const Home = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featuredJobs.map((job) => (
-                <button
-                  key={job.id}
-                  onClick={() => navigate('/jobs')}
-                  className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
-                >
-                  <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                    {job.badge}
-                  </span>
-                  <h3 className="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">{job.title}</h3>
-                  <p className="mt-1 text-slate-600">{job.company}</p>
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-slate-500">{job.location}</span>
-                    <span className="font-semibold text-primary">{job.salary}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {featuredJobs.length === 0 ? (
+              <p className="text-slate-500">Chưa có việc làm nổi bật.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {featuredJobs.map((job) => (
+                  <button
+                    key={job._id}
+                    onClick={() => navigate(`/jobs/${job._id}`)}
+                    className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
+                  >
+                    <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                      {getJobBadge(job)}
+                    </span>
+                    <h3 className="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">{job.title}</h3>
+                    <p className="mt-1 text-slate-600">{job.companyId?.name || 'Công ty'}</p>
+                    <div className="mt-4 flex items-center justify-between text-sm">
+                      <span className="text-slate-500">{formatJobLocation(job)}</span>
+                      <span className="font-semibold text-primary">{formatSalary(job.salary)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -151,22 +160,30 @@ const Home = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {featuredCompanies.map((company) => (
-                <button
-                  key={company.id}
-                  onClick={() => navigate(`/companies/${company.id}`)}
-                  className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/5 text-primary font-bold flex items-center justify-center">
-                    {company.name.charAt(0)}
-                  </div>
-                  <h3 className="mt-3 text-base font-semibold text-slate-900">{company.name}</h3>
-                  <p className="mt-1 text-sm text-slate-500">{company.industry}</p>
-                  <p className="mt-3 text-sm font-medium text-primary">{company.openings} vị trí đang tuyển</p>
-                </button>
-              ))}
-            </div>
+            {featuredCompanies.length === 0 ? (
+              <p className="text-slate-500">Chưa có công ty nào.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {featuredCompanies.map((company) => (
+                  <button
+                    key={company._id}
+                    onClick={() => navigate(`/companies/${company._id}`)}
+                    className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-primary/5 text-primary font-bold flex items-center justify-center overflow-hidden">
+                      {company.avatarUrl ? (
+                        <img src={company.avatarUrl} alt={company.name} className="w-full h-full object-cover" />
+                      ) : (
+                        company.name.charAt(0)
+                      )}
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold text-slate-900 line-clamp-1">{company.name}</h3>
+                    <p className="mt-1 text-sm text-slate-500">{company.industryId?.name || 'Đa lĩnh vực'}</p>
+                    <p className="mt-3 text-sm font-medium text-primary">{company.followersCount || 0} người theo dõi</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
