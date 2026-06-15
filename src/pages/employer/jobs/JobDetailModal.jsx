@@ -346,6 +346,17 @@ workLocations: Array.isArray(loadedJob.workLocations)
     }
   };
 
+  const handleCloseJob = async () => {
+    if (!window.confirm('Bạn có chắc muốn đóng tin tuyển dụng này? Job sẽ không còn hiển thị công khai.')) return;
+    try {
+      await jobService.closeJob(jobId);
+      alert('Đóng tin tuyển dụng thành công!');
+      onSuccess();
+    } catch (error) {
+      alert('Không thể đóng job: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   if (loading) return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-2xl shadow-xl">Đang liên kết dữ liệu danh mục hệ thống...</div>
@@ -767,6 +778,16 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               className="px-4 py-2 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600"
             >
               Gửi xét duyệt luôn
+            </button>
+          )}
+
+          {/* Nút đóng job CHỈ hiện khi tin ở trạng thái PUBLISHED */}
+          {job?.status === 'PUBLISHED' && (
+            <button 
+              onClick={handleCloseJob} 
+              className="px-4 py-2 text-sm font-semibold text-white bg-slate-700 rounded-xl hover:bg-slate-800"
+            >
+              Đóng job
             </button>
           )}
         </div>

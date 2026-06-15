@@ -13,7 +13,7 @@ const tabs = [
 ];
 
 const CompanyDetail = () => {
-  const { companyId } = useParams();
+  const { id: companyId } = useParams();
   const [active, setActive] = useState(tabs[0]);
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(false);

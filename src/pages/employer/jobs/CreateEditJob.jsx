@@ -47,6 +47,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
     applyInstruction: 'Ứng viên nộp hồ sơ trực tuyến bằng cách bấm trực tiếp vào nút Ứng tuyển.',
     deadline: '',
     isUrgent: false,
+    applicationCount: '',
   });
   useEffect(() => {
   const fetchCompanyLocations = async () => {
@@ -188,7 +189,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
       return Boolean(form.benefits);
     }
     if (step === 6) {
-      if (!form.deadline || form.workLocations.length === 0 || !form.applyInstruction) return false;
+      if (!form.deadline || form.workLocations.length === 0 || !form.applyInstruction || !form.applicationCount) return false;
       const today = new Date().setHours(0, 0, 0, 0);
       return new Date(form.deadline) >= today;
     }
@@ -201,7 +202,6 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // --- Chuẩn hóa Payload chuẩn cấu trúc Model trước khi API Call ---
   const preparePayload = () => {
   const payload = { ...form };
-
   if (form.salaryType === 'NEGOTIABLE') {
     payload.salary = {
       type: 'NEGOTIABLE',
@@ -672,7 +672,24 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           ⚠️ Lỗi: Ngày hết hạn không hợp lệ (không thể chọn ngày trong quá khứ).
         </p>
       ) : null}
+{/* ◄ THÊM Ô NHẬP LỆU APPLICATION COUNT VÀO ĐÂY */}
+      <div className="max-w-xs pt-2">
+        <Field
+          label="Số lượng hồ sơ tối đa / Số lượng ứng tuyển ban đầu"
+          required
+          type="number"
+          placeholder="Ví dụ: 50"
+          value={form.applicationCount}
+          onChange={(v) => setField('applicationCount', v)}
+        />
+      </div>
 
+      <TextArea
+        label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
+        required
+        value={form.applyInstruction}
+        onChange={(v) => setField('applyInstruction', v)}
+      />
       <TextArea
         label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
         required
