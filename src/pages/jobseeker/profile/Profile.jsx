@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { User, Lock, Bell, LayoutDashboard, FileText, CheckSquare, Heart, ThumbsUp, EyeOff, Award, Shield, Camera, Loader2, Smartphone, Mail } from 'lucide-react';
 import authService from '../../../services/authService';
 import jobseekerProfileService from '../../../services/jobseekerProfileService';
+import useAuth from '../../../hooks/useAuth';
 
 
 const accountStatusLabel = {
@@ -153,6 +154,7 @@ const ProfileNav = ({ activeTab, setActiveTab }) => {
 };
 
 const Overview = ({ profile, setProfile }) => {
+  const { updateUser } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
 
@@ -166,6 +168,11 @@ const Overview = ({ profile, setProfile }) => {
       });
       if (res.success) {
         setProfile((prev) => ({ ...prev, ...res.data }));
+        // Đồng bộ tên/SĐT vào auth store để topbar (Navbar) cập nhật ngay
+        updateUser({
+          fullName: res.data.fullName ?? profile.fullName,
+          phone: res.data.phone ?? profile.phone,
+        });
         setStatusMsg({ text: 'Cập nhật thông tin cá nhân thành công!', type: 'success' });
       } else {
         setStatusMsg({ text: res.message || 'Cập nhật thất bại.', type: 'error' });
