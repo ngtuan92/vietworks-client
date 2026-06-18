@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getProvinces } from 'sub-vn';
 import JobCard from '../../../components/jobseeker/jobs/JobCard';
 import { Search, MapPin } from 'lucide-react';
 import {
@@ -8,13 +9,20 @@ import {
   getExperienceLevels,
   getJobLevels,
   getPublicJobs,
+  getSalaryRanges,
 } from '../../../services/jobService';
 
+// Bỏ tiền tố "Thành phố" / "Tỉnh" / "TP." để chỉ hiển thị tên địa điểm
+const stripPrefix = (name = '') =>
+  name.replace(/^(thành phố|tỉnh|tp\.?)\s+/i, '').trim();
+
+// Danh sách tỉnh/thành Việt Nam offline từ sub-vn (chỉ hiện tên, không kèm "Thành phố"/"Tỉnh")
 const locationOptions = [
   { value: '', label: 'Tất cả địa điểm' },
-  { value: 'Hồ Chí Minh', label: 'Hồ Chí Minh' },
-  { value: 'Hà Nội', label: 'Hà Nội' },
-  { value: 'Đà Nẵng', label: 'Đà Nẵng' },
+  ...(getProvinces() || []).map((p) => {
+    const shortName = stripPrefix(p.name);
+    return { value: shortName, label: shortName };
+  }),
 ];
 
 const saturdayOptions = [
@@ -100,6 +108,7 @@ const Jobs = () => {
   const [careerId, setCareerId] = useState('');
   const [experienceLevelId, setExperienceLevelId] = useState('');
   const [jobLevelId, setJobLevelId] = useState('');
+  const [salaryRangeCode, setSalaryRangeCode] = useState('');
   const [salaryMin, setSalaryMin] = useState('');
   const [salaryMax, setSalaryMax] = useState('');
   const [saturdayPolicy, setSaturdayPolicy] = useState('');
@@ -115,6 +124,7 @@ const Jobs = () => {
   const [careers, setCareers] = useState([]);
   const [experienceLevels, setExperienceLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
+  const [salaryRanges, setSalaryRanges] = useState([]);
 
   const page = Number(getParam(searchParams, 'page', '1')) || 1;
 
@@ -125,6 +135,7 @@ const Jobs = () => {
     setCareerId(getParam(searchParams, 'careerId'));
     setExperienceLevelId(getParam(searchParams, 'experienceLevelId'));
     setJobLevelId(getParam(searchParams, 'jobLevelId'));
+    setSalaryRangeCode(getParam(searchParams, 'salaryRangeCode'));
     setSalaryMin(getParam(searchParams, 'salaryMin'));
     setSalaryMax(getParam(searchParams, 'salaryMax'));
     setSaturdayPolicy(getParam(searchParams, 'saturdayPolicy'));
@@ -135,15 +146,17 @@ const Jobs = () => {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const [groupsRes, expRes, levelsRes] = await Promise.all([
+        const [groupsRes, expRes, levelsRes, salaryRes] = await Promise.all([
           getCareerGroups(),
           getExperienceLevels(),
           getJobLevels(),
+          getSalaryRanges(),
         ]);
 
         setCareerGroups(groupsRes.data || []);
         setExperienceLevels(expRes.data || []);
         setJobLevels(levelsRes.data || []);
+        setSalaryRanges(salaryRes.data || []);
       } catch (err) {
         console.error('Load public job filters error:', err);
       }
@@ -270,6 +283,7 @@ const Jobs = () => {
     setCareerId('');
     setExperienceLevelId('');
     setJobLevelId('');
+    setSalaryRangeCode('');
     setSalaryMin('');
     setSalaryMax('');
     setSaturdayPolicy('');
@@ -279,6 +293,7 @@ const Jobs = () => {
       careerId: '',
       experienceLevelId: '',
       jobLevelId: '',
+      salaryRangeCode: '',
       salaryMin: '',
       salaryMax: '',
       saturdayPolicy: '',
@@ -405,12 +420,39 @@ const Jobs = () => {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Khoảng lương triệu VND
                 </label>
+                <select
+                  value={salaryRangeCode}
+                  onChange={(event) => {
+                    const code = event.target.value;
+                    setSalaryRangeCode(code);
+                    if (code) {
+                      const matched = salaryRanges.find((r) => r.code === code);
+                      if (matched) {
+                        setSalaryMin(matched.minMillion != null ? String(matched.minMillion) : '');
+                        setSalaryMax(matched.maxMillion != null ? String(matched.maxMillion) : '');
+                      }
+                    }
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary mb-2"
+                >
+                  <option value="">Chọn khoảng lương...</option>
+                  {salaryRanges
+                    .filter((r) => r.code !== 'NEGOTIABLE')
+                    .map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.name}
+                      </option>
+                    ))}
+                </select>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     min="0"
                     value={salaryMin}
-                    onChange={(event) => setSalaryMin(event.target.value)}
+                    onChange={(event) => {
+                      setSalaryMin(event.target.value);
+                      setSalaryRangeCode('');
+                    }}
                     placeholder="Từ"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
                   />
@@ -418,7 +460,10 @@ const Jobs = () => {
                     type="number"
                     min="0"
                     value={salaryMax}
-                    onChange={(event) => setSalaryMax(event.target.value)}
+                    onChange={(event) => {
+                      setSalaryMax(event.target.value);
+                      setSalaryRangeCode('');
+                    }}
                     placeholder="Đến"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
                   />
