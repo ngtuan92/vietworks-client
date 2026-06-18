@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Eye, FileText, Loader2, Search, X } from 'lucide-react';
 import atsService from '../../../services/atsService';
@@ -183,30 +183,63 @@ const JobApplications = () => {
 };
 
 const CvPreviewModal = ({ item, onClose, previewUrl, loading }) => (
-  <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="w-full max-w-5xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-      <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="text-lg font-bold text-slate-900 truncate">Preview CV - {item.candidateName}</h3>
-          <p className="text-sm text-slate-500 truncate">{item.cvName || 'CV ứng tuyển'}</p>
+  <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+    <div className="w-full max-w-5xl h-full max-h-[90vh] bg-white rounded-[2rem] shadow-2xl border border-slate-200/60 overflow-hidden flex flex-col transform scale-100 animate-in zoom-in-95 duration-200">
+      
+      {/* Header */}
+      <div className="px-6 py-4 md:px-8 md:py-5 border-b border-slate-100 flex items-center justify-between gap-4 bg-gradient-to-r from-white to-slate-50">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-primary flex items-center justify-center shrink-0 border border-blue-100/50 shadow-sm">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-xl font-bold text-slate-900 truncate tracking-tight">{item.candidateName}</h3>
+            <p className="text-sm font-medium text-slate-500 truncate mt-0.5">{item.cvName || 'CV ứng tuyển'}</p>
+          </div>
         </div>
-        <button onClick={onClose} className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={onClose} className="w-11 h-11 rounded-2xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors shadow-sm">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-slate-50 p-5">
+      {/* Body */}
+      <div className="flex-1 overflow-hidden bg-slate-100/50 p-4 md:p-6 relative">
         {loading ? (
-          <div className="h-[72vh] rounded-2xl border border-slate-200 bg-white flex items-center justify-center text-slate-500">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Đang tải CV...
+          <div className="w-full h-full rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-sm shadow-sm flex flex-col items-center justify-center text-slate-500 gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-primary shadow-inner">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-slate-700 text-lg">Đang tải CV</p>
+              <p className="text-sm text-slate-500 mt-1">Vui lòng chờ trong giây lát...</p>
+            </div>
           </div>
         ) : previewUrl ? (
-          <object data={previewUrl} type="application/pdf" className="w-full h-[72vh] rounded-2xl border border-slate-200 bg-white">
-            <embed src={previewUrl} type="application/pdf" className="w-full h-[72vh] rounded-2xl border border-slate-200 bg-white" />
-            <div className="p-6 text-center text-slate-500">Trình duyệt không preview được file CV này trực tiếp.</div>
-          </object>
+          <div className="w-full h-full rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden relative">
+            <object data={previewUrl} type="application/pdf" className="w-full h-full">
+              <embed src={previewUrl} type="application/pdf" className="w-full h-full" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-50">
+                <div className="w-20 h-20 rounded-full bg-slate-200/50 flex items-center justify-center mb-4">
+                  <FileText className="w-10 h-10 text-slate-400" />
+                </div>
+                <p className="font-bold text-slate-700 text-lg">Không thể xem trực tiếp CV</p>
+                <p className="text-sm text-slate-500 mt-2 max-w-md">Trình duyệt của bạn không hỗ trợ xem PDF trực tiếp hoặc file bị lỗi. Bạn có thể mở sang một tab mới để xem.</p>
+                <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="mt-6 px-6 py-3 rounded-xl bg-primary text-white font-semibold shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                  Mở trong thẻ mới
+                </a>
+              </div>
+            </object>
+          </div>
         ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-6 text-center text-slate-500">Không có dữ liệu CV để preview.</div>
+          <div className="w-full h-full rounded-2xl border border-slate-200/60 bg-white shadow-sm flex items-center justify-center flex-col gap-3">
+             <div className="w-20 h-20 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 mb-2">
+                <FileText className="w-8 h-8" />
+             </div>
+             <p className="font-semibold text-slate-600 text-lg">Không có dữ liệu CV</p>
+             <p className="text-sm text-slate-400">Không tìm thấy file đính kèm của ứng viên này.</p>
+          </div>
         )}
       </div>
     </div>
