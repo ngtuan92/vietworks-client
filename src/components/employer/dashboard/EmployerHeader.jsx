@@ -1,7 +1,10 @@
 import { Wallet, Plus, Bell, ShieldAlert, ChevronDown } from 'lucide-react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const EmployerHeader = () => {
+  const navigate = useNavigate();
+
   return (
     <header className="h-20 flex-shrink-0 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-8 z-40 sticky top-0 transition-all flex items-center justify-between">
       {/* Left: Company info */}
@@ -38,7 +41,7 @@ const EmployerHeader = () => {
         </div>
 
         {/* Notification bell */}
-        <button className="relative rounded-full p-2.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-95 border border-transparent hover:border-slate-200">
+        <button type="button" onClick={() => navigate('/employer/notifications')} className="relative rounded-full p-2.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-95 border border-transparent hover:border-slate-200">
           <Bell className="w-5 h-5" />
           <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500 animate-pulse"></span>
         </button>
@@ -68,3 +71,4 @@ const EmployerHeader = () => {
 };
 
 export default EmployerHeader;
+

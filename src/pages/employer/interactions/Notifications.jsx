@@ -4,6 +4,7 @@ import notificationService from '../../../services/notificationService';
 
 const TYPE_LABEL = {
   EMPLOYER_VIEWED_CV: 'CV',
+  NEW_APPLICATION: 'Ứng tuyển',
   INTERVIEW_INVITATION: 'Phỏng vấn',
   APPLICATION_RESULT: 'Hồ sơ',
   JOB_APPROVED: 'Job',

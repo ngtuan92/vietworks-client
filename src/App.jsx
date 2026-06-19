@@ -116,6 +116,7 @@ function App() {
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="applied-jobs/:id/status" element={<ApplicationStatusDetail />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="notifications" element={<Notifications />} />
               <Route path="saved-jobs" element={<SavedJobs />} />
               <Route path="matched-jobs" element={<MatchedJobs />} />
               <Route path="privacy-settings" element={<PrivacySettings />} />
@@ -227,6 +228,9 @@ function App() {
 }
 
 export default App;
+
+
+
 
 
 

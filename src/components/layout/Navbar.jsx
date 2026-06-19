@@ -27,6 +27,7 @@ const Navbar = () => {
   const profileEmail = user?.email || '';
   const profileInitial = profileLabel.trim().charAt(0).toUpperCase() || 'U';
   const roleLabel = isAdmin ? 'Quản trị viên' : isEmployer ? 'Nhà tuyển dụng' : 'Ứng viên';
+  const notificationPath = isAdmin ? '/admin/notifications' : isEmployer ? '/employer/notifications' : '/notifications';
 
   const isActive = (path) => location.pathname === path;
 
@@ -146,10 +147,10 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors hidden sm:block">
+              <Link to={notificationPath} className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors hidden sm:block">
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-              </button>
+              </Link>
 
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -266,4 +267,5 @@ const MenuLink = ({ to, icon, label, onClick }) => (
 );
 
 export default Navbar;
+
 
