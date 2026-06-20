@@ -248,15 +248,15 @@ const ApplicationStatusDetail = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Thời gian</p>
-                    <p className="font-semibold text-blue-900 mt-1">{formatDate(application.interviewInvitation.time)}</p>
+                    <p className="font-semibold text-blue-900 mt-1">{formatDate(application.interviewInvitation.interviewTime)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Hình thức</p>
-                    <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.format === 'ONLINE' ? 'Trực tuyến (Online)' : 'Trực tiếp (Offline)'}</p>
+                    <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.interviewType === 'ONLINE' ? 'Trực tuyến (Online)' : 'Trực tiếp (Offline)'}</p>
                   </div>
                   <div className="sm:col-span-2">
                     <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Địa điểm / Link</p>
-                    {application.interviewInvitation.format === 'ONLINE' && application.interviewInvitation.location.includes('http') ? (
+                    {application.interviewInvitation.interviewType === 'ONLINE' && application.interviewInvitation.location.includes('http') ? (
                       <a href={application.interviewInvitation.location} target="_blank" rel="noreferrer" className="font-semibold text-blue-700 underline mt-1 block">{application.interviewInvitation.location}</a>
                     ) : (
                       <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.location}</p>
