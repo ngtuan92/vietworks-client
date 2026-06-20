@@ -12,6 +12,7 @@ import CvPreview from './pages/jobseeker/cv/CvPreview';
 import AppliedJobs from './pages/jobseeker/jobs/AppliedJobs';
 import ApplicationStatusDetail from './pages/jobseeker/jobs/ApplicationStatusDetail';
 import AICvReview from './pages/jobseeker/cv/AICvReview';
+import JobseekerTransactions from './pages/jobseeker/billing/JobseekerTransactions';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
@@ -46,7 +47,6 @@ import ApplicationDetail from './pages/employer/ats/ApplicationDetail';
 import CVSearch from './pages/employer/talent-pool/CVSearch';
 import CandidateDetail from './pages/employer/talent-pool/CandidateDetail';
 import UnlockedCandidates from './pages/employer/talent-pool/UnlockedCandidates';
-import Wallet from './pages/employer/billing/Wallet';
 import BuyPackages from './pages/employer/billing/BuyPackages';
 import TopUp from './pages/employer/billing/TopUp';
 import PaymentResult from './pages/employer/billing/PaymentResult';
@@ -70,15 +70,13 @@ import JobDetailAdmin from './pages/admin/jobs/JobDetailAdmin';
 import JobModerationHistory from './pages/admin/jobs/JobModerationHistory';
 import MasterDataManagement from './pages/admin/master-data/MasterDataManagement';
 import CVTemplateManagement from './pages/admin/master-data/CVTemplateManagement';
-import TransactionManagement from './pages/admin/billing/TransactionManagement';
-import InvoiceManagement from './pages/admin/billing/InvoiceManagement';
-import PackageManagement from './pages/admin/billing/PackageManagement';
 import NotificationCenter from './pages/admin/notifications/NotificationCenter';
 import AnalyticsDashboard from './pages/admin/dashboard/AnalyticsDashboard';
 import AdminAccountSettings from './pages/admin/dashboard/AdminAccountSettings';
 
 // New Admin Pages from pull/merge
 import AdminPackages from './pages/admin/packages/AdminPackages';
+import AdminPackageForm from './pages/admin/packages/AdminPackageForm';
 import AdminUsers from './pages/admin/users/AdminUsers';
 import AdminTransactions from './pages/admin/transactions/AdminTransactions';
 import AdminRevenueReport from './pages/admin/analytics/AdminRevenueReport';
@@ -122,6 +120,7 @@ function App() {
               <Route path="matched-jobs" element={<MatchedJobs />} />
               <Route path="privacy-settings" element={<PrivacySettings />} />
               <Route path="ai-cv-review" element={<AICvReview />} />
+              <Route path="my-transactions" element={<JobseekerTransactions />} />
             </Route>
           </Route>
 
@@ -161,7 +160,6 @@ function App() {
               <Route path="talent-pool/:id" element={<CandidateDetail />} />
               <Route path="unlocked-candidates" element={<UnlockedCandidates />} />
               <Route path="wallet" element={<EmployerWallet />} />
-              <Route path="wallet-legacy" element={<Wallet />} />
               <Route path="wallet/topup" element={<TopUp />} />
               <Route path="wallet/payment-result" element={<PaymentResult />} />
               <Route path="packages" element={<BuyPackages />} />
@@ -202,15 +200,14 @@ function App() {
 
               {/* Transaction management routes */}
               <Route path="transactions" element={<AdminTransactions />} />
-              <Route path="transactions-legacy" element={<TransactionManagement />} />
 
               {/* Invoice management routes */}
               <Route path="invoices" element={<AdminInvoices />} />
-              <Route path="invoices-legacy" element={<InvoiceManagement />} />
 
               {/* Package management routes */}
               <Route path="packages" element={<AdminPackages />} />
-              <Route path="packages-legacy" element={<PackageManagement />} />
+              <Route path="packages/create" element={<AdminPackageForm />} />
+              <Route path="packages/:id/edit" element={<AdminPackageForm />} />
 
               <Route path="notifications" element={<NotificationCenter />} />
 

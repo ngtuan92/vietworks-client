@@ -55,7 +55,7 @@ const navItems = [
     label: 'Gói dịch vụ',
     children: [
       { label: 'Danh sách gói', to: '/admin/packages' },
-      { label: 'Thêm gói mới', to: '/admin/packages/new', icon: <PlusCircle className="w-4 h-4" /> },
+      { label: 'Thêm gói mới', to: '/admin/packages/create' },
     ],
   },
   {

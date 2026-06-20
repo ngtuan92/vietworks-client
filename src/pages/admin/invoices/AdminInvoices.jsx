@@ -1,58 +1,7 @@
-import { Receipt, Clock, CheckCircle2, FileText, Calendar, Send, Eye, X, SearchX } from 'lucide-react';
-import React, { useState } from 'react';
-import {
-  PageHeader,
-  SectionCard,
-  StatCard,
-  ModalShell,
-  ActionButton,
-  SelectField
-} from '../shared/AdminPrimitives';
-
-const MOCK_INVOICES = [
-  {
-    _id: 'inv1',
-    transactionId: { _id: 'tx1', amount: 2990000, userId: { fullName: 'Trần Thị Lan', email: 'lan.tran@company.com' } },
-    invoiceNumber: 'INV-2024-001234',
-    issuedDate: '2024-03-25T14:30:00Z',
-    buyerName: 'Công ty TNHH ABC',
-    buyerEmail: 'lan.tran@company.com',
-    buyerTaxId: '0123456789',
-    buyerAddress: '123 Nguyễn Trãi, Q1, TP.HCM',
-    amount: 2990000,
-    currency: 'VND',
-    status: 'SENT',
-    sentAt: '2024-03-25T16:00:00Z',
-  },
-  {
-    _id: 'inv2',
-    transactionId: { _id: 'tx2', amount: 990000, userId: { fullName: 'Nguyễn Văn Minh', email: 'minh.nguyen@email.com' } },
-    invoiceNumber: 'INV-2024-001235',
-    issuedDate: '2024-03-24T10:15:00Z',
-    buyerName: 'Nguyễn Văn Minh',
-    buyerEmail: 'minh.nguyen@email.com',
-    buyerTaxId: null,
-    buyerAddress: null,
-    amount: 990000,
-    currency: 'VND',
-    status: 'PENDING',
-    sentAt: null,
-  },
-  {
-    _id: 'inv3',
-    transactionId: { _id: 'tx3', amount: 5990000, userId: { fullName: 'Lê Hoàng Nam', email: 'nam.le@startup.vn' } },
-    invoiceNumber: 'INV-2024-001236',
-    issuedDate: '2024-03-23T09:00:00Z',
-    buyerName: 'Công ty TNHH Startup VN',
-    buyerEmail: 'nam.le@startup.vn',
-    buyerTaxId: '9876543210',
-    buyerAddress: '456 Lê Lợi, Q3, TP.HCM',
-    amount: 5990000,
-    currency: 'VND',
-    status: 'GENERATED',
-    sentAt: null,
-  },
-];
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { PageHeader, SectionCard, StatCard, SelectField, ActionButton, ModalShell } from '../shared/AdminPrimitives';
+import { Clock, FileText, CheckCircle2, X, Receipt, Calendar, Send, Eye, SearchX } from 'lucide-react';
 
 const statusConfig = {
   PENDING: { label: 'Chờ xử lý', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/60', icon: <Clock className="w-6 h-6 text-amber-600" /> },
@@ -66,22 +15,35 @@ const formatPrice = (price) => {
 };
 
 const AdminInvoices = () => {
-  const [invoices, setInvoices] = useState(MOCK_INVOICES);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  useEffect(() => {
+    api.get('/admin/invoice-requests')
+      .then(r => { if (r.data.success) setInvoices(r.data.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredInvoices = invoices.filter((inv) => {
     return !filterStatus || inv.status === filterStatus;
   });
 
-  const handleUpdateStatus = (invoiceId, newStatus) => {
-    setInvoices(
-      invoices.map((inv) =>
-        inv._id === invoiceId
-          ? { ...inv, status: newStatus, sentAt: newStatus === 'SENT' ? new Date().toISOString() : inv.sentAt }
-          : inv
-      )
-    );
+  const handleUpdateStatus = async (invoiceId, newStatus) => {
+    try {
+      const res = await api.patch('/admin/invoice-requests/' + invoiceId, { status: newStatus });
+      if (res.data.success) {
+        setInvoices(invoices.map(inv =>
+          inv._id === invoiceId
+            ? { ...inv, status: newStatus, sentAt: newStatus === 'SENT' ? new Date().toISOString() : inv.sentAt }
+            : inv
+        ));
+      }
+    } catch (error) {
+      console.error('Update invoice status error:', error);
+    }
   };
 
   return (

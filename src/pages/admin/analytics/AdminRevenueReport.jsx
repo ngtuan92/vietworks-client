@@ -1,33 +1,7 @@
-import React, { useState } from 'react';
-import {
-  PageHeader,
-  SectionCard,
-  StatCard,
-  ActionButton,
-  SelectField
-} from '../shared/AdminPrimitives';
-import { WalletCards, CreditCard, Receipt, TrendingUp } from 'lucide-react';
-
-const MOCK_REVENUE = {
-  summary: {
-    totalRevenue: 15890000,
-    totalDeposits: 12000000,
-    totalPayments: 3890000,
-    depositCount: 24,
-    paymentCount: 18,
-    transactionCount: 42,
-  },
-  revenueByRole: {
-    JOBSEEKER: 4200000,
-    EMPLOYER: 11690000,
-    ADMIN: 0,
-  },
-  monthlyData: [
-    { month: '2024-01', deposits: 5000000, payments: 1200000, depositsCount: 8, paymentsCount: 5 },
-    { month: '2024-02', deposits: 3500000, payments: 890000, depositsCount: 6, paymentsCount: 4 },
-    { month: '2024-03', deposits: 3500000, payments: 1800000, depositsCount: 10, paymentsCount: 9 },
-  ],
-};
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { PageHeader, SectionCard, SelectField, ActionButton } from '../shared/AdminPrimitives';
+import { WalletCards } from 'lucide-react';
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
@@ -35,9 +9,26 @@ const formatPrice = (price) => {
 
 const AdminRevenueReport = () => {
   const [dateRange, setDateRange] = useState('30days');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/admin/revenue-report', { params: { range: dateRange } })
+      .then(r => { if (r.data.success) setData(r.data.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [dateRange]);
+
+  if (loading || !data) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin w-8 h-8 border-4 border-[#0056b3] border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   const maxRevenue = Math.max(
-    ...MOCK_REVENUE.monthlyData.map((m) => Math.max(m.deposits, m.payments))
+    ...(data.monthlyData || []).map((m) => Math.max(m.deposits || 0, m.payments || 0))
   );
 
   return (
@@ -68,16 +59,45 @@ const AdminRevenueReport = () => {
             </div>
             <span className="text-sm font-bold text-blue-200 uppercase tracking-wider">Tổng doanh thu</span>
           </div>
-          <p className="text-3xl font-black">{formatPrice(MOCK_REVENUE.summary.totalRevenue)}</p>
-          <div className="mt-3 flex items-center gap-1.5 text-sm font-bold text-blue-200">
-            <TrendingUp className="w-4 h-4" />
+          <p className="text-3xl font-black">{formatPrice(data.summary.totalRevenue)}</p>
+          <div className="mt-3 flex items-center gap-1 text-sm text-blue-200">
+            <span className="material-symbols-outlined text-[16px]">trending_up</span>
             Tăng 15% so với tháng trước
           </div>
         </div>
 
-        <StatCard icon={<WalletCards className="w-6 h-6" />} label="Tiền nạp" value={formatPrice(MOCK_REVENUE.summary.totalDeposits)} tone="blue" />
-        <StatCard icon={<CreditCard className="w-6 h-6" />} label="Thanh toán" value={formatPrice(MOCK_REVENUE.summary.totalPayments)} tone="indigo" />
-        <StatCard icon={<Receipt className="w-6 h-6" />} label="Tổng giao dịch" value={MOCK_REVENUE.summary.transactionCount} tone="emerald" />
+        <div className="bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-emerald-600">add_card</span>
+            </div>
+            <span className="text-sm font-bold text-[#5e5e62] uppercase tracking-wider">Tiền nạp</span>
+          </div>
+          <p className="text-2xl font-black text-emerald-600">{formatPrice(data.summary.totalDeposits)}</p>
+          <p className="mt-2 text-xs text-[#5e5e62]">{data.summary.depositCount} giao dịch</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-indigo-600">payments</span>
+            </div>
+            <span className="text-sm font-bold text-[#5e5e62] uppercase tracking-wider">Thanh toán</span>
+          </div>
+          <p className="text-2xl font-black text-indigo-600">{formatPrice(data.summary.totalPayments)}</p>
+          <p className="mt-2 text-xs text-[#5e5e62]">{data.summary.paymentCount} giao dịch</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-amber-600">receipt_long</span>
+            </div>
+            <span className="text-sm font-bold text-[#5e5e62] uppercase tracking-wider">Tổng giao dịch</span>
+          </div>
+          <p className="text-2xl font-black text-amber-600">{data.summary.transactionCount}</p>
+          <p className="mt-2 text-xs text-[#5e5e62]">Đã hoàn thành</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -96,76 +116,70 @@ const AdminRevenueReport = () => {
                 </div>
               </div>
             </div>
-            <div className="h-64 flex items-end justify-between gap-4 px-4 border-b border-slate-100 pb-4">
-              {MOCK_REVENUE.monthlyData.map((m) => {
-                const monthLabel = new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
-                return (
-                  <div key={m.month} className="flex-1 flex flex-col items-center gap-3">
-                    <div className="w-full flex items-end gap-1.5 justify-center h-48">
-                      <div
-                        className="w-10 bg-blue-500/90 rounded-t-sm transition-all hover:bg-blue-600 relative group cursor-pointer"
-                        style={{ height: `${(m.deposits / maxRevenue) * 100}%` }}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
-                          {formatPrice(m.deposits)}
-                        </div>
-                      </div>
-                      <div
-                        className="w-10 bg-indigo-500/90 rounded-t-sm transition-all hover:bg-indigo-600 relative group cursor-pointer"
-                        style={{ height: `${(m.payments / maxRevenue) * 100}%` }}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
-                          {formatPrice(m.payments)}
-                        </div>
+          <div className="h-64 flex items-end justify-between gap-4 px-4">
+            {data.monthlyData.map((m) => {
+              const monthLabel = new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
+              return (
+                <div key={m.month} className="flex-1 flex flex-col items-center gap-2">
+                  <div className="w-full flex items-end gap-1 justify-center h-48">
+                    <div
+                      className="w-8 bg-emerald-500 rounded-t-sm transition-all hover:bg-emerald-600 relative"
+                      style={{ height: `${(m.deposits / maxRevenue) * 100}%` }}
+                      title={formatPrice(m.deposits)}
+                    >
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-emerald-600 whitespace-nowrap">
+                        {formatPrice(m.deposits)}
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{monthLabel}</span>
+                    <div
+                      className="w-8 bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600 relative"
+                      style={{ height: `${(m.payments / maxRevenue) * 100}%` }}
+                      title={formatPrice(m.payments)}
+                    >
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-indigo-600 whitespace-nowrap">
+                        {formatPrice(m.payments)}
+                      </div>
+                    </div>
                   </div>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{monthLabel}</span>
+                </div>
                 );
               })}
             </div>
           </SectionCard>
         </div>
 
-        <div className="lg:col-span-4">
-          <SectionCard className="h-full">
-            <h3 className="font-black text-slate-900 mb-8">Doanh thu theo vai trò</h3>
-            <div className="space-y-6">
-              {Object.entries(MOCK_REVENUE.revenueByRole).map(([role, amount]) => {
-                const percentage = (amount / MOCK_REVENUE.summary.totalRevenue) * 100;
-                const colors = {
-                  JOBSEEKER: { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Ứng viên' },
-                  EMPLOYER: { bg: 'bg-indigo-500', text: 'text-indigo-600', label: 'Nhà tuyển dụng' },
-                  ADMIN: { bg: 'bg-slate-300', text: 'text-slate-500', label: 'Quản trị' },
-                };
-                const config = colors[role] || colors.JOBSEEKER;
-                return (
-                  <div key={role}>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className={`font-bold uppercase tracking-wider text-[11px] ${config.text}`}>{config.label}</span>
-                      <span className="font-black text-slate-900">{formatPrice(amount)}</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${config.bg} rounded-full transition-all`}
-                        style={{ width: `${percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-end text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                      <span>{percentage.toFixed(1)}%</span>
-                    </div>
+        {/* Revenue by Role */}
+        <div className="lg:col-span-4 bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
+          <h3 className="font-bold text-[#1b1c1c] mb-6">Doanh thu theo vai trò</h3>
+          <div className="space-y-4">
+            {Object.entries(data.revenueByRole).map(([role, amount]) => {
+              const percentage = (amount / data.summary.totalRevenue) * 100;
+              const colors = {
+                JOBSEEKER: { bg: 'bg-emerald-500', text: 'text-emerald-600', label: 'Ứng viên' },
+                EMPLOYER: { bg: 'bg-indigo-500', text: 'text-indigo-600', label: 'Nhà tuyển dụng' },
+                ADMIN: { bg: 'bg-[#0056b3]/20', text: 'text-[#0056b3]', label: 'Quản trị' },
+              };
+              const config = colors[role] || colors.JOBSEEKER;
+              return (
+                <div key={role}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className={`font-bold ${config.text}`}>{config.label}</span>
+                    <span className="font-black text-[#1b1c1c]">{formatPrice(amount)}</span>
                   </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-slate-100">
-              <div className="flex justify-between text-sm">
-                <span className="font-bold text-slate-500 uppercase tracking-wider">Tổng cộng</span>
-                <span className="font-black text-primary text-xl">{formatPrice(MOCK_REVENUE.summary.totalRevenue)}</span>
-              </div>
-            </div>
-          </SectionCard>
+                  <div className="w-full h-3 bg-[#f5f3f3] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${config.bg} rounded-full transition-all`}
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-[#727784] mt-0.5">
+                    <span>{percentage.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -181,9 +195,9 @@ const AdminRevenueReport = () => {
             </tr>
           </thead>
           <tbody>
-            {MOCK_REVENUE.monthlyData.map((m) => (
-              <tr key={m.month} className="border-b border-slate-100/50 hover:bg-slate-50/50 transition-colors">
-                <td className="py-4 px-6 font-bold text-slate-900">
+            {data.monthlyData.map((m) => (
+              <tr key={m.month} className="border-b border-[#c2c6d4]/30 hover:bg-[#f5f3f3]/50">
+                <td className="py-4 px-4 font-bold text-[#1b1c1c]">
                   {new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}
                 </td>
                 <td className="py-4 px-6 font-black text-blue-600">{formatPrice(m.deposits)}</td>
