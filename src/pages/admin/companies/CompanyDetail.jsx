@@ -72,17 +72,26 @@ const CompanyDetail = () => {
     return <div className="text-slate-600">Đang tải chi tiết công ty...</div>;
   }
 
+  const renderActions = () => {
+    if (company?.verificationStatus === 'PENDING') {
+      return (
+        <>
+          <ActionButton tone="primary" onClick={handleApprove}>Duyệt công ty</ActionButton>
+          <ActionButton tone="danger" onClick={handleReject}>
+            {rejecting ? 'Đang từ chối...' : 'Từ chối duyệt công ty'}
+          </ActionButton>
+        </>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-7 animate-rise-in">
       <PageHeader
         title={company?.name || 'Chi tiết công ty'}
         description="Xem thông tin công ty, địa điểm và giấy tờ pháp lý để kiểm duyệt."
-        actions={
-          <>
-            <ActionButton tone="primary" onClick={handleApprove}>Duyệt công ty</ActionButton>
-            <ActionButton tone="danger" onClick={handleReject}>{rejecting ? 'Đang từ chối...' : 'Từ chối duyệt công ty'}</ActionButton>
-          </>
-        }
+        actions={renderActions()}
       />
 
       {message ? (
@@ -97,6 +106,26 @@ const CompanyDetail = () => {
 
       {active === 'Thông tin công ty' && company ? (
         <SectionCard title="Thông tin chung">
+          {(company.avatarUrl || company.coverUrl) && (
+            <div className="mb-6 space-y-4">
+              {company.coverUrl && (
+                <div className="relative h-48 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                  <img src={company.coverUrl} alt="Cover" className="h-full w-full object-cover" />
+                  {company.avatarUrl && (
+                    <div className="absolute bottom-4 left-4 h-20 w-20 overflow-hidden rounded-xl border-2 border-white bg-white shadow-md">
+                      <img src={company.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              )}
+              {!company.coverUrl && company.avatarUrl && (
+                <div className="h-20 w-20 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <img src={company.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Info label="Tên công ty" value={company.name} />
             <Info label="Mã số thuế" value={company.taxCode} />
@@ -133,18 +162,56 @@ const CompanyDetail = () => {
 
       {active === 'Giấy tờ pháp lý' && (
         <SectionCard title="Giấy phép kinh doanh">
-          {company?.businessLicenseFile?.fileUrl ? (
-            <div className="space-y-3">
-              <a href={company.businessLicenseFile.fileUrl} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
-                {company.businessLicenseFile.fileName || 'Xem file giấy phép'}
-              </a>
+          {company?.businessLicenseFile ? (
+            <div className="space-y-4">
+              {(() => {
+                // Xác định chính xác url, loại file, và tên file dựa trên cấu trúc dữ liệu trả về từ backend
+                const isObject = typeof company.businessLicenseFile === 'object' && company.businessLicenseFile !== null;
+                const fileUrl = isObject ? company.businessLicenseFile.fileUrl : company.businessLicenseFile;
+                const fileName = isObject ? (company.businessLicenseFile.fileName || 'Giấy phép kinh doanh') : 'Giấy phép kinh doanh';
+                const fileType = isObject ? company.businessLicenseFile.fileType : '';
 
-              {company.businessLicenseFile.fileType?.startsWith('image/') ? (
-                <img src={company.businessLicenseFile.fileUrl} alt="Giấy phép kinh doanh" className="max-h-[560px] rounded-2xl border border-slate-200 object-contain" />
-              ) : null}
+                const isImage = fileType?.startsWith('image/') || /\.(jpeg|jpg|gif|png|webp)$/i.test(fileUrl);
+                const isPdf = fileType === 'application/pdf' || /\.pdf$/i.test(fileUrl);
+
+                return (
+                  <>
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-primary hover:underline">
+                        📄 {fileName} <span className="text-xs font-normal text-slate-400">(Mở trong tab mới ↗)</span>
+                      </a>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-2 shadow-inner">
+                      {/* Xử lý hiển thị Preview nếu là Ảnh */}
+                      {isImage && (
+                        <div className="flex justify-center p-2 bg-white rounded-xl">
+                          <img src={fileUrl} alt="Giấy phép kinh doanh" className="max-h-[600px] object-contain rounded-lg" />
+                        </div>
+                      )}
+
+                      {/* Xử lý hiển thị Preview trực tiếp nếu là PDF */}
+                      {isPdf && (
+                        <iframe 
+                          src={fileUrl} 
+                          className="w-full h-[650px] rounded-xl bg-white" 
+                          title="Bản xem trước giấy phép kinh doanh"
+                        />
+                      )}
+
+                      {/* Fallback nếu không phải định dạng hỗ trợ xem trực tiếp */}
+                      {!isImage && !isPdf && (
+                        <div className="p-8 text-center text-sm text-slate-500">
+                          Định dạng file không hỗ trợ xem trước trực tiếp. Vui lòng bấm vào liên kết phía trên để tải xuống hoặc kiểm tra.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           ) : (
-            <div className="text-slate-600">Công ty chưa upload giấy phép kinh doanh.</div>
+            <div className="text-slate-600">Công ty chưa tải lên giấy phép kinh doanh.</div>
           )}
         </SectionCard>
       )}
@@ -168,5 +235,3 @@ const Info = ({ label, value }) => (
 );
 
 export default CompanyDetail;
-
-
