@@ -1,412 +1,492 @@
-import { Edit, FileSearch, CheckCircle2, X, Plus, Package, ToggleLeft, CreditCard, ToggleRight, ChevronUp, ChevronDown } from 'lucide-react';
-import React, { useState } from 'react';
-import {
-  PageHeader,
-  SectionCard,
-  StatCard,
-  ModalShell,
-  ActionButton,
-  InputField,
-  SelectField
-} from '../shared/AdminPrimitives';
-
-const MOCK_PACKAGES = [
-  {
-    _id: 'pkg1',
-    name: 'Gói Cơ Bản',
-    description: 'Dành cho doanh nghiệp nhỏ, đăng tối đa 5 tin tuyển dụng',
-    price: 990000,
-    currency: 'VND',
-    duration: 30,
-    jobPostsAllowed: 5,
-    featuredDays: 0,
-    cvAccessLimit: 10,
-    features: ['Đăng 5 tin tuyển dụng', 'Hiển thị trong 30 ngày', 'Xem 10 CV'],
-    isActive: true,
-    sortOrder: 1,
-    createdAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    _id: 'pkg2',
-    name: 'Gói Pro',
-    description: 'Dành cho doanh nghiệp vừa, đăng tối đa 20 tin và nổi bật',
-    price: 2990000,
-    currency: 'VND',
-    duration: 30,
-    jobPostsAllowed: 20,
-    featuredDays: 7,
-    cvAccessLimit: 50,
-    features: ['Đăng 20 tin tuyển dụng', '7 ngày nổi bật', 'Xem 50 CV', 'Hỗ trợ ưu tiên'],
-    isActive: true,
-    sortOrder: 2,
-    createdAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    _id: 'pkg3',
-    name: 'Gói Premium',
-    description: 'Giải pháp toàn diện cho doanh nghiệp lớn',
-    price: 5990000,
-    currency: 'VND',
-    duration: 90,
-    jobPostsAllowed: 100,
-    featuredDays: 30,
-    cvAccessLimit: 999,
-    features: ['Đăng 100 tin tuyển dụng', '30 ngày nổi bật', 'Xem CV không giới hạn', 'Dashboard quản lý', 'Hỗ trợ 24/7'],
-    isActive: true,
-    sortOrder: 3,
-    createdAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    _id: 'pkg4',
-    name: 'Gói Trial',
-    description: 'Dùng thử miễn phí cho doanh nghiệp mới',
-    price: 0,
-    currency: 'VND',
-    duration: 7,
-    jobPostsAllowed: 3,
-    featuredDays: 0,
-    cvAccessLimit: 5,
-    features: ['Đăng 3 tin tuyển dụng', 'Hiển thị trong 7 ngày', 'Xem 5 CV'],
-    isActive: false,
-    sortOrder: 0,
-    createdAt: '2024-03-01T10:00:00Z',
-  },
-];
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import api from '../../../services/api';
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
 };
 
-const PackageCard = ({ pkg, onEdit, onToggleStatus }) => {
+const targetRoleLabels = {
+  EMPLOYER: 'Nhà tuyển dụng',
+  JOBSEEKER: 'Ứng viên',
+};
+
+const packageTypeLabels = {
+  UNLOCK_CV: 'Mở khóa CV',
+  BOOST_JOB: 'Boost Job',
+  BOOST_CV: 'Boost CV',
+  AI_PREMIUM: 'AI Premium',
+};
+
+// PackageCard cho Employer - hiển thị fields của Employer
+const EmployerPackageCard = ({ pkg, onEdit, onToggleStatus }) => {
   const [showFeatures, setShowFeatures] = useState(false);
 
   return (
-    <SectionCard className={`h-full transition-all duration-300 ${!pkg.isActive ? 'opacity-80 grayscale-[20%]' : ''}`}>
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-black text-slate-900">{pkg.name}</h3>
-            {!pkg.isActive && (
-              <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Tạm ngưng
+    <div className={`bg-white rounded-xl shadow-sm border transition-all hover:shadow-md flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-[#ba1a1a]/30 bg-[#ffdad6]/10'}`}>
+      <div className="p-5 flex flex-col flex-1">
+        {/* Header - fixed structure */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 shrink-0">
+                {packageTypeLabels[pkg.packageType] || pkg.packageType}
               </span>
-            )}
-          </div>
-          <p className="text-xs font-semibold text-slate-500 line-clamp-2">{pkg.description}</p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => onEdit(pkg)}
-            className="p-1.5 rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-700 transition-all shadow-sm active:scale-95 bg-white"
-            title="Sửa"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onToggleStatus(pkg)}
-            className={`p-1.5 rounded-lg border shadow-sm transition-all active:scale-95 ${pkg.isActive ? 'border-red-200 hover:bg-red-50 text-red-600 bg-white' : 'border-emerald-200 hover:bg-emerald-50 text-emerald-600 bg-white'}`}
-            title={pkg.isActive ? 'Tạm ngưng' : 'Kích hoạt'}
-          >
-            {pkg.isActive ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-5">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-black text-primary">{formatPrice(pkg.price)}</span>
-          {pkg.price > 0 && <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">/ {pkg.duration} ngày</span>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3 text-center shadow-sm">
-          <p className="text-lg font-black text-slate-900">{pkg.jobPostsAllowed}</p>
-          <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Tin đăng</p>
-        </div>
-        <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3 text-center shadow-sm">
-          <p className="text-lg font-black text-slate-900">{pkg.featuredDays}</p>
-          <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Ngày nổi bật</p>
-        </div>
-        <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3 text-center shadow-sm">
-          <p className="text-lg font-black text-slate-900">{pkg.cvAccessLimit}</p>
-          <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">CV được xem</p>
-        </div>
-      </div>
-
-      <button
-        onClick={() => setShowFeatures(!showFeatures)}
-        className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary mb-3 hover:text-blue-700 transition-colors"
-      >
-        <FileSearch className="w-4 h-4" />
-        Tính năng ({pkg.features.length})
-        {showFeatures ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-      </button>
-
-      {showFeatures && (
-        <div className="space-y-2 mb-5 pl-2">
-          {pkg.features.map((feature, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-xs font-bold text-slate-600">
-              <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-              {feature}
+              <h3 className="text-base font-bold text-[#1b1c1c] truncate">{pkg.name}</h3>
             </div>
-          ))}
+            <p className="text-xs text-[#5e5e62] line-clamp-2 leading-relaxed">{pkg.description}</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => onEdit(pkg)}
+              className="p-1.5 rounded-lg hover:bg-[#f5f3f3] text-[#5e5e62] transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+            </button>
+            <button
+              onClick={() => onToggleStatus(pkg)}
+              className={`p-1.5 rounded-lg transition-all ${pkg.status === 'ACTIVE' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-[#ffdad6] text-[#ba1a1a]'}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">{pkg.status === 'ACTIVE' ? 'toggle_on' : 'toggle_off'}</span>
+            </button>
+          </div>
         </div>
-      )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          Tạo: {new Date(pkg.createdAt).toLocaleDateString('vi-VN')}
-        </span>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thứ tự: {pkg.sortOrder}</span>
+        {/* Status badge below header */}
+        {pkg.status === 'INACTIVE' && (
+          <div className="mb-3">
+            <span className="bg-[#ba1a1a]/10 text-[#ba1a1a] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+              Tạm ngưng
+            </span>
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mb-3">
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-black text-[#0056b3]">{formatPrice(pkg.price)}</span>
+            {pkg.price > 0 && <span className="text-xs text-[#5e5e62]">/ {pkg.durationDays || pkg.duration} ngày</span>}
+          </div>
+        </div>
+
+        {/* Stats - flex equal width */}
+        <div className="flex gap-2 mb-3">
+          <div className="flex-1 bg-[#f5f3f3] rounded-lg p-2 text-center min-w-0">
+            <p className="text-lg font-black text-[#1b1c1c] truncate">{pkg.jobPostsAllowed ?? pkg.benefits?.jobPostsAllowed ?? 0}</p>
+            <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Tin đăng</p>
+          </div>
+          <div className="flex-1 bg-[#f5f3f3] rounded-lg p-2 text-center min-w-0">
+            <p className="text-lg font-black text-[#1b1c1c] truncate">{pkg.featuredDays ?? pkg.benefits?.featuredDays ?? 0}</p>
+            <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Ngày nổi bật</p>
+          </div>
+          <div className="flex-1 bg-[#f5f3f3] rounded-lg p-2 text-center min-w-0">
+            <p className="text-lg font-black text-[#1b1c1c] truncate">{pkg.cvAccessLimit ?? pkg.benefits?.cvAccessLimit ?? 0}</p>
+            <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">CV được xem</p>
+          </div>
+        </div>
+
+        {/* Features toggle */}
+        <button
+          onClick={() => setShowFeatures(!showFeatures)}
+          className="flex items-center gap-1 text-xs font-bold text-[#0056b3] mb-2"
+        >
+          <span className="material-symbols-outlined text-[14px]">feature_search</span>
+          Tính năng ({pkg.features?.length || 0})
+          <span className="material-symbols-outlined text-[14px]">{showFeatures ? 'expand_less' : 'expand_more'}</span>
+        </button>
+
+        {/* Features list */}
+        {showFeatures && (
+          <div className="space-y-1 mb-3 pl-1">
+            {(pkg.features || []).map((feature, idx) => (
+              <div key={idx} className="flex items-start gap-1.5 text-xs text-[#5e5e62]">
+                <span className="material-symbols-outlined text-[12px] text-emerald-500 shrink-0 mt-0.5">check_circle</span>
+                <span className="leading-snug">{feature}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-[#c2c6d4]/30 mt-auto">
+          <span className="text-[10px] text-[#727784]">
+            {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('vi-VN') : '—'}
+          </span>
+          <span className="text-[10px] font-bold text-[#5e5e62]">Thứ tự: {pkg.sortOrder ?? 0}</span>
+        </div>
       </div>
-    </SectionCard>
+    </div>
   );
 };
 
-const PackageModal = ({ pkg, onSave, onClose }) => {
-  const [form, setForm] = useState(pkg || {
-    name: '',
-    description: '',
-    price: 0,
-    currency: 'VND',
-    duration: 30,
-    jobPostsAllowed: 1,
-    featuredDays: 0,
-    cvAccessLimit: 0,
-    features: [],
-    isActive: true,
-    sortOrder: 0,
-  });
-  const [featureInput, setFeatureInput] = useState('');
-
-  const handleAddFeature = () => {
-    if (featureInput) {
-      setForm({ ...form, features: [...form.features, featureInput] });
-      setFeatureInput('');
-    }
-  };
-
-  const handleRemoveFeature = (idx) => {
-    setForm({ ...form, features: form.features.filter((_, i) => i !== idx) });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(form);
-  };
+// PackageCard cho Jobseeker - hiển thị fields của Jobseeker
+const JobseekerPackageCard = ({ pkg, onEdit, onToggleStatus }) => {
+  const [showFeatures, setShowFeatures] = useState(false);
 
   return (
-    <ModalShell
-      title={pkg ? 'Chỉnh sửa gói dịch vụ' : 'Thêm gói dịch vụ mới'}
-      onClose={onClose}
-      footer={
-        <>
-          <ActionButton onClick={onClose}>Hủy</ActionButton>
-          <ActionButton tone="primary" onClick={handleSubmit}>
-            {pkg ? 'Lưu thay đổi' : 'Tạo gói mới'}
-          </ActionButton>
-        </>
-      }
-    >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <InputField
-              label="Tên gói"
-              required
-              value={form.name}
-              onChange={(val) => setForm({ ...form, name: val })}
-            />
-          </div>
-          <div className="col-span-2">
-            <InputField
-              label="Mô tả"
-              value={form.description}
-              onChange={(val) => setForm({ ...form, description: val })}
-            />
-          </div>
-          <div>
-            <InputField
-              type="number"
-              label="Giá (VND)"
-              required
-              value={form.price}
-              onChange={(val) => setForm({ ...form, price: Number(val) })}
-            />
-          </div>
-          <div>
-            <InputField
-              type="number"
-              label="Thời hạn (ngày)"
-              required
-              value={form.duration}
-              onChange={(val) => setForm({ ...form, duration: Number(val) })}
-            />
-          </div>
-          <div>
-            <InputField
-              type="number"
-              label="Số tin được đăng"
-              value={form.jobPostsAllowed}
-              onChange={(val) => setForm({ ...form, jobPostsAllowed: Number(val) })}
-            />
-          </div>
-          <div>
-            <InputField
-              type="number"
-              label="Ngày nổi bật"
-              value={form.featuredDays}
-              onChange={(val) => setForm({ ...form, featuredDays: Number(val) })}
-            />
-          </div>
-          <div>
-            <InputField
-              type="number"
-              label="Số CV được xem"
-              value={form.cvAccessLimit}
-              onChange={(val) => setForm({ ...form, cvAccessLimit: Number(val) })}
-            />
-          </div>
-          <div>
-            <InputField
-              type="number"
-              label="Thứ tự hiển thị"
-              value={form.sortOrder}
-              onChange={(val) => setForm({ ...form, sortOrder: Number(val) })}
-            />
-          </div>
-
-          <div className="col-span-2">
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">Tính năng</label>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={featureInput}
-                onChange={(e) => setFeatureInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
-                placeholder="Nhập tính năng..."
-                className="flex-1 w-full min-h-[44px] rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-2.5 text-sm font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-medium transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 outline-none"
-              />
-              <ActionButton type="button" tone="soft" onClick={handleAddFeature}>
-                <Plus className="w-5 h-5" />
-              </ActionButton>
+    <div className={`bg-white rounded-xl shadow-sm border transition-all hover:shadow-md flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-[#ba1a1a]/30 bg-[#ffdad6]/10'}`}>
+      <div className="p-5 flex flex-col flex-1">
+        {/* Header - fixed structure */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                pkg.packageType === 'AI_PREMIUM' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {packageTypeLabels[pkg.packageType] || pkg.packageType}
+              </span>
+              <h3 className="text-base font-bold text-[#1b1c1c] truncate">{pkg.name}</h3>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {form.features.map((f, i) => (
-                <span key={i} className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1 rounded-md text-[11px] font-bold text-slate-700 shadow-sm">
-                  {f}
-                  <button type="button" onClick={() => handleRemoveFeature(i)} className="text-slate-400 hover:text-red-500 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
+            <p className="text-xs text-[#5e5e62] line-clamp-2 leading-relaxed">{pkg.description}</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => onEdit(pkg)}
+              className="p-1.5 rounded-lg hover:bg-[#f5f3f3] text-[#5e5e62] transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+            </button>
+            <button
+              onClick={() => onToggleStatus(pkg)}
+              className={`p-1.5 rounded-lg transition-all ${pkg.status === 'ACTIVE' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-[#ffdad6] text-[#ba1a1a]'}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">{pkg.status === 'ACTIVE' ? 'toggle_on' : 'toggle_off'}</span>
+            </button>
           </div>
         </div>
-      </form>
-    </ModalShell>
+
+        {/* Status badge below header */}
+        {pkg.status === 'INACTIVE' && (
+          <div className="mb-3">
+            <span className="bg-[#ba1a1a]/10 text-[#ba1a1a] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+              Tạm ngưng
+            </span>
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mb-3">
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-black text-[#0056b3]">{formatPrice(pkg.price)}</span>
+            {pkg.price > 0 && <span className="text-xs text-[#5e5e62]">/ {pkg.durationDays || pkg.duration} ngày</span>}
+          </div>
+        </div>
+
+        {/* Stats */}
+        {pkg.packageType === 'BOOST_CV' && (
+          <div className="flex gap-2 mb-3">
+            <div className="flex-1 bg-[#f5f3f3] rounded-lg p-2 text-center min-w-0">
+              <p className="text-lg font-black text-[#1b1c1c] truncate">{pkg.boostDays ?? pkg.durationDays ?? 0}</p>
+              <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Ngày boost</p>
+            </div>
+            <div className="flex-1 bg-[#f5f3f3] rounded-lg p-2 text-center min-w-0">
+              <p className="text-lg font-black text-[#1b1c1c] truncate">{pkg.visibilityMultiplier ?? 1}x</p>
+              <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Tăng view</p>
+            </div>
+          </div>
+        )}
+
+        {pkg.packageType === 'AI_PREMIUM' && (
+          <div className="mb-3">
+            <div className="bg-[#f5f3f3] rounded-lg p-2 text-center">
+              <p className="text-lg font-black text-[#1b1c1c]">
+                {pkg.aiCredits === -1 ? '∞' : (pkg.aiCredits ?? 0)}
+              </p>
+              <p className="text-[9px] font-bold text-[#5e5e62] uppercase">AI Credits</p>
+            </div>
+          </div>
+        )}
+
+        {/* Features toggle */}
+        <button
+          onClick={() => setShowFeatures(!showFeatures)}
+          className="flex items-center gap-1 text-xs font-bold text-[#0056b3] mb-2"
+        >
+          <span className="material-symbols-outlined text-[14px]">feature_search</span>
+          Tính năng ({pkg.features?.length || 0})
+          <span className="material-symbols-outlined text-[14px]">{showFeatures ? 'expand_less' : 'expand_more'}</span>
+        </button>
+
+        {/* Features list */}
+        {showFeatures && (
+          <div className="space-y-1 mb-3 pl-1">
+            {(pkg.features || []).map((feature, idx) => (
+              <div key={idx} className="flex items-start gap-1.5 text-xs text-[#5e5e62]">
+                <span className="material-symbols-outlined text-[12px] text-emerald-500 shrink-0 mt-0.5">check_circle</span>
+                <span className="leading-snug">{feature}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-[#c2c6d4]/30 mt-auto">
+          <span className="text-[10px] text-[#727784]">
+            {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('vi-VN') : '—'}
+          </span>
+          <span className="text-[10px] font-bold text-[#5e5e62]">Thứ tự: {pkg.sortOrder ?? 0}</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
 const AdminPackages = () => {
-  const [packages, setPackages] = useState(MOCK_PACKAGES);
-  const [showModal, setShowModal] = useState(false);
-  const [editingPkg, setEditingPkg] = useState(null);
-  const [filterActive, setFilterActive] = useState('');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterActive, setFilterActive] = useState('all');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'jobseeker' ? 'JOBSEEKER' : 'EMPLOYER');
 
-  const filteredPackages = packages.filter((pkg) => {
-    if (!filterActive) return true;
-    if (filterActive === 'active') return pkg.isActive;
-    if (filterActive === 'inactive') return !pkg.isActive;
-    return true;
-  });
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  const fetchPackages = async () => {
+    try {
+      const res = await api.get('/admin/packages');
+      if (res.data.success) {
+        const transformedData = res.data.data.map(pkg => ({
+          ...pkg,
+          // Map benefits to features array
+          features: pkg.benefits ? [
+            pkg.benefits.jobPostsAllowed > 0 ? `Đăng ${pkg.benefits.jobPostsAllowed} tin tuyển dụng` : null,
+            pkg.durationDays > 0 ? `Hiển thị trong ${pkg.durationDays} ngày` : null,
+            pkg.benefits.cvAccessLimit > 0 ? `Xem ${pkg.benefits.cvAccessLimit} CV` : null,
+            pkg.benefits.aiPremiumAccess ? 'Truy cập AI Premium' : null,
+            pkg.benefits.priorityDisplay ? 'Hiển thị ưu tiên' : null,
+          ].filter(Boolean) : [],
+          // Map benefits to top-level fields for card display
+          jobPostsAllowed: pkg.benefits?.jobPostsAllowed || 0,
+          featuredDays: pkg.benefits?.featuredDays || 0,
+          cvAccessLimit: pkg.benefits?.cvAccessLimit || 0,
+        }));
+        setPackages(transformedData);
+      }
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const currentTabPackages = packages.filter((p) => p.targetRole === activeTab);
+
+  const [sortPrice, setSortPrice] = useState('default');
+
+  const filteredPackages = useMemo(() => {
+    let result = currentTabPackages.filter((pkg) => {
+      if (filterActive === 'all') return true;
+      if (filterActive === 'active') return pkg.status === 'ACTIVE';
+      if (filterActive === 'inactive') return pkg.status === 'INACTIVE';
+      return true;
+    });
+
+    if (sortPrice === 'asc') {
+      result = [...result].sort((a, b) => a.price - b.price);
+    } else if (sortPrice === 'desc') {
+      result = [...result].sort((a, b) => b.price - a.price);
+    }
+
+    return result;
+  }, [currentTabPackages, filterActive, sortPrice]);
 
   const handleEdit = (pkg) => {
-    setEditingPkg(pkg);
-    setShowModal(true);
+    navigate(`/admin/packages/${pkg._id}/edit`);
   };
 
-  const handleToggleStatus = (pkg) => {
-    setPackages(packages.map((p) => (p._id === pkg._id ? { ...p, isActive: !p.isActive } : p)));
-  };
-
-  const handleSave = (form) => {
-    if (editingPkg) {
-      setPackages(packages.map((p) => (p._id === editingPkg._id ? { ...p, ...form } : p)));
-    } else {
-      setPackages([...packages, { ...form, _id: `pkg${Date.now()}`, createdAt: new Date().toISOString() }]);
+  const handleToggleStatus = async (pkg) => {
+    try {
+      const newStatus = pkg.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const res = await api.patch(`/admin/packages/${pkg._id}/status`, {
+        status: newStatus
+      }, { withCredentials: true });
+      if (res.data.success) {
+        setPackages(packages.map((p) =>
+          p._id === pkg._id ? { ...p, status: newStatus } : p
+        ));
+      }
+    } catch (error) {
+      console.error('Error toggling package status:', error);
     }
-    setShowModal(false);
-    setEditingPkg(null);
+  };
+
+  const handleAddNew = () => {
+    navigate('/admin/packages/create');
+  };
+
+  const tabCounts = {
+    EMPLOYER: packages.filter((p) => p.targetRole === 'EMPLOYER').length,
+    JOBSEEKER: packages.filter((p) => p.targetRole === 'JOBSEEKER').length,
   };
 
   return (
-    <div className="space-y-7 pb-10 animate-rise-in">
-      <PageHeader
-        title="Quản lý Gói dịch vụ"
-        description="Tạo và quản lý các gói dịch vụ cao cấp cho nhà tuyển dụng"
-        actions={
-          <div className="flex items-center gap-3">
-            <div className="w-48">
-              <SelectField
-                label=""
-                value={filterActive}
-                onChange={setFilterActive}
-                options={[['active', 'Đang hoạt động'], ['inactive', 'Tạm ngưng']]}
-                placeholder="Tất cả trạng thái"
-              />
-            </div>
-            <ActionButton
-              tone="primary"
-              onClick={() => {
-                setEditingPkg(null);
-                setShowModal(true);
-              }}
-            >
-              <span className="flex items-center gap-1.5"><Plus className="w-4 h-4" /> Thêm gói mới</span>
-            </ActionButton>
-          </div>
-        }
-      />
+    <div className="space-y-6 pb-10">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-[#0056b3] flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#0056b3] rounded-full"></span>
+            Quản lý Gói dịch vụ
+          </h2>
+          <p className="text-sm text-[#5e5e62] mt-1">
+            Tạo và quản lý các gói dịch vụ cho nhà tuyển dụng và ứng viên
+          </p>
+        </div>
+      </div>
 
+      {/* Tabs */}
+      <div className="bg-white rounded-xl border border-[#c2c6d4]/50 p-1 inline-flex">
+        <button
+          onClick={() => setActiveTab('EMPLOYER')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'EMPLOYER'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-[#5e5e62] hover:bg-[#f5f3f3]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">apartment</span>
+          Gói Nhà tuyển dụng
+          <span className={`px-2 py-0.5 rounded-full text-xs ${
+            activeTab === 'EMPLOYER' ? 'bg-white/20 text-white' : 'bg-[#f5f3f3] text-[#5e5e62]'
+          }`}>
+            {tabCounts.EMPLOYER}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('JOBSEEKER')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'JOBSEEKER'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-[#5e5e62] hover:bg-[#f5f3f3]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">person</span>
+          Gói Ứng viên
+          <span className={`px-2 py-0.5 rounded-full text-xs ${
+            activeTab === 'JOBSEEKER' ? 'bg-white/20 text-white' : 'bg-[#f5f3f3] text-[#5e5e62]'
+          }`}>
+            {tabCounts.JOBSEEKER}
+          </span>
+        </button>
+      </div>
+
+      {/* Stats Summary - theo tab hiện tại */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard icon={<Package className="w-6 h-6" />} label="Tổng gói" value={packages.length} tone="blue" />
-        <StatCard icon={<CheckCircle2 className="w-6 h-6" />} label="Đang hoạt động" value={packages.filter((p) => p.isActive).length} tone="emerald" />
-        <StatCard icon={<ToggleLeft className="w-6 h-6" />} label="Tạm ngưng" value={packages.filter((p) => !p.isActive).length} tone="amber" />
-        <StatCard icon={<CreditCard className="w-6 h-6" />} label="Giá trung bình" value={formatPrice(Math.round(packages.filter((p) => p.price > 0).reduce((sum, p) => sum + p.price, 0) / (packages.filter((p) => p.price > 0).length || 1)))} tone="indigo" />
+        <div className="bg-gradient-to-br from-[#0056b3] to-blue-800 p-5 rounded-xl text-white">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-blue-200">inventory_2</span>
+            <span className="text-sm font-bold text-blue-200 uppercase">Tổng gói</span>
+          </div>
+          <p className="text-3xl font-black">{currentTabPackages.length}</p>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+            <span className="text-sm font-bold text-emerald-600 uppercase">Đang hoạt động</span>
+          </div>
+          <p className="text-3xl font-black text-[#1b1c1c]">
+            {currentTabPackages.filter((p) => p.status === 'ACTIVE').length}
+          </p>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-[#ba1a1a]">toggle_off</span>
+            <span className="text-sm font-bold text-[#ba1a1a] uppercase">Tạm ngưng</span>
+          </div>
+          <p className="text-3xl font-black text-[#1b1c1c]">
+            {currentTabPackages.filter((p) => p.status !== 'ACTIVE').length}
+          </p>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-amber-600">payments</span>
+            <span className="text-sm font-bold text-amber-600 uppercase">Giá TB</span>
+          </div>
+          <p className="text-3xl font-black text-[#1b1c1c]">
+            {formatPrice(
+              Math.round(
+                currentTabPackages.filter((p) => p.price > 0).reduce((sum, p) => sum + p.price, 0) /
+                  currentTabPackages.filter((p) => p.price > 0).length || 0
+              )
+            )}
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredPackages.map((pkg) => (
-          <PackageCard key={pkg._id} pkg={pkg} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
-        ))}
+      {/* Actions - filter + sort + add */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <select
+            value={filterActive}
+            onChange={(e) => setFilterActive(e.target.value)}
+            className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+          >
+            <option value="all">Tất cả</option>
+            <option value="active">Đang hoạt động</option>
+            <option value="inactive">Tạm ngưng</option>
+          </select>
+          <select
+            value={sortPrice}
+            onChange={(e) => setSortPrice(e.target.value)}
+            className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+          >
+            <option value="default">Mặc định</option>
+            <option value="asc">Giá: Thấp → Cao</option>
+            <option value="desc">Giá: Cao → Thấp</option>
+          </select>
+        </div>
+        <button
+          onClick={handleAddNew}
+          className="bg-[#0056b3] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-[#0056b3]/90 transition-all flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Thêm gói mới
+        </button>
       </div>
 
-      {filteredPackages.length === 0 && (
-        <SectionCard className="text-center py-16">
-          <Package className="w-16 h-16 text-slate-300 mx-auto" />
-          <p className="mt-4 font-black text-slate-500 text-lg">Chưa có gói dịch vụ nào</p>
-          <ActionButton
-            tone="soft"
-            onClick={() => setShowModal(true)}
-            className="mt-4"
+      {/* Package Grid */}
+      {activeTab === 'EMPLOYER' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredPackages.map((pkg) => (
+            <EmployerPackageCard
+              key={pkg._id}
+              pkg={pkg}
+              onEdit={handleEdit}
+              onToggleStatus={handleToggleStatus}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredPackages.map((pkg) => (
+            <JobseekerPackageCard
+              key={pkg._id}
+              pkg={pkg}
+              onEdit={handleEdit}
+              onToggleStatus={handleToggleStatus}
+            />
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-4 border-[#0056b3] border-t-transparent rounded-full"></div>
+        </div>
+      ) : filteredPackages.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-[#c2c6d4]/50">
+          <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">inventory_2</span>
+          <p className="text-[#5e5e62] mt-3 font-bold">Chưa có gói dịch vụ nào</p>
+          <button
+            onClick={handleAddNew}
+            className="mt-4 text-[#0056b3] font-bold hover:underline"
           >
             Tạo gói đầu tiên
-          </ActionButton>
-        </SectionCard>
-      )}
-
-      {showModal && (
-        <PackageModal
-          pkg={editingPkg}
-          onSave={handleSave}
-          onClose={() => {
-            setShowModal(false);
-            setEditingPkg(null);
-          }}
-        />
-      )}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };

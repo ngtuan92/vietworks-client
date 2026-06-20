@@ -1,13 +1,16 @@
-import { Eye } from 'lucide-react';
-
-
-const rows = [
-  { id: 1, name: 'Gói Job 7 ngày', target: 'Job Senior Backend Developer', start: '18/05/2026', end: '25/05/2026', status: 'ACTIVE', cost: '150.000 VNĐ' },
-  { id: 2, name: 'Gói 50 CV', target: 'Tài khoản công ty', start: '10/05/2026', end: '09/06/2026', status: 'ACTIVE', cost: '800.000 VNĐ' },
-  { id: 3, name: 'Gói Job 14 ngày', target: 'Job Sales Executive', start: '20/04/2026', end: '04/05/2026', status: 'EXPIRED', cost: '250.000 VNĐ' },
-];
+import { useEffect, useState } from 'react';
+import api from '../../../services/api';
 
 const ActivePackages = () => {
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/employer/active-packages').then(res => {
+      if (res.data.success) setPackages(res.data.data || []);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -26,28 +29,38 @@ const ActivePackages = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium text-slate-900">{r.name}</td>
-                  <td className="px-4 py-3">{r.target}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{r.start}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{r.end}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${r.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
-                      {r.status === 'ACTIVE' ? 'Đang hoạt động' : 'Hết hạn'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{r.cost}</td>
-                  <td className="px-4 py-3">
-                    <button 
-                      title="Xem chi tiết"
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">Đang tải...</td>
                 </tr>
-              ))}
+              ) : packages.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">Chưa có gói đang hoạt động.</td>
+                </tr>
+              ) : (
+                packages.map((pkg) => (
+                  <tr key={pkg._id} className="border-t border-slate-100">
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${pkg.labelType === 'URGENT' ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
+                        {pkg.packageId?.name || 'Boost Job'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">{pkg.jobId?.title || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{new Date(pkg.startAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{new Date(pkg.endAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${pkg.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                        {pkg.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">{pkg.packageId?.price?.toLocaleString('vi-VN') || '—'} VNĐ</td>
+                    <td className="px-4 py-3">
+                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Xem chi tiết</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

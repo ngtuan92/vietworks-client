@@ -1,12 +1,17 @@
-import { Eye, MessageCircle, Download } from 'lucide-react';
-
-
-const rows = [
-  { id: 1, name: 'Lê Gia Huy', role: 'UI/UX Designer', contact: 'legiahuy@gmail.com • 0912345566', unlockedAt: '18/05/2026 14:00', cost: '20.000 VNĐ', unlockedBy: 'HR Admin' },
-  { id: 2, name: 'Nguyễn Minh Anh', role: 'Backend Developer', contact: 'nguyenminhanh@gmail.com • 0901234123', unlockedAt: '17/05/2026 16:20', cost: '20.000 VNĐ', unlockedBy: 'HR Team 1' },
-];
+import { useState, useEffect } from 'react';
+import api from '../../../services/api';
 
 const UnlockedCandidates = () => {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/employer/unlocked-candidates')
+      .then(r => { if (r.data.success) setRows(r.data.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -25,38 +30,44 @@ const UnlockedCandidates = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-t border-slate-100">
-                  <td className="px-4 py-4 font-semibold text-slate-900">{r.name}</td>
-                  <td className="px-4 py-4">{r.role}</td>
-                  <td className="px-4 py-4">{r.contact}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{r.unlockedAt}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{r.cost}</td>
-                  <td className="px-4 py-4">{r.unlockedBy}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex flex-wrap gap-2">
-                      <button 
-                        title="Xem CV"
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        title="Chat"
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </button>
-                      <button 
-                        title="Tải CV"
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-200 hover:text-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">Đang tải...</td>
                 </tr>
-              ))}
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">Chưa có ứng viên nào được mở khóa.</td>
+                </tr>
+              ) : (
+                rows.map((r) => {
+                  const candidate = r.candidateId || {};
+                  const cv = r.cvId || {};
+                  return (
+                    <tr key={r._id} className="border-t border-slate-100">
+                      <td className="px-4 py-4 font-semibold text-slate-900">{candidate.fullName || '—'}</td>
+                      <td className="px-4 py-4">{cv.title || '—'}</td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm">{candidate.email || '—'}</div>
+                        <div className="text-xs text-slate-500">{candidate.phone || '—'}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {r.unlockedAt ? new Date(r.unlockedAt).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {r.amountCharged ? `${Number(r.amountCharged).toLocaleString('vi-VN')} VNĐ` : '—'}
+                      </td>
+                      <td className="px-4 py-4">—</td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Xem CV</button>
+                          <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Chat</button>
+                          <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">Tải CV</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

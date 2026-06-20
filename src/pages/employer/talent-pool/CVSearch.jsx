@@ -1,53 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
-const MOCK_CANDIDATES = [
-  {
-    id: 1,
-    name: 'Nguyễn Minh Anh',
-    role: 'Backend Developer',
-    exp: '4 năm',
-    skills: ['Node.js', 'PostgreSQL', 'Docker'],
-    location: 'TP. Hồ Chí Minh',
-    salary: '30 - 40 triệu',
-    level: 'Senior',
-    publicProfile: true,
-    email: 'nguyenminhanh@gmail.com',
-    phone: '0901234123',
-  },
-  {
-    id: 2,
-    name: 'Lê Gia Huy',
-    role: 'UI/UX Designer',
-    exp: '2 năm',
-    skills: ['Figma', 'Design system', 'Prototyping'],
-    location: 'Hà Nội',
-    salary: '20 - 28 triệu',
-    level: 'Junior',
-    publicProfile: true,
-    email: 'legiahuy@gmail.com',
-    phone: '0912345566',
-  },
-  {
-    id: 3,
-    name: 'Trần Bảo Ngọc',
-    role: 'Data Analyst',
-    exp: '3 năm',
-    skills: ['SQL', 'Power BI', 'Python'],
-    location: 'Đà Nẵng',
-    salary: '18 - 25 triệu',
-    level: 'Nhân viên',
-    publicProfile: false, // should be hidden
-    email: 'tranbaongoc@gmail.com',
-    phone: '0923456677',
-  },
-];
+import api from '../../../services/api';
 
 const maskEmail = (email) => {
+  if (!email) return '****';
   const [name, domain] = email.split('@');
   return `${name.slice(0, 4)}****@${domain}`;
 };
-const maskPhone = (phone) => `${phone.slice(0, 2)}******${phone.slice(-2)}`;
+const maskPhone = (phone) => { if (!phone) return '******'; return `${phone.slice(0, 2)}******${phone.slice(-2)}`; };
 
 const CVSearch = () => {
   const navigate = useNavigate();
@@ -58,39 +18,63 @@ const CVSearch = () => {
   const [industry, setIndustry] = useState('');
   const [salary, setSalary] = useState('');
   const [level, setLevel] = useState('');
-  const [walletBalance, setWalletBalance] = useState(55000);
-  const [unlockedIds, setUnlockedIds] = useState([2]);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [unlockTarget, setUnlockTarget] = useState(null);
+  const [unlocking, setUnlocking] = useState(false);
 
-  const candidates = useMemo(() => {
-    return MOCK_CANDIDATES.filter((c) => {
-      if (!c.publicProfile) return false; // ràng buộc private profile
-      if (keyword) {
-        const blob = `${c.name} ${c.role} ${c.skills.join(' ')}`.toLowerCase();
-        if (!blob.includes(keyword.toLowerCase())) return false;
-      }
-      if (location && c.location !== location) return false;
-      if (experience && c.exp !== experience) return false;
-      if (skills && !c.skills.join(' ').toLowerCase().includes(skills.toLowerCase())) return false;
-      if (industry) {
-        // UI-only filter hook
-      }
-      if (salary && c.salary !== salary) return false;
-      if (level && c.level !== level) return false;
-      return true;
-    });
-  }, [keyword, location, experience, skills, industry, salary, level]);
+  useEffect(() => {
+    api.get('/employer/wallet').then(r => { if (r.data.success) setWalletBalance(r.data.data.balance); }).catch(console.error);
+    fetchCandidates();
+  }, []);
+
+  const fetchCandidates = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (keyword) params.search = keyword;
+      if (skills) params.skills = skills;
+      if (location) params.location = location;
+      if (experience) params.experience = experience;
+      const res = await api.get('/employer/talent-pool', { params });
+      if (res.data.success) setCandidates(res.data.data);
+    } catch (error) {
+      console.error('Fetch candidates error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchCandidates();
+  };
 
   const openUnlock = (candidate) => setUnlockTarget(candidate);
   const closeUnlock = () => setUnlockTarget(null);
 
-  const confirmUnlock = () => {
+  const confirmUnlock = async () => {
     if (!unlockTarget) return;
-    const cost = 20000;
-    if (walletBalance < cost) return;
-    setWalletBalance((prev) => prev - cost);
-    setUnlockedIds((prev) => [...new Set([...prev, unlockTarget.id])]);
-    closeUnlock();
+    setUnlocking(true);
+    try {
+      await api.post('/employer/talent-pool/' + unlockTarget._id + '/unlock', {
+        cvId: unlockTarget.cvId,
+        amount: 20000
+      });
+      setCandidates(candidates.map(c =>
+        c._id === unlockTarget._id ? { ...c, isUnlocked: true, email: unlockTarget.email, phone: unlockTarget.phone } : c
+      ));
+      setWalletBalance(prev => prev - 20000);
+      closeUnlock();
+    } catch (error) {
+      console.error('Unlock error:', error);
+      if (error.response?.data?.message === 'Insufficient balance') {
+        navigate('/employer/wallet/topup');
+      }
+    } finally {
+      setUnlocking(false);
+    }
   };
 
   return (
@@ -120,7 +104,7 @@ const CVSearch = () => {
           <Select label="Mức lương mong muốn" value={salary} onChange={setSalary} options={['18 - 25 triệu', '20 - 28 triệu', '30 - 40 triệu']} />
           <Select label="Cấp bậc" value={level} onChange={setLevel} options={['Nhân viên', 'Junior', 'Senior']} />
           <div className="flex items-end">
-            <button className="w-full px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+            <button onClick={handleSearch} className="w-full px-4 py-3 rounded-xl bg-[#003f87] text-white font-semibold hover:bg-[#0b4e9f]">
               Tìm kiếm
             </button>
           </div>
@@ -128,60 +112,68 @@ const CVSearch = () => {
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {candidates.map((candidate) => {
-          const unlocked = unlockedIds.includes(candidate.id);
-          return (
-            <div key={candidate.id} className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">{candidate.name}</h3>
-                  <p className="text-slate-600">{candidate.role}</p>
+        {loading ? (
+          <div className="col-span-2 flex items-center justify-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-[#003f87] border-t-transparent rounded-full"></div>
+          </div>
+        ) : candidates.length === 0 ? (
+          <div className="col-span-2 text-center py-12 text-slate-500">Không tìm thấy ứng viên nào.</div>
+        ) : (
+          candidates.map((candidate) => {
+            const { isUnlocked } = candidate;
+            return (
+              <div key={candidate._id} className="bg-white border border-slate-200 rounded-2xl p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">{candidate.fullName}</h3>
+                    <p className="text-slate-600">{candidate.title}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                    {candidate.experienceYears || 'Nhân viên'}
+                  </span>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                  {candidate.level}
-                </span>
-              </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <Info label="Kinh nghiệm" value={candidate.exp} />
-                <Info label="Địa điểm" value={candidate.location} />
-                <Info label="Mức lương mong muốn" value={candidate.salary} />
-                <Info label="Email" value={unlocked ? candidate.email : maskEmail(candidate.email)} />
-                <Info label="Số điện thoại" value={unlocked ? candidate.phone : maskPhone(candidate.phone)} />
-              </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <Info label="Kinh nghiệm" value={candidate.experienceYears ? `${candidate.experienceYears} năm` : '—'} />
+                  <Info label="Địa điểm" value={candidate.location?.provinceCode || '—'} />
+                  <Info label="Kỹ năng" value={Array.isArray(candidate.skills) ? candidate.skills.slice(0, 3).join(', ') : '—'} />
+                  <Info label="Email" value={isUnlocked ? (candidate.email || '—') : maskEmail(candidate.email)} />
+                  <Info label="Số điện thoại" value={isUnlocked ? (candidate.phone || '—') : maskPhone(candidate.phone)} />
+                </div>
 
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-slate-700 mb-2">Kỹ năng</p>
-                <div className="flex flex-wrap gap-2">
-                  {candidate.skills.map((skill) => (
-                    <span key={skill} className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-                      {skill}
-                    </span>
-                  ))}
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-slate-700 mb-2">Kỹ năng</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(candidate.skills || []).map((skill) => (
+                      <span key={skill} className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Link to={`/employer/talent-pool/${candidate._id}`} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">
+                    Xem chi tiết
+                  </Link>
+                  {!isUnlocked ? (
+                    <button
+                      onClick={() => openUnlock(candidate)}
+                      className="px-3 py-2 rounded-xl border border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50"
+                    >
+                      Mở khóa CV
+                    </button>
+                  ) : (
+                    <>
+                      <button className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Tải CV</button>
+                      <button onClick={() => navigate('/employer/messages')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Chat</button>
+                    </>
+                  )}
                 </div>
               </div>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Link to={`/employer/talent-pool/${candidate.id}`} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">
-                  Xem chi tiết
-                </Link>
-                {!unlocked ? (
-                  <button
-                    onClick={() => openUnlock(candidate)}
-                    className="px-3 py-2 rounded-xl border border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50"
-                  >
-                    Mở khóa CV
-                  </button>
-                ) : (
-                  <>
-                    <button className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Tải CV</button>
-                    <button onClick={() => navigate('/employer/messages')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Chat</button>
-                  </>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </section>
 
       {unlockTarget ? (
@@ -210,7 +202,7 @@ const UnlockCVModal = ({ candidate, balance, onClose, onConfirm, onTopUp }) => {
           <button onClick={onClose} className="text-slate-500 hover:text-slate-700">✕</button>
         </div>
         <div className="p-5 space-y-3 text-sm">
-          <Info label="Tên ứng viên" value={candidate.name} />
+          <Info label="Tên ứng viên" value={candidate.fullName} />
           <Info label="Chi phí" value={`${cost.toLocaleString('vi-VN')} VNĐ / 1 CV`} />
           <Info label="Số dư hiện tại" value={`${balance.toLocaleString('vi-VN')} VNĐ`} />
           <Info label="Số dư sau giao dịch" value={`${Math.max(after, 0).toLocaleString('vi-VN')} VNĐ`} />

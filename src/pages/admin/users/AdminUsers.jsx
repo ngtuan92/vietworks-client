@@ -1,26 +1,7 @@
-import { Eye, Users, CheckCircle2, Clock, SearchX, Briefcase, Key } from 'lucide-react';
-import { useState } from 'react';
-import {
-  PageHeader,
-  SectionCard,
-  SimpleTable,
-  StatusBadge,
-  FilterGrid,
-  InputField,
-  SelectField,
-  ModalShell,
-  ActionButton,
-  StatCard,
-} from '../shared/AdminPrimitives';
-
-const MOCK_USERS = [
-  { _id: 'u1', fullName: 'Nguyễn Văn Minh', email: 'minh.nguyen@email.com', role: 'JOBSEEKER', accountStatus: 'ACTIVE', phone: '0901234567', createdAt: '2024-01-15T10:00:00Z' },
-  { _id: 'u2', fullName: 'Trần Thị Lan', email: 'lan.tran@company.com', role: 'EMPLOYER', accountStatus: 'ACTIVE', phone: '0912345678', createdAt: '2024-02-20T14:30:00Z' },
-  { _id: 'u3', fullName: 'Lê Hoàng Nam', email: 'nam.le@startup.vn', role: 'EMPLOYER', accountStatus: 'UNVERIFIED', phone: '0923456789', createdAt: '2024-03-10T09:15:00Z' },
-  { _id: 'u4', fullName: 'Phạm Quốc Khánh', email: 'khanh.pham@mail.com', role: 'JOBSEEKER', accountStatus: 'ACTIVE', phone: '0956789012', createdAt: '2024-01-20T11:45:00Z' },
-  { _id: 'u5', fullName: 'Công ty TNHH ABC', email: 'hr@abc-corp.vn', role: 'EMPLOYER', accountStatus: 'ACTIVE', phone: '0934567890', createdAt: '2024-03-05T08:00:00Z' },
-  { _id: 'u6', fullName: 'Đỗ Minh Tuấn', email: 'tuan.dodm@mail.com', role: 'JOBSEEKER', accountStatus: 'ACTIVE', phone: '0945678901', createdAt: '2024-03-18T13:20:00Z' },
-];
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { PageHeader, SectionCard, StatCard, FilterGrid, InputField, SelectField, ActionButton, StatusBadge, ModalShell } from '../shared/AdminPrimitives';
+import { Eye, Users, Briefcase, Key, SearchX } from 'lucide-react';
 
 const roleMap = {
   JOBSEEKER: 'bg-blue-50 text-blue-700 border-blue-200/60',
@@ -117,27 +98,49 @@ const UserDetailModal = ({ user, onClose }) => {
 };
 
 const AdminUsers = () => {
-  const [users] = useState(MOCK_USERS);
+  const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [detailModal, setDetailModal] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [filterRole, filterStatus, search]);
+
+  const fetchUsers = async () => {
+    try {
+      const params = {};
+      if (filterRole !== 'all') params.role = filterRole;
+      if (filterStatus !== 'all') params.accountStatus = filterStatus;
+      if (search) params.search = search;
+      const res = await api.get('/admin/users', { params });
+      if (res.data.success) setUsers(res.data.data);
+    } catch (error) {
+      console.error('Fetch users error:', error);
+    }
+  };
+
+  const fetchUserDetail = async (userId) => {
+    setDetailLoading(true);
+    try {
+      const res = await api.get('/admin/users/' + userId);
+      if (res.data.success) setDetailModal(res.data.data);
+    } catch (error) {
+      console.error('Fetch user detail error:', error);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const filteredUsers = users.filter((user) => {
-    const keyword = search.toLowerCase();
-    const matchSearch = !search || user.fullName.toLowerCase().includes(keyword) || user.email.toLowerCase().includes(keyword) || user.phone?.includes(search);
-    const matchRole = !filterRole || user.role === filterRole;
-    const matchStatus = !filterStatus || user.accountStatus === filterStatus;
-    return matchSearch && matchRole && matchStatus;
+    const matchSearch =
+      !search ||
+      user.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase());
+    return matchSearch;
   });
-
-  const activeFilterCount = [search, filterRole, filterStatus].filter(Boolean).length;
-
-  const clearFilters = () => {
-    setSearch('');
-    setFilterRole('');
-    setFilterStatus('');
-  };
 
   return (
     <div className="space-y-7 pb-10 animate-rise-in">
@@ -155,34 +158,105 @@ const AdminUsers = () => {
         <StatCard icon={<Key className="h-6 w-6" />} label="Tài khoản Admin" value={users.filter((user) => user.role === 'ADMIN').length} tone="amber" />
       </div>
 
-      <SectionCard 
-        title="Danh sách tài khoản" 
-        description="Quản lý và tra cứu thông tin người dùng"
-        right={activeFilterCount > 0 && (
-          <ActionButton tone="soft" onClick={clearFilters}>Xóa bộ lọc ({activeFilterCount})</ActionButton>
-        )}
-      >
-        <div className="mb-6">
-          <FilterGrid>
-            <InputField label="Tìm kiếm" value={search} onChange={setSearch} placeholder="Tên, email hoặc số điện thoại..." />
-            <SelectField label="Vai trò" value={filterRole} onChange={setFilterRole} options={[['JOBSEEKER', 'Ứng viên'], ['EMPLOYER', 'Nhà tuyển dụng'], ['ADMIN', 'Quản trị']]} placeholder="Tất cả vai trò" />
-            <SelectField label="Trạng thái" value={filterStatus} onChange={setFilterStatus} options={[['ACTIVE', 'Hoạt động'], ['UNVERIFIED', 'Chưa xác minh'], ['BANNED', 'Đã khóa']]} placeholder="Tất cả trạng thái" />
-          </FilterGrid>
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-xl border border-[#c2c6d4]/50 flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#5e5e62]">search</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo tên hoặc email..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#c2c6d4] focus:border-[#0056b3] focus:ring-2 focus:ring-[#0056b3]/10 outline-none"
+            />
+          </div>
         </div>
+        <select
+          value={filterRole}
+          onChange={(e) => setFilterRole(e.target.value)}
+          className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+        >
+          <option value="all">Tất cả vai trò</option>
+          <option value="JOBSEEKER">Ứng viên</option>
+          <option value="EMPLOYER">Nhà tuyển dụng</option>
+          <option value="ADMIN">Quản trị</option>
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+        >
+          <option value="all">Tất cả trạng thái</option>
+          <option value="ACTIVE">Hoạt động</option>
+          <option value="UNVERIFIED">Chưa xác minh</option>
+          <option value="BANNED">Bị khóa</option>
+        </select>
+      </div>
 
-        <SimpleTable headers={['Người dùng', 'Vai trò', 'Trạng thái', 'Điện thoại', 'Ngày đăng ký', 'Thao tác']}>
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => <UserRow key={user._id} user={user} onView={setDetailModal} />)
-          ) : (
-            <tr>
-              <td colSpan={6} className="py-12 text-center">
-                <SearchX className="mx-auto h-16 w-16 text-slate-300" />
-                <p className="mt-3 font-bold text-slate-500">Không tìm thấy người dùng nào</p>
-              </td>
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-[#0056b3]">group</span>
+            <span className="text-sm font-bold text-[#5e5e62] uppercase">Tổng cộng</span>
+          </div>
+          <p className="text-3xl font-black text-[#1b1c1c]">{users.length}</p>
+        </div>
+        <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+            <span className="text-sm font-bold text-emerald-600 uppercase">Hoạt động</span>
+          </div>
+          <p className="text-3xl font-black text-emerald-600">{users.filter((u) => u.accountStatus === 'ACTIVE').length}</p>
+        </div>
+        <div className="bg-amber-50 p-5 rounded-xl border border-amber-200">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-amber-600">pending</span>
+            <span className="text-sm font-bold text-amber-600 uppercase">Chưa xác minh</span>
+          </div>
+          <p className="text-3xl font-black text-amber-600">{users.filter((u) => u.accountStatus === 'UNVERIFIED').length}</p>
+        </div>
+        <div className="bg-red-50 p-5 rounded-xl border border-red-200">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-[#ba1a1a]">block</span>
+            <span className="text-sm font-bold text-[#ba1a1a] uppercase">Bị khóa</span>
+          </div>
+          <p className="text-3xl font-black text-[#ba1a1a]">{users.filter((u) => u.accountStatus === 'BANNED').length}</p>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-[#c2c6d4]/50 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-[#f5f3f3] border-b border-[#c2c6d4]">
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Người dùng</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Vai trò</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Trạng thái</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Điện thoại</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Ngày tham gia</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Thao tác</th>
             </tr>
-          )}
-        </SimpleTable>
-      </SectionCard>
+          </thead>
+          <tbody>
+            {filteredUsers.map((user) => (
+              <UserRow
+                key={user._id}
+                user={user}
+                onView={fetchUserDetail}
+              />
+            ))}
+          </tbody>
+        </table>
+
+        {filteredUsers.length === 0 && (
+          <div className="text-center py-12">
+            <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">search_off</span>
+            <p className="text-[#5e5e62] mt-3 font-bold">Không tìm thấy người dùng nào</p>
+          </div>
+        )}
+      </div>
 
       {detailModal && <UserDetailModal user={detailModal} onClose={() => setDetailModal(null)} />}
     </div>

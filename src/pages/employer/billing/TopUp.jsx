@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 
 const quickAmounts = [
   { label: '500k', value: 500000 },
@@ -17,14 +18,27 @@ const TopUp = () => {
   const [amount, setAmount] = useState(500000);
   const [method, setMethod] = useState('SePay');
   const [needInvoice, setNeedInvoice] = useState(false);
+  const [qrData, setQrData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
-    if (amount < 50000) {
-      alert('Số tiền nạp tối thiểu là 50.000 VNĐ');
-      return;
+    setLoading(true);
+    try {
+      const res = await api.post('/employer/wallet/deposit', { amount });
+      if (res.data.success) {
+        setQrData(res.data.data);
+      }
+    } catch (error) {
+      console.error('Deposit error:', error);
+      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
     }
-    navigate('/employer/wallet/payment-result?status=success&amount=' + encodeURIComponent(amount));
+  };
+
+  const handleCloseQr = () => {
+    setQrData(null);
   };
 
   return (
@@ -149,7 +163,70 @@ const TopUp = () => {
             </p>
           </div>
         </div>
+
       </div>
+
+      {/* QR Code Modal */}
+      {qrData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-emerald-600 text-[24px]">qr_code</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Quét mã QR thanh toán</h2>
+                  <p className="text-sm text-slate-500">Thanh toán qua SePay</p>
+                </div>
+              </div>
+              <button onClick={handleCloseQr} className="p-2 hover:bg-slate-100 rounded-lg">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-6 text-center">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 inline-block mb-4">
+                <img src={qrData.qrUrl} alt="QR Thanh toán" className="w-48 h-48 mx-auto" />
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 text-left space-y-2 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Số tiền:</span>
+                  <span className="font-black text-emerald-600">{Number(qrData.amount).toLocaleString('vi-VN')} VNĐ</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Ngân hàng:</span>
+                  <span className="font-bold text-slate-900">{qrData.bankName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Số tài khoản:</span>
+                  <span className="font-bold text-slate-900">{qrData.bankAccount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Nội dung CK:</span>
+                  <span className="font-black text-[#003f87]">{qrData.transferContent}</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">
+                Hệ thống sẽ tự động cộng tiền vào ví khi nhận được thanh toán
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate('/employer/wallet/payment-result?status=success&amount=' + encodeURIComponent(amount))}
+                  className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all"
+                >
+                  Tôi đã thanh toán xong
+                </button>
+                <button
+                  onClick={handleCloseQr}
+                  className="px-6 py-3 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
