@@ -99,73 +99,75 @@ export const UploadedCVCard = ({ id, title, date, fileName, fileSize, fileUrl, f
   };
 
   return (
-    <div className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
       <div
-        className="relative h-48 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden cursor-pointer flex flex-col items-center justify-center p-4"
+        className="relative aspect-[210/297] w-full bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden cursor-pointer flex flex-col items-center justify-center p-4"
         onClick={handleDownload}
       >
-        <div className="w-16 h-20 bg-white rounded shadow-md flex items-center justify-center mb-3">
+        <div className="w-16 h-20 bg-white rounded shadow-md flex items-center justify-center mb-3 shrink-0">
           {icon}
         </div>
-        <p className="text-xs text-slate-500 truncate w-full text-center">{fileName || 'document'}</p>
-        <p className="text-xs text-slate-400 mt-1">{fileSize ? formatFileSize(fileSize) : 'N/A'}</p>
+        <p className="text-xs font-semibold text-slate-700 truncate w-full text-center px-2">{fileName || 'document'}</p>
+        <p className="text-xs text-slate-500 mt-1">{fileSize ? formatFileSize(fileSize) : 'N/A'}</p>
       </div>
 
-      <div className="p-stack-md">
-        <div className="flex justify-between items-start mb-base gap-2">
-          {isRenaming ? (
-            <input
-              ref={inputRef}
-              value={renameValue}
-              onChange={e => setRenameValue(e.target.value)}
-              onBlur={handleRenameSubmit}
-              onKeyDown={handleRenameKeyDown}
-              onClick={e => e.stopPropagation()}
-              className="flex-1 font-headline-md text-on-surface border-b-2 border-primary bg-transparent outline-none py-0.5 pr-2"
-              placeholder="Nhập tên CV..."
-              maxLength={80}
-            />
-          ) : (
-            <h3
-              className="font-headline-md text-headline-md text-on-surface hover:text-primary cursor-pointer transition-colors flex-1 min-w-0 truncate"
-              onClick={handleDownload}
-              title={title}
-            >
-              {title}
-            </h3>
-          )}
+      <div className="p-stack-md flex-grow flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-base gap-2">
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onBlur={handleRenameSubmit}
+                onKeyDown={handleRenameKeyDown}
+                onClick={e => e.stopPropagation()}
+                className="flex-1 font-headline-md text-on-surface border-b-2 border-primary bg-transparent outline-none py-0.5 pr-2"
+                placeholder="Nhập tên CV..."
+                maxLength={80}
+              />
+            ) : (
+              <h3
+                className="font-headline-md text-headline-md text-on-surface hover:text-primary cursor-pointer transition-colors flex-1 min-w-0 truncate"
+                onClick={handleDownload}
+                title={title}
+              >
+                {title}
+              </h3>
+            )}
 
-          <div className="flex gap-stack-sm shrink-0">
-            <button
-              onClick={handleRenameStart}
-              className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
-              title="Đổi tên CV"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => onDelete && onDelete(id, title)}
-              className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
-              title="Xóa CV"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
+            <div className="flex gap-stack-sm shrink-0">
+              <button
+                onClick={handleRenameStart}
+                className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
+                title="Đổi tên CV"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => onDelete && onDelete(id, title)}
+                className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
+                title="Xóa CV"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <p className="text-on-surface-variant font-body-sm mb-stack-md">Tải lên: {date}</p>
+          <p className="text-on-surface-variant font-body-sm mb-stack-md">Tải lên: {date}</p>
+        </div>
 
         <div className="flex gap-stack-sm">
           <button
             onClick={handleOpenPreview}
-            className="flex-1 border border-outline text-on-surface font-bold py-2 rounded-lg hover:bg-surface-container-low transition-colors text-body-sm flex items-center justify-center gap-1"
+            className="flex-1 border border-outline text-on-surface font-bold py-2 rounded-lg hover:bg-surface-container-low transition-colors text-body-sm flex items-center justify-center gap-1 cursor-pointer"
           >
             <Eye className="w-5 h-5" />
             Xem trước
           </button>
           <button
             onClick={handleDownload}
-            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm flex items-center justify-center gap-1"
+            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm flex items-center justify-center gap-1 cursor-pointer"
           >
             <Download className="w-5 h-5" />
             Tải về
@@ -255,7 +257,7 @@ export const UploadedCVPlaceholderCard = ({ onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group"
+      className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-outline-variant rounded-xl bg-surface hover:bg-surface-container hover:border-primary transition-all group cursor-pointer"
     >
       <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
         <Upload className="text-primary group-hover:text-white w-8 h-8" />

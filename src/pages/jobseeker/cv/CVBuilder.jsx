@@ -188,6 +188,62 @@ const CVBuilder = () => {
     }
   };
 
+  const generatePreviewImage = async () => {
+    if (!cvRef.current) return null;
+    try {
+      const pages = cvRef.current.querySelectorAll('.cv-page');
+      const targetElement = pages.length > 0 ? pages[0] : cvRef.current;
+      
+      const canvas = await html2canvas(targetElement, {
+        scale: 1.2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+
+      return new Promise((resolve) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], `cv-preview-${id}.jpg`, { type: 'image/jpeg' });
+          try {
+            const res = await uploadService.uploadAvatar(file);
+            if (res.success && res.data?.fileUrl) {
+              resolve(res.data.fileUrl);
+            } else {
+              resolve(null);
+            }
+          } catch (uploadErr) {
+            console.error('Lỗi upload ảnh preview:', uploadErr);
+            resolve(null);
+          }
+        }, 'image/jpeg', 0.8);
+      });
+    } catch (err) {
+      console.error('Lỗi tạo ảnh preview:', err);
+      return null;
+    }
+  };
+
+  const handleExitBuilder = async () => {
+    try {
+      setSaving(true);
+      const previewUrl = await generatePreviewImage();
+      await cvService.updateCv(id, {
+        sections,
+        style,
+        previewImageUrl: previewUrl || undefined
+      });
+    } catch (err) {
+      console.error('Lỗi khi lưu và thoát:', err);
+    } finally {
+      setSaving(false);
+      navigate('/manage-cv');
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
     try {
@@ -203,6 +259,8 @@ const CVBuilder = () => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
+      let previewUrl = null;
+
       if (pages.length === 0) {
         // Fallback for single page
         const canvas = await html2canvas(cvRef.current, {
@@ -214,6 +272,18 @@ const CVBuilder = () => {
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
         const singlePdfHeight = (canvas.height * pdfWidth) / canvas.width;
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, singlePdfHeight);
+
+        // Upload first page snapshot
+        await new Promise((resolve) => {
+          canvas.toBlob(async (blob) => {
+            if (blob) {
+              const file = new File([blob], `cv-preview-${id}.jpg`, { type: 'image/jpeg' });
+              const res = await uploadService.uploadAvatar(file).catch(() => null);
+              if (res?.success) previewUrl = res.data.fileUrl;
+            }
+            resolve();
+          }, 'image/jpeg', 0.85);
+        });
       } else {
         for (let i = 0; i < pages.length; i++) {
           if (i > 0) {
@@ -227,7 +297,30 @@ const CVBuilder = () => {
           });
           const imgData = canvas.toDataURL('image/jpeg', 1.0);
           pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+          if (i === 0) {
+            // Upload first page snapshot
+            await new Promise((resolve) => {
+              canvas.toBlob(async (blob) => {
+                if (blob) {
+                  const file = new File([blob], `cv-preview-${id}.jpg`, { type: 'image/jpeg' });
+                  const res = await uploadService.uploadAvatar(file).catch(() => null);
+                  if (res?.success) previewUrl = res.data.fileUrl;
+                }
+                resolve();
+              }, 'image/jpeg', 0.85);
+            });
+          }
         }
+      }
+
+      // Save preview URL to DB
+      if (previewUrl) {
+        await cvService.updateCv(id, {
+          sections,
+          style,
+          previewImageUrl: previewUrl
+        }).catch(err => console.error('Lỗi lưu previewUrl:', err));
       }
 
       pdf.save(`${cvData?.title || 'CV'}.pdf`);
@@ -889,7 +982,7 @@ const CVBuilder = () => {
         onStyleChange={handleStyleChange}
         onExport={handleExportPDF}
         isSaving={saving}
-        navigateBack={() => navigate('/manage-cv')}
+        navigateBack={handleExitBuilder}
         currentTemplateId={cvData?.templateId?._id}
         onTemplateChange={handleTemplateChange}
       />

@@ -35,9 +35,9 @@ export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, o
   };
 
   return (
-    <div className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
       <div
-        className="relative h-48 bg-surface-container overflow-hidden cursor-pointer"
+        className="relative aspect-[210/297] w-full bg-surface-container overflow-hidden cursor-pointer"
         onClick={() => navigate(`/cv-builder/${id}`)}
       >
         <img
@@ -52,75 +52,79 @@ export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, o
         </div>
       </div>
 
-      <div className="p-stack-md">
-        <div className="flex justify-between items-start mb-base gap-2">
-          {/* Title / Rename Input */}
-          {isRenaming ? (
-            <input
-              ref={inputRef}
-              value={renameValue}
-              onChange={e => setRenameValue(e.target.value)}
-              onBlur={handleRenameSubmit}
-              onKeyDown={handleRenameKeyDown}
-              onClick={e => e.stopPropagation()}
-              className="flex-1 font-headline-md text-on-surface border-b-2 border-primary bg-transparent outline-none py-0.5 pr-2"
-              placeholder="Nhập tên CV..."
-              maxLength={80}
-            />
-          ) : (
-            <h3
-              className="font-headline-md text-headline-md text-on-surface hover:text-primary cursor-pointer transition-colors flex-1 min-w-0 truncate"
-              onClick={() => navigate(`/cv-builder/${id}`)}
-              title={title}
-            >
-              {title}
-            </h3>
-          )}
+      <div className="p-stack-md flex-1 flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-base gap-2">
+            {/* Title / Rename Input */}
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onBlur={handleRenameSubmit}
+                onKeyDown={handleRenameKeyDown}
+                onClick={e => e.stopPropagation()}
+                className="flex-1 font-headline-md text-on-surface border-b-2 border-primary bg-transparent outline-none py-0.5 pr-2"
+                placeholder="Nhập tên CV..."
+                maxLength={80}
+              />
+            ) : (
+              <h3
+                className="font-headline-md text-headline-md text-on-surface hover:text-primary cursor-pointer transition-colors flex-1 min-w-0 truncate"
+                onClick={() => navigate(`/cv-builder/${id}`)}
+                title={title}
+              >
+                {title}
+              </h3>
+            )}
 
-          <div className="flex gap-stack-sm shrink-0">
-            <button
-              onClick={handleRenameStart}
-              className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
-              title="Đổi tên CV"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => onDelete && onDelete(id, title)}
-              className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
-              title="Xóa CV"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
+            <div className="flex gap-stack-sm shrink-0">
+              <button
+                onClick={handleRenameStart}
+                className="p-stack-sm text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors"
+                title="Đổi tên CV"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => onDelete && onDelete(id, title)}
+                className="p-stack-sm text-on-surface-variant hover:text-error hover:bg-error-container rounded transition-colors"
+                title="Xóa CV"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
           </div>
+
+          <p className="text-on-surface-variant font-body-sm mb-stack-md">Cập nhật: {date}</p>
         </div>
 
-        <p className="text-on-surface-variant font-body-sm mb-stack-md">Cập nhật: {date}</p>
+        <div>
+          {!isMain && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onSetMain?.(id); }}
+              className="w-full mb-stack-sm bg-surface-container border border-outline-variant text-on-surface hover:bg-primary hover:text-white font-bold py-1.5 rounded-lg transition-all text-body-sm flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <CheckCircle className="w-5 h-5" />
+              Dùng làm CV chính
+            </button>
+          )}
 
-        {!isMain && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onSetMain?.(id); }}
-            className="w-full mb-stack-sm bg-surface-container border border-outline-variant text-on-surface hover:bg-primary hover:text-white font-bold py-1.5 rounded-lg transition-all text-body-sm flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <CheckCircle className="w-5 h-5" />
-            Dùng làm CV chính
-          </button>
-        )}
-
-        <div className="flex gap-stack-sm">
-          <button
-            onClick={() => navigate(`/cv-builder/${id}`)}
-            className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm cursor-pointer"
-          >
-            Xem trước
-          </button>
-          <button
-            onClick={() => onDownload && onDownload(id)}
-            className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
-            title="Tải PDF"
-          >
-            <Download className="w-5 h-5" />
-          </button>
+          <div className="flex gap-stack-sm">
+            <button
+              onClick={() => navigate(`/cv-builder/${id}`)}
+              className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm cursor-pointer"
+            >
+              Xem trước
+            </button>
+            <button
+              onClick={() => onDownload && onDownload(id)}
+              className="p-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+              title="Tải PDF"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
