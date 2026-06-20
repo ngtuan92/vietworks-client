@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Upload, FileText, CheckCircle, AlertTriangle, ArrowRight, RefreshCw, Cpu, Award, Zap, ThumbsUp } from 'lucide-react';
 
 const MOCK_ONLINE_CVS = [

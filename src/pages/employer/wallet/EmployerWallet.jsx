@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { History } from 'lucide-react';
+import api from '../../../services/api';
 
 const typeConfig = {
-  DEPOSIT: { label: 'Nạp tiền', bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
-  PAYMENT: { label: 'Thanh toán', bg: 'bg-indigo-100', text: 'text-indigo-700', icon: 'payments' },
-  REFUND: { label: 'Hoàn tiền', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'replay' },
+  WALLET_DEPOSIT:       { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
+  PACKAGE_PURCHASE:     { label: 'Mua gói',         bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: 'payments' },
+  CV_UNLOCK_SINGLE:     { label: 'Mở khóa CV',      bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
+  CV_UNLOCK_BY_PACKAGE: { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100', text: 'text-violet-700',  icon: 'lock_open' },
+  REFUND:               { label: 'Hoàn tiền',       bg: 'bg-amber-100',   text: 'text-amber-700',   icon: 'replay' },
+  ADMIN_ADJUSTMENT:     { label: 'Điều chỉnh',      bg: 'bg-slate-100',   text: 'text-slate-700',   icon: 'tune' },
 };
 
 const statusConfig = {
@@ -49,7 +51,7 @@ const EmployerWallet = () => {
 
   const fetchWallet = async () => {
     try {
-      const res = await axios.get('/api/employer/wallet', { withCredentials: true });
+      const res = await api.get('/employer/wallet');
       if (res.data.success) setWallet(res.data.data);
     } catch (error) {
       console.error('Fetch wallet error:', error);
@@ -58,7 +60,7 @@ const EmployerWallet = () => {
 
   const fetchTransactions = async () => {
     try {
-      const res = await axios.get('/api/employer/transactions', { withCredentials: true });
+      const res = await api.get('/employer/transactions');
       if (res.data.success) setTransactions(res.data.data);
     } catch (error) {
       console.error('Fetch transactions error:', error);
@@ -68,19 +70,18 @@ const EmployerWallet = () => {
   };
 
   const totalDeposits = transactions
-    .filter((tx) => tx.type === 'DEPOSIT' && tx.status === 'SUCCESS')
+    .filter((tx) => tx.type === 'WALLET_DEPOSIT' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + tx.amount, 0);
   const totalSpent = transactions
-    .filter((tx) => tx.type === 'PAYMENT' && tx.status === 'SUCCESS')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .filter((tx) => tx.type !== 'WALLET_DEPOSIT' && tx.type !== 'REFUND' && tx.status === 'SUCCESS')
+    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
   const handleDeposit = async () => {
     if (!depositAmount || Number(depositAmount) <= 0) return;
 
     try {
-      const res = await axios.post('/api/employer/wallet/deposit',
-        { amount: Number(depositAmount) },
-        { withCredentials: true }
+      const res = await api.post('/employer/wallet/deposit',
+        { amount: Number(depositAmount) }
       );
       if (res.data.success) {
         setDepositData(res.data.data);
@@ -126,7 +127,7 @@ const EmployerWallet = () => {
           <p className="text-sm text-[#5e5e62] mt-1">Quản lý số dư và giao dịch</p>
         </div>
         <Link
-          to="/employer/wallet/top-up"
+          to="/employer/wallet/topup"
           className="bg-[#0056b3] text-white px-5 py-2 rounded-lg font-bold hover:bg-[#0056b3]/90 transition-all flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add_card</span>
@@ -188,7 +189,7 @@ const EmployerWallet = () => {
               </button>
               <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left">
                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <History className="w-5 h-5 text-slate-400" />
+                  <span className="material-symbols-outlined text-indigo-600">history</span>
                 </div>
                 <div>
                   <p className="font-bold text-[#1b1c1c]">Lịch sử giao dịch</p>
@@ -226,7 +227,7 @@ const EmployerWallet = () => {
           </thead>
           <tbody>
             {transactions.map((tx) => {
-              const type = typeConfig[tx.type] || typeConfig.PAYMENT;
+              const type = typeConfig[tx.type] || typeConfig.PACKAGE_PURCHASE;
               const status = statusConfig[tx.status] || statusConfig.PENDING;
               return (
                 <tr key={tx._id} className="border-b border-[#c2c6d4]/30 hover:bg-[#f5f3f3]/50 transition-colors">
@@ -237,8 +238,8 @@ const EmployerWallet = () => {
                     </span>
                   </td>
                   <td className="py-4 px-4">
-                    <span className={`font-black ${tx.type === 'DEPOSIT' ? 'text-emerald-600' : 'text-[#1b1c1c]'}`}>
-                      {tx.type === 'DEPOSIT' ? '+' : '-'}{formatPrice(tx.amount)}
+                    <span className={`font-black ${tx.type === 'WALLET_DEPOSIT' ? 'text-emerald-600' : 'text-[#1b1c1c]'}`}>
+                      {tx.type === 'WALLET_DEPOSIT' ? '+' : '-'}{formatPrice(Math.abs(tx.amount))}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-sm text-[#5e5e62]">{tx.description}</td>

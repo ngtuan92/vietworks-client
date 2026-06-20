@@ -48,7 +48,7 @@ const Footer = () => {
       
       <div className="max-w-container-max mx-auto px-gutter pt-8 border-t border-gray-300">
         <p className="text-gray-500 text-xs">
-          © 2024 VietWorks. Bản quyền thuộc về Công ty cổ phần VietWorks.
+          © 2026 VietWorks. Bản quyền thuộc về Công ty cổ phần VietWorks.
         </p>
       </div>
     </footer>

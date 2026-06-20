@@ -1,47 +1,30 @@
-import { BarChart2, Table, Users, User, Building2, TrendingUp, TrendingDown } from 'lucide-react';
-import React, { useState } from 'react';
-import {
-  PageHeader,
-  SectionCard,
-  StatCard,
-  ActionButton,
-  SelectField
-} from '../shared/AdminPrimitives';
-
-const MOCK_USER_GROWTH = {
-  summary: {
-    totalUsers: 15240,
-    byRole: {
-      JOBSEEKER: 12480,
-      EMPLOYER: 2760,
-      ADMIN: 0,
-    },
-    byStatus: {
-      ACTIVE: 12890,
-      UNVERIFIED: 2150,
-    },
-  },
-  growthData: [
-    { date: '2024-01', JOBSEEKER: 150, EMPLOYER: 45, ADMIN: 2, total: 197 },
-    { date: '2024-02', JOBSEEKER: 180, EMPLOYER: 52, ADMIN: 1, total: 233 },
-    { date: '2024-03', JOBSEEKER: 220, EMPLOYER: 68, ADMIN: 3, total: 291 },
-    { date: '2024-04', JOBSEEKER: 195, EMPLOYER: 55, ADMIN: 2, total: 252 },
-    { date: '2024-05', JOBSEEKER: 240, EMPLOYER: 72, ADMIN: 1, total: 313 },
-    { date: '2024-06', JOBSEEKER: 280, EMPLOYER: 85, ADMIN: 2, total: 367 },
-    { date: '2024-07', JOBSEEKER: 310, EMPLOYER: 92, ADMIN: 3, total: 405 },
-    { date: '2024-08', JOBSEEKER: 325, EMPLOYER: 88, ADMIN: 2, total: 415 },
-    { date: '2024-09', JOBSEEKER: 340, EMPLOYER: 95, ADMIN: 1, total: 436 },
-    { date: '2024-10', JOBSEEKER: 355, EMPLOYER: 102, ADMIN: 2, total: 459 },
-    { date: '2024-11', JOBSEEKER: 380, EMPLOYER: 110, ADMIN: 2, total: 492 },
-    { date: '2024-12', JOBSEEKER: 420, EMPLOYER: 125, ADMIN: 3, total: 548 },
-  ],
-};
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { PageHeader, SectionCard, SelectField } from '../shared/AdminPrimitives';
+import { Users, User, Building2, BarChart2, Table, TrendingUp, TrendingDown } from 'lucide-react';
 
 const AdminUserGrowth = () => {
   const [dateRange, setDateRange] = useState('year');
   const [viewMode, setViewMode] = useState('chart');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const maxTotal = Math.max(...MOCK_USER_GROWTH.growthData.map((d) => d.total));
+  useEffect(() => {
+    api.get('/admin/user-growth', { params: { range: dateRange } })
+      .then(r => { if (r.data.success) setData(r.data.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [dateRange]);
+
+  if (loading || !data) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin w-8 h-8 border-4 border-[#0056b3] border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  const maxTotal = Math.max(...(data.growthData || []).map((d) => d.total));
 
   return (
     <div className="space-y-7 pb-10 animate-rise-in">
@@ -84,7 +67,7 @@ const AdminUserGrowth = () => {
             </div>
             <span className="text-sm font-bold text-blue-200 uppercase tracking-wider">Tổng người dùng</span>
           </div>
-          <p className="text-3xl font-black">{MOCK_USER_GROWTH.summary.totalUsers.toLocaleString()}</p>
+          <p className="text-3xl font-black">{data.summary.totalUsers.toLocaleString()}</p>
         </div>
 
         <SectionCard className="p-6">
@@ -94,15 +77,15 @@ const AdminUserGrowth = () => {
             </div>
             <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ứng viên</span>
           </div>
-          <p className="text-2xl font-black text-blue-600">{MOCK_USER_GROWTH.summary.byRole.JOBSEEKER.toLocaleString()}</p>
-          <div className="mt-3 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <p className="text-2xl font-black text-emerald-600">{data.summary.byRole.JOBSEEKER.toLocaleString()}</p>
+          <div className="mt-2 w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full"
-              style={{ width: `${(MOCK_USER_GROWTH.summary.byRole.JOBSEEKER / MOCK_USER_GROWTH.summary.totalUsers) * 100}%` }}
+              className="h-full bg-emerald-500 rounded-full"
+              style={{ width: `${(data.summary.byRole.JOBSEEKER / data.summary.totalUsers) * 100}%` }}
             ></div>
           </div>
-          <p className="mt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">
-            {((MOCK_USER_GROWTH.summary.byRole.JOBSEEKER / MOCK_USER_GROWTH.summary.totalUsers) * 100).toFixed(1)}%
+          <p className="mt-1 text-xs text-[#5e5e62]">
+            {((data.summary.byRole.JOBSEEKER / data.summary.totalUsers) * 100).toFixed(1)}%
           </p>
         </SectionCard>
 
@@ -113,72 +96,64 @@ const AdminUserGrowth = () => {
             </div>
             <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Nhà tuyển dụng</span>
           </div>
-          <p className="text-2xl font-black text-indigo-600">{MOCK_USER_GROWTH.summary.byRole.EMPLOYER.toLocaleString()}</p>
-          <div className="mt-3 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <p className="text-2xl font-black text-indigo-600">{data.summary.byRole.EMPLOYER.toLocaleString()}</p>
+          <div className="mt-2 w-full h-2 bg-indigo-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-indigo-500 rounded-full"
-              style={{ width: `${(MOCK_USER_GROWTH.summary.byRole.EMPLOYER / MOCK_USER_GROWTH.summary.totalUsers) * 100}%` }}
+              style={{ width: `${(data.summary.byRole.EMPLOYER / data.summary.totalUsers) * 100}%` }}
             ></div>
           </div>
-          <p className="mt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">
-            {((MOCK_USER_GROWTH.summary.byRole.EMPLOYER / MOCK_USER_GROWTH.summary.totalUsers) * 100).toFixed(1)}%
+          <p className="mt-1 text-xs text-[#5e5e62]">
+            {((data.summary.byRole.EMPLOYER / data.summary.totalUsers) * 100).toFixed(1)}%
           </p>
         </SectionCard>
       </div>
 
       {viewMode === 'chart' ? (
-        <SectionCard>
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="font-black text-slate-900">Tăng trưởng người dùng mới theo tháng</h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-blue-500"></div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ứng viên</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-indigo-400"></div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Nhà tuyển dụng</span>
-              </div>
+      <div className="bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-bold text-[#1b1c1c]">Tăng trưởng người dùng mới theo tháng</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-[#0056b3]"></div>
+              <span className="text-xs font-medium text-[#5e5e62]">Ứng viên</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-indigo-400"></div>
+              <span className="text-xs font-medium text-[#5e5e62]">Nhà tuyển dụng</span>
             </div>
           </div>
+        </div>
 
-          <div className="h-72 flex items-end justify-between gap-3 px-4 border-b border-slate-100 pb-4">
-            {MOCK_USER_GROWTH.growthData.map((d, idx) => {
-              const monthLabel = new Date(d.date + '-01').toLocaleDateString('vi-VN', { month: 'short' });
-              return (
-                <div key={d.date} className="flex-1 flex flex-col items-center gap-3 group relative">
-                  <div className="w-full flex items-end justify-center gap-1 h-56">
-                    <div
-                      className="w-6 bg-blue-500/80 hover:bg-blue-600 rounded-t-sm transition-all cursor-pointer relative"
-                      style={{ height: `${(d.JOBSEEKER / maxTotal) * 100}%` }}
-                    ></div>
-                    <div
-                      className="w-6 bg-indigo-400/80 hover:bg-indigo-500 rounded-t-sm transition-all cursor-pointer relative"
-                      style={{ height: `${(d.EMPLOYER / maxTotal) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-700 transition-colors">{monthLabel}</span>
-
-                  <div className="absolute bottom-full mb-3 bg-slate-900 text-white text-[11px] rounded-xl px-4 py-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap shadow-xl">
-                    <div className="font-black mb-2 text-sm">{monthLabel} 2024</div>
-                    <div className="flex items-center justify-between gap-4 mb-1">
-                      <span className="text-slate-300 font-medium">Ứng viên</span>
-                      <span className="font-bold text-blue-400">{d.JOBSEEKER}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 mb-2">
-                      <span className="text-slate-300 font-medium">Nhà tuyển dụng</span>
-                      <span className="font-bold text-indigo-400">{d.EMPLOYER}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 font-black border-t border-slate-700 pt-2 mt-2 text-sm">
-                      <span className="text-white">Tổng cộng</span>
-                      <span className="text-white">{d.total}</span>
-                    </div>
-                  </div>
+        <div className="h-72 flex items-end justify-between gap-2 px-4">
+          {data.growthData.map((d, idx) => {
+            const monthLabel = new Date(d.date + '-01').toLocaleDateString('vi-VN', { month: 'short' });
+            return (
+              <div key={d.date} className="flex-1 flex flex-col items-center gap-2 group relative">
+                <div className="w-full flex items-end justify-center gap-0.5 h-56">
+                  <div
+                    className="w-5 bg-[#0056b3]/70 hover:bg-[#0056b3] rounded-t-sm transition-all cursor-pointer"
+                    style={{ height: `${(d.JOBSEEKER / maxTotal) * 100}%` }}
+                  ></div>
+                  <div
+                    className="w-5 bg-indigo-400 hover:bg-indigo-600 rounded-t-sm transition-all cursor-pointer"
+                    style={{ height: `${(d.EMPLOYER / maxTotal) * 100}%` }}
+                  ></div>
                 </div>
-              );
-            })}
-          </div>
-        </SectionCard>
+                <span className="text-[10px] font-bold text-[#5e5e62] uppercase">{monthLabel}</span>
+
+                {/* Tooltip */}
+                <div className="absolute bottom-full mb-2 bg-[#1b1c1c] text-white text-[10px] rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                  <div className="font-bold mb-1">{monthLabel} 2024</div>
+                  <div>Ứng viên: <span className="text-[#0056b3]">{d.JOBSEEKER}</span></div>
+                  <div>Nhà tuyển dụng: <span className="text-indigo-400">{d.EMPLOYER}</span></div>
+                  <div className="font-black border-t border-white/20 pt-1 mt-1">Tổng: {d.total}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
       ) : (
         <SectionCard className="p-0 overflow-hidden">
           <table className="w-full">
@@ -193,8 +168,8 @@ const AdminUserGrowth = () => {
               </tr>
             </thead>
             <tbody>
-              {MOCK_USER_GROWTH.growthData.map((d, idx) => {
-                const prevTotal = idx > 0 ? MOCK_USER_GROWTH.growthData[idx - 1].total : d.total;
+              {data.growthData.map((d, idx) => {
+                const prevTotal = idx > 0 ? data.growthData[idx - 1].total : d.total;
                 const growth = ((d.total - prevTotal) / prevTotal) * 100;
                 const monthLabel = new Date(d.date + '-01').toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
 

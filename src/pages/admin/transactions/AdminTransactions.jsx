@@ -1,82 +1,15 @@
-import { Receipt, CheckCircle2, CreditCard, Eye, SearchX, WalletCards, RotateCcw, Landmark } from 'lucide-react';
-import React, { useState } from 'react';
-import {
-  PageHeader,
-  SectionCard,
-  SimpleTable,
-  FilterGrid,
-  InputField,
-  SelectField,
-  ModalShell,
-  ActionButton,
-  StatCard,
-} from '../shared/AdminPrimitives';
-
-const MOCK_TRANSACTIONS = [
-  {
-    _id: 'tx1',
-    userId: { fullName: 'Trần Thị Lan', email: 'lan.tran@company.com', role: 'EMPLOYER' },
-    type: 'DEPOSIT',
-    amount: 2990000,
-    currency: 'VND',
-    status: 'SUCCESS',
-    description: 'Nạp tiền qua PayOS - 2990000 VND',
-    paymentMethod: 'PAYTOS',
-    payosTransactionId: 'PAY123456',
-    createdAt: '2024-03-25T14:30:00Z',
-  },
-  {
-    _id: 'tx2',
-    userId: { fullName: 'Nguyễn Văn Minh', email: 'minh.nguyen@email.com', role: 'JOBSEEKER' },
-    type: 'PAYMENT',
-    amount: 990000,
-    currency: 'VND',
-    status: 'SUCCESS',
-    description: 'Mua gói Cơ Bản',
-    paymentMethod: 'PAYTOS',
-    packageId: { name: 'Gói Cơ Bản', price: 990000 },
-    createdAt: '2024-03-24T10:15:00Z',
-  },
-  {
-    _id: 'tx3',
-    userId: { fullName: 'Công ty ABC', email: 'hr@abc-corp.vn', role: 'EMPLOYER' },
-    type: 'DEPOSIT',
-    amount: 5990000,
-    currency: 'VND',
-    status: 'PENDING',
-    description: 'Nạp tiền qua PayOS - 5990000 VND',
-    paymentMethod: 'PAYTOS',
-    createdAt: '2024-03-25T16:00:00Z',
-  },
-  {
-    _id: 'tx4',
-    userId: { fullName: 'Lê Hoàng Nam', email: 'nam.le@startup.vn', role: 'EMPLOYER' },
-    type: 'PAYMENT',
-    amount: 2990000,
-    currency: 'VND',
-    status: 'FAILED',
-    description: 'Thanh toán gói Pro - thất bại',
-    paymentMethod: 'PAYTOS',
-    createdAt: '2024-03-23T09:00:00Z',
-  },
-  {
-    _id: 'tx5',
-    userId: { fullName: 'Phạm Quốc Khánh', email: 'khanh.pham@mail.com', role: 'JOBSEEKER' },
-    type: 'REFUND',
-    amount: 500000,
-    currency: 'VND',
-    status: 'SUCCESS',
-    description: 'Hoàn tiền gói Premium',
-    paymentMethod: 'PAYTOS',
-    createdAt: '2024-03-22T11:30:00Z',
-  },
-];
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { PageHeader, SectionCard, StatCard, FilterGrid, InputField, SelectField, ActionButton, ModalShell } from '../shared/AdminPrimitives';
+import { Receipt, CheckCircle2, CreditCard, Eye, SearchX } from 'lucide-react';
 
 const typeConfig = {
-  DEPOSIT: { label: 'Nạp tiền', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/60', icon: <WalletCards className="w-3.5 h-3.5" /> },
-  PAYMENT: { label: 'Thanh toán', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200/60', icon: <CreditCard className="w-3.5 h-3.5" /> },
-  REFUND: { label: 'Hoàn tiền', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/60', icon: <RotateCcw className="w-3.5 h-3.5" /> },
-  WITHDRAW: { label: 'Rút tiền', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200/60', icon: <Landmark className="w-3.5 h-3.5" /> },
+  WALLET_DEPOSIT:       { label: 'Nạp tiền',         bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
+  PACKAGE_PURCHASE:     { label: 'Mua gói',           bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: 'payments' },
+  CV_UNLOCK_SINGLE:     { label: 'Mở khóa CV',        bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
+  CV_UNLOCK_BY_PACKAGE: { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
+  REFUND:               { label: 'Hoàn tiền',         bg: 'bg-amber-100',   text: 'text-amber-700',   icon: 'replay' },
+  ADMIN_ADJUSTMENT:     { label: 'Điều chỉnh',        bg: 'bg-slate-100',   text: 'text-slate-700',   icon: 'tune' },
 };
 
 const statusConfig = {
@@ -91,20 +24,28 @@ const formatPrice = (price) => {
 };
 
 const AdminTransactions = () => {
-  const [transactions] = useState(MOCK_TRANSACTIONS);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selectedTx, setSelectedTx] = useState(null);
 
+  useEffect(() => {
+    api.get('/admin/transactions')
+      .then(r => { if (r.data.success) setTransactions(r.data.data); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const filteredTx = transactions.filter((tx) => {
     const matchSearch =
       !search ||
-      tx.userId.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      tx.userId.email.toLowerCase().includes(search.toLowerCase()) ||
-      tx.description.toLowerCase().includes(search.toLowerCase());
-    const matchType = !filterType || tx.type === filterType;
-    const matchStatus = !filterStatus || tx.status === filterStatus;
+      (tx.userId?.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (tx.userId?.email || '').toLowerCase().includes(search.toLowerCase()) ||
+      (tx.description || '').toLowerCase().includes(search.toLowerCase());
+    const matchType = filterType === 'all' || tx.type === filterType;
+    const matchStatus = filterStatus === 'all' || tx.status === filterStatus;
     return matchSearch && matchType && matchStatus;
   });
 
@@ -117,10 +58,10 @@ const AdminTransactions = () => {
   };
 
   const totalRevenue = transactions
-    .filter((tx) => tx.status === 'SUCCESS' && tx.type === 'DEPOSIT')
+    .filter((tx) => tx.status === 'SUCCESS' && tx.type === 'WALLET_DEPOSIT')
     .reduce((sum, tx) => sum + tx.amount, 0);
   const totalPayments = transactions
-    .filter((tx) => tx.status === 'SUCCESS' && tx.type === 'PAYMENT')
+    .filter((tx) => tx.status === 'SUCCESS' && tx.type === 'PACKAGE_PURCHASE')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
@@ -155,19 +96,32 @@ const AdminTransactions = () => {
           </FilterGrid>
         </div>
 
-        <SimpleTable headers={['Mã GD', 'Người dùng', 'Loại', 'Số tiền', 'Trạng thái', 'Ngày', 'Thao tác']}>
-          {filteredTx.length > 0 ? (
-            filteredTx.map((tx) => {
-              const type = typeConfig[tx.type] || typeConfig.PAYMENT;
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-[#c2c6d4]/50 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-[#f5f3f3] border-b border-[#c2c6d4]">
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Mã GD</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Người dùng</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Loại</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Số tiền</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Trạng thái</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Ngày</th>
+              <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTx.map((tx) => {
+              const type = typeConfig[tx.type] || typeConfig.PACKAGE_PURCHASE;
               const status = statusConfig[tx.status] || statusConfig.PENDING;
               return (
                 <tr key={tx._id} className="border-t border-slate-100 transition-colors">
                   <td className="px-6 py-4">
                     <span className="font-mono text-sm font-bold text-slate-700">{tx._id.slice(-8).toUpperCase()}</span>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900">{tx.userId.fullName}</p>
-                    <p className="text-xs font-medium text-slate-500">{tx.userId.email}</p>
+                  <td className="py-4 px-4">
+                    <p className="font-bold text-[#1b1c1c]">{tx.userId?.fullName || 'N/A'}</p>
+                    <p className="text-xs text-[#5e5e62]">{tx.userId?.email || 'N/A'}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${type.bg} ${type.text} ${type.border}`}>
@@ -199,16 +153,16 @@ const AdminTransactions = () => {
                   </td>
                 </tr>
               );
-            })
-          ) : (
-            <tr>
-              <td colSpan={7} className="py-12 text-center">
-                <SearchX className="mx-auto h-16 w-16 text-slate-300" />
-                <p className="mt-3 font-bold text-slate-500">Không tìm thấy giao dịch nào</p>
-              </td>
-            </tr>
-          )}
-        </SimpleTable>
+            })}
+          </tbody>
+        </table>
+        {filteredTx.length === 0 && (
+          <div className="text-center py-12">
+            <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">search_off</span>
+            <p className="text-[#5e5e62] mt-3 font-bold">Không tìm thấy giao dịch nào</p>
+          </div>
+        )}
+      </div>
       </SectionCard>
 
       {selectedTx && (
@@ -221,12 +175,6 @@ const AdminTransactions = () => {
             <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Mã giao dịch</p>
               <p className="font-mono font-black text-slate-900 mt-1">{selectedTx._id.slice(-8).toUpperCase()}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Loại giao dịch</p>
-              <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mt-1.5 ${typeConfig[selectedTx.type].bg} ${typeConfig[selectedTx.type].text} ${typeConfig[selectedTx.type].border}`}>
-                {typeConfig[selectedTx.type].label}
-              </span>
             </div>
             <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Số tiền</p>
