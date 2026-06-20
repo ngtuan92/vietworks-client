@@ -37,7 +37,7 @@ const ApplicationDetail = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [interviewModalOpen, setInterviewModalOpen] = useState(false);
-  const [interviewData, setInterviewData] = useState({ time: '', format: 'ONLINE', location: '', contactPerson: '', note: '' });
+  const [interviewData, setInterviewData] = useState({ interviewTime: '', interviewType: 'ONLINE', location: '', contactPerson: '', note: '' });
 
   const handleApprove = async () => {
     if (!window.confirm('Bạn muốn chuyển hồ sơ này sang trạng thái Đã duyệt?')) return;
@@ -45,7 +45,7 @@ const ApplicationDetail = () => {
       setActionLoading(true);
       setError(''); setSuccessMessage('');
       const res = await atsService.approveApplication(id, 'Hồ sơ của bạn đã được duyệt và đang chờ sắp xếp lịch phỏng vấn.');
-      setApplication(res.data);
+      setApplication(prev => ({ ...prev, status: res.data.status, approvedMessage: res.data.approvedMessage, statusHistory: res.data.statusHistory }));
       setSuccessMessage('Đã duyệt hồ sơ thành công.');
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi duyệt hồ sơ');
@@ -61,7 +61,7 @@ const ApplicationDetail = () => {
       setActionLoading(true);
       setError(''); setSuccessMessage('');
       const res = await atsService.rejectApplication(id, rejectReason);
-      setApplication(res.data);
+      setApplication(prev => ({ ...prev, status: res.data.status, rejectionReason: res.data.rejectionReason, statusHistory: res.data.statusHistory }));
       setSuccessMessage('Đã từ chối hồ sơ và thông báo cho ứng viên.');
       setRejectModalOpen(false);
     } catch (err) {
@@ -73,12 +73,12 @@ const ApplicationDetail = () => {
 
   const handleInterview = async (e) => {
     e.preventDefault();
-    if (!interviewData.time || !interviewData.location) return alert('Vui lòng nhập đủ thời gian và địa điểm');
+    if (!interviewData.interviewTime || !interviewData.location) return alert('Vui lòng nhập đủ thời gian và địa điểm');
     try {
       setActionLoading(true);
       setError(''); setSuccessMessage('');
       const res = await atsService.inviteInterview(id, interviewData);
-      setApplication(res.data);
+      setApplication(prev => ({ ...prev, status: res.data.status, interviewInvitation: res.data.interviewInvitation, statusHistory: res.data.statusHistory }));
       setSuccessMessage('Đã gửi thư mời phỏng vấn thành công.');
       setInterviewModalOpen(false);
     } catch (err) {
@@ -218,7 +218,7 @@ const ApplicationDetail = () => {
       </div>
 
       {successMessage ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{successMessage}</div> : null}
-      {error && application ? <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+      {error && application && !interviewModalOpen && !rejectModalOpen ? <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <section className="xl:col-span-1 bg-white border border-slate-200/60 premium-shadow rounded-2xl p-5 space-y-5">
@@ -319,6 +319,7 @@ const ApplicationDetail = () => {
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-5 border-b border-slate-100 font-bold text-lg">Từ chối ứng viên</div>
             <form onSubmit={handleReject} className="p-5 space-y-4">
+              {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-semibold">{error}</div>}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Lý do từ chối <span className="text-red-500">*</span></label>
                 <textarea required value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} placeholder="VD: Kinh nghiệm chưa phù hợp..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100" />
@@ -339,17 +340,18 @@ const ApplicationDetail = () => {
           <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-5 border-b border-slate-100 font-bold text-lg">Mời phỏng vấn</div>
             <form onSubmit={handleInterview} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-semibold">{error}</div>}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Hình thức</label>
-                  <select value={interviewData.format} onChange={e => setInterviewData({...interviewData, format: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500">
+                  <select value={interviewData.interviewType} onChange={e => setInterviewData({...interviewData, interviewType: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500">
                     <option value="ONLINE">Online (Trực tuyến)</option>
                     <option value="OFFLINE">Offline (Trực tiếp)</option>
                   </select>
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Thời gian <span className="text-red-500">*</span></label>
-                  <input type="datetime-local" required value={interviewData.time} onChange={e => setInterviewData({...interviewData, time: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                  <input type="datetime-local" required value={interviewData.interviewTime} onChange={e => setInterviewData({...interviewData, interviewTime: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
                 </div>
               </div>
               <div>

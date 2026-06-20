@@ -93,11 +93,10 @@ export const getCareerPositions = async (careerId) => {
 };
 
 /**
- * Lấy danh sách Cấp bậc công việc (Job Levels) - Có thể lọc theo careerGroup
+ * Lấy danh sách Cấp bậc công việc (Job Levels)
  */
-export const getJobLevels = async (careerGroupId = null) => {
-  const params = careerGroupId ? { careerGroupId } : {};
-  const response = await api.get('/master-data/job-levels', { params });
+export const getJobLevels = async () => {
+  const response = await api.get('/master-data/job-levels');
   return response.data;
 };
 

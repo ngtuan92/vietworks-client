@@ -71,6 +71,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
+  const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
   const [experienceLevels, setExperienceLevels] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -128,12 +129,14 @@ const [companyLocations, setCompanyLocations] = useState([]);
   useEffect(() => {
     const fetchInitialMasterData = async () => {
       try {
-        const [resGroups, resExp] = await Promise.all([
+        const [resGroups, resExp, resLevels] = await Promise.all([
           jobApi.getCareerGroups(),
-          jobApi.getExperienceLevels()
+          jobApi.getExperienceLevels(),
+          jobApi.getJobLevels()
         ]);
         if (resGroups.success) setCareerGroups(resGroups.data);
         if (resExp.success) setExperienceLevels(resExp.data);
+        if (resLevels.success) setGlobalJobLevels(resLevels.data);
       } catch (err) {
         showToast('error', 'Không thể tải dữ liệu danh mục hệ thống.');
       }
@@ -152,14 +155,25 @@ const [companyLocations, setCompanyLocations] = useState([]);
     
     const fetchDependentByGroup = async () => {
       try {
-        const [resCareers, resLevels, resSkills] = await Promise.all([
+        const [resCareers, resSkills] = await Promise.all([
           jobApi.getCareersByGroup(form.careerGroupId),
-          jobApi.getJobLevels(form.careerGroupId),
           jobApi.getSkillsByCareerGroup(form.careerGroupId)
         ]);
         if (resCareers.success) setCareers(resCareers.data);
-        if (resLevels.success) setJobLevels(resLevels.data);
         if (resSkills.success) setSkills(resSkills.data);
+        
+        // --- Logic Lọc JobLevels (Loại bỏ các Level IT nếu không phải ngành IT) ---
+        const selectedGroup = careerGroups.find(g => g._id === form.careerGroupId);
+        if (selectedGroup && selectedGroup.slug !== 'cong-nghe-thong-tin') {
+          const itLevels = [
+            'Thực tập sinh (IT)', 'Fresher', 'Junior', 'Senior', 
+            'Technical Leader', 'IT Manager / Project Manager', 
+            'Giám đốc công nghệ (CTO) / Director'
+          ];
+          setJobLevels(globalJobLevels.filter(lvl => !itLevels.includes(lvl.name)));
+        } else {
+          setJobLevels(globalJobLevels);
+        }
       } catch (err) {
         console.error(err);
       }
