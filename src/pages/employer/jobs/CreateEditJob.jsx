@@ -12,6 +12,55 @@ const STEPS = [
   'Địa điểm & hạn nộp',
 ];
 
+// --- Danh mục ngày trong tuần dùng cho bộ chọn lịch làm việc ---
+const WORKING_DAYS = [
+  { code: 'MON', label: 'Thứ 2' },
+  { code: 'TUE', label: 'Thứ 3' },
+  { code: 'WED', label: 'Thứ 4' },
+  { code: 'THU', label: 'Thứ 5' },
+  { code: 'FRI', label: 'Thứ 6' },
+  { code: 'SAT', label: 'Thứ 7' },
+  { code: 'SUN', label: 'Chủ nhật' },
+];
+const WORKING_DAY_ORDER = WORKING_DAYS.map((d) => d.code);
+
+// Gộp các ngày liên tiếp thành dạng "Thứ 2 - Thứ 6" cho gọn, thay vì liệt kê từng ngày
+const compressWorkingDays = (days) => {
+  if (!days || days.length === 0) return '';
+  const sorted = [...days].sort(
+    (a, b) => WORKING_DAY_ORDER.indexOf(a) - WORKING_DAY_ORDER.indexOf(b)
+  );
+  const labelOf = (code) => WORKING_DAYS.find((d) => d.code === code)?.label || code;
+
+  const groups = [];
+  let groupStart = sorted[0];
+  let groupPrev = sorted[0];
+
+  for (let i = 1; i <= sorted.length; i++) {
+    const code = sorted[i];
+    const prevIdx = WORKING_DAY_ORDER.indexOf(groupPrev);
+    const isConsecutive = code && WORKING_DAY_ORDER.indexOf(code) === prevIdx + 1;
+
+    if (!isConsecutive) {
+      groups.push(
+        groupStart === groupPrev ? labelOf(groupStart) : `${labelOf(groupStart)} - ${labelOf(groupPrev)}`
+      );
+      groupStart = code;
+    }
+    groupPrev = code;
+  }
+
+  return groups.join(', ');
+};
+
+// Tạo chuỗi hiển thị/lưu trữ "Quy chuẩn thời gian làm việc" từ dữ liệu có cấu trúc
+const formatWorkingSchedule = (workingDays, from, to) => {
+  const daysText = compressWorkingDays(workingDays);
+  if (!daysText) return '';
+  const timeText = from && to ? ` (Từ ${from} đến ${to})` : '';
+  return `${daysText}${timeText}`;
+};
+
 const CreateEditJob = () => {
   const [step, setStep] = useState(1);
   const [isCompanyVerified, setIsCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
@@ -43,7 +92,9 @@ const [companyLocations, setCompanyLocations] = useState([]);
     description: '',
     requirements: '',
     benefits: '',
-    workingTime: '',
+    workingDays: [], // ['MON', 'TUE', ...] - các ngày làm việc cố định trong tuần
+    workingTimeFrom: '08:30',
+    workingTimeTo: '17:30',
     applyInstruction: 'Ứng viên nộp hồ sơ trực tuyến bằng cách bấm trực tiếp vào nút Ứng tuyển.',
     deadline: '',
     isUrgent: false,
@@ -161,6 +212,30 @@ const [companyLocations, setCompanyLocations] = useState([]);
     });
   };
 
+  // --- Bật/tắt một ngày làm việc, đồng thời tự đồng bộ Chính sách Thứ 7 cho hợp lý ---
+  const toggleWorkingDay = (day) => {
+    setForm((prev) => {
+      const current = new Set(prev.workingDays);
+      if (current.has(day)) current.delete(day);
+      else current.add(day);
+      const workingDays = Array.from(current);
+
+      const hasSaturday = workingDays.includes('SAT');
+      const hasSunday = workingDays.includes('SUN');
+
+      let saturdayPolicy = prev.saturdayPolicy;
+      if (hasSaturday) {
+        // Đã chọn làm Thứ 7 trong lịch tuần -> chính sách phải phản ánh đúng là CÓ làm Thứ 7
+        saturdayPolicy = 'WORK_SATURDAY';
+      } else if (!hasSunday && saturdayPolicy === 'WORK_SATURDAY') {
+        // Lịch tuần chỉ chọn Thứ 2 - Thứ 6 (không có Thứ 7/CN) -> không thể giữ chính sách "có làm Thứ 7"
+        saturdayPolicy = 'OFF_SATURDAY';
+      }
+
+      return { ...prev, workingDays, saturdayPolicy };
+    });
+  };
+
   const showToast = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
@@ -180,7 +255,13 @@ const [companyLocations, setCompanyLocations] = useState([]);
       if (form.salaryType === 'TO') return Boolean(form.salaryTo);
     }
     if (step === 3) {
-      return Boolean(form.description && form.workingTime);
+      return Boolean(
+        form.description &&
+        form.workingDays.length > 0 &&
+        form.workingTimeFrom &&
+        form.workingTimeTo &&
+        form.workingTimeFrom < form.workingTimeTo
+      );
     }
     if (step === 4) {
       return Boolean(form.requirements);
@@ -221,6 +302,17 @@ const [companyLocations, setCompanyLocations] = useState([]);
   delete payload.salaryType;
   delete payload.salaryFrom;
   delete payload.salaryTo;
+
+  // Backend hiện chỉ lưu "workingTime" dưới dạng chuỗi text, nên ta build chuỗi đó
+  // từ dữ liệu có cấu trúc (ngày + giờ) ngay tại frontend -> không cần sửa backend.
+  payload.workingTime = formatWorkingSchedule(
+    form.workingDays,
+    form.workingTimeFrom,
+    form.workingTimeTo
+  );
+  delete payload.workingDays;
+  delete payload.workingTimeFrom;
+  delete payload.workingTimeTo;
 
   return payload;
 };
@@ -348,7 +440,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
           />
         )}
         {step === 2 && <StepSalary form={form} setField={setField} />}
-        {step === 3 && <StepDescription form={form} setField={setField} />}
+        {step === 3 && <StepDescription form={form} setField={setField} toggleWorkingDay={toggleWorkingDay} />}
         {step === 4 && <StepRequirements form={form} setField={setField} skills={skills} toggleMulti={toggleMulti}  />}
         {step === 5 && <StepBenefits form={form} setField={setField} />}
         {step === 6 && (
@@ -501,11 +593,56 @@ const StepSalary = ({ form, setField }) => {
   );
 };
 
-const StepDescription = ({ form, setField }) => (
+const StepDescription = ({ form, setField, toggleWorkingDay }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 3: Bản mô tả công việc</h2>
     <TextArea label="Chi tiết công việc diễn ra" required value={form.description} onChange={(v) => setField('description', v)} placeholder="- Chịu trách nhiệm kiến trúc hệ thống dữ liệu API Backend...&#10;- Xây dựng tài liệu kỹ thuật dự án..." />
-    <TextArea label="Quy chuẩn thời gian làm việc" required value={form.workingTime} onChange={(v) => setField('workingTime', v)} placeholder="Thứ 2 - Thứ 6 (Từ 08:30 đến 17:45). Nghỉ trưa 1 tiếng 30 phút." />
+
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">
+        Ngày làm việc trong tuần <span className="text-red-500">*</span>
+      </label>
+      <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+        {WORKING_DAYS.map((day) => {
+          const isSelected = form.workingDays.includes(day.code);
+          return (
+            <button
+              key={day.code}
+              type="button"
+              onClick={() => toggleWorkingDay(day.code)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                isSelected ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              {day.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-slate-400 mt-1.5">
+        Chọn/bỏ chọn <span className="font-semibold">Thứ 7</span> ở đây sẽ tự động cập nhật "Chính sách làm việc Thứ 7" ở Bước 6.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 max-w-sm">
+      <Field
+        label="Giờ bắt đầu"
+        required
+        type="time"
+        value={form.workingTimeFrom}
+        onChange={(v) => setField('workingTimeFrom', v)}
+      />
+      <Field
+        label="Giờ kết thúc"
+        required
+        type="time"
+        value={form.workingTimeTo}
+        onChange={(v) => setField('workingTimeTo', v)}
+      />
+    </div>
+    {form.workingTimeFrom && form.workingTimeTo && form.workingTimeFrom >= form.workingTimeTo ? (
+      <p className="text-sm text-red-600 font-medium">⚠️ Giờ kết thúc phải sau giờ bắt đầu.</p>
+    ) : null}
   </div>
 );
 
@@ -587,6 +724,24 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
     ]);
   };
 
+  // Khoá các lựa chọn Chính sách Thứ 7 mâu thuẫn với lịch làm việc đã chọn ở Bước 3
+  const scheduleSelected = form.workingDays && form.workingDays.length > 0;
+  const includesSaturday = form.workingDays?.includes('SAT');
+
+  const saturdayPolicyOptions = [
+    { value: 'NOT_SPECIFIED', label: 'Không đề cập chi tiết' },
+    {
+      value: 'WORK_SATURDAY',
+      label: 'Có làm việc ngày Thứ 7',
+      disabled: scheduleSelected && !includesSaturday,
+    },
+    {
+      value: 'OFF_SATURDAY',
+      label: 'Nghỉ hoàn toàn Thứ 7 & CN',
+      disabled: scheduleSelected && includesSaturday,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold text-slate-900">Bước 6: Khối địa điểm & Thời hạn ứng tuyển</h2>
@@ -652,11 +807,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           label="Chính sách làm việc Thứ 7"
           value={form.saturdayPolicy}
           onChange={(v) => setField('saturdayPolicy', v)}
-          options={[
-            { value: 'NOT_SPECIFIED', label: 'Không đề cập chi tiết' },
-            { value: 'WORK_SATURDAY', label: 'Có làm việc ngày Thứ 7' },
-            { value: 'OFF_SATURDAY', label: 'Nghỉ hoàn toàn Thứ 7 & CN' },
-          ]}
+          options={saturdayPolicyOptions}
         />
         <Field
           label="Hạn cuối nộp hồ sơ nhận CV"
@@ -666,6 +817,13 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           onChange={(v) => setField('deadline', v)}
         />
       </div>
+      {scheduleSelected && (
+        <p className="text-xs text-slate-400 -mt-2">
+          {includesSaturday
+            ? 'Lịch làm việc ở Bước 3 có Thứ 7 nên chính sách được khoá ở "Có làm việc ngày Thứ 7".'
+            : 'Lịch làm việc ở Bước 3 chỉ từ Thứ 2 - Thứ 6 nên không thể chọn "Có làm việc ngày Thứ 7".'}
+        </p>
+      )}
 
       {isPastDeadline ? (
         <p className="text-sm text-red-600 font-medium">
@@ -774,7 +932,7 @@ const StepPreview = ({ form, isCompanyVerified, careerGroups, careers, positions
           )}
 
           <PreviewSection title="3. Các quyền lợi & Gói chế độ phúc lợi được hưởng" content={form.benefits} />
-          <PreviewSection title="4. Khung giờ làm việc hành chính" content={form.workingTime} />
+          <PreviewSection title="4. Khung giờ làm việc hành chính" content={formatWorkingSchedule(form.workingDays, form.workingTimeFrom, form.workingTimeTo)} />
           <PreviewSection title="5. Quy chuẩn & Cách thức nhận CV ứng tuyển" content={form.applyInstruction} />
 
           <div className="text-xs text-slate-400 font-medium pt-2">Hạn chót đóng cổng nhận hồ sơ trực tuyến: {form.deadline ? new Date(form.deadline).toLocaleDateString('vi-VN') : 'Chưa thiết lập'}</div>
@@ -814,7 +972,7 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
     >
       <option value="">-- Vui lòng click chọn --</option>
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
+        <option key={opt.value} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
       ))}
     </select>
   </div>

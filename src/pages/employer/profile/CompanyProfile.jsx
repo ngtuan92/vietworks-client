@@ -145,13 +145,34 @@ setLegalPreview(company.businessLicenseFile?.fileUrl || '');
 const handleLegalFileChange = (event) => {
   const file = event.target.files?.[0] || null;
 
+  const isAllowedLegalFile = (selectedFile) => {
+    if (!selectedFile) return false;
+    return (
+      selectedFile.type.startsWith('image/') ||
+      selectedFile.type === 'application/pdf' ||
+      selectedFile.type === 'application/octet-stream' ||
+      /\.pdf$/i.test(selectedFile.name)
+    );
+  };
+
+  if (file && !isAllowedLegalFile(file)) {
+    setBanner({
+      type: 'error',
+      message: 'Chỉ hỗ trợ ảnh hoặc file PDF cho giấy tờ pháp lý.'
+    });
+    event.target.value = '';
+    return;
+  }
+
   setLegal((prev) => ({
     ...prev,
     file,
   }));
 
-  if (file) {
+  if (file && file.type.startsWith('image/')) {
     setLegalPreview(URL.createObjectURL(file));
+  } else {
+    setLegalPreview('');
   }
 };
 
@@ -198,7 +219,7 @@ const handleLegalFileChange = (event) => {
     }
 
     if (legal.file) {
-      const uploadRes = await uploadService.uploadCompanyImage(legal.file);
+      const uploadRes = await uploadService.uploadLegalDocument(legal.file);
       businessLicenseFile = {
         fileUrl: uploadRes.data.fileUrl,
         fileName: uploadRes.data.fileName,
@@ -625,8 +646,9 @@ useEffect(() => {
           <div className="rounded-2xl border border-slate-200 p-4">
             <FileField
               label="File giấy đăng ký doanh nghiệp"
-              accept="application/pdf,image/*"
-onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
+              accept=".pdf,application/pdf,image/*"
+              onChange={handleLegalFileChange}
+              hint="PDF hoặc ảnh"
             />
 {legal.file ? (
   <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -640,6 +662,8 @@ onChange={handleLegalFileChange}              hint="PDF hoặc ảnh"
         alt="Giấy đăng ký doanh nghiệp mới"
         className="mt-3 max-h-64 rounded-xl border border-slate-200 object-contain"
       />
+    ) : legal.file.type === 'application/pdf' || /\.pdf$/i.test(legal.file.name) ? (
+      <p className="mt-3 text-sm text-slate-600">Tệp PDF đã được chọn để upload.</p>
     ) : null}
   </div>
 ) : legal.businessLicenseFile?.fileUrl ? (

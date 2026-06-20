@@ -11,13 +11,14 @@ const statusMap = {
 };
 
 const CompanyVerification = () => {
-  const [filters, setFilters] = useState({ keyword: '', status: 'PENDING', field: '', size: '' });
+  // 1. Thay đổi status mặc định thành rỗng '' để lúc đầu load TẤT CẢ công ty
+  const [filters, setFilters] = useState({ keyword: '', status: '', field: '', size: '' });
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchPendingCompanies = async () => {
+    const fetchCompanies = async () => {
       try {
         setLoading(true);
         const res = await adminCompanyVerificationService.getPendingCompanies();
@@ -26,13 +27,13 @@ const CompanyVerification = () => {
           setCompanies(res.data || []);
         }
       } catch (error) {
-        setMessage(error.response?.data?.message || 'Không thể tải danh sách công ty chờ duyệt.');
+        setMessage(error.response?.data?.message || 'Không thể tải danh sách công ty.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPendingCompanies();
+    fetchCompanies();
   }, []);
 
   const filteredCompanies = useMemo(() => {
@@ -58,7 +59,7 @@ const CompanyVerification = () => {
 
   return (
     <div className="space-y-7 animate-rise-in">
-      <PageHeader title="Quản lý công ty" description="Danh sách công ty đang chờ kiểm duyệt pháp lý." />
+      <PageHeader title="Quản lý công ty" description="Danh sách toàn bộ hệ thống công ty và trạng thái kiểm duyệt pháp lý." />
 
       {message ? (
         <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-[#001a40]">
@@ -69,13 +70,27 @@ const CompanyVerification = () => {
       <SectionCard title="Bộ lọc">
         <FilterGrid>
           <InputField label="Từ khóa" value={filters.keyword} onChange={(v) => setFilters((p) => ({ ...p, keyword: v }))} placeholder="Tên công ty, mã số thuế, email" />
-          <SelectField label="Trạng thái xác minh" value={filters.status} onChange={(v) => setFilters((p) => ({ ...p, status: v }))} options={[['PENDING', 'Đang chờ duyệt']]} />
+          
+          {/* 2. Cập nhật options đầy đủ các trạng thái để admin lựa chọn */}
+          <SelectField 
+            label="Trạng thái xác minh" 
+            value={filters.status} 
+            onChange={(v) => setFilters((p) => ({ ...p, status: v }))} 
+            options={[
+              ['', 'Tất cả trạng thái'],
+              ['PENDING', 'Đang chờ duyệt'],
+              ['VERIFIED', 'Đã xác minh'],
+              ['REJECTED', 'Đã từ chối'],
+              ['UNVERIFIED', 'Chưa xác minh']
+            ]} 
+          />
+          
           <SelectField label="Lĩnh vực" value={filters.field} onChange={(v) => setFilters((p) => ({ ...p, field: v }))} options={fieldOptions} />
           <SelectField label="Quy mô công ty" value={filters.size} onChange={(v) => setFilters((p) => ({ ...p, size: v }))} options={sizeOptions} />
         </FilterGrid>
       </SectionCard>
 
-      <SimpleTable headers={['Công ty', 'Mã số thuế', 'Email', 'Lĩnh vực', 'Quy mô', 'Trạng thái', 'Ngày gửi', 'Thao tác']}>
+      <SimpleTable headers={['Công ty', 'Mã số thuế', 'Email', 'Lĩnh vực', 'Quy mô', 'Trạng thái', 'Ngày cập nhật', 'Thao tác']}>
         {loading ? (
           <tr>
             <td className="px-4 py-4 text-slate-500" colSpan={8}>Đang tải dữ liệu...</td>
@@ -84,7 +99,7 @@ const CompanyVerification = () => {
 
         {!loading && filteredCompanies.length === 0 ? (
           <tr>
-            <td className="px-4 py-4 text-slate-500" colSpan={8}>Không có công ty đang chờ duyệt.</td>
+            <td className="px-4 py-4 text-slate-500" colSpan={8}>Không tìm thấy công ty nào phù hợp.</td>
           </tr>
         ) : null}
 
@@ -99,8 +114,16 @@ const CompanyVerification = () => {
             <td className="px-4 py-3">{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString('vi-VN') : '-'}</td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
-                <Link to={`/admin/companies/${company.id}`} className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95">Chi tiết</Link>
-                <Link to={`/admin/companies/${company.id}/review`} className="rounded-xl bg-primary shadow-sm px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition active:scale-95">Duyệt</Link>
+                <Link to={`/admin/companies/${company.id}`} className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95">
+                  Chi tiết
+                </Link>
+                
+                {/* 3. Logic điều kiện ẩn/hiện nút Duyệt: Chỉ hiện khi trạng thái là PENDING */}
+                {company.verificationStatus === 'PENDING' && (
+                  <Link to={`/admin/companies/${company.id}`} className="rounded-xl bg-primary shadow-sm px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition active:scale-95">
+                    Duyệt
+                  </Link>
+                )}
               </div>
             </td>
           </tr>
@@ -111,5 +134,3 @@ const CompanyVerification = () => {
 };
 
 export default CompanyVerification;
-
-
