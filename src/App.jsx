@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -83,6 +83,7 @@ import AdminUsers from './pages/admin/users/AdminUsers';
 import AdminTransactions from './pages/admin/transactions/AdminTransactions';
 import AdminRevenueReport from './pages/admin/analytics/AdminRevenueReport';
 import AdminUserGrowth from './pages/admin/analytics/AdminUserGrowth';
+import EmailLogs from './pages/admin/analytics/EmailLogs';
 import AdminInvoices from './pages/admin/invoices/AdminInvoices';
 
 // CV Template Pages from feat/cv-template
@@ -217,6 +218,7 @@ function App() {
               <Route path="analytics" element={<AnalyticsDashboard />} />
               <Route path="revenue-report" element={<AdminRevenueReport />} />
               <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
+              <Route path="email-logs" element={<EmailLogs />} />
 
               <Route path="account" element={<AdminAccountSettings />} />
             </Route>
