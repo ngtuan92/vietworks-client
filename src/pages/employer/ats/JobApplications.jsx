@@ -26,6 +26,7 @@ const JobApplications = () => {
   const [previewItem, setPreviewItem] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewNotice, setPreviewNotice] = useState('');
   const previewUrlRef = useRef('');
 
   useEffect(() => {
@@ -58,6 +59,22 @@ const JobApplications = () => {
     queueMicrotask(async () => {
       try {
         setPreviewLoading(true);
+        setPreviewNotice('');
+
+        if (['UNREAD', 'APPLIED'].includes(previewItem.status)) {
+          const viewedRes = await atsService.markApplicationAsViewed(previewItem.id);
+          const viewedData = viewedRes?.data;
+          if (viewedData) {
+            setApplications((prev) => prev.map((item) => item.id === previewItem.id ? { ...item, ...viewedData, status: viewedData.status || 'VIEWED' } : item));
+            setPreviewItem((prev) => prev ? { ...prev, ...viewedData, status: viewedData.status || 'VIEWED' } : prev);
+          }
+          if (viewedRes?.notificationCreated) {
+            setPreviewNotice('Đã chuyển hồ sơ sang trạng thái đã xem và gửi thông báo cho ứng viên.');
+          } else {
+            setPreviewNotice('Hồ sơ đã được chuyển sang trạng thái đã xem.');
+          }
+        }
+
         const blob = await atsService.getApplicationCvBlob(previewItem.id);
         if (!active) return;
         if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -66,7 +83,7 @@ const JobApplications = () => {
         setPreviewUrl(objectUrl);
       } catch (err) {
         if (!active) return;
-        setError(err.response?.data?.message || 'Kh?ng th? t?i CV ?? xem tr??c');
+        setError(err.response?.data?.message || 'Không thể tải CV để xem trước');
       } finally {
         if (active) setPreviewLoading(false);
       }
@@ -177,12 +194,12 @@ const JobApplications = () => {
         ))}
       </section>
 
-      {previewItem ? <CvPreviewModal item={previewItem} onClose={() => { if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = ''; setPreviewUrl(''); setPreviewItem(null); }} previewUrl={previewUrl} loading={previewLoading} /> : null}
+      {previewItem ? <CvPreviewModal item={previewItem} onClose={() => { if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = ''; setPreviewUrl(''); setPreviewNotice(''); setPreviewItem(null); }} previewUrl={previewUrl} loading={previewLoading} notice={previewNotice} /> : null}
     </div>
   );
 };
 
-const CvPreviewModal = ({ item, onClose, previewUrl, loading }) => (
+const CvPreviewModal = ({ item, onClose, previewUrl, loading, notice }) => (
   <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
     <div className="w-full max-w-5xl h-full max-h-[90vh] bg-white rounded-[2rem] shadow-2xl border border-slate-200/60 overflow-hidden flex flex-col transform scale-100 animate-in zoom-in-95 duration-200">
       
@@ -203,6 +220,10 @@ const CvPreviewModal = ({ item, onClose, previewUrl, loading }) => (
           </button>
         </div>
       </div>
+
+      {notice ? (
+        <div className="px-6 py-3 bg-emerald-50 border-b border-emerald-100 text-sm font-semibold text-emerald-700">{notice}</div>
+      ) : null}
 
       {/* Body */}
       <div className="flex-1 overflow-hidden bg-slate-100/50 p-4 md:p-6 relative">

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Eye, FileText, Loader2, Mail, MapPin, Phone } from 'lucide-react';
 import atsService from '../../../services/atsService';
@@ -32,6 +32,61 @@ const ApplicationDetail = () => {
   const [cvBlobUrl, setCvBlobUrl] = useState('');
   const [cvPreviewLoading, setCvPreviewLoading] = useState(false);
   const cvBlobUrlRef = useRef('');
+
+  const [actionLoading, setActionLoading] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [interviewModalOpen, setInterviewModalOpen] = useState(false);
+  const [interviewData, setInterviewData] = useState({ time: '', format: 'ONLINE', location: '', contactPerson: '', note: '' });
+
+  const handleApprove = async () => {
+    if (!window.confirm('Bạn muốn chuyển hồ sơ này sang trạng thái Đã duyệt?')) return;
+    try {
+      setActionLoading(true);
+      setError(''); setSuccessMessage('');
+      const res = await atsService.approveApplication(id, 'Hồ sơ của bạn đã được duyệt và đang chờ sắp xếp lịch phỏng vấn.');
+      setApplication(res.data);
+      setSuccessMessage('Đã duyệt hồ sơ thành công.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi duyệt hồ sơ');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReject = async (e) => {
+    e.preventDefault();
+    if (!rejectReason.trim()) return alert('Vui lòng nhập lý do từ chối');
+    try {
+      setActionLoading(true);
+      setError(''); setSuccessMessage('');
+      const res = await atsService.rejectApplication(id, rejectReason);
+      setApplication(res.data);
+      setSuccessMessage('Đã từ chối hồ sơ và thông báo cho ứng viên.');
+      setRejectModalOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi từ chối hồ sơ');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleInterview = async (e) => {
+    e.preventDefault();
+    if (!interviewData.time || !interviewData.location) return alert('Vui lòng nhập đủ thời gian và địa điểm');
+    try {
+      setActionLoading(true);
+      setError(''); setSuccessMessage('');
+      const res = await atsService.inviteInterview(id, interviewData);
+      setApplication(res.data);
+      setSuccessMessage('Đã gửi thư mời phỏng vấn thành công.');
+      setInterviewModalOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi mời phỏng vấn');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadDetail = async () => {
@@ -145,9 +200,21 @@ const ApplicationDetail = () => {
             <p className="text-slate-600 mt-1">{application.job?.title || 'Tin tuyển dụng'} • {application.company?.name || 'Công ty'}</p>
           </div>
         </div>
-        <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${STATUS_COLOR[application.status] || STATUS_COLOR.VIEWED}`}>
-          {STATUS_LABEL[application.status] || application.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${STATUS_COLOR[application.status] || STATUS_COLOR.VIEWED}`}>
+            {STATUS_LABEL[application.status] || application.status}
+          </span>
+          {['UNREAD', 'APPLIED', 'VIEWED'].includes(application.status) && (
+            <div className="flex gap-2 ml-4">
+              <button disabled={actionLoading} onClick={handleApprove} className="px-4 py-1.5 text-sm font-bold bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50">Duyệt</button>
+              <button disabled={actionLoading} onClick={() => setInterviewModalOpen(true)} className="px-4 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50">Mời phỏng vấn</button>
+              <button disabled={actionLoading} onClick={() => setRejectModalOpen(true)} className="px-4 py-1.5 text-sm font-bold bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50">Từ chối</button>
+            </div>
+          )}
+          {application.status === 'APPROVED' && !application.interviewInvitation && (
+            <button disabled={actionLoading} onClick={() => setInterviewModalOpen(true)} className="ml-4 px-4 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50">Tạo thư mời phỏng vấn</button>
+          )}
+        </div>
       </div>
 
       {successMessage ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{successMessage}</div> : null}
@@ -245,6 +312,67 @@ const ApplicationDetail = () => {
           </div>
         </section>
       </div>
+
+      {/* REJECT MODAL */}
+      {rejectModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-5 border-b border-slate-100 font-bold text-lg">Từ chối ứng viên</div>
+            <form onSubmit={handleReject} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Lý do từ chối <span className="text-red-500">*</span></label>
+                <textarea required value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} placeholder="VD: Kinh nghiệm chưa phù hợp..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100" />
+                <p className="text-xs text-slate-500 mt-1">Ứng viên sẽ nhận được email thông báo kèm theo lý do này.</p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setRejectModalOpen(false)} className="px-4 py-2 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 border border-slate-200">Hủy</button>
+                <button type="submit" disabled={actionLoading} className="px-4 py-2 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">Xác nhận từ chối</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* INTERVIEW MODAL */}
+      {interviewModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-5 border-b border-slate-100 font-bold text-lg">Mời phỏng vấn</div>
+            <form onSubmit={handleInterview} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Hình thức</label>
+                  <select value={interviewData.format} onChange={e => setInterviewData({...interviewData, format: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500">
+                    <option value="ONLINE">Online (Trực tuyến)</option>
+                    <option value="OFFLINE">Offline (Trực tiếp)</option>
+                  </select>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Thời gian <span className="text-red-500">*</span></label>
+                  <input type="datetime-local" required value={interviewData.time} onChange={e => setInterviewData({...interviewData, time: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Địa chỉ / Link Zoom <span className="text-red-500">*</span></label>
+                <input required value={interviewData.location} onChange={e => setInterviewData({...interviewData, location: e.target.value})} placeholder="VD: Tầng 5 tòa VTC Online..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Người liên hệ</label>
+                <input value={interviewData.contactPerson} onChange={e => setInterviewData({...interviewData, contactPerson: e.target.value})} placeholder="Tên và SĐT liên lạc..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Ghi chú thêm</label>
+                <textarea value={interviewData.note} onChange={e => setInterviewData({...interviewData, note: e.target.value})} rows={2} placeholder="Mang theo laptop, mặc lịch sự..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setInterviewModalOpen(false)} className="px-4 py-2 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 border border-slate-200">Hủy</button>
+                <button type="submit" disabled={actionLoading} className="px-4 py-2 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">Gửi thư mời</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
