@@ -7,6 +7,7 @@ import {
   ReceiptText, Factory, Layers, Search, Copy, Check,
   Filter
 } from 'lucide-react';
+import CompanyLogo from '../../../components/common/CompanyLogo';
 import {
   getPublicCompanyDetail,
   getCompanyOpenJobs,
@@ -43,11 +44,7 @@ const JobCard = ({ job, company }) => {
       className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-sm transition group"
     >
       <div className="h-12 w-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
-        {company?.avatarUrl ? (
-          <img src={company.avatarUrl} alt={company.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-lg font-bold text-slate-400">{company?.name?.charAt(0) || 'C'}</span>
-        )}
+        <CompanyLogo name={company?.name} avatarUrl={company?.avatarUrl} textClassName="text-lg font-bold text-slate-400" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
@@ -242,11 +239,7 @@ const CompanyDetail = () => {
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
           <div className="flex gap-5 items-center min-w-0">
             <div className="h-24 w-24 md:h-28 md:w-28 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
-              {company.avatarUrl ? (
-                <img src={company.avatarUrl} alt={company.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl font-bold text-slate-400">{company.name?.charAt(0)}</span>
-              )}
+              <CompanyLogo name={company.name} avatarUrl={company.avatarUrl} textClassName="text-3xl font-bold text-slate-400" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">

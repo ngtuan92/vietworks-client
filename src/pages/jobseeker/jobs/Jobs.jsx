@@ -184,36 +184,26 @@ const Jobs = () => {
     fetchCareers();
   }, [careerGroupId]);
 
+  // Lọc job dựa trên giá trị ĐÃ ÁP DỤNG (lưu trên URL), KHÔNG dựa trên state nháp
+  // của các ô lọc. Nhờ vậy đổi bộ lọc sẽ không tự fetch — chỉ fetch khi bấm "Áp dụng",
+  // "Tìm kiếm", đổi sắp xếp, phân trang hoặc đặt lại bộ lọc (các hành động này cập nhật URL).
   const apiParams = useMemo(
     () => ({
-      keyword,
-      location,
-      careerGroupId,
-      careerId,
-      experienceLevelId,
-      jobLevelId,
-      salaryMin,
-      salaryMax,
-      saturdayPolicy,
+      keyword: getParam(searchParams, 'keyword') || getParam(searchParams, 'q'),
+      location: getParam(searchParams, 'location'),
+      careerGroupId: getParam(searchParams, 'careerGroupId'),
+      careerId: getParam(searchParams, 'careerId'),
+      experienceLevelId: getParam(searchParams, 'experienceLevelId'),
+      jobLevelId: getParam(searchParams, 'jobLevelId'),
+      salaryMin: getParam(searchParams, 'salaryMin'),
+      salaryMax: getParam(searchParams, 'salaryMax'),
+      saturdayPolicy: getParam(searchParams, 'saturdayPolicy'),
       page,
       limit: 12,
-      sortBy,
-      sortOrder,
+      sortBy: getParam(searchParams, 'sortBy', 'publishedAt'),
+      sortOrder: getParam(searchParams, 'sortOrder', 'desc'),
     }),
-    [
-      keyword,
-      location,
-      careerGroupId,
-      careerId,
-      experienceLevelId,
-      jobLevelId,
-      salaryMin,
-      salaryMax,
-      saturdayPolicy,
-      page,
-      sortBy,
-      sortOrder,
-    ]
+    [searchParams, page]
   );
 
   useEffect(() => {
