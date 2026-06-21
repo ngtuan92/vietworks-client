@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, StatusBadge } from '../shared/AdminPrimitives';
-// Giả định đây là file chứa hàm getAllJobs của bạn
 import jobAdminService from '../../../services/jobAdminService'; 
 
+// CẬP NHẬT: Định nghĩa chuẩn key PENDING_APPROVAL đồng bộ với DB
 const statusMap = {
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  PENDING_APPROVAL: 'bg-amber-50 text-amber-700 border-amber-200/60',
   PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
   BANNED: 'bg-red-50 text-red-700 border-red-200/60',
   CLOSED: 'bg-slate-50 text-slate-700 border-slate-200',
@@ -14,32 +14,31 @@ const statusMap = {
 };
 
 const JobModeration = () => {
-  // Quản lý bộ lọc tương thích với các tham số nhận vào từ Backend
+  // CẬP NHẬT: Mặc định vừa vào trang sẽ chọn lọc trạng thái 'PENDING_APPROVAL'
   const [filters, setFilters] = useState({ 
     keyword: '', 
-    status: '' 
+    status: 'PENDING_APPROVAL' 
   });
   
-  // Các state quản lý dữ liệu, phân trang và trạng thái tải
+  const [searchTrigger, setSearchTrigger] = useState('');
   const [jobList, setJobList] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [loading, setLoading] = useState(false);
 
-  // Hàm kích hoạt gọi API đổ dữ liệu vào State
   const fetchAllJobsData = async () => {
     setLoading(true);
     try {
       const params = {
         page: pagination.page,
         limit: pagination.limit,
-        search: filters.keyword || undefined, // Map keyword từ ô input vào tham số 'search' của API
-        status: filters.status || undefined   // Nếu để trống thì backend sẽ trả về TẤT CẢ các trạng thái
+        search: searchTrigger || undefined, 
+        status: filters.status || undefined   
       };
 
       const response = await jobAdminService.getAllJobsPending(params);
-      if (response.success) {
-        setJobList(response.data);
-        setPagination(response.pagination);
+      if (response && response.success) {
+        setJobList(response.data || []);
+        setPagination(response.pagination || { page: 1, limit: 10, total: 0, pages: 1 });
       }
     } catch (error) {
       console.error("Lỗi khi tải danh sách công việc toàn hệ thống:", error);
@@ -48,16 +47,14 @@ const JobModeration = () => {
     }
   };
 
-  // Mỗi khi người dùng đổi bộ lọc hoặc đổi trang, API sẽ tự động kích hoạt lại
   useEffect(() => {
     fetchAllJobsData();
-  }, [filters.status, pagination.page]);
+  }, [pagination.page, filters.status, searchTrigger]);
 
-  // Hàm xử lý riêng cho ô tìm kiếm text để tránh gọi API liên tục khi đang gõ (hoặc ấn Enter / Click tìm)
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
-    setPagination(p => ({ ...p, page: 1 })); // Reset về trang 1 khi tìm kiếm từ khóa mới
-    fetchAllJobsData();
+    setPagination(p => ({ ...p, page: 1 })); 
+    setSearchTrigger(filters.keyword); 
   };
 
   return (
@@ -81,12 +78,11 @@ const JobModeration = () => {
               value={filters.status} 
               onChange={(v) => {
                 setFilters((p) => ({ ...p, status: v }));
-                setPagination(p => ({ ...p, page: 1 })); // Reset về trang 1 khi đổi trạng thái
+                setPagination(p => ({ ...p, page: 1 })); 
               }} 
-              // Option đầu tiên để trống tương ứng lấy tất cả trạng thái như backend xử lý
               options={[
                 ['', 'Tất cả trạng thái'],
-                ['PENDING', 'Đang chờ duyệt'],
+                ['PENDING_APPROVAL', 'Đang chờ duyệt'],
                 ['PUBLISHED', 'Đã duyệt/Đang mở'],
                 ['CLOSED', 'Đã đóng'],
                 ['BANNED', 'Bị khóa'],
@@ -94,7 +90,6 @@ const JobModeration = () => {
                 ['EXPIRED', 'Hết hạn']
               ]} 
             />
-            {/* Nút trigger tìm kiếm theo từ khóa văn bản */}
             <div className="flex items-end pb-1.5">
               <button 
                 type="submit" 
@@ -121,12 +116,10 @@ const JobModeration = () => {
             ) : (
               jobList.map((job) => (
                 <tr key={job._id} className="border-t border-slate-100 hover:bg-slate-50/50 transition">
-                  {/* Cột Công việc */}
                   <td className="px-4 py-3 font-semibold text-slate-900 max-w-xs truncate">
                     {job.title}
                   </td>
                   
-                  {/* Cột Công ty (đã được populate thông tin từ companyId) */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {job.companyId?.logo && (
@@ -142,36 +135,37 @@ const JobModeration = () => {
                     </div>
                   </td>
                   
-                  {/* Cột Người đăng tin (đã được populate thông tin từ createdBy) */}
                   <td className="px-4 py-3 text-sm text-slate-600">
                     <div className="font-medium">{job.createdBy?.fullName || 'Hệ thống'}</div>
                     <div className="text-xs text-slate-400">{job.createdBy?.email}</div>
                   </td>
                   
-                  {/* Cột Ngày tạo tin */}
                   <td className="px-4 py-3 text-sm text-slate-500">
                     {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
                   </td>
                   
-                  {/* Cột Trạng thái */}
                   <td className="px-4 py-3">
                     <StatusBadge value={job.status} map={statusMap} />
                   </td>
                   
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
                       <Link 
                         to={`/admin/jobs/${job._id}`} 
-                        className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95"
+                        className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95 whitespace-nowrap"
                       >
                         Chi tiết
                       </Link>
-                      <Link 
-                        to={`/admin/jobs/${job._id}/review`} 
-                        className="rounded-xl bg-primary shadow-sm px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition active:scale-95"
-                      >
-                        Duyệt
-                      </Link>
+                      
+                      {/* NGHIỆP VỤ MỚI: Chỉ hiển thị nút Duyệt nếu trạng thái là PENDING_APPROVAL */}
+                      {job.status === 'PENDING_APPROVAL' && (
+                        <Link 
+                          to={`/admin/jobs/${job._id}/review`} 
+                          className="rounded-xl bg-slate-900 shadow-sm px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800 transition active:scale-95 whitespace-nowrap"
+                        >
+                          Duyệt
+                        </Link>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -179,7 +173,6 @@ const JobModeration = () => {
             )}
           </SimpleTable>
 
-          {/* Thanh phân trang kết nối trực tiếp với bộ đếm của Mongoose */}
           {pagination.pages > 1 && (
             <div className="flex items-center justify-between border-t border-slate-100 pt-4 px-2">
               <div className="text-xs text-slate-500">
@@ -215,4 +208,3 @@ const JobModeration = () => {
 };
 
 export default JobModeration;
-
