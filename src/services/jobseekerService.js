@@ -31,6 +31,9 @@ export const unsaveJob = (jobId) =>
 export const getSimilarSavedJobs = (limit = 6) =>
   api.get('/jobseeker/saved-jobs/similar', { params: { limit } }).then(r => r.data);
 
+export const getSimilarAppliedJobs = (limit = 6) =>
+  api.get('/jobseeker/applications/similar', { params: { limit } }).then(r => r.data);
+
 // ─── Followed Companies ───────────────────────────────────
 export const getFollowedCompanies = (params = {}) =>
   api.get('/jobseeker/followed-companies', { params }).then(r => r.data);

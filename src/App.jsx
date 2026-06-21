@@ -28,6 +28,7 @@ import MatchedJobs from './pages/jobseeker/jobs/MatchedJobs';
 import LinkedinCallback from './pages/jobseeker/auth/LinkedinCallback';
 import CompanyList from './pages/jobseeker/companies/CompanyList';
 import CompanyDetail from './pages/jobseeker/companies/CompanyDetail';
+import FollowedCompanies from './pages/jobseeker/companies/FollowedCompanies';
 import SalaryInsight from './pages/jobseeker/premium/SalaryInsight';
 import UpgradePremium from './pages/jobseeker/premium/UpgradePremium';
 import EmployerRegister from './pages/employer/auth/Register';
@@ -121,6 +122,7 @@ function App() {
               <Route path="privacy-settings" element={<PrivacySettings />} />
               <Route path="ai-cv-review" element={<AICvReview />} />
               <Route path="my-transactions" element={<JobseekerTransactions />} />
+              <Route path="followed-companies" element={<FollowedCompanies />} />
             </Route>
           </Route>
 
