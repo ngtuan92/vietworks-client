@@ -14,6 +14,9 @@ export const clearSearchHistory = () =>
 export const updateJobPreferences = (data) =>
   api.put('/jobseeker/job-preferences', data).then(r => r.data);
 
+export const getJobPreferences = () =>
+  api.get('/jobseeker/job-preferences').then(r => r.data);
+
 // ─── Matched Jobs ─────────────────────────────────────────
 export const getMatchedJobs = (params = {}) =>
   api.get('/jobseeker/matched-jobs', { params }).then(r => r.data);

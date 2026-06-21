@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, DollarSign, Calendar, Eye, Send, Briefcase, Loader2 } from 'lucide-react';
-import { getSavedJobs, unsaveJob } from '../../../services/jobseekerService';
+import { getSavedJobs, unsaveJob, getSimilarSavedJobs } from '../../../services/jobseekerService';
+import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
 const SavedJobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -138,10 +139,17 @@ const SavedJobs = () => {
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            {totalPages > 1 && (
+              );
+            })}
+
+            <SimilarJobsSection
+              title="Việc làm tương tự"
+              subtitle="Các công việc cùng ngành với những việc bạn đã lưu"
+              fetchFn={getSimilarSavedJobs}
+              limit={6}
+            />
+          </div>
+          {totalPages > 1 && (
               <div className="flex justify-center gap-2 pt-4">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                   <button
