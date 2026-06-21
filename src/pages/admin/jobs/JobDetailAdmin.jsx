@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs, StatusBadge } from '../shared/AdminPrimitives';
-// Nhập hàm API từ file service của bạn
 import jobAdminService from '../../../services/jobAdminService'; 
 
 const tabs = ['Nội dung tin', 'Công ty', 'Ứng viên', 'Gói dịch vụ', 'Lịch sử duyệt', 'Báo cáo vi phạm'];
 
-// Cấu hình màu sắc cho trạng thái tin tuyển dụng
+// Cấu hình màu sắc đồng bộ với key PENDING_APPROVAL trong DB
 const statusMap = {
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  PENDING_APPROVAL: 'bg-amber-50 text-amber-700 border-amber-200/60',
   PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
   BANNED: 'bg-red-50 text-red-700 border-red-200/60',
   CLOSED: 'bg-slate-50 text-slate-700 border-slate-200',
@@ -17,7 +16,7 @@ const statusMap = {
 };
 
 const JobDetailAdmin = () => {
-  const { jobId } = useParams(); // Lấy ID công việc từ URL
+  const { jobId } = useParams();
   const navigate = useNavigate();
   
   const [active, setActive] = useState(tabs[0]);
@@ -25,20 +24,18 @@ const JobDetailAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Gọi API lấy dữ liệu chi tiết
   useEffect(() => {
-    let isMounted = true; // Tránh cập nhật state khi component đã unmount
+    let isMounted = true;
 
     const fetchJobDetail = async () => {
       try {
         setLoading(true);
-        setError(null); // Reset lại trạng thái lỗi cũ trước khi tải
+        setError(null);
 
         const response = await jobAdminService.getJobById(jobId);
         
         if (!isMounted) return;
 
-        // Kiểm tra phản hồi từ backend
         if (response && response.success) {
           setJob(response.data);
         } else {
@@ -47,15 +44,12 @@ const JobDetailAdmin = () => {
       } catch (err) {
         if (!isMounted) return;
         console.error("Lỗi chi tiết từ API:", err);
-        
-        // Bóc tách message từ Object lỗi của Axios/Backend trả về
         const backendMessage = err?.message || err?.response?.data?.message;
         const fallbackMessage = typeof err === 'string' ? err : 'Hệ thống không thể kết nối tới server.';
-        
         setError(backendMessage || fallbackMessage);
       } finally {
         if (isMounted) {
-          setLoading(false); // ĐẢM BẢO LUÔN ĐƯỢC CHẠY ĐỂ TẮT LOADING
+          setLoading(false);
         }
       }
     };
@@ -72,12 +66,10 @@ const JobDetailAdmin = () => {
     };
   }, [jobId]);
 
-  // Trạng thái đang tải dữ liệu
   if (loading) {
     return <div className="text-center py-20 text-slate-500 font-medium">Đang tải chi tiết tin tuyển dụng...</div>;
   }
 
-  // Trạng thái lỗi không tìm thấy hoặc lỗi server
   if (error || !job) {
     return (
       <div className="text-center py-20 space-y-4">
@@ -89,7 +81,6 @@ const JobDetailAdmin = () => {
 
   return (
     <div className="space-y-7 animate-rise-in">
-      {/* Tiêu đề trang tích hợp dữ liệu động (Đã đổi div sang span để sửa lỗi lồng thẻ HTML) */}
       <PageHeader 
         title={`Chi tiết: ${job.title}`} 
         description={
@@ -101,14 +92,26 @@ const JobDetailAdmin = () => {
         } 
         actions={
           <>
-            <ActionButton tone="primary" onClick={() => console.log('Duyệt job', job._id)}>Phê duyệt</ActionButton>
-            <ActionButton tone="soft" onClick={() => console.log('Từ chối job', job._id)}>Từ chối</ActionButton>
-            <ActionButton tone="danger" onClick={() => console.log('Khóa job', job._id)}>Khóa tin</ActionButton>
+            {/* NGHIỆP VỤ MỚI: Chỉ hiển thị nút duyệt nếu trạng thái là PENDING_APPROVAL */}
+            {job.status === 'PENDING_APPROVAL' && (
+              <ActionButton 
+                tone="primary" 
+                onClick={() => navigate(`/admin/jobs/${job._id}/review`)}
+              >
+                Đi đến kiểm duyệt
+              </ActionButton>
+            )}
+            
+            <ActionButton 
+              tone="soft" 
+              onClick={() => navigate(-1)}
+            >
+              Quay lại
+            </ActionButton>
           </>
-        } 
+        }
       />
       
-      {/* Thanh Tabs điều hướng */}
       <SectionCard>
         <Tabs tabs={tabs} active={active} onChange={setActive} />
       </SectionCard>
@@ -119,8 +122,6 @@ const JobDetailAdmin = () => {
           <SectionCard title="Thông tin chung tin tuyển dụng">
             <div className="space-y-3 text-sm text-slate-700">
               <div><b>Tiêu đề:</b> {job.title}</div>
-              
-              {/* Sửa lỗi hiển thị Object salary */}
               <div>
                 <b>Mức lương:</b>{' '}
                 {job.salary ? (
@@ -135,7 +136,6 @@ const JobDetailAdmin = () => {
                   'Chưa cập nhật'
                 )}
               </div>
-
               <div><b>Kinh nghiệm:</b> {job.experienceLevelId?.name || 'Không yêu cầu'}</div>
               <div><b>Cấp bậc:</b> {job.jobLevelId?.name || 'N/A'}</div>
               <div><b>Hạn nộp hồ sơ:</b> {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A'}</div>
@@ -259,4 +259,3 @@ const JobDetailAdmin = () => {
 };
 
 export default JobDetailAdmin;
-

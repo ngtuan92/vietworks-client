@@ -1,24 +1,35 @@
 import { AlertTriangle, Briefcase, Users, Wallet, CreditCard, Sparkles, RefreshCw, Star, Clock, AlertCircle, ArrowUpRight, CheckCircle2, TrendingUp, ChevronRight, Activity } from 'lucide-react';
 import React from 'react';
 
-const WarningBanner = () => (
-  <div className="bg-gradient-to-r from-amber-50 to-orange-50/30 border border-amber-200/60 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:shadow-md">
-    <div className="flex items-start gap-4">
-      <div className="p-3 bg-amber-100/80 rounded-2xl text-amber-600 shadow-sm">
-        <AlertTriangle className="w-6 h-6 animate-pulse" />
+// Cập nhật: Nhận prop verificationStatus để ẩn khi đã upload (PENDING hoặc VERIFIED)
+const WarningBanner = ({ verificationStatus }) => {
+  if (verificationStatus === 'PENDING' || verificationStatus === 'VERIFIED') {
+    return null;
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-amber-50 to-orange-50/30 border border-amber-200/60 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:shadow-md">
+      <div className="flex items-start gap-4">
+        <div className="p-3 bg-amber-100/80 rounded-2xl text-amber-600 shadow-sm">
+          <AlertTriangle className="w-6 h-6 animate-pulse" />
+        </div>
+        <div>
+          <h3 className="font-bold text-amber-900 text-sm md:text-base tracking-tight">
+            {verificationStatus === 'REJECTED' ? 'Hồ sơ xác thực bị từ chối' : 'Hồ sơ công ty của bạn chưa được xác thực'}
+          </h3>
+          <p className="text-xs md:text-sm text-amber-700/80 mt-1 leading-relaxed">
+            {verificationStatus === 'REJECTED' 
+              ? 'Vui lòng cập nhật lại giấy phép ĐKKD chính xác để Admin duyệt lại.' 
+              : 'Vui lòng cập nhật giấy phép ĐKKD để mở khóa toàn bộ tính năng đăng tin tuyển dụng.'}
+          </p>
+        </div>
       </div>
-      <div>
-        <h3 className="font-bold text-amber-900 text-sm md:text-base tracking-tight">Hồ sơ công ty của bạn chưa được xác thực</h3>
-        <p className="text-xs md:text-sm text-amber-700/80 mt-1 leading-relaxed">
-          Vui lòng cập nhật giấy phép ĐKKD để mở khóa toàn bộ tính năng đăng tin tuyển dụng.
-        </p>
-      </div>
+      <button className="bg-amber-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all flex-shrink-0 whitespace-nowrap">
+        Cập nhật ngay
+      </button>
     </div>
-    <button className="bg-amber-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all flex-shrink-0 whitespace-nowrap">
-      Cập nhật ngay
-    </button>
-  </div>
-);
+  );
+};
 
 const StatsGrid = () => {
   const stats = [
@@ -128,9 +139,7 @@ const ApplicationTrend = () => (
       </select>
     </div>
 
-    {/* Elegant SVG Area Chart */}
     <div className="h-64 relative w-full pt-4">
-      {/* Background grid lines */}
       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 z-0">
         <div className="w-full border-t border-slate-100 border-dashed"></div>
         <div className="w-full border-t border-slate-100 border-dashed"></div>
@@ -156,13 +165,11 @@ const ApplicationTrend = () => (
           </filter>
         </defs>
 
-        {/* Smoother, Subtle Spline Area */}
         <path
           d="M 0 150 C 60 150, 70 110, 100 110 C 140 110, 160 135, 200 135 C 240 135, 260 65, 300 65 C 340 65, 360 95, 400 95 C 440 95, 460 140, 500 140 L 500 200 L 0 200 Z"
           fill="url(#areaGrad)"
         />
 
-        {/* Elegant Thin Stroke Line */}
         <path
           d="M 0 150 C 60 150, 70 110, 100 110 C 140 110, 160 135, 200 135 C 240 135, 260 65, 300 65 C 340 65, 360 95, 400 95 C 440 95, 460 140, 500 140"
           fill="none"
@@ -173,7 +180,6 @@ const ApplicationTrend = () => (
           filter="url(#softGlow)"
         />
 
-        {/* Elegant Data Markers */}
         <g transform="translate(100, 110)">
           <circle cx="0" cy="0" r="3" className="fill-white stroke-blue-400 stroke-[2px]" />
         </g>
@@ -182,7 +188,6 @@ const ApplicationTrend = () => (
         </g>
         <g transform="translate(300, 65)">
           <circle cx="0" cy="0" r="4.5" className="fill-white stroke-primary stroke-[3px]" />
-          {/* Subtle Tooltip */}
           <rect x="-26" y="-36" width="52" height="22" rx="6" fill="#0f172a" />
           <polygon points="-4,-14 4,-14 0,-10" fill="#0f172a" />
           <text x="0" y="-21" fill="white" fontSize="10" fontWeight="bold" textAnchor="middle">125 CV</text>
@@ -427,7 +432,6 @@ const ServiceCostChart = () => (
       <p className="text-xs text-slate-500 mt-1 font-medium">Thống kê 6 tháng gần nhất</p>
     </div>
 
-    {/* Enhanced Custom Column Chart */}
     <div className="h-32 relative w-full pt-4">
       <svg className="w-full h-full drop-shadow-md overflow-visible relative z-10" viewBox="0 0 300 100" preserveAspectRatio="none">
         <defs>
@@ -441,19 +445,16 @@ const ServiceCostChart = () => (
           </linearGradient>
         </defs>
 
-        {/* Background Grid */}
         <line x1="0" y1="25" x2="300" y2="25" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
         <line x1="0" y1="50" x2="300" y2="50" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
         <line x1="0" y1="75" x2="300" y2="75" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
 
-        {/* Animated Columns */}
         <rect x="15" y="80" width="24" height="20" rx="8" fill="#e2e8f0" className="hover:fill-[#cbd5e1] transition-all cursor-pointer" />
         <rect x="63" y="65" width="24" height="35" rx="8" fill="#cbd5e1" className="hover:fill-[#94a3b8] transition-all cursor-pointer" />
         <rect x="111" y="50" width="24" height="50" rx="8" fill="#94a3b8" className="hover:fill-[#64748b] transition-all cursor-pointer" />
         <rect x="159" y="25" width="24" height="75" rx="8" fill="url(#barGrad)" fillOpacity="0.7" className="hover:fill-[url(#barGradActive)] transition-all cursor-pointer" />
         <rect x="207" y="35" width="24" height="65" rx="8" fill="url(#barGrad)" fillOpacity="0.85" className="hover:fill-[url(#barGradActive)] transition-all cursor-pointer" />
         
-        {/* Highest column with a tooltip */}
         <g className="group cursor-pointer">
           <rect x="255" y="10" width="24" height="90" rx="8" fill="url(#barGradActive)" className="hover:opacity-90 transition-opacity" />
           <rect x="242" y="-15" width="50" height="20" rx="6" fill="#1e293b" className="opacity-0 group-hover:opacity-100 transition-opacity" />
