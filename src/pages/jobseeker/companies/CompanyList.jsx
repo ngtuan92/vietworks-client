@@ -1,9 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Building2, Briefcase, Loader2, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Building2, Loader2 } from 'lucide-react';
 import { getPublicCompanies } from '../../../services/jobseekerService';
+import { useNotification } from '../../../contexts/NotificationContext';
+import { useAuthStore } from '../../../store/authStore';
+import {
+  followCompany,
+  unfollowCompany,
+  getFollowedCompanies
+} from '../../../services/jobseekerService';
+import CompanyCard from '../../../components/common/CompanyCard';
 
 const CompanyList = () => {
+  const { confirm, error: showError } = useNotification();
+  const { isAuthenticated } = useAuthStore();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
@@ -11,22 +20,83 @@ const CompanyList = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [followedIds, setFollowedIds] = useState(new Set());
+  const [busyId, setBusyId] = useState(null);
 
-  const fetchCompanies = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getPublicCompanies({ keyword: search, page, limit: 12 });
-      setCompanies(data.data || []);
-      setTotalPages(data.totalPages || 1);
-      setTotal(data.total || 0);
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await getPublicCompanies({ keyword: search, page, limit: 12 });
+        if (cancelled) return;
+        setCompanies(data.data || []);
+        setTotalPages(data.pagination?.pages || 1);
+        setTotal(data.pagination?.total || 0);
+      } catch {
+        // silent
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
   }, [search, page]);
 
-  useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getFollowedCompanies({ limit: 200 });
+        if (cancelled) return;
+        const ids = new Set();
+        (res.data || []).forEach((f) => {
+          if (f.company?._id) ids.add(f.company._id.toString());
+        });
+        setFollowedIds(ids);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
+
+  const handleFollowToggle = (companyId) => {
+    if (!isAuthenticated) {
+      confirm(
+        'Bạn cần đăng nhập để theo dõi công ty. Vui lòng đăng nhập để tiếp tục.',
+        () => { window.location.href = '/login'; },
+        null,
+        'Yêu cầu đăng nhập',
+        'Đăng nhập',
+        'Hủy'
+      );
+      return;
+    }
+    const wasFollowing = followedIds.has(String(companyId));
+    setBusyId(companyId);
+    setFollowedIds((prev) => {
+      const next = new Set(prev);
+      if (wasFollowing) next.delete(String(companyId));
+      else next.add(String(companyId));
+      return next;
+    });
+    (async () => {
+      try {
+        if (wasFollowing) await unfollowCompany(companyId);
+        else await followCompany(companyId);
+      } catch {
+        setFollowedIds((prev) => {
+          const next = new Set(prev);
+          if (wasFollowing) next.add(String(companyId));
+          else next.delete(String(companyId));
+          return next;
+        });
+        showError?.('Không thể cập nhật trạng thái theo dõi.');
+      } finally {
+        setBusyId(null);
+      }
+    })();
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -74,36 +144,14 @@ const CompanyList = () => {
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {companies.map((company) => (
-              <Link
+              <CompanyCard
                 key={company._id}
-                to={`/companies/${company._id}`}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
-              >
-                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl overflow-hidden bg-blue-50">
-                  {company.logoUrl
-                    ? <img src={company.logoUrl} alt={company.name} className="w-full h-full object-cover" />
-                    : <span className="text-xl font-bold text-blue-700">{company.name?.charAt(0)}</span>
-                  }
-                </div>
-                <h2 className="text-base font-semibold text-slate-900 line-clamp-1">{company.name}</h2>
-                {company.industryName && (
-                  <p className="mt-1 text-sm text-slate-500">{company.industryName}</p>
-                )}
-                <div className="mt-4 flex items-center gap-4 text-xs text-slate-500">
-                  {company.openJobsCount > 0 && (
-                    <span className="flex items-center gap-1 font-semibold text-blue-700">
-                      <Briefcase className="w-3.5 h-3.5" />
-                      {company.openJobsCount} việc làm
-                    </span>
-                  )}
-                  {company.followersCount > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      {company.followersCount} theo dõi
-                    </span>
-                  )}
-                </div>
-              </Link>
+                company={company}
+                openJobsCount={company.openJobsCount || 0}
+                followMode={followedIds.has(String(company._id)) ? 'remove' : 'add'}
+                onFollowClick={handleFollowToggle}
+                disabled={busyId === company._id}
+              />
             ))}
           </div>
 

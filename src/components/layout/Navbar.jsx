@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
-import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell } from 'lucide-react';
+import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell, Building2 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 const Navbar = () => {
   const location = useLocation();
@@ -124,6 +124,7 @@ const Navbar = () => {
                     <MenuLink to="/saved-jobs" icon={<Heart className="w-4 h-4" />} label="Việc đã lưu" />
                     <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-4 h-4" />} label="Việc làm phù hợp" />
                     <MenuLink to="/ai-cv-review" icon={<Award className="w-4 h-4 text-yellow-500" />} label="AI CV Review" />
+                    <MenuLink to="/followed-companies" icon={<Building2 className="w-4 h-4" />} label="Công ty đang theo dõi" />
                   </div>
                 </div>
               </div>
