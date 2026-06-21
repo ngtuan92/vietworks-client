@@ -10,7 +10,7 @@ const AdminUserGrowth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/admin/user-growth', { params: { range: dateRange } })
+    api.get('/admin/analytics/user-growth', { params: { range: dateRange } })
       .then(r => { if (r.data.success) setData(r.data.data); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -144,7 +144,7 @@ const AdminUserGrowth = () => {
 
                 {/* Tooltip */}
                 <div className="absolute bottom-full mb-2 bg-[#1b1c1c] text-white text-[10px] rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
-                  <div className="font-bold mb-1">{monthLabel} 2024</div>
+                  <div className="font-bold mb-1">{monthLabel} {d.date.split('-')[0]}</div>
                   <div>Ứng viên: <span className="text-[#0056b3]">{d.JOBSEEKER}</span></div>
                   <div>Nhà tuyển dụng: <span className="text-indigo-400">{d.EMPLOYER}</span></div>
                   <div className="font-black border-t border-white/20 pt-1 mt-1">Tổng: {d.total}</div>
