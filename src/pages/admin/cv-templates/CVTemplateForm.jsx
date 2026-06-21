@@ -4,6 +4,7 @@ import adminService from '../../../services/adminService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
 import uploadService from '../../../services/uploadService';
+import html2canvas from 'html2canvas-pro';
 
 const defaultLayouts = [
   {
@@ -425,10 +426,47 @@ const CVTemplateForm = () => {
     }
   ]);
 
-  // Image Upload state
-  const [previewImage, setPreviewImage] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+
+  const generateTemplatePreview = async () => {
+    const el = containerRef.current?.querySelector('.cv-template-page-canvas');
+    if (!el) return null;
+
+    const clone = el.cloneNode(true);
+    clone.style.transform = 'none';
+    clone.style.position = 'fixed';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    document.body.appendChild(clone);
+
+    try {
+      const canvas = await html2canvas(clone, {
+        scale: 1.5,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: 794,
+        height: 1123
+      });
+
+      return new Promise((resolve) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], `template-preview.jpg`, { type: 'image/jpeg' });
+          resolve(file);
+        }, 'image/jpeg', 0.85);
+      });
+    } catch (err) {
+      console.error('Lỗi khi chụp ảnh mẫu CV:', err);
+      return null;
+    } finally {
+      document.body.removeChild(clone);
+    }
+  };
 
   // Load Career Groups
   useEffect(() => {
@@ -467,9 +505,7 @@ const CVTemplateForm = () => {
         setAvatarY(editingTemplate.layoutConfig.avatarY || 0);
       }
 
-      if (editingTemplate.previewImageUrl) {
-        setPreviewUrl(editingTemplate.previewImageUrl);
-      }
+
 
       if (editingTemplate.layoutConfig?.sections && editingTemplate.layoutConfig.sections.length > 0) {
         setSections(editingTemplate.layoutConfig.sections);
@@ -557,53 +593,7 @@ const CVTemplateForm = () => {
     }
   };
 
-  // Drag and Drop handlers
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      processFile(files[0]);
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const files = e.target.files;
-    if (files.length > 0) {
-      processFile(files[0]);
-    }
-  };
-
-  const processFile = (file) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chỉ tải lên file hình ảnh hợp lệ (PNG, JPG, JPEG).');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhẹ hơn.');
-      return;
-    }
-    setPreviewImage(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    setPreviewImage(null);
-    setPreviewUrl(null);
-  };
 
   // Helper functions to modify items
   const handleUpdateItem = (sectionCode, index, field, value) => {
@@ -1147,6 +1137,7 @@ const CVTemplateForm = () => {
   // Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!name.trim()) {
       warning('Vui lòng nhập tên mẫu CV.');
       return;
@@ -1157,6 +1148,11 @@ const CVTemplateForm = () => {
     }
 
     try {
+      setSaving(true);
+      
+      // Auto-generate preview image
+      const finalPreviewFile = await generateTemplatePreview();
+
       const payload = {
         name,
         careerGroupId: industry,
@@ -1193,8 +1189,8 @@ const CVTemplateForm = () => {
       }
 
       if (result.success) {
-        if (previewImage) {
-          await adminService.uploadTemplatePreview(result.data._id, previewImage);
+        if (finalPreviewFile) {
+          await adminService.uploadTemplatePreview(result.data._id, finalPreviewFile);
         }
         success(
           isEditMode ? 'Cập nhật mẫu CV thành công!' : 'Tạo mới mẫu CV thành công!',
@@ -1205,6 +1201,8 @@ const CVTemplateForm = () => {
     } catch (err) {
       console.error(err);
       error('Đã xảy ra lỗi khi lưu mẫu CV.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1230,184 +1228,104 @@ const CVTemplateForm = () => {
           <button
             type="button"
             onClick={() => navigate('/admin/cv-templates')}
-            className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-white font-bold hover:bg-gray-50 transition-all shadow-sm"
+            disabled={saving}
+            className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-white font-bold hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-lg bg-[#0056b3] hover:bg-[#004085] text-white font-bold transition-all shadow-sm flex items-center gap-2"
+            disabled={saving}
+            className="px-5 py-2.5 rounded-lg bg-[#0056b3] hover:bg-[#004085] text-white font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[20px]">save</span>
-            Lưu Mẫu CV
+            {saving ? (
+              <span className="animate-spin material-symbols-outlined text-[20px]">sync</span>
+            ) : (
+              <span className="material-symbols-outlined text-[20px]">save</span>
+            )}
+            {saving ? 'Đang lưu...' : 'Lưu Mẫu CV'}
           </button>
         </div>
       </div>
 
-      {/* Top Grid Row: Basic Info & Static Preview Upload */}
-      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${isFocusMode ? 'hidden' : ''}`}>
-        {/* Left: Thông tin cơ bản */}
-        <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-5 flex flex-col justify-between">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#0056b3] text-[22px]">info</span>
-            Thông tin cơ bản
-          </h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5">Tên mẫu CV *</label>
-              <input
-                type="text"
-                required
-                placeholder="VD: Modern Professional, Creative Minimal..."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5">Ngành nghề phù hợp *</label>
-              <select
-                required
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none cursor-pointer"
-              >
-                <option value="">Chọn ngành nghề</option>
-                {careerGroups.map(group => (
-                  <option key={group._id} value={group._id}>{group.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status Toggle Switch */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <div>
-                <label className="block text-sm font-bold text-gray-900">Trạng thái hoạt động</label>
-                <span className="text-xs text-gray-500 block mt-0.5">Hiển thị mẫu CV này cho ứng viên lựa chọn sử dụng.</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsActive(!isActive)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[#0056b3]' : 'bg-gray-300'
-                  }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                />
-              </button>
-            </div>
-
-            {/* Premium Toggle Switch */}
-            <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-xl border border-amber-200/60 mt-4">
-              <div>
-                <label className="block text-sm font-bold text-amber-900 flex items-center gap-1.5">Mẫu Premium <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider">VIP</span></label>
-                <span className="text-xs text-amber-700/80 block mt-0.5">Yêu cầu người dùng nâng cấp gói dịch vụ để sử dụng mẫu này.</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPremium(!isPremium)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isPremium ? 'bg-amber-500' : 'bg-amber-200/60'
-                  }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isPremium ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Upload Ảnh Preview Tĩnh */}
-        <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">image</span>
-              Ảnh Preview Thiết Kế (Tĩnh)
-            </h2>
-            <p className="text-xs text-gray-500 leading-relaxed mt-1">
-              Hình ảnh thiết kế chính thức (PNG, JPG) sẽ hiển thị trong thư viện Mẫu CV để người dùng có thể xem trước.
-            </p>
-          </div>
-
-          {/* Drag & Drop Area styled as A4 */}
-          <div className="flex-1 flex items-center justify-center py-2">
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              style={{ aspectRatio: '1 / 1.414' }}
-              className={`w-40 border-2 border-dashed rounded-lg text-center transition-all relative flex flex-col items-center justify-center bg-white shadow-sm hover:shadow-md ${isDragging
-                  ? 'border-[#0056b3] bg-blue-50/20'
-                  : previewUrl
-                    ? 'border-gray-200 bg-gray-50'
-                    : 'border-gray-300 hover:border-gray-400 bg-gray-50/30'
-                }`}
-            >
-              {previewUrl ? (
-                <div className="w-full h-full flex flex-col items-center justify-center relative group p-1.5">
-                  <img
-                    src={previewUrl}
-                    alt="CV template preview"
-                    className="w-full h-full rounded object-contain"
-                  />
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-md flex items-center justify-center transition-colors"
-                      title="Gỡ bỏ ảnh"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">close</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center space-y-2 p-3">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
-                    <span className="material-symbols-outlined text-[20px]">cloud_upload</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-800 block leading-tight">Kéo thả ảnh hoặc click</span>
-                  </div>
-                  <span className="text-[8px] text-gray-400 leading-normal max-w-[100px] block">
-                    Hỗ trợ JPG, PNG (Tối đa 5MB)
-                  </span>
-                </div>
-              )}
-              <input
-                id="previewImageUploader"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className={previewUrl ? "hidden" : "absolute inset-0 w-full h-full opacity-0 cursor-pointer"}
-              />
-            </div>
-          </div>
-
-          <div className="text-center">
-            {previewUrl && (
-              <span className="text-[10px] font-semibold text-gray-500 truncate max-w-full px-2 block">
-                {previewImage ? previewImage.name : 'image_preview.png'}
-              </span>
-            )}
-            <label
-              htmlFor="previewImageUploader"
-              className="text-[11px] font-bold text-[#0056b3] hover:underline cursor-pointer"
-            >
-              {previewUrl ? 'Thay đổi ảnh khác' : 'Chọn tệp hình ảnh'}
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Grid Layout */}
+      {/* Main Form Layout: Left settings sidebar, Right A4 preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column (Form properties) */}
+        {/* Left Column (Settings & Config) */}
         <div className={`space-y-6 ${isFocusMode ? 'hidden' : ''}`}>
+          {/* Card 1: Thông tin cơ bản */}
+          <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-5">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#0056b3] text-[22px]">info</span>
+              Thông tin cơ bản
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Tên mẫu CV *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="VD: Modern Professional, Creative Minimal..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Ngành nghề phù hợp *</label>
+                <select
+                  required
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none cursor-pointer"
+                >
+                  <option value="">Chọn ngành nghề</option>
+                  {careerGroups.map(group => (
+                    <option key={group._id} value={group._id}>{group.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status Toggle Switch */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div>
+                  <label className="block text-sm font-bold text-gray-900">Trạng thái hoạt động</label>
+                  <span className="text-xs text-gray-500 block mt-0.5">Hiển thị mẫu CV này cho ứng viên lựa chọn sử dụng.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsActive(!isActive)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? 'bg-[#0056b3]' : 'bg-gray-300'
+                    }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                  />
+                </button>
+              </div>
+
+              {/* Premium Toggle Switch */}
+              <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-xl border border-amber-200/60 mt-4">
+                <div>
+                  <label className="block text-sm font-bold text-amber-900 flex items-center gap-1.5">Mẫu Premium <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider">VIP</span></label>
+                  <span className="text-xs text-amber-700/80 block mt-0.5">Yêu cầu người dùng nâng cấp gói dịch vụ để sử dụng mẫu này.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPremium(!isPremium)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isPremium ? 'bg-amber-500' : 'bg-amber-200/60'
+                    }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isPremium ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Card 2: Cấu hình thiết kế */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6">
@@ -1938,7 +1856,7 @@ const CVTemplateForm = () => {
                               top: 0,
                               left: 0
                             }}
-                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left"
+                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left cv-template-page-canvas"
                           >
                             {/* Content Area */}
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

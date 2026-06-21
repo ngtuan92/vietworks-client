@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
+import { getSimilarAppliedJobs } from '../../../services/jobseekerService';
+import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
 const statusConfig = {
   UNREAD: { label: 'Chưa xem', bg: 'bg-gray-100', text: 'text-gray-600', icon: 'mark_email_unread' },
@@ -239,6 +241,45 @@ const ApplicationStatusDetail = () => {
               </div>
             )}
 
+            {application.interviewInvitation && (
+              <div className="mb-6 p-5 bg-blue-50 border border-blue-200 rounded-xl">
+                <h3 className="text-base font-bold text-blue-800 mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined">event_available</span>
+                  Thư mời phỏng vấn
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Thời gian</p>
+                    <p className="font-semibold text-blue-900 mt-1">{formatDate(application.interviewInvitation.interviewTime)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Hình thức</p>
+                    <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.interviewType === 'ONLINE' ? 'Trực tuyến (Online)' : 'Trực tiếp (Offline)'}</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Địa điểm / Link</p>
+                    {application.interviewInvitation.interviewType === 'ONLINE' && application.interviewInvitation.location.includes('http') ? (
+                      <a href={application.interviewInvitation.location} target="_blank" rel="noreferrer" className="font-semibold text-blue-700 underline mt-1 block">{application.interviewInvitation.location}</a>
+                    ) : (
+                      <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.location}</p>
+                    )}
+                  </div>
+                  {application.interviewInvitation.contactPerson && (
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Người liên hệ</p>
+                      <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.contactPerson}</p>
+                    </div>
+                  )}
+                  {application.interviewInvitation.note && (
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Ghi chú thêm</p>
+                      <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.note}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-200">
               <button
@@ -256,6 +297,15 @@ const ApplicationStatusDetail = () => {
                 Danh sách ứng tuyển
               </button>
             </div>
+
+            {application?.job?.id && (
+              <SimilarJobsSection
+                title="Việc làm tương tự"
+                subtitle="Có thể bạn cũng quan tâm"
+                fetchFn={getSimilarAppliedJobs}
+                limit={3}
+              />
+            )}
           </div>
         </div>
       </main>

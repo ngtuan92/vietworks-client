@@ -1,6 +1,7 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import employerAccountService from '../../../services/employerAccountService.js';
 import authService from '../../../services/authService.js';
+import notificationService from '../../../services/notificationService';
 
 const tabs = [
   { key: 'profile', label: 'Thông tin cá nhân' },
@@ -15,12 +16,13 @@ const genderOptions = [
 ];
 
 const notificationRows = [
-  { label: 'Có ứng viên mới ứng tuyển', emailKey: 'newApplicationEmail', systemKey: 'newApplicationSystem' },
-  { label: 'Admin duyệt/từ chối Job', emailKey: 'jobReviewEmail', systemKey: 'jobReviewSystem' },
-  { label: 'Admin duyệt/từ chối công ty', emailKey: 'companyReviewEmail', systemKey: 'companyReviewSystem' },
-  { label: 'Tin nhắn mới từ ứng viên', emailKey: 'messageEmail', systemKey: 'messageSystem' },
-  { label: 'Giao dịch ví', emailKey: 'billingEmail', systemKey: 'billingSystem' },
-  { label: 'Gói dịch vụ sắp hết hạn', emailKey: 'packageEmail', systemKey: 'packageSystem' },
+  { label: 'Có ứng viên mới ứng tuyển', emailKey: 'NEW_APPLICATION_EMAIL', systemKey: 'NEW_APPLICATION_SYSTEM' },
+  { label: 'Admin duyệt Job', emailKey: 'JOB_APPROVED_EMAIL', systemKey: 'JOB_APPROVED_SYSTEM' },
+  { label: 'Admin từ chối Job', emailKey: 'JOB_REJECTED_EMAIL', systemKey: 'JOB_REJECTED_SYSTEM' },
+  { label: 'Admin duyệt công ty', emailKey: 'COMPANY_VERIFIED_EMAIL', systemKey: 'COMPANY_VERIFIED_SYSTEM' },
+  { label: 'Admin từ chối công ty', emailKey: 'COMPANY_REJECTED_EMAIL', systemKey: 'COMPANY_REJECTED_SYSTEM' },
+  { label: 'Tin nhắn mới từ ứng viên', emailKey: 'NEW_MESSAGE_EMAIL', systemKey: 'NEW_MESSAGE_SYSTEM' },
+  { label: 'Hệ thống (Giao dịch, Dịch vụ...)', emailKey: 'SYSTEM_UPDATE_EMAIL', systemKey: 'SYSTEM_UPDATE_SYSTEM' },
 ];
 
 const AccountSettings = () => {
@@ -43,18 +45,20 @@ const AccountSettings = () => {
   });
 
   const [notify, setNotify] = useState({
-    newApplicationEmail: true,
-    newApplicationSystem: true,
-    jobReviewEmail: true,
-    jobReviewSystem: true,
-    companyReviewEmail: true,
-    companyReviewSystem: true,
-    messageEmail: false,
-    messageSystem: true,
-    billingEmail: true,
-    billingSystem: true,
-    packageEmail: true,
-    packageSystem: true,
+    NEW_APPLICATION_EMAIL: true,
+    NEW_APPLICATION_SYSTEM: true,
+    JOB_APPROVED_EMAIL: true,
+    JOB_APPROVED_SYSTEM: true,
+    JOB_REJECTED_EMAIL: true,
+    JOB_REJECTED_SYSTEM: true,
+    COMPANY_VERIFIED_EMAIL: true,
+    COMPANY_VERIFIED_SYSTEM: true,
+    COMPANY_REJECTED_EMAIL: true,
+    COMPANY_REJECTED_SYSTEM: true,
+    NEW_MESSAGE_EMAIL: false,
+    NEW_MESSAGE_SYSTEM: true,
+    SYSTEM_UPDATE_EMAIL: true,
+    SYSTEM_UPDATE_SYSTEM: true,
   });
 
   useEffect(() => {
@@ -62,9 +66,10 @@ const AccountSettings = () => {
       try {
         setLoading(true);
 
-        const [representativeRes, accountRes] = await Promise.all([
+        const [representativeRes, accountRes, settingsRes] = await Promise.all([
           employerAccountService.getMyRepresentativeProfile(),
           employerAccountService.getMyEmployerLoginInfo(),
+          notificationService.getSettings()
         ]);
 
         setProfile({
@@ -78,6 +83,13 @@ const AccountSettings = () => {
           ...prev,
           email: accountRes.data?.email || '',
         }));
+
+        if (settingsRes.data) {
+          setNotify((prev) => ({
+            ...prev,
+            ...settingsRes.data
+          }));
+        }
       } catch (error) {
         setMessage(error.response?.data?.message || 'Không thể tải thông tin tài khoản');
       } finally {
@@ -128,6 +140,20 @@ const AccountSettings = () => {
       setMessage(res.message || 'Đổi mật khẩu thành công');
     } catch (error) {
       setMessage(error.response?.data?.message || 'Đổi mật khẩu thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateNotificationSettings = async () => {
+    try {
+      setLoading(true);
+      setMessage('');
+      
+      const res = await notificationService.updateSettings(notify);
+      setMessage(res.message || 'Lưu cài đặt thông báo thành công');
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Lưu cài đặt thông báo thất bại');
     } finally {
       setLoading(false);
     }
@@ -215,8 +241,12 @@ const AccountSettings = () => {
           </div>
 
           <div className="mt-5 flex justify-end">
-            <button className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-              Lưu cài đặt thông báo
+            <button 
+              onClick={handleUpdateNotificationSettings} 
+              disabled={loading} 
+              className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-60"
+            >
+              {loading ? 'Đang lưu...' : 'Lưu cài đặt thông báo'}
             </button>
           </div>
         </section>

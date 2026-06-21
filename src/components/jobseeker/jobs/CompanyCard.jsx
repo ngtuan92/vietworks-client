@@ -1,20 +1,3 @@
-const getCompanyLocation = (company) => {
-  const firstLocation = company?.locations?.[0];
-
-  if (!firstLocation) return '-';
-
-  return (
-    firstLocation.address ||
-    [
-      firstLocation.wardName || firstLocation.ward,
-      firstLocation.districtName || firstLocation.district,
-      firstLocation.provinceName || firstLocation.province,
-    ]
-      .filter(Boolean)
-      .join(', ')
-  );
-};
-
 const CompanyCard = ({ company }) => {
   return (
     <div className="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant">

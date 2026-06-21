@@ -1,9 +1,38 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import ApplyJobModal from './ApplyJobModal';
 import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
 import JobseekerAuthModal from '../../common/JobseekerAuthModal';
+import { useAuthStore } from '../../../store/authStore';
+import { getSavedJobs, saveJob, unsaveJob } from '../../../services/jobseekerService';
 import { Banknote, MapPin, Clock, CheckCircle, BookmarkPlus } from 'lucide-react';
+
+let savedJobsCache = null;
+let savedJobsCachePromise = null;
+const loadSavedJobIds = async () => {
+  if (savedJobsCache) return savedJobsCache;
+  if (savedJobsCachePromise) return savedJobsCachePromise;
+  savedJobsCachePromise = (async () => {
+    try {
+      const res = await getSavedJobs({ limit: 50 });
+      const list = res.data || [];
+      const ids = new Set();
+      list.forEach((item) => {
+        const id = item.job?.id || item.job?._id || item.jobId?._id || item.jobId;
+        if (id) ids.add(id.toString());
+      });
+      savedJobsCache = ids;
+    } catch {
+      savedJobsCache = new Set();
+    } finally {
+      savedJobsCachePromise = null;
+    }
+    return savedJobsCache;
+  })();
+  return savedJobsCachePromise;
+};
+const invalidateSavedCache = () => {
+  savedJobsCache = null;
+};
 
 const DEFAULT_LOGO =
   'https://ui-avatars.com/api/?name=Company&background=EAF2FF&color=003F87&bold=true';
@@ -52,21 +81,63 @@ const JobDetailHeader = ({
   hasApplied,
   onApplySuccess
 }) => {
-  const navigate = useNavigate();
   const { guard, modalState, closeModal } = useJobseekerAuth();
+  const { isAuthenticated } = useAuthStore();
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const company = job?.companyId;
   const companyAvatar = company?.avatarUrl || DEFAULT_LOGO;
   const companyName = company?.name || 'Công ty không xác định';
   const isVerified = company?.verificationStatus === 'VERIFIED';
 
+  useEffect(() => {
+    if (!isAuthenticated || !job?._id) return;
+    let cancelled = false;
+    loadSavedJobIds().then((set) => {
+      if (!cancelled) setIsSaved(set.has(String(job._id)));
+    });
+    return () => { cancelled = true; };
+  }, [job?._id, isAuthenticated]);
+
   const handleApply = guard(() => {
     if (canApply) setShowApplyModal(true);
   }, 'apply_job');
 
-  const handleSave = guard(() => {
-    console.log('Save job:', job._id);
+  const handleSave = guard(async () => {
+    if (saving || !job?._id) return;
+    setSaving(true);
+    const wasSaved = isSaved;
+    try {
+      if (wasSaved) {
+        await unsaveJob(job._id);
+        setIsSaved(false);
+        invalidateSavedCache();
+      } else {
+        const set = await loadSavedJobIds();
+        if (set.has(String(job._id))) {
+          setIsSaved(true);
+        } else {
+          await saveJob(job._id);
+          setIsSaved(true);
+          invalidateSavedCache();
+        }
+      }
+    } catch (err) {
+      const status = err?.response?.status;
+      if (!wasSaved && status === 400) {
+        setIsSaved(true);
+        invalidateSavedCache();
+      } else if (wasSaved && status === 404) {
+        setIsSaved(false);
+        invalidateSavedCache();
+      } else {
+        setIsSaved(wasSaved);
+      }
+    } finally {
+      setSaving(false);
+    }
   }, 'save_job');
 
   return (
@@ -166,10 +237,15 @@ const JobDetailHeader = ({
 
             <button
               onClick={handleSave}
-              className="w-full md:w-48 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary-fixed transition-all text-body-md flex items-center justify-center gap-2"
+              disabled={saving}
+              className={`w-full md:w-48 py-3 border font-bold rounded-lg transition-all text-body-md flex items-center justify-center gap-2 ${
+                isSaved
+                  ? 'border-primary bg-primary text-white hover:bg-primary/90'
+                  : 'border-primary text-primary hover:bg-primary-fixed'
+              } disabled:opacity-60`}
             >
-              <BookmarkPlus className="w-5 h-5" />
-              Lưu Việc Làm
+              <BookmarkPlus className={`w-5 h-5 ${isSaved ? 'fill-white' : ''}`} />
+              {isSaved ? 'Đã lưu' : 'Lưu Việc Làm'}
             </button>
           </div>
         </div>

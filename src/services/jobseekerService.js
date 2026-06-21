@@ -14,6 +14,9 @@ export const clearSearchHistory = () =>
 export const updateJobPreferences = (data) =>
   api.put('/jobseeker/job-preferences', data).then(r => r.data);
 
+export const getJobPreferences = () =>
+  api.get('/jobseeker/job-preferences').then(r => r.data);
+
 // ─── Matched Jobs ─────────────────────────────────────────
 export const getMatchedJobs = (params = {}) =>
   api.get('/jobseeker/matched-jobs', { params }).then(r => r.data);
@@ -30,6 +33,9 @@ export const unsaveJob = (jobId) =>
 
 export const getSimilarSavedJobs = (limit = 6) =>
   api.get('/jobseeker/saved-jobs/similar', { params: { limit } }).then(r => r.data);
+
+export const getSimilarAppliedJobs = (limit = 6) =>
+  api.get('/jobseeker/applications/similar', { params: { limit } }).then(r => r.data);
 
 // ─── Followed Companies ───────────────────────────────────
 export const getFollowedCompanies = (params = {}) =>

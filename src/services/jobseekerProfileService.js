@@ -6,8 +6,17 @@ const jobseekerProfileService = {
     return response.data;
   },
 
-  updateMyProfile: async ({ fullName, phone }) => {
-    const response = await api.put('/jobseeker/profile', { fullName, phone });
+  updateMyProfile: async ({ fullName, phone, avatarUrl }) => {
+    const payload = { fullName, phone };
+    if (avatarUrl !== undefined) payload.avatarUrl = avatarUrl;
+    const response = await api.put('/jobseeker/profile', payload);
+    return response.data;
+  },
+
+  uploadAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/uploads/avatar', formData);
     return response.data;
   },
 

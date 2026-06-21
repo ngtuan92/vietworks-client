@@ -11,27 +11,31 @@ const MatchedJobs = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const fetch = async () => {
+    let cancelled = false;
+    const load = async () => {
       setLoading(true);
       setError('');
       try {
         const data = await getMatchedJobs({ page, limit: 10 });
+        if (cancelled) return;
         setJobs(data.data || []);
-        setTotalPages(data.totalPages || 1);
+        setTotalPages(data.pagination?.pages || 1);
       } catch {
-        setError('Không thể tải danh sách việc làm phù hợp.');
+        if (!cancelled) setError('Không thể tải danh sách việc làm phù hợp.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    fetch();
+    load();
+    return () => { cancelled = true; };
   }, [page]);
 
   const formatSalary = (job) => {
-    if (!job.salaryMin && !job.salaryMax) return 'Thỏa thuận';
-    if (job.salaryMin && job.salaryMax) return `${job.salaryMin} - ${job.salaryMax} triệu`;
-    if (job.salaryMin) return `Từ ${job.salaryMin} triệu`;
-    return `Đến ${job.salaryMax} triệu`;
+    const s = job.salary;
+    if (!s || s.type === 'NEGOTIABLE' || (!s.minMillion && !s.maxMillion)) return 'Thỏa thuận';
+    if (s.minMillion && s.maxMillion) return `${s.minMillion} - ${s.maxMillion} triệu`;
+    if (s.minMillion) return `Từ ${s.minMillion} triệu`;
+    return `Đến ${s.maxMillion} triệu`;
   };
 
   return (
@@ -68,36 +72,38 @@ const MatchedJobs = () => {
         ) : (
           <>
             <div className="space-y-4">
-              {jobs.map((job) => (
+              {jobs.map((job) => {
+                const company = job.companyId || job.company;
+                return (
                 <div key={job._id} className="bg-white rounded-2xl border border-slate-200 p-5 hover:border-primary/40 hover:shadow-sm transition-all relative overflow-hidden">
                   <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                     <div className="flex gap-4">
                       <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 font-bold text-sm overflow-hidden">
-                        {job.companySnapshot?.logoUrl
-                          ? <img src={job.companySnapshot.logoUrl} alt="" className="w-full h-full object-cover" />
-                          : (job.companySnapshot?.name || job.title || '?').charAt(0)
+                        {company?.avatarUrl
+                          ? <img src={company.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          : (company?.name || job.title || '?').charAt(0)
                         }
                       </div>
                       <div className="space-y-1">
                         <h3 className="font-bold text-slate-950 text-base md:text-lg hover:text-primary transition-colors">
                           <Link to={`/jobs/${job._id}`}>{job.title}</Link>
                         </h3>
-                        <p className="text-sm text-slate-600">{job.companySnapshot?.name || '—'}</p>
+                        <p className="text-sm text-slate-600">{company?.name || '—'}</p>
                         <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-2">
-                          {job.locations?.[0] && (
+                          {job.workLocations?.[0] && (
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3.5 h-3.5" />
-                              {job.locations[0].provinceName}
+                              {job.workLocations[0].provinceName}
                             </span>
                           )}
                           <span className="flex items-center gap-1 font-semibold text-emerald-600">
                             <DollarSign className="w-3.5 h-3.5" />
                             {formatSalary(job)}
                           </span>
-                          {job.jobLevelSnapshot?.name && (
+                          {job.jobLevelId?.name && (
                             <span className="flex items-center gap-1">
                               <Award className="w-3.5 h-3.5" />
-                              {job.jobLevelSnapshot.name}
+                              {job.jobLevelId.name}
                             </span>
                           )}
                         </div>
@@ -120,7 +126,8 @@ const MatchedJobs = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {totalPages > 1 && (
               <div className="flex justify-center gap-2 pt-4">
