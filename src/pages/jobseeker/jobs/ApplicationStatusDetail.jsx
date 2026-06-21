@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
+import { getOrCreateConversation } from '../../../services/chatService';
+import { MessageCircle, Loader2 } from 'lucide-react';
 
 const statusConfig = {
   UNREAD: { label: 'Chưa xem', bg: 'bg-gray-100', text: 'text-gray-600', icon: 'mark_email_unread' },
@@ -17,6 +19,7 @@ const ApplicationStatusDetail = () => {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {

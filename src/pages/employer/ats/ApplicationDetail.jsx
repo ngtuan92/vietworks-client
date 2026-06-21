@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Eye, FileText, Loader2, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowLeft, Eye, FileText, Loader2, Mail, MapPin, Phone, MessageCircle } from 'lucide-react';
 import atsService from '../../../services/atsService';
+import { getOrCreateConversation } from '../../../services/chatService';
 
 const STATUS_LABEL = {
   UNREAD: 'Chưa xem',
@@ -83,6 +84,20 @@ const ApplicationDetail = () => {
       setInterviewModalOpen(false);
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi mời phỏng vấn');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleChat = async () => {
+    try {
+      setActionLoading(true);
+      const res = await getOrCreateConversation(id);
+      if (res.success) {
+        navigate(`/employer/messages?conversationId=${res.data._id}`);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể tạo cuộc hội thoại');
     } finally {
       setActionLoading(false);
     }
@@ -208,7 +223,20 @@ const ApplicationDetail = () => {
             <div className="flex gap-2 ml-4">
               <button disabled={actionLoading} onClick={handleApprove} className="px-4 py-1.5 text-sm font-bold bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50">Duyệt</button>
               <button disabled={actionLoading} onClick={() => setInterviewModalOpen(true)} className="px-4 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50">Mời phỏng vấn</button>
-              <button disabled={actionLoading} onClick={() => setRejectModalOpen(true)} className="px-4 py-1.5 text-sm font-bold bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50">Từ chối</button>
+              <button
+                onClick={handleChat}
+                disabled={actionLoading}
+                className="px-6 py-2 bg-white text-primary border border-primary font-bold rounded-xl hover:bg-blue-50 transition-colors flex items-center gap-2"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Nhắn tin
+              </button>
+              <button 
+                onClick={() => setRejectModalOpen(true)}
+                className="px-6 py-2 bg-white text-red-600 border border-red-200 font-bold rounded-xl hover:bg-red-50 transition-colors"
+              >
+                Từ chối
+              </button>
             </div>
           )}
           {application.status === 'APPROVED' && !application.interviewInvitation && (

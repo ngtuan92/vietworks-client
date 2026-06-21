@@ -89,11 +89,13 @@ import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
 import CVTemplateForm from './pages/admin/cv-templates/CVTemplateForm';
 
 import { NotificationProvider } from './contexts/NotificationContext';
+import { SocketProvider } from './contexts/SocketContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
     <NotificationProvider>
+      <SocketProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<JobseekerLayout />}>
@@ -222,6 +224,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </SocketProvider>
     </NotificationProvider>
   );
 }
