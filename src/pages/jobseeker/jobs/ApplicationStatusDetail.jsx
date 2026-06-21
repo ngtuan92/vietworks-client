@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
 import { getSimilarAppliedJobs } from '../../../services/jobseekerService';
@@ -314,3 +314,4 @@ const ApplicationStatusDetail = () => {
 };
 
 export default ApplicationStatusDetail;
+
