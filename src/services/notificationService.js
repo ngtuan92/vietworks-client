@@ -1,4 +1,4 @@
-﻿import api from './api';
+import api from './api';
 
 const notificationService = {
   async getMyNotifications(params = {}) {
@@ -15,6 +15,14 @@ const notificationService = {
   },
   async deleteNotification(id) {
     const response = await api.delete(`/notifications/${id}`);
+    return response.data;
+  },
+  async getSettings() {
+    const response = await api.get('/notification-settings');
+    return response.data;
+  },
+  async updateSettings(settings) {
+    const response = await api.patch('/notification-settings', { settings });
     return response.data;
   }
 };

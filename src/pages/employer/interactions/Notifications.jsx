@@ -1,9 +1,11 @@
-﻿import { useEffect, useMemo, useState } from 'react';
-import { Bell, CheckCheck, Eye, Loader2, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, CheckCheck, Eye, Loader2, Trash2, ChevronRight, Clock } from 'lucide-react';
 import notificationService from '../../../services/notificationService';
 
 const TYPE_LABEL = {
   EMPLOYER_VIEWED_CV: 'CV',
+  NEW_APPLICATION: 'Ứng tuyển',
   INTERVIEW_INVITATION: 'Phỏng vấn',
   APPLICATION_RESULT: 'Hồ sơ',
   JOB_APPROVED: 'Job',
@@ -15,6 +17,7 @@ const TYPE_LABEL = {
 };
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -22,11 +25,14 @@ const Notifications = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [filter, setFilter] = useState('ALL'); // ALL, UNREAD, READ
+  const [visibleLimit, setVisibleLimit] = useState(10);
+
   const loadNotifications = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await notificationService.getMyNotifications({ limit: 50 });
+      const res = await notificationService.getMyNotifications({ limit: 100 });
       setItems(res?.data || []);
       setUnreadCount(res?.unreadCount || 0);
     } catch (err) {
@@ -45,6 +51,47 @@ const Notifications = () => {
   const totalCount = items.length;
   const readCount = useMemo(() => items.filter((item) => item.status === 'READ').length, [items]);
 
+  const filteredItems = useMemo(() => {
+    if (filter === 'UNREAD') return items.filter(i => i.status === 'UNREAD');
+    if (filter === 'READ') return items.filter(i => i.status === 'READ');
+    return items;
+  }, [items, filter]);
+
+  const visibleItems = useMemo(() => filteredItems.slice(0, visibleLimit), [filteredItems, visibleLimit]);
+  const hasMore = visibleLimit < filteredItems.length;
+
+  const handleShowMore = () => setVisibleLimit(prev => prev + 10);
+
+  const groupedItems = useMemo(() => {
+    const groups = {
+      today: [],
+      yesterday: [],
+      earlier: []
+    };
+    
+    const now = new Date();
+    const todayStr = now.toDateString();
+    
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toDateString();
+    
+    visibleItems.forEach(item => {
+      const itemDate = new Date(item.createdAt);
+      const itemStr = itemDate.toDateString();
+      
+      if (itemStr === todayStr) {
+        groups.today.push(item);
+      } else if (itemStr === yesterdayStr) {
+        groups.yesterday.push(item);
+      } else {
+        groups.earlier.push(item);
+      }
+    });
+    
+    return groups;
+  }, [visibleItems]);
+
   const handleMarkAsRead = async (id) => {
     try {
       setActionLoading(`read-${id}`);
@@ -53,7 +100,6 @@ const Notifications = () => {
       await notificationService.markAsRead(id);
       setItems((prev) => prev.map((item) => item._id === id ? { ...item, status: 'READ' } : item));
       setUnreadCount((prev) => Math.max(prev - 1, 0));
-      setSuccess('Đã đánh dấu thông báo là đã đọc.');
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể đánh dấu đã đọc');
     } finally {
@@ -77,7 +123,8 @@ const Notifications = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, e) => {
+    if (e) e.stopPropagation();
     try {
       setActionLoading(`delete-${id}`);
       setError('');
@@ -94,6 +141,96 @@ const Notifications = () => {
     } finally {
       setActionLoading('');
     }
+  };
+
+  const handleNotificationClick = async (item) => {
+    if (item.status === 'UNREAD') {
+      await handleMarkAsRead(item._id);
+    }
+    
+    const refId = item.referenceId || item.metadata?.applicationId || item.metadata?.jobId;
+    if (!refId) return;
+
+    if (['NEW_APPLICATION', 'EMPLOYER_VIEWED_CV', 'INTERVIEW_INVITATION', 'APPLICATION_RESULT'].includes(item.typeCode)) {
+      navigate(`/employer/applications/${refId}`);
+    } else if (['JOB_APPROVED', 'JOB_REJECTED'].includes(item.typeCode)) {
+      navigate(`/employer/jobs/${refId}`);
+    } else if (item.typeCode === 'NEW_MESSAGE') {
+      // Future implementation for chat
+      // navigate(`/employer/conversations/${refId}`);
+    }
+  };
+
+  const renderGroup = (title, groupItems) => {
+    if (groupItems.length === 0) return null;
+    return (
+      <div className="mb-6 last:mb-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+          <Clock className="w-4 h-4" /> {title}
+        </h3>
+        <div className="space-y-3">
+          {groupItems.map(item => (
+            <div 
+              key={item._id}
+              onClick={() => handleNotificationClick(item)}
+              className={`group flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
+                item.status === 'UNREAD' 
+                ? 'bg-blue-50/50 border-blue-100 hover:bg-blue-50 hover:shadow-md hover:border-blue-200' 
+                : 'bg-white border-slate-200/60 hover:bg-slate-50 hover:shadow-sm hover:border-slate-300'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                item.status === 'UNREAD' ? 'bg-white text-primary premium-shadow' : 'bg-slate-100 text-slate-500'
+              }`}>
+                {item.status === 'UNREAD' ? <Bell className="w-6 h-6 animate-pulse" /> : <CheckCheck className="w-6 h-6" />}
+              </div>
+              <div className="flex-1 min-w-0 pt-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className={`text-base truncate font-bold ${item.status === 'UNREAD' ? 'text-slate-900' : 'text-slate-700'}`}>
+                    {item.title}
+                  </h4>
+                  <span className="text-xs font-semibold text-slate-400 whitespace-nowrap shrink-0 mt-1">
+                    {formatDateTimeShort(item.createdAt)}
+                  </span>
+                </div>
+                <p className={`text-sm mt-1 line-clamp-2 ${item.status === 'UNREAD' ? 'text-slate-700' : 'text-slate-500'}`}>
+                  {item.content}
+                </p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    item.status === 'UNREAD' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {TYPE_LABEL[item.typeCode] || item.typeCode}
+                  </span>
+                  
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleMarkAsRead(item._id); }}
+                      disabled={item.status === 'READ' || actionLoading === `read-${item._id}`}
+                      title="Đánh dấu đã đọc"
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-800 hover:text-white transition-all disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-500"
+                    >
+                      {actionLoading === `read-${item._id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(item._id, e)}
+                      disabled={actionLoading === `delete-${item._id}`}
+                      title="Xóa thông báo"
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-all disabled:opacity-40 disabled:hover:bg-red-50 disabled:hover:text-red-500"
+                    >
+                      {actionLoading === `delete-${item._id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    </button>
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -114,75 +251,54 @@ const Notifications = () => {
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="Tổng thông báo" value={totalCount} icon={<Bell className="w-5 h-5" />} />
-        <StatCard label="Chưa đọc" value={unreadCount} icon={<Eye className="w-5 h-5" />} highlight />
-        <StatCard label="Đã đọc" value={readCount} icon={<CheckCheck className="w-5 h-5" />} />
+        <StatCard label="Tổng thông báo" value={totalCount} icon={<Bell className="w-5 h-5" />} active={filter === 'ALL'} onClick={() => { setFilter('ALL'); setVisibleLimit(10); }} />
+        <StatCard label="Chưa đọc" value={unreadCount} icon={<Eye className="w-5 h-5" />} highlight active={filter === 'UNREAD'} onClick={() => { setFilter('UNREAD'); setVisibleLimit(10); }} />
+        <StatCard label="Đã đọc" value={readCount} icon={<CheckCheck className="w-5 h-5" />} active={filter === 'READ'} onClick={() => { setFilter('READ'); setVisibleLimit(10); }} />
       </section>
 
       {error ? <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
       {success ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{success}</div> : null}
 
-      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                {['Tiêu đề', 'Nội dung', 'Loại', 'Trạng thái', 'Thời gian', 'Hành động'].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="6" className="py-12 text-center text-slate-500"><Loader2 className="w-5 h-5 animate-spin inline mr-2" />Đang tải thông báo...</td></tr>
-              ) : items.length === 0 ? (
-                <tr><td colSpan="6" className="py-12 text-center text-slate-500">Chưa có thông báo nào.</td></tr>
-              ) : items.map((item) => (
-                <tr key={item._id} className={`border-t border-slate-100 hover:bg-slate-50/70 transition-colors ${item.status === 'UNREAD' ? 'bg-blue-50/30' : ''}`}>
-                  <td className="px-4 py-3 min-w-[280px]">
-                    <div className="font-bold text-slate-900">{item.title}</div>
-                  </td>
-                  <td className="px-4 py-3 min-w-[360px] text-slate-600">{item.content}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{TYPE_LABEL[item.typeCode] || item.typeCode}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${item.status === 'UNREAD' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
-                      {item.status === 'UNREAD' ? 'Chưa đọc' : 'Đã đọc'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-slate-500">{formatDateTime(item.createdAt)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleMarkAsRead(item._id)}
-                        disabled={item.status === 'READ' || actionLoading === `read-${item._id}`}
-                        title="Đánh dấu đã đọc"
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-500 disabled:hover:translate-y-0"
-                      >
-                        {actionLoading === `read-${item._id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        disabled={actionLoading === `delete-${item._id}`}
-                        title="Xóa thông báo"
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-600 hover:text-white hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:hover:bg-red-50 disabled:hover:text-red-500 disabled:hover:translate-y-0"
-                      >
-                        {actionLoading === `delete-${item._id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <section className="bg-transparent">
+        {loading ? (
+          <div className="py-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200/60 premium-shadow">
+            <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Đang tải thông báo...
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200/60 premium-shadow">
+            {filter === 'ALL' ? 'Chưa có thông báo nào.' : filter === 'UNREAD' ? 'Tuyệt vời! Bạn đã đọc hết tất cả thông báo.' : 'Bạn chưa có thông báo nào đã đọc.'}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {renderGroup('Hôm nay', groupedItems.today)}
+            {renderGroup('Hôm qua', groupedItems.yesterday)}
+            {renderGroup('Trước đó', groupedItems.earlier)}
+            
+            {hasMore && (
+              <div className="pt-4 flex justify-center">
+                <button
+                  onClick={handleShowMore}
+                  className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-semibold hover:bg-slate-50 hover:text-primary transition-colors shadow-sm"
+                >
+                  Hiển thị các thông báo trước đó
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );
 };
 
-const StatCard = ({ label, value, icon, highlight = false }) => (
-  <div className={`rounded-2xl border p-5 premium-shadow ${highlight ? 'bg-blue-50 border-blue-100' : 'bg-white border-slate-200/60'}`}>
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${highlight ? 'bg-white text-primary' : 'bg-slate-50 text-slate-500'}`}>
+const StatCard = ({ label, value, icon, highlight = false, active = false, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`rounded-2xl border p-5 transition-all cursor-pointer ${
+      active ? 'ring-2 ring-primary ring-offset-2' : 'hover:shadow-md hover:-translate-y-0.5 premium-shadow'
+    } ${highlight ? 'bg-blue-50 border-blue-100' : 'bg-white border-slate-200/60'}`}
+  >
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors ${highlight && active ? 'bg-primary text-white shadow-md' : highlight ? 'bg-white text-primary' : active ? 'bg-slate-800 text-white shadow-md' : 'bg-slate-50 text-slate-500'}`}>
       {icon}
     </div>
     <p className="text-sm text-slate-500 font-semibold">{label}</p>
@@ -190,9 +306,10 @@ const StatCard = ({ label, value, icon, highlight = false }) => (
   </div>
 );
 
-const formatDateTime = (value) => {
+const formatDateTimeShort = (value) => {
   if (!value) return '--';
-  return new Date(value).toLocaleString('vi-VN');
+  const d = new Date(value);
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
 export default Notifications;
