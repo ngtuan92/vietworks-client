@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Briefcase, DollarSign, MapPin, Award, Loader2 } from 'lucide-react';
-import { updateJobPreferences } from '../../../services/jobseekerService';
-import { getCareerGroups, getCareersByGroup, getCareerPositions, getExperienceLevels } from '../../../services/jobService';
+import {
+  ArrowLeft, ArrowRight, Check, Briefcase, DollarSign, MapPin, Award, Loader2, X
+} from 'lucide-react';
+import {
+  updateJobPreferences,
+  getJobPreferences
+} from '../../../services/jobseekerService';
+import {
+  getCareerGroups,
+  getCareersByGroup,
+  getCareerPositions,
+  getExperienceLevels
+} from '../../../services/jobService';
+import HierarchicalLocationPicker from '../../../components/HierarchicalLocationPicker';
 
 const JobPreferences = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   const [formData, setFormData] = useState({
     careerGroupId: '',
@@ -16,6 +27,7 @@ const JobPreferences = () => {
     experienceLevelId: '',
     salaryMin: '',
     salaryMax: '',
+    workLocations: []
   });
 
   const [careerGroups, setCareerGroups] = useState([]);
@@ -23,44 +35,114 @@ const JobPreferences = () => {
   const [positions, setPositions] = useState([]);
   const [experienceLevels, setExperienceLevels] = useState([]);
   const [loadingMaster, setLoadingMaster] = useState(true);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadMasterData = async () => {
+    const loadData = async () => {
       try {
-        const [cgRes, expRes] = await Promise.all([getCareerGroups(), getExperienceLevels()]);
+        const [cgRes, expRes, prefsRes] = await Promise.all([
+          getCareerGroups(),
+          getExperienceLevels(),
+          getJobPreferences()
+        ]);
         setCareerGroups(cgRes.data || []);
         setExperienceLevels(expRes.data || []);
+
+        const data = prefsRes.data;
+        if (data) {
+          const dj = data.desiredJob || {};
+          setFormData({
+            careerGroupId: dj.careerGroupId?._id || dj.careerGroupId || '',
+            careerId: dj.careerId?._id || dj.careerId || '',
+            careerPositionId: dj.careerPositionId?._id || dj.careerPositionId || '',
+            experienceLevelId: dj.experienceLevelId?._id || dj.experienceLevelId || '',
+            salaryMin: dj.salaryExpectationMillion?.min ?? '',
+            salaryMax: dj.salaryExpectationMillion?.max ?? '',
+            workLocations: Array.isArray(dj.workLocations) ? dj.workLocations : []
+          });
+        }
       } catch {
         setError('Không thể tải dữ liệu. Vui lòng thử lại.');
       } finally {
         setLoadingMaster(false);
+        setPreferencesLoaded(true);
       }
     };
-    loadMasterData();
+    loadData();
   }, []);
 
   useEffect(() => {
+    if (!preferencesLoaded) return;
     if (!formData.careerGroupId) { setCareers([]); return; }
     getCareersByGroup(formData.careerGroupId)
       .then(r => setCareers(r.data || []))
       .catch(() => setCareers([]));
-    setFormData(prev => ({ ...prev, careerId: '', careerPositionId: '' }));
-  }, [formData.careerGroupId]);
+  }, [formData.careerGroupId, preferencesLoaded]);
 
   useEffect(() => {
+    if (!preferencesLoaded) return;
     if (!formData.careerId) { setPositions([]); return; }
     getCareerPositions(formData.careerId)
       .then(r => setPositions(r.data || []))
       .catch(() => setPositions([]));
-    setFormData(prev => ({ ...prev, careerPositionId: '' }));
+  }, [formData.careerId, preferencesLoaded]);
+
+  useEffect(() => {
+    if (!formData.careerGroupId) {
+      setFormData((prev) => (prev.careerId || prev.careerPositionId
+        ? { ...prev, careerId: '', careerPositionId: '' }
+        : prev));
+    }
+  }, [formData.careerGroupId]);
+
+  useEffect(() => {
+    if (!formData.careerId) {
+      setFormData((prev) => (prev.careerPositionId
+        ? { ...prev, careerPositionId: '' }
+        : prev));
+    }
   }, [formData.careerId]);
 
-  const nextStep = () => setStep(s => Math.min(s + 1, totalSteps));
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
+  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+
+  const addLocation = (loc) => {
+    if (!loc || !loc.provinceName) return;
+    setFormData((prev) => {
+      const exists = prev.workLocations.some(
+        (l) => l.provinceCode === loc.provinceId
+          && l.districtCode === (loc.districtName || '')
+          && l.wardCode === (loc.wardName || '')
+      );
+      if (exists) return prev;
+      return {
+        ...prev,
+        workLocations: [
+          ...prev.workLocations,
+          {
+            provinceCode: loc.provinceId || '',
+            provinceName: loc.provinceName || '',
+            districtCode: loc.districtName || '',
+            districtName: loc.districtName || '',
+            wardCode: loc.wardName || '',
+            wardName: loc.wardName || '',
+            detailAddress: loc.fullAddress || loc.detailAddress || ''
+          }
+        ]
+      };
+    });
+  };
+
+  const removeLocation = (idx) => {
+    setFormData((prev) => ({
+      ...prev,
+      workLocations: prev.workLocations.filter((_, i) => i !== idx)
+    }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -71,8 +153,9 @@ const JobPreferences = () => {
         careerId: formData.careerId || undefined,
         careerPositionId: formData.careerPositionId || undefined,
         experienceLevelId: formData.experienceLevelId || undefined,
-        salaryMin: formData.salaryMin ? Number(formData.salaryMin) : undefined,
-        salaryMax: formData.salaryMax ? Number(formData.salaryMax) : undefined,
+        salaryMin: formData.salaryMin !== '' ? Number(formData.salaryMin) : undefined,
+        salaryMax: formData.salaryMax !== '' ? Number(formData.salaryMax) : undefined,
+        workLocations: formData.workLocations.length > 0 ? formData.workLocations : undefined
       });
       setMessage('Lưu nhu cầu công việc thành công! Hệ thống sẽ gợi ý việc làm phù hợp cho bạn.');
       setTimeout(() => navigate('/matched-jobs'), 1500);
@@ -100,12 +183,14 @@ const JobPreferences = () => {
           <p className="text-slate-500 text-sm">Chúng tôi sẽ gợi ý cơ hội tốt nhất dựa trên các tiêu chí bạn thiết lập dưới đây.</p>
         </div>
 
-        <div className="flex items-center justify-center gap-4 px-4">
+        <div className="flex items-center justify-center gap-3 md:gap-4 px-2">
           <StepItem num={1} active={step === 1} completed={step > 1} label="Vị trí" icon={<Briefcase className="w-4 h-4" />} />
-          <div className={`h-0.5 w-12 md:w-16 transition-colors ${step > 1 ? 'bg-primary' : 'bg-slate-200'}`} />
-          <StepItem num={2} active={step === 2} completed={step > 2} label="Yêu cầu" icon={<Award className="w-4 h-4" />} />
-          <div className={`h-0.5 w-12 md:w-16 transition-colors ${step > 2 ? 'bg-primary' : 'bg-slate-200'}`} />
+          <div className={`h-0.5 w-8 md:w-12 transition-colors ${step > 1 ? 'bg-primary' : 'bg-slate-200'}`} />
+          <StepItem num={2} active={step === 2} completed={step > 2} label="Kinh nghiệm" icon={<Award className="w-4 h-4" />} />
+          <div className={`h-0.5 w-8 md:w-12 transition-colors ${step > 2 ? 'bg-primary' : 'bg-slate-200'}`} />
           <StepItem num={3} active={step === 3} completed={step > 3} label="Lương" icon={<DollarSign className="w-4 h-4" />} />
+          <div className={`h-0.5 w-8 md:w-12 transition-colors ${step > 3 ? 'bg-primary' : 'bg-slate-200'}`} />
+          <StepItem num={4} active={step === 4} completed={step > 4} label="Địa điểm" icon={<MapPin className="w-4 h-4" />} />
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
@@ -128,7 +213,7 @@ const JobPreferences = () => {
                     <label className="text-sm font-bold text-slate-700">Nhóm ngành nghề</label>
                     <select
                       value={formData.careerGroupId}
-                      onChange={e => setFormData(p => ({ ...p, careerGroupId: e.target.value }))}
+                      onChange={e => setFormData(p => ({ ...p, careerGroupId: e.target.value, careerId: '', careerPositionId: '' }))}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-primary transition-all text-sm"
                     >
                       <option value="">-- Chọn nhóm ngành --</option>
@@ -139,7 +224,7 @@ const JobPreferences = () => {
                     <label className="text-sm font-bold text-slate-700">Ngành nghề cụ thể</label>
                     <select
                       value={formData.careerId}
-                      onChange={e => setFormData(p => ({ ...p, careerId: e.target.value }))}
+                      onChange={e => setFormData(p => ({ ...p, careerId: e.target.value, careerPositionId: '' }))}
                       disabled={!formData.careerGroupId}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:border-primary transition-all text-sm disabled:opacity-50"
                     >
@@ -216,6 +301,55 @@ const JobPreferences = () => {
                 </div>
               </div>
             )}
+
+            {step === 4 && (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <MapPin className="text-primary w-5 h-5" /> Bước 4: Địa điểm làm việc mong muốn
+                </h2>
+                <p className="text-xs text-slate-500">Chọn nhiều địa điểm nếu bạn sẵn sàng làm việc ở nhiều nơi.</p>
+
+                {formData.workLocations.length > 0 && (
+                  <div className="space-y-2">
+                    {formData.workLocations.map((loc, idx) => (
+                      <div
+                        key={`${loc.provinceCode}-${loc.districtCode}-${loc.wardCode}-${idx}`}
+                        className="flex items-start justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
+                            <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span className="truncate">
+                              {[loc.wardName, loc.districtName, loc.provinceName].filter(Boolean).join(', ') || loc.detailAddress}
+                            </span>
+                          </div>
+                          {loc.detailAddress && (
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{loc.detailAddress}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeLocation(idx)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition shrink-0"
+                          title="Xóa"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                  <div className="bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-200">
+                    Thêm địa điểm
+                  </div>
+                  <div className="p-2">
+                    <HierarchicalLocationPicker onLocationSelect={addLocation} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
@@ -227,8 +361,8 @@ const JobPreferences = () => {
             </button>
             <div className="flex gap-4">
               {step === totalSteps && (
-                <button onClick={() => navigate('/')} className="hidden sm:block text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">
-                  Bỏ qua
+                <button onClick={() => navigate('/job-preferences')} className="hidden sm:block text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">
+                  Hủy
                 </button>
               )}
               <button

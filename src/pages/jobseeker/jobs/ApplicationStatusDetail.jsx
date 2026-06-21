@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
-import { getOrCreateConversation } from '../../../services/chatService';
-import { MessageCircle, Loader2 } from 'lucide-react';
+import { getSimilarAppliedJobs } from '../../../services/jobseekerService';
+import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
 const statusConfig = {
   UNREAD: { label: 'Chưa xem', bg: 'bg-gray-100', text: 'text-gray-600', icon: 'mark_email_unread' },
@@ -19,7 +19,6 @@ const ApplicationStatusDetail = () => {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -298,6 +297,15 @@ const ApplicationStatusDetail = () => {
                 Danh sách ứng tuyển
               </button>
             </div>
+
+            {application?.job?.id && (
+              <SimilarJobsSection
+                title="Việc làm tương tự"
+                subtitle="Có thể bạn cũng quan tâm"
+                fetchFn={getSimilarAppliedJobs}
+                limit={3}
+              />
+            )}
           </div>
         </div>
       </main>
@@ -306,3 +314,4 @@ const ApplicationStatusDetail = () => {
 };
 
 export default ApplicationStatusDetail;
+

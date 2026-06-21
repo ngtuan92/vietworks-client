@@ -2,9 +2,28 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
-import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell } from 'lucide-react';
+
+import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell, Building2 } from 'lucide-react';
+
 import NotificationDropdown from './NotificationDropdown';
 import logoImg from '../../assets/logo.png';
+
+// Avatar người dùng: hiện ảnh nếu có (và tải được), nếu không thì hiện chữ cái đầu.
+const UserAvatar = ({ avatarUrl, initial, className = '' }) => {
+  const [error, setError] = useState(false);
+  if (avatarUrl && !error) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={initial}
+        className={`${className} object-cover`}
+        onError={() => setError(true)}
+      />
+    );
+  }
+  return <div className={className}>{initial}</div>;
+};
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -126,6 +145,7 @@ const Navbar = () => {
                     <MenuLink to="/saved-jobs" icon={<Heart className="w-4 h-4" />} label="Việc đã lưu" />
                     <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-4 h-4" />} label="Việc làm phù hợp" />
                     <MenuLink to="/ai-cv-review" icon={<Award className="w-4 h-4 text-yellow-500" />} label="AI CV Review" />
+                    <MenuLink to="/followed-companies" icon={<Building2 className="w-4 h-4" />} label="Công ty đang theo dõi" />
                   </div>
                 </div>
               </div>
@@ -163,9 +183,11 @@ const Navbar = () => {
                   onClick={() => setIsMenuOpen((prev) => !prev)}
                   className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-white p-1 pr-3 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm group shrink-0"
                 >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner shrink-0">
-                    {profileInitial}
-                  </div>
+                  <UserAvatar
+                    avatarUrl={user?.avatarUrl}
+                    initial={profileInitial}
+                    className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner shrink-0 overflow-hidden"
+                  />
                   <span className="text-sm font-semibold text-slate-700 hidden sm:block max-w-[100px] lg:max-w-[140px] truncate group-hover:text-primary transition-colors whitespace-nowrap">
                     {profileLabel}
                   </span>
@@ -176,9 +198,11 @@ const Navbar = () => {
                   <div className="absolute right-0 mt-3 w-[260px] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden">
                     <div className="px-4 py-4 bg-slate-50 border-b border-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className="h-11 w-11 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-bold">
-                          {profileInitial}
-                        </div>
+                        <UserAvatar
+                          avatarUrl={user?.avatarUrl}
+                          initial={profileInitial}
+                          className="h-11 w-11 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-bold overflow-hidden"
+                        />
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-900 truncate">{profileLabel}</p>
                           <p className="text-xs text-slate-500 truncate">{profileEmail}</p>

@@ -243,7 +243,7 @@ const ManageCV = () => {
                         title={cv.title}
                         date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
                         isMain={cv.isMain}
-                        image={cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
+                        image={cv.previewImageUrl || cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
                         onDelete={handleDeleteCv}
                         onDownload={handleDownloadPdf}
                         onRename={handleRenameCv}

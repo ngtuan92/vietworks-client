@@ -6,6 +6,7 @@ import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { getPublicJobs } from '../../../services/jobService';
 import { getPublicCompanies } from '../../../services/jobseekerService';
+import CompanyCard from '../../../components/common/CompanyCard';
 import { Heart, UserPlus, ShieldCheck, MessageCircle } from 'lucide-react';
 
 const formatSalary = (salary) => {
@@ -163,24 +164,13 @@ const Home = () => {
             {featuredCompanies.length === 0 ? (
               <p className="text-slate-500">Chưa có công ty nào.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {featuredCompanies.map((company) => (
-                  <button
+                  <CompanyCard
                     key={company._id}
-                    onClick={() => navigate(`/companies/${company._id}`)}
-                    className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-primary/5 text-primary font-bold flex items-center justify-center overflow-hidden">
-                      {company.avatarUrl ? (
-                        <img src={company.avatarUrl} alt={company.name} className="w-full h-full object-cover" />
-                      ) : (
-                        company.name.charAt(0)
-                      )}
-                    </div>
-                    <h3 className="mt-3 text-base font-semibold text-slate-900 line-clamp-1">{company.name}</h3>
-                    <p className="mt-1 text-sm text-slate-500">{company.industryId?.name || 'Đa lĩnh vực'}</p>
-                    <p className="mt-3 text-sm font-medium text-primary">{company.followersCount || 0} người theo dõi</p>
-                  </button>
+                    company={company}
+                    openJobsCount={company.openJobsCount || 0}
+                  />
                 ))}
               </div>
             )}

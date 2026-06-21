@@ -2,18 +2,18 @@ import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 
-const DEFAULT_PACKAGES = [
-  { id: '7d', label: 'Gói 7 ngày', days: 7, price: 150000 },
-  { id: '14d', label: 'Gói 14 ngày', days: 14, price: 250000 },
-  { id: '30d', label: 'Gói 30 ngày', days: 30, price: 400000 },
-];
+// Lấy danh sách gói tin nổi bật (PREMIUM_JOB) từ API — admin quản lý,
+// employer mua sẽ thấy đúng cùng danh sách. Mặc định hạn 1 tháng.
+
+const formatVND = (n) => `${(n || 0).toLocaleString('vi-VN')} VNĐ`;
 
 const BuyFeaturedPackage = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
+  const [packages, setPackages] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
   const [jobId, setJobId] = useState('');
-  const [packageId, setPackageId] = useState('7d');
+  const [packageId, setPackageId] = useState('');
   const [confirmCost, setConfirmCost] = useState(false);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
@@ -21,20 +21,27 @@ const BuyFeaturedPackage = () => {
   useEffect(() => {
     Promise.all([
       api.get('/employer/jobs', { params: { status: 'PUBLISHED', limit: 100 } }),
-      api.get('/employer/wallet')
-    ]).then(([jobsRes, walletRes]) => {
+      api.get('/employer/wallet'),
+      api.get('/packages', { params: { targetRole: 'EMPLOYER', packageType: 'PREMIUM_JOB' } })
+    ]).then(([jobsRes, walletRes, pkgRes]) => {
       if (jobsRes.data.success) setJobs(jobsRes.data.data || []);
       if (walletRes.data.success) setWalletBalance(walletRes.data.data.balance || 0);
+      if (pkgRes.data.success) {
+        const list = (pkgRes.data.data || []).filter(p => p.status === 'ACTIVE');
+        setPackages(list);
+        if (list[0]) setPackageId(list[0]._id);
+      }
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const selectedJob = jobs.find((j) => String(j._id) === String(jobId));
-  const selectedPackage = DEFAULT_PACKAGES.find((p) => p.id === packageId);
+  const selectedPackage = packages.find((p) => String(p._id) === String(packageId));
 
   const endDate = useMemo(() => {
     if (!selectedPackage) return null;
     const now = new Date();
-    now.setDate(now.getDate() + selectedPackage.days);
+    const days = selectedPackage.durationDays || 30;
+    now.setDate(now.getDate() + days);
     return now.toISOString().split('T')[0];
   }, [selectedPackage]);
 
@@ -49,8 +56,7 @@ const BuyFeaturedPackage = () => {
     setBuying(true);
     try {
       const res = await api.post('/employer/jobs/' + selectedJob._id + '/boost/payment', {
-        packageType: 'FEATURED_JOB',
-        durationDays: selectedPackage.days
+        packageId: selectedPackage._id
       });
       if (res.data.success) {
         navigate('/employer/wallet/payment-result?status=success&amount=' + selectedPackage.price);
@@ -70,11 +76,29 @@ const BuyFeaturedPackage = () => {
     );
   }
 
+  if (packages.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold text-slate-900">Mua gói tin nổi bật</h1>
+        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+          <span className="material-symbols-outlined text-[48px] text-slate-300">inventory_2</span>
+          <p className="mt-2 font-semibold">Chưa có gói tin nổi bật nào đang mở bán. Vui lòng liên hệ admin.</p>
+          <button
+            onClick={() => navigate('/employer/packages')}
+            className="mt-4 px-4 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Quay lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Mua gói tin nổi bật</h1>
-        <p className="text-slate-600 mt-1">Gắn gói premium cho một Job cụ thể.</p>
+        <p className="text-slate-600 mt-1">Gắn gói premium cho một Job cụ thể. Tất cả gói đều có hạn 1 tháng.</p>
       </div>
 
       <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-4">
@@ -97,25 +121,25 @@ const BuyFeaturedPackage = () => {
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Chọn gói</label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {DEFAULT_PACKAGES.map((pkg) => (
+            {packages.map((pkg) => (
               <button
-                key={pkg.id}
+                key={pkg._id}
                 type="button"
-                onClick={() => setPackageId(pkg.id)}
-                className={`text-left rounded-2xl border p-4 ${packageId === pkg.id ? 'border-primary bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}
+                onClick={() => setPackageId(pkg._id)}
+                className={`text-left rounded-2xl border p-4 ${packageId === pkg._id ? 'border-primary bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}
               >
-                <div className="font-bold text-slate-900">{pkg.label}</div>
-                <div className="text-sm text-slate-600 mt-1">{pkg.days} ngày</div>
-                <div className="text-lg font-bold text-primary mt-2">{pkg.price.toLocaleString('vi-VN')} VNĐ</div>
+                <div className="font-bold text-slate-900">{pkg.name}</div>
+                <div className="text-sm text-slate-600 mt-1">{pkg.durationDays || 30} ngày</div>
+                <div className="text-lg font-bold text-primary mt-2">{formatVND(pkg.price)}</div>
               </button>
             ))}
           </div>
         </div>
 
         <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
-          <Info label="Số dư ví" value={`${walletBalance.toLocaleString('vi-VN')} VNĐ`} />
-          <Info label="Giá gói" value={selectedPackage ? `${selectedPackage.price.toLocaleString('vi-VN')} VNĐ` : '—'} />
-          <Info label="Số dư sau mua" value={selectedPackage ? `${(walletBalance - selectedPackage.price).toLocaleString('vi-VN')} VNĐ` : '—'} />
+          <Info label="Số dư ví" value={formatVND(walletBalance)} />
+          <Info label="Giá gói" value={selectedPackage ? formatVND(selectedPackage.price) : '—'} />
+          <Info label="Số dư sau mua" value={selectedPackage ? formatVND(walletBalance - selectedPackage.price) : '—'} />
           <Info label="Ngày hết hạn Job" value={selectedJob?.deadline ? new Date(selectedJob.deadline).toLocaleDateString('vi-VN') : '—'} />
           <Info label="Ngày hết hạn gói" value={endDate ? new Date(endDate).toLocaleDateString('vi-VN') : '—'} />
         </div>
