@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, Plus, Check, Building2 } from 'lucide-react';
 
@@ -10,6 +11,8 @@ const CompanyCard = ({
 }) => {
   const industry = company.industryId?.name;
   const showFollowButton = !!onFollowClick;
+  const [logoError, setLogoError] = useState(false);
+  const showLogo = company.avatarUrl && !logoError;
 
   return (
     <div className="rounded-2xl border-2 border-orange-300 bg-white p-4 hover:shadow-md transition-all flex items-start gap-4">
@@ -17,11 +20,12 @@ const CompanyCard = ({
         to={`/companies/${company._id}`}
         className="h-16 w-16 rounded-xl border border-orange-200 overflow-hidden bg-orange-50 flex items-center justify-center shrink-0"
       >
-        {company.avatarUrl ? (
+        {showLogo ? (
           <img
             src={company.avatarUrl}
             alt={company.name}
             className="w-full h-full object-cover"
+            onError={() => setLogoError(true)}
           />
         ) : (
           <span className="text-2xl font-bold text-orange-700">
