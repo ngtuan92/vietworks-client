@@ -41,7 +41,7 @@ const JobCard = ({ job, company }) => {
   return (
     <Link
       to={`/jobs/${job._id}`}
-      className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-sm transition group"
+      className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 hover:border-primary/70 hover:shadow-sm transition group"
     >
       <div className="h-12 w-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
         <CompanyLogo name={company?.name} avatarUrl={company?.avatarUrl} textClassName="text-lg font-bold text-slate-400" />
@@ -50,7 +50,7 @@ const JobCard = ({ job, company }) => {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-bold text-slate-900 group-hover:text-emerald-600 transition line-clamp-1">
+              <p className="font-bold text-slate-900 group-hover:text-primary transition line-clamp-1">
                 {job.title}
               </p>
               {job.isUrgent && (
@@ -61,7 +61,7 @@ const JobCard = ({ job, company }) => {
             </div>
             <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{company?.name}</p>
           </div>
-          <span className="text-sm font-bold text-emerald-600 shrink-0 whitespace-nowrap">
+          <span className="text-sm font-bold text-primary shrink-0 whitespace-nowrap">
             {formatSalary(job)}
           </span>
         </div>
@@ -85,7 +85,7 @@ const JobCard = ({ job, company }) => {
       </div>
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        className="h-8 w-8 rounded-full border border-emerald-500 text-emerald-500 flex items-center justify-center hover:bg-emerald-50 shrink-0 mt-1"
+        className="h-8 w-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/10 shrink-0 mt-1"
         title="Ứng tuyển nhanh"
       >
         <Check className="w-4 h-4" />
@@ -270,7 +270,7 @@ const CompanyDetail = () => {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition shrink-0 ${
                 following
                   ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
-                  : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                  : 'bg-primary text-white hover:bg-primary'
               } disabled:opacity-60`}
             >
               {followLoading ? (
@@ -289,7 +289,7 @@ const CompanyDetail = () => {
             onClick={() => setTab('home')}
             className={`pb-3 text-sm font-semibold transition border-b-2 -mb-px ${
               tab === 'home'
-                ? 'text-emerald-600 border-emerald-500'
+                ? 'text-primary border-primary'
                 : 'text-slate-500 border-transparent hover:text-slate-700'
             }`}
           >
@@ -299,7 +299,7 @@ const CompanyDetail = () => {
             onClick={() => setTab('jobs')}
             className={`pb-3 text-sm font-semibold transition border-b-2 -mb-px ${
               tab === 'jobs'
-                ? 'text-emerald-600 border-emerald-500'
+                ? 'text-primary border-primary'
                 : 'text-slate-500 border-transparent hover:text-slate-700'
             }`}
           >
@@ -344,7 +344,7 @@ const CompanyDetail = () => {
             {jobs.length > 0 && (
               <section className="bg-white rounded-2xl border border-slate-200 p-6">
                 <h2 className="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-emerald-600" />
+                  <Briefcase className="w-5 h-5 text-primary" />
                   Tin tuyển dụng
                   <span className="text-sm font-medium text-slate-400">({jobs.length})</span>
                 </h2>
@@ -356,7 +356,7 @@ const CompanyDetail = () => {
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       placeholder="Tên công việc, vị trí ứng tuyển..."
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary"
                     />
                   </div>
                   <div className="relative">
@@ -364,7 +364,7 @@ const CompanyDetail = () => {
                     <select
                       value={locationFilter}
                       onChange={(e) => setLocationFilter(e.target.value)}
-                      className="pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white appearance-none"
+                      className="pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary bg-white appearance-none"
                     >
                       <option value="">Tất cả địa điểm</option>
                       {Array.from(
@@ -388,7 +388,7 @@ const CompanyDetail = () => {
                   <div className="flex justify-center mt-4">
                     <button
                       onClick={() => setTab('jobs')}
-                      className="px-6 py-2 rounded-full border border-emerald-500 text-emerald-600 text-sm font-bold hover:bg-emerald-50 transition"
+                      className="px-6 py-2 rounded-full border border-primary text-primary text-sm font-bold hover:bg-primary/10 transition"
                     >
                       Xem thêm
                     </button>
@@ -437,17 +437,7 @@ const CompanyDetail = () => {
                     </div>
                   </li>
                 )}
-                {industryName && (
-                  <li className="flex gap-3 items-start">
-                    <span className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">
-                      <Factory className="w-4 h-4 text-slate-500" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs text-slate-500">Lĩnh vực chính</p>
-                      <p className="font-semibold text-slate-900">{industryName}</p>
-                    </div>
-                  </li>
-                )}
+
               </ul>
             </section>
 
@@ -487,7 +477,7 @@ const CompanyDetail = () => {
                   </a>
                 )}
                 {company.locations?.length > 1 && (
-                  <button className="mt-3 text-sm text-emerald-600 font-semibold hover:underline">
+                  <button className="mt-3 text-sm text-primary font-semibold hover:underline">
                     Xem thêm {company.locations.length - 1} địa điểm khác
                   </button>
                 )}
@@ -510,7 +500,7 @@ const CompanyDetail = () => {
                   className="px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition shrink-0"
                   title="Sao chép"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
+                  {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-slate-500" />}
                 </button>
               </div>
               <p className="text-sm text-slate-500 mt-4 mb-2">Chia sẻ qua mạng xã hội</p>
@@ -555,7 +545,7 @@ const CompanyDetail = () => {
       {tab === 'jobs' && (
         <section className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-emerald-600" />
+            <Briefcase className="w-5 h-5 text-primary" />
             Tin tuyển dụng
             <span className="text-sm font-medium text-slate-400">({jobs.length})</span>
           </h2>
@@ -567,7 +557,7 @@ const CompanyDetail = () => {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tên công việc, vị trí ứng tuyển..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary"
               />
             </div>
             <div className="relative">
@@ -575,7 +565,7 @@ const CompanyDetail = () => {
               <select
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
-                className="pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white appearance-none"
+                className="pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary bg-white appearance-none"
               >
                 <option value="">Tất cả địa điểm</option>
                 {Array.from(
@@ -590,7 +580,7 @@ const CompanyDetail = () => {
           </div>
           {jobsLoading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : filteredJobs.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8">Không có vị trí nào phù hợp.</p>

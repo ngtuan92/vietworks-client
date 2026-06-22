@@ -1,29 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getProvinces } from 'sub-vn';
 import JobCard from '../../../components/jobseeker/jobs/JobCard';
 import { Search, MapPin } from 'lucide-react';
 import {
-  getCareersByGroup,
   getCareerGroups,
+  getCareersByGroup,
+  getCareerPositions,
   getExperienceLevels,
   getJobLevels,
   getPublicJobs,
   getSalaryRanges,
 } from '../../../services/jobService';
-
-// Bỏ tiền tố "Thành phố" / "Tỉnh" / "TP." để chỉ hiển thị tên địa điểm
-const stripPrefix = (name = '') =>
-  name.replace(/^(thành phố|tỉnh|tp\.?)\s+/i, '').trim();
-
-// Danh sách tỉnh/thành Việt Nam offline từ sub-vn (chỉ hiện tên, không kèm "Thành phố"/"Tỉnh")
-const locationOptions = [
-  { value: '', label: 'Tất cả địa điểm' },
-  ...(getProvinces() || []).map((p) => {
-    const shortName = stripPrefix(p.name);
-    return { value: shortName, label: shortName };
-  }),
-];
+import { useSearchStore } from '../../../store/searchStore';
+import companyLocationService from '../../../services/companyLocationService';
 
 const saturdayOptions = [
   { value: '', label: 'Tất cả' },
@@ -104,10 +93,14 @@ const Jobs = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState('');
+  const keyword = useSearchStore(state => state.globalKeyword);
+  const setKeyword = useSearchStore(state => state.setGlobalKeyword);
+  const location = useSearchStore(state => state.globalLocation);
+  const setLocation = useSearchStore(state => state.setGlobalLocation);
+  
   const [careerGroupId, setCareerGroupId] = useState('');
   const [careerId, setCareerId] = useState('');
+  const [careerPositionId, setCareerPositionId] = useState('');
   const [experienceLevelId, setExperienceLevelId] = useState('');
   const [jobLevelId, setJobLevelId] = useState('');
   const [salaryRangeCode, setSalaryRangeCode] = useState('');
@@ -124,17 +117,25 @@ const Jobs = () => {
 
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
+  const [careerPositions, setCareerPositions] = useState([]);
   const [experienceLevels, setExperienceLevels] = useState([]);
+  const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
   const [salaryRanges, setSalaryRanges] = useState([]);
+  const [provinces, setProvinces] = useState([]);
 
   const page = Number(getParam(searchParams, 'page', '1')) || 1;
 
   useEffect(() => {
-    setKeyword(getParam(searchParams, 'keyword') || getParam(searchParams, 'q'));
-    setLocation(getParam(searchParams, 'location'));
+    if (searchParams.has('keyword') || searchParams.has('q')) {
+      setKeyword(getParam(searchParams, 'keyword') || getParam(searchParams, 'q'));
+    }
+    if (searchParams.has('location')) {
+      setLocation(getParam(searchParams, 'location'));
+    }
     setCareerGroupId(getParam(searchParams, 'careerGroupId'));
     setCareerId(getParam(searchParams, 'careerId'));
+    setCareerPositionId(getParam(searchParams, 'careerPositionId'));
     setExperienceLevelId(getParam(searchParams, 'experienceLevelId'));
     setJobLevelId(getParam(searchParams, 'jobLevelId'));
     setSalaryRangeCode(getParam(searchParams, 'salaryRangeCode'));
@@ -148,17 +149,20 @@ const Jobs = () => {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const [groupsRes, expRes, levelsRes, salaryRes] = await Promise.all([
+        const [groupsRes, expRes, levelsRes, salaryRes, provincesRes] = await Promise.all([
           getCareerGroups(),
           getExperienceLevels(),
           getJobLevels(),
           getSalaryRanges(),
+          companyLocationService.getProvinces(),
         ]);
 
         setCareerGroups(groupsRes.data || []);
         setExperienceLevels(expRes.data || []);
+        setGlobalJobLevels(levelsRes.data || []);
         setJobLevels(levelsRes.data || []);
         setSalaryRanges(salaryRes.data || []);
+        setProvinces(provincesRes || []);
       } catch (err) {
         console.error('Load public job filters error:', err);
       }
@@ -183,8 +187,47 @@ const Jobs = () => {
       }
     };
 
+    const updateJobLevels = () => {
+      if (!careerGroupId) {
+        setJobLevels(globalJobLevels);
+        return;
+      }
+      
+      const selectedGroup = careerGroups.find(g => g._id === careerGroupId);
+      if (selectedGroup && selectedGroup.slug !== 'cong-nghe-thong-tin') {
+        const itLevels = [
+          'Thực tập sinh (IT)', 'Fresher', 'Junior', 'Senior', 
+          'Technical Leader', 'IT Manager / Project Manager', 
+          'Giám đốc công nghệ (CTO) / Director'
+        ];
+        setJobLevels(globalJobLevels.filter(lvl => !itLevels.includes(lvl.name)));
+      } else {
+        setJobLevels(globalJobLevels);
+      }
+    };
+
     fetchCareers();
-  }, [careerGroupId]);
+    updateJobLevels();
+  }, [careerGroupId, careerGroups, globalJobLevels]);
+
+  useEffect(() => {
+    const fetchCareerPositions = async () => {
+      if (!careerId) {
+        setCareerPositions([]);
+        return;
+      }
+
+      try {
+        const res = await getCareerPositions(careerId);
+        setCareerPositions(res.data || []);
+      } catch (err) {
+        console.error('Load career positions error:', err);
+        setCareerPositions([]);
+      }
+    };
+
+    fetchCareerPositions();
+  }, [careerId]);
 
   // Lọc job dựa trên giá trị ĐÃ ÁP DỤNG (lưu trên URL), KHÔNG dựa trên state nháp
   // của các ô lọc. Nhờ vậy đổi bộ lọc sẽ không tự fetch — chỉ fetch khi bấm "Áp dụng",
@@ -195,6 +238,7 @@ const Jobs = () => {
       location: getParam(searchParams, 'location'),
       careerGroupId: getParam(searchParams, 'careerGroupId'),
       careerId: getParam(searchParams, 'careerId'),
+      careerPositionId: getParam(searchParams, 'careerPositionId'),
       experienceLevelId: getParam(searchParams, 'experienceLevelId'),
       jobLevelId: getParam(searchParams, 'jobLevelId'),
       salaryMin: getParam(searchParams, 'salaryMin'),
@@ -261,6 +305,7 @@ const Jobs = () => {
     updateQuery({
       careerGroupId,
       careerId,
+      careerPositionId,
       experienceLevelId,
       jobLevelId,
       salaryMin,
@@ -273,6 +318,7 @@ const Jobs = () => {
   const handleResetFilters = () => {
     setCareerGroupId('');
     setCareerId('');
+    setCareerPositionId('');
     setExperienceLevelId('');
     setJobLevelId('');
     setSalaryRangeCode('');
@@ -283,6 +329,7 @@ const Jobs = () => {
     updateQuery({
       careerGroupId: '',
       careerId: '',
+      careerPositionId: '',
       experienceLevelId: '',
       jobLevelId: '',
       salaryRangeCode: '',
@@ -347,11 +394,15 @@ const Jobs = () => {
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                   >
-                    {locationOptions.map((opt) => (
-                      <option key={opt.value || 'all'} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
+                    <option value="">Tất cả địa điểm</option>
+                    {provinces.map((p) => {
+                      const val = p.name || p.provinceName;
+                      return (
+                        <option key={p.code || p.provinceCode || val} value={val}>
+                          {val}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -382,6 +433,8 @@ const Jobs = () => {
                 onChange={(value) => {
                   setCareerGroupId(value);
                   setCareerId('');
+                  setCareerPositionId('');
+                  setJobLevelId('');
                 }}
                 options={careerGroups.map((item) => ({ value: item._id, label: item.name }))}
               />
@@ -389,9 +442,27 @@ const Jobs = () => {
               <SelectFilter
                 label="Ngành nghề"
                 value={careerId}
-                onChange={setCareerId}
+                onChange={(value) => {
+                  setCareerId(value);
+                  setCareerPositionId('');
+                }}
                 disabled={!careerGroupId}
                 options={careers.map((item) => ({ value: item._id, label: item.name }))}
+              />
+
+              <SelectFilter
+                label="Vị trí chuyên môn"
+                value={careerPositionId}
+                onChange={setCareerPositionId}
+                disabled={!careerId}
+                options={careerPositions.map((item) => ({ value: item._id, label: item.name }))}
+              />
+
+              <SelectFilter
+                label="Cấp bậc vị trí"
+                value={jobLevelId}
+                onChange={setJobLevelId}
+                options={jobLevels.map((item) => ({ value: item._id, label: item.name }))}
               />
 
               <SelectFilter
@@ -399,13 +470,6 @@ const Jobs = () => {
                 value={experienceLevelId}
                 onChange={setExperienceLevelId}
                 options={experienceLevels.map((item) => ({ value: item._id, label: item.name }))}
-              />
-
-              <SelectFilter
-                label="Cấp bậc"
-                value={jobLevelId}
-                onChange={setJobLevelId}
-                options={jobLevels.map((item) => ({ value: item._id, label: item.name }))}
               />
 
               <div>

@@ -1,119 +1,159 @@
-
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import CategorySidebar from './CategorySidebar';
-import { Search, MapPin, PlayCircle } from 'lucide-react';
-import aiJobImg from '../../../assets/ai_job.png';
+import { Search, MapPin, Upload, Sparkles, Rocket } from 'lucide-react';
+import heroImage from '../../../assets/anh-hero.png';
+import companyLocationService from '../../../services/companyLocationService';
+import { useSearchStore } from '../../../store/searchStore';
 
 const Hero = () => {
   const navigate = useNavigate();
-  const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState('all');
+  const globalKeyword = useSearchStore(state => state.globalKeyword);
+  const setGlobalKeyword = useSearchStore(state => state.setGlobalKeyword);
+  const globalLocation = useSearchStore(state => state.globalLocation);
+  const setGlobalLocation = useSearchStore(state => state.setGlobalLocation);
+  const [provinces, setProvinces] = useState([]);
+
+  useEffect(() => {
+    companyLocationService.getProvinces()
+      .then(res => setProvinces(res || []))
+      .catch(err => console.error("Lỗi lấy danh sách tỉnh:", err));
+  }, []);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-
-    if (keyword.trim()) {
-      params.set('q', keyword.trim());
-    }
-
-    if (location !== 'all') {
-      params.set('location', location);
-    }
-
+    if (globalKeyword.trim()) params.set('q', globalKeyword.trim());
+    if (globalLocation && globalLocation !== 'all') params.set('location', globalLocation);
     const queryString = params.toString();
     navigate(queryString ? `/jobs?${queryString}` : '/jobs');
   };
 
   return (
-    <section className="hero-gradient pt-16 pb-24 relative overflow-hidden">
-      <div className="max-w-container-max mx-auto px-gutter relative z-10">
-        <div className="text-center mb-10">
-          <h1 className="text-white text-display-lg font-display-lg tracking-tight mb-stack-md drop-shadow-md">
-            VietWorks - Kiến tạo tương lai, gặt hái thành công
-          </h1>
-          <p className="text-sky-100 text-body-lg opacity-90">
-            Tiếp cận 50,000+ việc làm hàng đầu từ các công ty lớn tại Việt Nam
-          </p>
-        </div>
-
-        <div className="glass-card rounded-2xl p-2 md:flex items-center max-w-4xl mx-auto">
-          <div className="flex-1 flex items-center px-4 border-r border-outline-variant py-3">
-            <Search className="text-outline mr-3 w-5 h-5" />
-            <input
-              className="w-full bg-transparent border-none focus:ring-0 text-on-surface text-body-md outline-none placeholder:text-slate-500"
-              placeholder="Chức danh, từ khóa hoặc công ty..."
-              type="text"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
+    <div className="bg-[#f8fafc] pb-16">
+      <section className="hero-gradient pt-16 pb-64 relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 blur-3xl rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-1/3 h-full bg-white/5 blur-3xl rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
+        
+        <div className="max-w-container-max mx-auto px-gutter relative z-10">
+          <div className="text-center mb-10">
+            <h1 className="text-white text-display-lg font-display-lg font-black tracking-tight mb-stack-md drop-shadow-lg leading-tight">
+              VietWorks - Kiến tạo tương lai <br /> Gặt hái thành công
+            </h1>
+            <p className="text-sky-100 text-body-lg opacity-90 max-w-2xl mx-auto">
+              Tiếp cận 50,000+ việc làm chất lượng cao từ các công ty và tập đoàn lớn nhất tại Việt Nam
+            </p>
           </div>
-          <div className="flex-1 flex items-center px-4 py-3">
-            <MapPin className="text-outline mr-3 w-5 h-5" />
-            <select
-              className="w-full bg-transparent border-none focus:ring-0 text-on-surface text-body-md outline-none placeholder:text-slate-500 appearance-none cursor-pointer"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
+
+          {/* Search Bar - Premium Glassmorphism */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-full p-2.5 md:flex items-center max-w-4xl mx-auto shadow-[0px_8px_32px_rgba(0,0,0,0.1)] border border-white/50">
+            <div className="flex-1 flex items-center px-6 md:border-r border-slate-200 h-12">
+              <Search className="text-slate-400 mr-3 w-5 h-5 shrink-0" />
+              <input
+                className="w-full bg-transparent border-none focus:ring-0 text-slate-900 text-base outline-none placeholder:text-slate-500 font-medium"
+                placeholder="Chức danh, từ khóa hoặc công ty..."
+                type="text"
+                value={globalKeyword}
+                onChange={(event) => setGlobalKeyword(event.target.value)}
+              />
+            </div>
+            <div className="flex-1 flex items-center px-6 h-12">
+              <MapPin className="text-slate-400 mr-3 w-5 h-5 shrink-0" />
+              <select
+                className="w-full bg-transparent border-none focus:ring-0 text-slate-900 text-base outline-none placeholder:text-slate-500 appearance-none cursor-pointer font-medium"
+                value={globalLocation}
+                onChange={(event) => setGlobalLocation(event.target.value)}
+              >
+                <option value="">Tất cả địa điểm</option>
+                {provinces.map(p => {
+                  const val = p.name || p.provinceName;
+                  return (
+                    <option key={p.code || p.provinceCode || val} value={val}>
+                      {val}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <button
+              onClick={handleSearch}
+              className="bg-primary text-white px-10 h-12 rounded-full font-bold hover:bg-primary-dark transition-all m-1 flex items-center gap-2 shadow-md hover:shadow-lg shrink-0 w-full md:w-auto justify-center"
             >
-              <option value="all">Tất cả địa điểm</option>
-              <option value="hcm">Hồ Chí Minh</option>
-              <option value="hn">Hà Nội</option>
-              <option value="dn">Đà Nẵng</option>
-            </select>
+              <Search className="w-5 h-5" />
+              Tìm kiếm
+            </button>
           </div>
-          <button
-            onClick={handleSearch}
-            className="bg-primary text-on-primary px-10 py-3 rounded-lg font-bold hover:bg-primary-container transition-all m-1 flex items-center gap-2"
-          >
-            <Search className="w-5 h-5" />
-            Tìm kiếm
-          </button>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-stack-lg mt-16">
-          <CategorySidebar />
+      {/* Grid Content */}
+      <div className="w-[96%] max-w-[1600px] mx-auto -mt-48 relative z-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8">
+          
+          {/* Left: Category Sidebar */}
+          <div className="lg:col-span-3">
+            <div className="h-full bg-white rounded-2xl shadow-[0px_8px_24px_rgba(0,0,0,0.06)] overflow-hidden border border-slate-100">
+               <CategorySidebar />
+            </div>
+          </div>
 
-          <div className="md:col-span-6 relative rounded-xl overflow-hidden shadow-2xl h-80 group">
+          {/* Center: Hero Image */}
+          <div className="lg:col-span-6 relative rounded-2xl overflow-hidden shadow-[0px_12px_32px_rgba(0,0,0,0.15)] h-[500px] group border border-slate-100/50 bg-white">
             <img
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYhueuhQrroDLhJFXli1-s34L_Yc51SO1Ju2zvILFOI41W4GxMgEsd_gAnx66BnqgSQaIRo9ZQ-x6hKyxFvs8rzi0R3N8hphNoRB1puJ6LHLe2uErr14IwrlJMKjOLci-10OtAwqOuKAFlTQUuPECsmfzvMIppIkwoNKvyA7cdbZFc3PPlTKH9xrBuM0gCBR3ix6mrsGMLuXVp-YlKBzP30a2CNh6CGKvzM03mh__9vjY6DdRwo8y3jkYHxGVARKs1Ztii2yAMcYSe"
+              src={heroImage}
               alt="Professional team"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex flex-col justify-end p-8">
-              <h2 className="text-on-primary text-headline-lg font-headline-lg mb-2">Tạo CV số của bạn trong 5 phút</h2>
-              <p className="text-on-primary-container opacity-90 mb-4">Các mẫu chuyên nghiệp được chuyên gia nhân sự kiểm duyệt.</p>
-              <div className="flex gap-stack-md">
-                <button className="px-6 py-2 bg-white text-primary font-bold rounded-lg flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5" />
-                  Xem hướng dẫn
-                </button>
-              </div>
+            {/* Dark gradient overlay at bottom for text */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+            
+            {/* Floating content on image */}
+            <div className="absolute bottom-0 left-0 p-8 w-full text-white pointer-events-none">
+              <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold mb-3 border border-white/30">
+                #KhámPháTiềmNăng
+              </span>
+              <h2 className="text-3xl font-bold mb-2">Tỏa sáng sự nghiệp của bạn</h2>
+              <p className="text-white/80">Kết nối ngay với hàng ngàn cơ hội hấp dẫn nhất.</p>
             </div>
           </div>
 
-          <div className="md:col-span-3 bg-[#032d60] rounded-xl p-8 flex flex-col justify-center items-center text-center shadow-xl border border-white/10">
-            <div className="mb-6 relative">
-              <div className="w-24 h-24 bg-primary-fixed rounded-full overflow-hidden flex items-center justify-center">
-                <img src={aiJobImg} alt="AI Job Matching" className="w-full h-full object-cover" />
+          {/* Right: Premium CV Widget */}
+          <div className="lg:col-span-3 rounded-2xl shadow-[0px_12px_32px_rgba(0,0,0,0.15)] bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-slate-700/50 p-7 flex flex-col justify-between h-[500px] relative overflow-hidden">
+            {/* Decorative blob */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/30 rounded-full blur-3xl"></div>
+            
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 text-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                <Sparkles className="w-7 h-7" />
               </div>
+              <h3 className="text-white font-bold text-xl mb-3">Nâng tầm sự nghiệp</h3>
+              <p className="text-slate-300 text-sm mb-8 leading-relaxed">
+                Tạo lợi thế cạnh tranh tuyệt đối bằng cách tải CV lên và sử dụng trí tuệ nhân tạo để phân tích độ phù hợp với JD.
+              </p>
             </div>
-            <h3 className="text-on-primary text-headline-md font-bold mb-2">Cập nhật thị trường</h3>
-            <div className="space-y-4 w-full">
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-white/60 text-body-sm">Việc làm đang mở</div>
-                <div className="text-white text-headline-md font-bold">
-                  56,517 <span className="text-green-400 text-sm">↑</span>
-                </div>
-              </div>
-              <div className="bg-white/10 rounded-lg p-3">
-                <div className="text-white/60 text-body-sm">Mới hôm nay</div>
-                <div className="text-white text-headline-md font-bold">5,092</div>
-              </div>
+            
+            <div className="space-y-4 mt-auto relative z-10">
+              <button
+                onClick={() => navigate('/manage-cv')}
+                className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
+              >
+                <Upload className="w-5 h-5" />
+                Tải CV lên ngay
+              </button>
+              
+              <button
+                onClick={() => navigate('/premium')}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-400 text-slate-900 font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] hover:scale-[1.02]"
+              >
+                <Sparkles className="w-5 h-5" />
+                Chấm điểm CV bằng AI
+              </button>
             </div>
           </div>
+
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
