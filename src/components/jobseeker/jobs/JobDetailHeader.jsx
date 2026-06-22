@@ -4,7 +4,7 @@ import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
 import JobseekerAuthModal from '../../common/JobseekerAuthModal';
 import { useAuthStore } from '../../../store/authStore';
 import { getSavedJobs, saveJob, unsaveJob } from '../../../services/jobseekerService';
-import { Banknote, MapPin, Clock, CheckCircle, BookmarkPlus } from 'lucide-react';
+import { Banknote, MapPin, Clock, CheckCircle, BookmarkPlus, Users } from 'lucide-react';
 
 let savedJobsCache = null;
 let savedJobsCachePromise = null;
@@ -147,7 +147,7 @@ const JobDetailHeader = ({
           <div className="w-24 h-24 bg-surface rounded-lg border border-outline-variant p-2 flex items-center justify-center shrink-0">
             <img
               alt={companyName}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-cover"
               src={companyAvatar}
             />
           </div>
@@ -197,6 +197,11 @@ const JobDetailHeader = ({
               </div>
 
               <div className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                <span>Cần tuyển: {job?.headcount || 1} người</span>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 <span>{formatUpdatedTime(job?.publishedAt || job?.createdAt)}</span>
               </div>
@@ -225,7 +230,7 @@ const JobDetailHeader = ({
                   disabled
                   className="w-full md:w-48 py-3 bg-gray-300 text-gray-500 font-bold rounded-lg cursor-not-allowed text-body-md"
                 >
-                  Không thể ứng tuyển
+                  {cannotApplyReason === 'Tin tuyển dụng đã tuyển đủ số lượng' ? 'Đã tuyển đủ' : 'Không thể ứng tuyển'}
                 </button>
                 {cannotApplyReason && (
                   <div className="absolute right-0 top-full mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">

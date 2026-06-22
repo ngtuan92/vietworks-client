@@ -72,6 +72,10 @@ const JobCard = ({ job, company }) => {
               {job.workLocations[0].provinceName}
             </span>
           )}
+          <span className="flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            Cần tuyển: {job.headcount || 1}
+          </span>
           {left !== null && left > 0 && (
             <span className={left <= 7 ? 'text-orange-600 font-semibold' : ''}>
               Còn {left} ngày

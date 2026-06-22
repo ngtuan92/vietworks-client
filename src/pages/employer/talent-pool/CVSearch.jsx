@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { getOrCreateConversation } from '../../../services/chatService';
 
 const maskEmail = (email) => {
   if (!email) return '****';
@@ -23,6 +24,7 @@ const CVSearch = () => {
   const [loading, setLoading] = useState(true);
   const [unlockTarget, setUnlockTarget] = useState(null);
   const [unlocking, setUnlocking] = useState(false);
+  const [chatLoadingId, setChatLoadingId] = useState(null);
 
   useEffect(() => {
     api.get('/employer/wallet').then(r => { if (r.data.success) setWalletBalance(r.data.data.balance); }).catch(console.error);
@@ -74,6 +76,21 @@ const CVSearch = () => {
       }
     } finally {
       setUnlocking(false);
+    }
+  };
+
+  const handleChat = async (candidateId) => {
+    try {
+      setChatLoadingId(candidateId);
+      const res = await getOrCreateConversation(null, candidateId);
+      if (res.success) {
+        navigate(`/employer/messages?conversationId=${res.data._id}`);
+      }
+    } catch (err) {
+      console.error('Cannot create chat', err);
+      alert('Lỗi tạo phòng chat. Vui lòng thử lại.');
+    } finally {
+      setChatLoadingId(null);
     }
   };
 
@@ -166,7 +183,13 @@ const CVSearch = () => {
                   ) : (
                     <>
                       <button className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Tải CV</button>
-                      <button onClick={() => navigate('/employer/messages')} className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">Chat</button>
+                      <button 
+                        onClick={() => handleChat(candidate._id)} 
+                        disabled={chatLoadingId === candidate._id}
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        {chatLoadingId === candidate._id ? 'Đang tải...' : 'Chat'}
+                      </button>
                     </>
                   )}
                 </div>

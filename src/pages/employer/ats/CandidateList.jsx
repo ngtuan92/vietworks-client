@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BriefcaseBusiness, Eye, FileText, Loader2, Users } from 'lucide-react';
 import atsService from '../../../services/atsService';
@@ -97,11 +97,12 @@ const CandidateList = () => {
                     <p className="text-sm text-slate-500 mt-1">{job.company?.name || 'Công ty của bạn'} • Hạn nộp: {formatDate(job.deadline)}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 xl:w-[520px]">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 xl:w-[600px]">
                     <MiniStat label="Tổng" value={job.applicationCount || 0} />
                     <MiniStat label="Chưa xem" value={(job.stats?.UNREAD || 0) + (job.stats?.APPLIED || 0)} />
                     <MiniStat label="Đã xem" value={job.stats?.VIEWED || 0} />
                     <MiniStat label="Đã duyệt" value={job.stats?.APPROVED || 0} />
+                    <MiniStat label="Phỏng vấn" value={job.stats?.INTERVIEW_INVITED || 0} />
                   </div>
 
                   <Link
