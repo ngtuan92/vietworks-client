@@ -922,7 +922,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('EXPERIENCE', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -968,7 +968,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('EDUCATION', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1015,7 +1015,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('PROJECTS', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1061,7 +1061,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem(sectionCode, idx)}
-                  className="absolute top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1092,7 +1092,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('ACTIVITIES', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1634,7 +1634,7 @@ const CVTemplateForm = () => {
                 const profileSection = sections.find(s => s.sectionCode === 'PROFILE');
 
                 // Dynamic height-based split pagination
-                const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 960) => {
+                const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1250) => {
                   const pages = [];
                   let currentPageSecs = [];
                   let currentHeight = initialHeight;
@@ -1794,14 +1794,14 @@ const CVTemplateForm = () => {
                   return false;
                 };
 
-                const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 960);
-                const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 960);
-                const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 960);
-                const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 960);
-                const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 960);
-                const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 960);
-                const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 960);
-                const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 960);
+                const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 1250);
+                const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 1250);
+                const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1250);
+                const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 1250);
+                const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 1250);
+                const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 1250);
+                const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1250);
+                const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 1250);
 
                 let totalPages = 1;
                 if (selectedLayout === 'left-col') {
@@ -1856,7 +1856,7 @@ const CVTemplateForm = () => {
                               top: 0,
                               left: 0
                             }}
-                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left cv-template-page-canvas"
+                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left cv-template-page-canvas pb-[40px]"
                           >
                             {/* Content Area */}
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -2210,7 +2210,7 @@ const CVTemplateForm = () => {
                             </div>
 
                             {/* Page Footer Watermark */}
-                            <div className="px-12 py-3 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none">
+                            <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-white px-12 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none z-20">
                               <span>© VietWorks</span>
                             </div>
                           </div>

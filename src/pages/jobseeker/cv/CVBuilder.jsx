@@ -357,7 +357,7 @@ const CVBuilder = () => {
     'Fira Code': 'monospace'
   };
 
-  const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1000) => {
+  const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1250) => {
     const pages = [];
     let currentPageSecs = [];
     let currentHeight = initialHeight;
@@ -514,24 +514,24 @@ const CVBuilder = () => {
   };
 
   // 1. left-col pagination
-  const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 1000);
-  const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 1000);
+  const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 1250);
+  const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 1250);
 
   // 2. header-left pagination
-  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1000);
+  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1250);
 
   // 3. two-col-equal pagination
-  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 1000);
-  const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 1000);
+  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 1250);
+  const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 1250);
 
   // 4. full-width pagination
-  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 1000);
+  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 1250);
 
   // 5. harvard-classic pagination
-  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1000);
+  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1250);
 
   // 6. harvard-gsas pagination
-  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 1000);
+  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 1250);
 
   // Determine total pages depending on selected layout
   let totalPages = 1;
