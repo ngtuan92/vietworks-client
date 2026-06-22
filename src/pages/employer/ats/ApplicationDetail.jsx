@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Eye, FileText, Loader2, Mail, MapPin, Phone, MessageCircle } from 'lucide-react';
 import ReactQuill, { Quill } from 'react-quill-new';
-import 'react-quill/dist/quill.snow.css';
+import 'react-quill-new/dist/quill.snow.css';
 import atsService from '../../../services/atsService';
 import { getOrCreateConversation } from '../../../services/chatService';
 
