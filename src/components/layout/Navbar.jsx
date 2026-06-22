@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useNotification } from '../../contexts/NotificationContext';
 
-import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell, Building2 } from 'lucide-react';
+import { Megaphone, ChevronDown, ChevronUp, User, Settings, LogOut, Heart, CheckSquare, ThumbsUp, Sliders, Award, Bell, Building2, CreditCard } from 'lucide-react';
 
 import NotificationDropdown from './NotificationDropdown';
 import logoImg from '../../assets/logo.png';
@@ -236,6 +236,7 @@ const Navbar = () => {
                         <>
                           <MenuLink to="/profile" icon={<User className="w-4 h-4" />} label="Cài đặt tài khoản" onClick={() => setIsMenuOpen(false)} />
                           <MenuLink to="/job-preferences" icon={<Sliders className="w-4 h-4" />} label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
+                          <MenuLink to="/my-transactions" icon={<CreditCard className="w-4 h-4" />} label="Lịch sử giao dịch" onClick={() => setIsMenuOpen(false)} />
                         </>
                       )}
 

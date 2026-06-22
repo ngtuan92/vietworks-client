@@ -1,8 +1,11 @@
 import { LayoutDashboard, ChevronDown, Building2, Briefcase, Users, Wallet, MessageSquare, UserCircle, PlusCircle, LogOut } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useSocket } from '../../../contexts/SocketContext';
+import { getUnreadMessageCount } from '../../../services/chatService';
+import notificationService from '../../../services/notificationService';
 import logoImg from '../../../assets/logo.png';
 
 const navItems = [
@@ -65,8 +68,10 @@ const navItems = [
 const EmployerSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const socket = useSocket();
   const { logout } = useAuth();
   const { confirm } = useNotification();
+  const [interactionBadge, setInteractionBadge] = useState(0);
   const isActive = (to) => {
     if (!to) return false;
     if (to.includes('?')) {
@@ -105,6 +110,46 @@ const EmployerSidebar = () => {
     );
   };
 
+  const refreshInteractionBadge = async () => {
+    try {
+      const [messageRes, notificationRes] = await Promise.all([
+        getUnreadMessageCount(),
+        notificationService.getMyNotifications({ page: 1, limit: 1 })
+      ]);
+      setInteractionBadge((messageRes?.unreadCount || 0) + (notificationRes?.unreadCount || 0));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    refreshInteractionBadge();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const refresh = () => refreshInteractionBadge();
+    socket.on('new_message', refresh);
+    socket.on('new_notification', refresh);
+
+    return () => {
+      socket.off('new_message', refresh);
+      socket.off('new_notification', refresh);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const refresh = () => refreshInteractionBadge();
+    window.addEventListener('vietworks:chat-read', refresh);
+    window.addEventListener('vietworks:notification-read', refresh);
+
+    return () => {
+      window.removeEventListener('vietworks:chat-read', refresh);
+      window.removeEventListener('vietworks:notification-read', refresh);
+    };
+  }, []);
+
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-slate-50 border-r border-slate-200/80 flex flex-col z-50">
       {/* Brand logo */}
@@ -129,7 +174,9 @@ const EmployerSidebar = () => {
           Tổng quan
         </NavLink>
 
-        {navItems.map((item) => (
+        {navItems.map((item) => {
+          const itemBadge = item.children?.some((child) => child.to === '/employer/messages') ? interactionBadge : item.badge;
+          return (
           <div key={item.label} className="mb-1">
             <button
               type="button"
@@ -141,9 +188,9 @@ const EmployerSidebar = () => {
                 <span>{item.label}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                {item.badge ? (
+                {itemBadge ? (
                   <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    {item.badge}
+                    {itemBadge > 99 ? '99+' : itemBadge}
                   </span>
                 ) : null}
                 <ChevronDown
@@ -197,7 +244,8 @@ const EmployerSidebar = () => {
               </div>
             </div>
           </div>
-        ))}
+        );
+        })}
       </nav>
       
       {/* Footer in Sidebar */}

@@ -1,8 +1,8 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { ActionButton, FilterGrid, InputField, ModalShell, PageHeader, SectionCard, SelectField, SimpleTable, TextAreaField } from '../shared/AdminPrimitives';
 
 const reports = [
-  { id: 1, type: 'Job', target: 'Data Entry Online', reporter: 'ngocanh@gmail.com', severity: 'Nghiêm trọng', status: 'Chờ xử lý', createdAt: '2026-05-18 09:40' },
+  { id: 1, type: 'Tin tuyển dụng', target: 'Data Entry Online', reporter: 'ngocanh@gmail.com', severity: 'Nghiêm trọng', status: 'Chờ xử lý', createdAt: '2026-05-18 09:40' },
   { id: 2, type: 'Công ty', target: 'XYZ Group', reporter: 'kien@gmail.com', severity: 'Trung bình', status: 'Đã xử lý', createdAt: '2026-05-17 21:10' },
 ];
 
@@ -16,7 +16,7 @@ const ViolationsManagement = () => {
       <PageHeader title="Báo cáo vi phạm" description="Xem xét báo cáo cho Job/Công ty/Người dùng; lưu log và hành động xử lý." />
       <SectionCard title="Bộ lọc báo cáo">
         <FilterGrid>
-          <SelectField label="Loại báo cáo" options={['Job', 'Công ty', 'Người dùng']} />
+          <SelectField label="Loại báo cáo" options={['Tin tuyển dụng', 'Công ty', 'Người dùng']} />
           <SelectField label="Trạng thái" options={['Chờ xử lý', 'Đã xử lý', 'Bỏ qua']} />
           <SelectField label="Mức độ" options={['Thấp', 'Trung bình', 'Nghiêm trọng']} />
           <InputField label="Từ khóa" placeholder="Job, công ty hoặc người dùng" />

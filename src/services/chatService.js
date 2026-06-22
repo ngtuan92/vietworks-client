@@ -5,8 +5,16 @@ export const getConversations = async () => {
   return response.data;
 };
 
-export const getOrCreateConversation = async (applicationId) => {
-  const response = await api.post('/conversations', { applicationId });
+export const getUnreadMessageCount = async () => {
+  const response = await api.get('/conversations/unread-count');
+  return response.data;
+};
+
+export const getOrCreateConversation = async (applicationId, jobseekerId = null) => {
+  const payload = {};
+  if (applicationId) payload.applicationId = applicationId;
+  if (jobseekerId) payload.jobseekerId = jobseekerId;
+  const response = await api.post('/conversations', payload);
   return response.data;
 };
 
@@ -22,6 +30,7 @@ export const sendMessage = async (conversationId, payload) => {
 
 export const markAsRead = async (conversationId) => {
   const response = await api.patch(`/conversations/${conversationId}/read`);
+  window.dispatchEvent(new CustomEvent('vietworks:chat-read'));
   return response.data;
 };
 

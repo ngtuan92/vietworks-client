@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 console.log('companyLocationService:', companyLocationService);
 const STEPS = [
   'Thông tin cơ bản',
@@ -23,6 +25,19 @@ const WORKING_DAYS = [
   { code: 'SUN', label: 'Chủ nhật' },
 ];
 const WORKING_DAY_ORDER = WORKING_DAYS.map((d) => d.code);
+
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+    ['link'],
+    ['clean']
+  ],
+};
 
 // Gộp các ngày liên tiếp thành dạng "Thứ 2 - Thứ 6" cho gọn, thay vì liệt kê từng ngày
 const compressWorkingDays = (days) => {
@@ -100,6 +115,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
     deadline: '',
     isUrgent: false,
     applicationCount: '',
+    headcount: 1,
   });
   useEffect(() => {
   const fetchCompanyLocations = async () => {
@@ -526,6 +542,8 @@ const StepBasicInfo = ({ form, setField, careerGroups, careers, positions, jobLe
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Field label="Tiêu đề công việc" required value={form.title} onChange={(v) => setField('title', v)} placeholder="VD: Senior Backend Developer (NodeJS)" />
       
+      <Field label="Số lượng cần tuyển" type="number" required value={form.headcount} onChange={(v) => setField('headcount', Number(v))} placeholder="1" />
+      
       <Select 
         label="Nhóm ngành nghề" 
         required 
@@ -610,7 +628,12 @@ const StepSalary = ({ form, setField }) => {
 const StepDescription = ({ form, setField, toggleWorkingDay }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 3: Bản mô tả công việc</h2>
-    <TextArea label="Chi tiết công việc diễn ra" required value={form.description} onChange={(v) => setField('description', v)} placeholder="- Chịu trách nhiệm kiến trúc hệ thống dữ liệu API Backend...&#10;- Xây dựng tài liệu kỹ thuật dự án..." />
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">Chi tiết mô tả công việc <span className="text-red-500">*</span></label>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <ReactQuill theme="snow" value={form.description} onChange={(v) => setField('description', v)} modules={quillModules} className="h-48 mb-12" />
+      </div>
+    </div>
 
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -663,7 +686,12 @@ const StepDescription = ({ form, setField, toggleWorkingDay }) => (
 const StepRequirements = ({ form, setField, skills, toggleMulti }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 4: Tiêu chí và Yêu cầu ứng viên</h2>
-    <TextArea label="Yêu cầu năng lực chuyên môn" required value={form.requirements} onChange={(v) => setField('requirements', v)} placeholder="- Tối thiểu từ 2 năm chinh chiến thực tế với hệ sinh thái Node.JS...&#10;- Tư duy cấu trúc dữ liệu giải thuật tốt..." />
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">Yêu cầu năng lực chuyên môn <span className="text-red-500">*</span></label>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <ReactQuill theme="snow" value={form.requirements} onChange={(v) => setField('requirements', v)} modules={quillModules} className="h-48 mb-12" />
+      </div>
+    </div>
     
     <div className="mt-4">
       <label className="block text-sm font-semibold text-slate-700 mb-2">Bộ kỹ năng bổ trợ đính kèm (Lọc động theo nhóm nghề)</label>
@@ -695,7 +723,12 @@ const StepRequirements = ({ form, setField, skills, toggleMulti }) => (
 const StepBenefits = ({ form, setField }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 5: Chế độ đãi ngộ & Quyền lợi</h2>
-    <TextArea label="Quyền lợi ứng viên được hưởng" required value={form.benefits} onChange={(v) => setField('benefits', v)} placeholder="- Thu nhập tháng 13 + thưởng KPI hiệu suất cuối năm hấp dẫn...&#10;- Đóng đầy đủ BHXH, BHYT theo luật định..." />
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">Quyền lợi và Đãi ngộ dành cho ứng viên <span className="text-red-500">*</span></label>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <ReactQuill theme="snow" value={form.benefits} onChange={(v) => setField('benefits', v)} modules={quillModules} className="h-48 mb-12" />
+      </div>
+    </div>
   </div>
 );
 
@@ -856,19 +889,12 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
         />
       </div>
 
-      <TextArea
-        label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
-        required
-        value={form.applyInstruction}
-        onChange={(v) => setField('applyInstruction', v)}
-      />
-      <TextArea
-        label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
-        required
-        value={form.applyInstruction}
-        onChange={(v) => setField('applyInstruction', v)}
-      />
-
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Hướng dẫn nộp hồ sơ chi tiết cho ứng viên <span className="text-red-500">*</span></label>
+        <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+          <ReactQuill theme="snow" value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} className="h-48 mb-12" />
+        </div>
+      </div>
       <label className="flex items-center gap-2 font-semibold text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-100 max-w-max cursor-pointer">
         <input
           type="checkbox"

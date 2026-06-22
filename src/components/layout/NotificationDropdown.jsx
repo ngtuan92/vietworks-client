@@ -2,16 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Loader2 } from 'lucide-react';
 import notificationService from '../../services/notificationService';
+import useAuth from '../../hooks/useAuth';
+import { useSocket } from '../../contexts/SocketContext';
+import { navigateToNotificationTarget } from '../../utils/notificationNavigation';
 
 const TYPE_LABEL = {
   EMPLOYER_VIEWED_CV: 'CV',
   NEW_APPLICATION: 'Ứng tuyển',
   INTERVIEW_INVITATION: 'Phỏng vấn',
   APPLICATION_RESULT: 'Hồ sơ',
-  JOB_APPROVED: 'Job',
-  JOB_REJECTED: 'Job',
-  COMPANY_VERIFIED: 'Company',
-  COMPANY_REJECTED: 'Company',
+  JOB_APPROVED: 'Việc làm',
+  JOB_REJECTED: 'Việc làm',
+  COMPANY_VERIFIED: 'Công ty',
+  COMPANY_REJECTED: 'Công ty',
   SYSTEM_UPDATE: 'Hệ thống',
   NEW_MESSAGE: 'Tin nhắn'
 };
@@ -23,6 +26,8 @@ const formatDateTimeShort = (value) => {
 };
 
 const NotificationDropdown = () => {
+  const { user } = useAuth();
+  const socket = useSocket();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -51,6 +56,26 @@ const NotificationDropdown = () => {
       loadNotifications();
     });
   }, []);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const handleNewNotification = (notification) => {
+      setItems((prev) => {
+        if (prev.some((item) => String(item._id) === String(notification._id))) return prev;
+        return [notification, ...prev].slice(0, 50);
+      });
+      if (notification.status === 'UNREAD') {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    socket.on('new_notification', handleNewNotification);
+
+    return () => {
+      socket.off('new_notification', handleNewNotification);
+    };
+  }, [socket]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -138,15 +163,7 @@ const NotificationDropdown = () => {
       await handleMarkAsRead(item._id);
     }
     setIsOpen(false);
-    
-    const refId = item.referenceId || item.metadata?.applicationId || item.metadata?.jobId;
-    if (!refId) return;
-
-    if (['NEW_APPLICATION', 'EMPLOYER_VIEWED_CV', 'INTERVIEW_INVITATION', 'APPLICATION_RESULT'].includes(item.typeCode)) {
-      navigate(`/applied-jobs`); // Navigate to user's applied jobs tracking
-    } else if (['JOB_APPROVED', 'JOB_REJECTED'].includes(item.typeCode)) {
-      navigate(`/jobs/${refId}`);
-    }
+    navigateToNotificationTarget(navigate, item, user);
   };
 
   const renderGroup = (title, groupItems) => {
@@ -281,3 +298,5 @@ const NotificationDropdown = () => {
 };
 
 export default NotificationDropdown;
+
+

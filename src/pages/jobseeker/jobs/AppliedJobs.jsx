@@ -9,6 +9,7 @@ const statusConfig = {
   APPLIED: { label: 'Đã ứng tuyển', bg: 'bg-blue-100', text: 'text-blue-600' },
   VIEWED: { label: 'Đã xem', bg: 'bg-blue-100', text: 'text-blue-700' },
   APPROVED: { label: 'Được duyệt', bg: 'bg-green-100', text: 'text-green-600' },
+  INTERVIEW_INVITED: { label: 'Đã mời phỏng vấn', bg: 'bg-purple-100', text: 'text-purple-600' },
   REJECTED: { label: 'Từ chối', bg: 'bg-red-100', text: 'text-red-600' },
   HIRED: { label: 'Được tuyển', bg: 'bg-green-100', text: 'text-green-700' },
 };

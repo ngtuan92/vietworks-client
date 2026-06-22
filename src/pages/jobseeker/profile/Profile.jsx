@@ -7,9 +7,9 @@ import useAuth from '../../../hooks/useAuth';
 
 
 const accountStatusLabel = {
-  ACTIVE: 'Đã xác thực (ACTIVE)',
-  UNVERIFIED: 'Chưa xác thực (UNVERIFIED)',
-  BANNED: 'Bị khóa (BANNED)',
+  ACTIVE: 'Đã xác thực',
+  UNVERIFIED: 'Chưa xác thực',
+  BANNED: 'Bị khóa',
 };
 
 const Profile = () => {
