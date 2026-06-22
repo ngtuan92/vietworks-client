@@ -278,4 +278,66 @@ body {
   background-color: #f8fafc;
 }
 
+/* Fix React Quill Bullet Points with Tailwind */
+.ql-editor ul, .ql-editor ol {
+  padding-left: 1.5em !important;
+}
 
+/* Ẩn các marker tuỳ chỉnh của Quill để dùng marker mặc định của trình duyệt */
+.ql-editor li::before,
+.ql-editor li > .ql-ui {
+  display: none !important;
+}
+
+/* Dùng list-style-type dựa trên attribute của Quill (dành cho Quill 1.x) hoặc thẻ chuẩn (Quill 2.x) */
+.ql-editor ul > li,
+.ql-editor li[data-list="bullet"] {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+}
+
+.ql-editor ol > li,
+.ql-editor li[data-list="ordered"] {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+}
+
+/* React Quill Size Picker Scrollbar */
+.ql-snow .ql-picker.ql-size .ql-picker-options {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* React Quill Custom Size Labels */
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before {
+  content: '10px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
+  content: '12px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before {
+  content: '14px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
+  content: '16px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
+  content: '18px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before {
+  content: '20px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before {
+  content: '24px' !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+  content: 'Cỡ chữ' !important; /* Mặc định placeholder */
+}

@@ -3,13 +3,14 @@ import { Link, useParams } from 'react-router-dom';
 import { Eye, FileText, Loader2, Search, X } from 'lucide-react';
 import atsService from '../../../services/atsService';
 
-const QUICK_FILTERS = ['ALL', 'UNREAD', 'VIEWED', 'APPROVED', 'REJECTED'];
-const LABEL = { ALL: 'Tất cả', UNREAD: 'Chưa xem', APPLIED: 'Đã nộp', VIEWED: 'Đã xem', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối', HIRED: 'Đã tuyển' };
+const QUICK_FILTERS = ['ALL', 'UNREAD', 'VIEWED', 'APPROVED', 'INTERVIEW_INVITED', 'REJECTED'];
+const LABEL = { ALL: 'Tất cả', UNREAD: 'Chưa xem', APPLIED: 'Đã nộp', VIEWED: 'Đã xem', APPROVED: 'Đã duyệt', INTERVIEW_INVITED: 'Đã mời phỏng vấn', REJECTED: 'Từ chối', HIRED: 'Đã tuyển' };
 const COLOR = {
   UNREAD: 'bg-blue-50 text-primary border border-blue-100',
   APPLIED: 'bg-blue-50 text-primary border border-blue-100',
   VIEWED: 'bg-slate-100 text-slate-700 border border-slate-200',
   APPROVED: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  INTERVIEW_INVITED: 'bg-purple-50 text-purple-700 border border-purple-100',
   REJECTED: 'bg-red-50 text-red-700 border border-red-100',
   HIRED: 'bg-blue-100 text-primary border border-blue-200'
 };

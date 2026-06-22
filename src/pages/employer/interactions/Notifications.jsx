@@ -2,22 +2,27 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Eye, Loader2, Trash2, ChevronRight, Clock } from 'lucide-react';
 import notificationService from '../../../services/notificationService';
+import { useSocket } from '../../../contexts/SocketContext';
+import { navigateToNotificationTarget } from '../../../utils/notificationNavigation';
+import useAuth from '../../../hooks/useAuth';
 
 const TYPE_LABEL = {
   EMPLOYER_VIEWED_CV: 'CV',
   NEW_APPLICATION: 'Ứng tuyển',
   INTERVIEW_INVITATION: 'Phỏng vấn',
   APPLICATION_RESULT: 'Hồ sơ',
-  JOB_APPROVED: 'Job',
-  JOB_REJECTED: 'Job',
-  COMPANY_VERIFIED: 'Company',
-  COMPANY_REJECTED: 'Company',
+  JOB_APPROVED: 'Việc làm',
+  JOB_REJECTED: 'Việc làm',
+  COMPANY_VERIFIED: 'Công ty',
+  COMPANY_REJECTED: 'Công ty',
   SYSTEM_UPDATE: 'Hệ thống',
   NEW_MESSAGE: 'Tin nhắn'
 };
 
 const Notifications = () => {
   const navigate = useNavigate();
+  const socket = useSocket();
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -47,6 +52,26 @@ const Notifications = () => {
       loadNotifications();
     });
   }, []);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const handleNewNotification = (notification) => {
+      setItems((prev) => {
+        if (prev.some((item) => String(item._id) === String(notification._id))) return prev;
+        return [notification, ...prev];
+      });
+      if (notification.status === 'UNREAD') {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    socket.on('new_notification', handleNewNotification);
+
+    return () => {
+      socket.off('new_notification', handleNewNotification);
+    };
+  }, [socket]);
 
   const totalCount = items.length;
   const readCount = useMemo(() => items.filter((item) => item.status === 'READ').length, [items]);
@@ -147,18 +172,7 @@ const Notifications = () => {
     if (item.status === 'UNREAD') {
       await handleMarkAsRead(item._id);
     }
-    
-    const refId = item.referenceId || item.metadata?.applicationId || item.metadata?.jobId;
-    if (!refId) return;
-
-    if (['NEW_APPLICATION', 'EMPLOYER_VIEWED_CV', 'INTERVIEW_INVITATION', 'APPLICATION_RESULT'].includes(item.typeCode)) {
-      navigate(`/employer/applications/${refId}`);
-    } else if (['JOB_APPROVED', 'JOB_REJECTED'].includes(item.typeCode)) {
-      navigate(`/employer/jobs/${refId}`);
-    } else if (item.typeCode === 'NEW_MESSAGE') {
-      // Future implementation for chat
-      // navigate(`/employer/conversations/${refId}`);
-    }
+    navigateToNotificationTarget(navigate, item, user);
   };
 
   const renderGroup = (title, groupItems) => {
@@ -313,3 +327,6 @@ const formatDateTimeShort = (value) => {
 };
 
 export default Notifications;
+
+
+

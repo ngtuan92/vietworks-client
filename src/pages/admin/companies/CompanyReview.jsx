@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import adminCompanyVerificationService from '../../../services/adminCompanyVerificationService';
 import { ActionButton, ModalShell, PageHeader, SectionCard, SelectField, TextAreaField } from '../shared/AdminPrimitives';
+import { Eye, Download, X } from 'lucide-react';
+import InlinePdfViewer from '../../../components/shared/InlinePdfViewer';
 
 const CompanyReview = () => {
   const { id: companyId } = useParams();
@@ -12,6 +14,7 @@ const CompanyReview = () => {
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const fetchCompanyDetail = async () => {
@@ -97,14 +100,16 @@ const CompanyReview = () => {
 
         <SectionCard title="Tài liệu pháp lý" right={company.businessLicenseFile?.fileUrl ? <a href={company.businessLicenseFile.fileUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-semibold">Tải về</a> : null}>
           {company.businessLicenseFile?.fileUrl ? (
-            company.businessLicenseFile.fileType?.startsWith('image/') ? (
-              <img src={company.businessLicenseFile.fileUrl} alt="Giấy phép kinh doanh" className="max-h-[400px] rounded-2xl border border-slate-200 object-contain" />
+            company.businessLicenseFile.fileType?.startsWith('image/') || /\.(jpeg|jpg|png|gif)$/i.test(company.businessLicenseFile.fileUrl) ? (
+              <img src={company.businessLicenseFile.fileUrl} alt="Giấy phép kinh doanh" className="max-h-[600px] rounded-2xl border border-slate-200 object-contain w-full" />
+            ) : company.businessLicenseFile.fileType === 'application/pdf' || /\.pdf$/i.test(company.businessLicenseFile.fileUrl || company.businessLicenseFile.fileName) ? (
+              <InlinePdfViewer url={company.businessLicenseFile.fileUrl} className="w-full h-[600px] rounded-2xl border border-slate-200" />
             ) : (
-              <div className="h-96 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-slate-500 flex flex-col items-center justify-center">
+              <div className="h-48 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-slate-500 flex flex-col items-center justify-center">
                 <div className="text-center">
                   <div className="font-semibold">File giấy phép kinh doanh</div>
                   <a href={company.businessLicenseFile.fileUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline mt-2 block">
-                    {company.businessLicenseFile.fileName}
+                    {company.businessLicenseFile.fileName || 'Tải file xuống'}
                   </a>
                 </div>
               </div>

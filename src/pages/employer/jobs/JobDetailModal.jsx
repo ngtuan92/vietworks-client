@@ -416,7 +416,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
                   onChange={(e) => handleInputChange('isUrgent', e.target.checked)}
                   className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 disabled:opacity-60"
                 />
-                Đánh dấu Tuyển gấp (isUrgent)
+                Đánh dấu Tuyển gấp
               </label>
             </div>
           </div>
@@ -545,14 +545,14 @@ workLocations: Array.isArray(loadedJob.workLocations)
               <label className="block text-sm font-semibold text-slate-700 mb-1">Mức lương (triệu VND)</label>
               <div className="flex items-center gap-1">
                 <input
-                  type="number" placeholder="Min" disabled={!isEditable}
+                  type="number" placeholder="Tối thiểu" disabled={!isEditable}
                   value={formData.salary?.minMillion ?? ''}
                   onChange={(e) => handleSalaryChange('minMillion', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary disabled:bg-slate-50"
                 />
                 <span className="text-slate-400">—</span>
                 <input
-                  type="number" placeholder="Max" disabled={!isEditable}
+                  type="number" placeholder="Tối đa" disabled={!isEditable}
                   value={formData.salary?.maxMillion ?? ''}
                   onChange={(e) => handleSalaryChange('maxMillion', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary disabled:bg-slate-50"
@@ -572,7 +572,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Chính sách Thứ 7 (saturdayPolicy)</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Chính sách Thứ 7</label>
               <select
                 disabled={!isEditable}
                 value={formData.saturdayPolicy}
@@ -590,7 +590,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
           {/* CẤU TRÚC MỚI: Tích hợp Bộ chọn địa chỉ phân cấp động */}
          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-4">
   <div>
-    <h3 className="text-sm font-bold text-slate-800">Địa điểm làm việc (workLocations)</h3>
+    <h3 className="text-sm font-bold text-slate-800">Địa điểm làm việc</h3>
     <p className="text-xs text-slate-500 mt-0.5">
       Chọn địa điểm làm việc từ danh sách chi nhánh đã tạo trong hồ sơ công ty.
     </p>
@@ -700,7 +700,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
 
           {/* Các trường mô tả chi tiết bằng Text */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Thời gian làm việc chi tiết (workingTime)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Thời gian làm việc chi tiết</label>
             <input
               type="text" placeholder="Ví dụ: 08:00 - 17:30 nghỉ trưa 1 tiếng 30 phút"
               disabled={!isEditable}
@@ -711,7 +711,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Mô tả công việc (description)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Mô tả công việc</label>
             <textarea
               rows="3" disabled={!isEditable}
               value={formData.description}
@@ -721,7 +721,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Yêu cầu ứng viên (requirements)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Yêu cầu ứng viên</label>
             <textarea
               rows="3" disabled={!isEditable}
               value={formData.requirements}
@@ -731,7 +731,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Quyền lợi được hưởng (benefits)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Quyền lợi được hưởng</label>
             <textarea
               rows="3" disabled={!isEditable}
               value={formData.benefits}
@@ -741,7 +741,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Hướng dẫn ứng tuyển (applyInstruction)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Hướng dẫn ứng tuyển</label>
             <textarea
               rows="2" disabled={!isEditable}
               value={formData.applyInstruction}
@@ -787,7 +787,7 @@ key={getLocationId(loc) || loc.address || loc.fullAddress || index}            c
               onClick={handleCloseJob} 
               className="px-4 py-2 text-sm font-semibold text-white bg-slate-700 rounded-xl hover:bg-slate-800"
             >
-              Đóng job
+              Đóng tin tuyển dụng
             </button>
           )}
         </div>

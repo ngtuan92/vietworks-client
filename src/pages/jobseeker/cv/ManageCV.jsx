@@ -4,9 +4,8 @@ import CVWelcome from '../../../components/jobseeker/cv/CVWelcome';
 import CVFilter from '../../../components/jobseeker/cv/CVFilter';
 import { CVCard, CVPlaceholderCard } from '../../../components/jobseeker/cv/CVCard';
 import { UploadedCVCard, UploadedCVPlaceholderCard } from '../../../components/jobseeker/cv/UploadedCVCard';
-import ProfileStrength from '../../../components/jobseeker/cv/ProfileStrength';
+
 import CVExpertReview from '../../../components/jobseeker/cv/CVExpertReview';
-import CareerResources from '../../../components/jobseeker/cv/CareerResources';
 import cvService from '../../../services/cvService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { HelpCircle, MessageSquare, X, Loader2, UploadCloud, FileBox, FileText, File } from 'lucide-react';
@@ -243,7 +242,7 @@ const ManageCV = () => {
                         title={cv.title}
                         date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
                         isMain={cv.isMain}
-                        image={cv.previewImageUrl || cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
+                        image={cv.previewImageUrl || cv.templateId?.previewImageUrl || cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
                         onDelete={handleDeleteCv}
                         onDownload={handleDownloadPdf}
                         onRename={handleRenameCv}
@@ -284,23 +283,12 @@ const ManageCV = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-stack-lg">
-            <ProfileStrength />
             <CVExpertReview />
-            <CareerResources />
           </div>
         </div>
       </main>
 
-      {/* Floating Action for Help */}
-      <div className="fixed bottom-gutter right-gutter flex flex-col gap-stack-md items-end z-40">
-        <button className="bg-surface-container-lowest shadow-lg border border-outline-variant p-stack-md rounded-full text-on-surface-variant hover:text-primary transition-all group relative">
-          <HelpCircle className="w-5 h-5" />
-          <span className="absolute right-full mr-stack-md whitespace-nowrap bg-on-surface text-on-secondary px-3 py-1 rounded text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">Support</span>
-        </button>
-        <button className="bg-primary text-on-secondary shadow-lg p-stack-md rounded-full hover:scale-105 active:scale-95 transition-all">
-          <MessageSquare className="w-5 h-5" />
-        </button>
-      </div>
+
 
       {/* Hidden file input */}
       <input

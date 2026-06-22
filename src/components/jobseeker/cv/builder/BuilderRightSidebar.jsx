@@ -6,7 +6,7 @@ const colors = ['#0056b3', '#1e3a8a', '#1e293b', '#15803d', '#b45309', '#991b1b'
 const fonts = ['Inter', 'Roboto', 'Outfit', 'Montserrat', 'Poppins', 'Open Sans', 'Lora', 'Lato', 'Playfair Display', 'Fira Code'];
 
 export const BuilderRightSidebar = ({ 
-  style, onStyleChange, onExport, isSaving, navigateBack, currentTemplateId, onTemplateChange
+  style, onStyleChange, onExport, onSaveOfficial, isSaving, navigateBack, currentTemplateId, onTemplateChange
 }) => {
   const [activeTab, setActiveTab] = useState('design');
   const [templates, setTemplates] = useState([]);
@@ -121,7 +121,6 @@ export const BuilderRightSidebar = ({
                 </div>
                 <div className="p-2 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-700 truncate max-w-[90px]">{tpl.name}</span>
-                  {tpl.isPremium && <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-extrabold rounded">PRO</span>}
                 </div>
               </div>
             ))}
@@ -137,13 +136,18 @@ export const BuilderRightSidebar = ({
           </span>
           <span className={isSaving ? 'text-amber-600' : 'text-emerald-600 font-bold'}>{isSaving ? 'Đang lưu...' : 'Đã tự động lưu'}</span>
         </div>
-        <div className="flex gap-2">
-          <button onClick={navigateBack} className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 px-2 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-xs">
-            <ArrowLeft className="w-4 h-4" /> Thoát
+        <div className="flex flex-col gap-2">
+          <button onClick={onSaveOfficial} disabled={isSaving} className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+            <Check className="w-4 h-4" /> Lưu làm CV chính thức
           </button>
-          <button onClick={onExport} disabled={isSaving} className="flex-[2] bg-primary hover:bg-primary/90 disabled:bg-slate-300 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
-            <Download className="w-4 h-4" /> Xuất PDF
-          </button>
+          <div className="flex gap-2">
+            <button onClick={navigateBack} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-2 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-xs border border-slate-300">
+              <ArrowLeft className="w-4 h-4" /> Lưu nháp & Thoát
+            </button>
+            <button onClick={onExport} disabled={isSaving} className="flex-1 bg-primary hover:bg-primary/90 disabled:bg-slate-300 text-white font-bold py-3 px-2 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 text-xs">
+              <Download className="w-4 h-4" /> Xuất PDF
+            </button>
+          </div>
         </div>
       </div>
     </div>

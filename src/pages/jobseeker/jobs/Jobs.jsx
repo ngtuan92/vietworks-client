@@ -96,6 +96,7 @@ const mapJobToCard = (job) => ({
   logo: job.companyId?.avatarUrl || DEFAULT_LOGO,
   updatedTime: formatUpdatedTime(job.publishedAt || job.createdAt),
   tags: getTags(job),
+  headcount: job.headcount,
 });
 
 const Jobs = () => {

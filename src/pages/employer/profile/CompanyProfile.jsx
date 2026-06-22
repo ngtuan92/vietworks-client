@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2, Plus, Edit2, Camera, Upload, Trash2, CheckCircle2, ChevronRight, X, Phone, User as UserIcon } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import InlinePdfViewer from '../../../components/shared/InlinePdfViewer';
 import {
   searchVietMapPlaces,
   getVietMapPlaceDetail
@@ -662,27 +664,37 @@ useEffect(() => {
         alt="Giấy đăng ký doanh nghiệp mới"
         className="mt-3 max-h-64 rounded-xl border border-slate-200 object-contain"
       />
-    ) : legal.file.type === 'application/pdf' || /\.pdf$/i.test(legal.file.name) ? (
-      <p className="mt-3 text-sm text-slate-600">Tệp PDF đã được chọn để upload.</p>
+    ) : (legal.file.type === 'application/pdf' || /\.pdf$/i.test(legal.file.name)) && legalPreview ? (
+      <InlinePdfViewer
+        url={legalPreview}
+        className="mt-3 w-full h-[500px] rounded-xl border border-slate-200"
+      />
     ) : null}
   </div>
 ) : legal.businessLicenseFile?.fileUrl ? (
   <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-    <p className="text-sm font-semibold text-slate-800">File đã tải lên</p>
-    <a
-      href={legal.businessLicenseFile.fileUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="text-sm text-primary font-semibold hover:underline"
-    >
-      {legal.businessLicenseFile.fileName || 'Xem giấy đăng ký doanh nghiệp'}
-    </a>
+    <div className="flex items-center justify-between mb-3">
+      <p className="text-sm font-semibold text-slate-800">File đã tải lên</p>
+      <a
+        href={legal.businessLicenseFile.fileUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="text-sm text-primary font-semibold hover:underline bg-primary/10 px-3 py-1.5 rounded-lg"
+      >
+        Mở trong tab mới
+      </a>
+    </div>
 
-    {legal.businessLicenseFile.fileType?.startsWith('image/') ? (
+    {legal.businessLicenseFile.fileType?.startsWith('image/') || /\.(jpeg|jpg|png|gif)$/i.test(legal.businessLicenseFile.fileUrl) ? (
       <img
         src={legal.businessLicenseFile.fileUrl}
         alt="Giấy đăng ký doanh nghiệp"
-        className="mt-3 max-h-64 rounded-xl border border-slate-200 object-contain"
+        className="max-h-64 rounded-xl border border-slate-200 object-contain"
+      />
+    ) : legal.businessLicenseFile.fileType === 'application/pdf' || /\.pdf$/i.test(legal.businessLicenseFile.fileUrl || legal.businessLicenseFile.fileName) ? (
+      <InlinePdfViewer
+        url={legal.businessLicenseFile.fileUrl}
+        className="w-full h-[500px] rounded-xl border border-slate-200"
       />
     ) : null}
   </div>

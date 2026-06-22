@@ -20,9 +20,9 @@ const jobApproval = [
 ];
 
 const queueItems = [
-  { id: 'JOB-2481', title: 'Senior Backend Engineer', owner: 'TechNova Solutions', type: 'Tin tuyển dụng', priority: 'Cao', status: 'Chờ duyệt', time: '12 phút trước' },
+  { id: 'JOB-2481', title: 'Kỹ sư Backend Senior', owner: 'TechNova Solutions', type: 'Tin tuyển dụng', priority: 'Cao', status: 'Chờ duyệt', time: '12 phút trước' },
   { id: 'COM-1022', title: 'FinTrust Group', owner: 'MST: 0319***', type: 'Hồ sơ công ty', priority: 'Trung bình', status: 'Cần xác minh', time: '28 phút trước' },
-  { id: 'JOB-2478', title: 'Product Designer UI/UX', owner: 'BrightSide Creative', type: 'Tin tuyển dụng', priority: 'Khẩn cấp', status: 'Cảnh báo', time: '42 phút trước' },
+  { id: 'JOB-2478', title: 'Nhà thiết kế sản phẩm UI/UX', owner: 'BrightSide Creative', type: 'Tin tuyển dụng', priority: 'Khẩn cấp', status: 'Cảnh báo', time: '42 phút trước' },
 ];
 
 const stats = [
