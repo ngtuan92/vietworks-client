@@ -104,7 +104,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
     salaryFrom: '',
     salaryTo: '',
     workLocations: [], // Lưu danh sách các object địa điểm snapshot chi tiết
-    saturdayPolicy: 'NOT_SPECIFIED', // 'WORK_SATURDAY', 'OFF_SATURDAY', 'NOT_SPECIFIED'
+    saturdayPolicy: 'NOT_SPECIFIED', // 'WORKING_SATURDAY', 'OFF_SATURDAY', 'NOT_SPECIFIED'
     description: '',
     requirements: '',
     benefits: '',
@@ -256,8 +256,8 @@ const [companyLocations, setCompanyLocations] = useState([]);
       let saturdayPolicy = prev.saturdayPolicy;
       if (hasSaturday) {
         // Đã chọn làm Thứ 7 trong lịch tuần -> chính sách phải phản ánh đúng là CÓ làm Thứ 7
-        saturdayPolicy = 'WORK_SATURDAY';
-      } else if (!hasSunday && saturdayPolicy === 'WORK_SATURDAY') {
+        saturdayPolicy = 'WORKING_SATURDAY';
+      } else if (!hasSunday && saturdayPolicy === 'WORKING_SATURDAY') {
         // Lịch tuần chỉ chọn Thứ 2 - Thứ 6 (không có Thứ 7/CN) -> không thể giữ chính sách "có làm Thứ 7"
         saturdayPolicy = 'OFF_SATURDAY';
       }
@@ -778,7 +778,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
   const saturdayPolicyOptions = [
     { value: 'NOT_SPECIFIED', label: 'Không đề cập chi tiết' },
     {
-      value: 'WORK_SATURDAY',
+      value: 'WORKING_SATURDAY',
       label: 'Có làm việc ngày Thứ 7',
       disabled: scheduleSelected && !includesSaturday,
     },

@@ -28,7 +28,7 @@ const locationOptions = [
 const saturdayOptions = [
   { value: '', label: 'Tất cả' },
   { value: 'NOT_SPECIFIED', label: 'Không đề cập' },
-  { value: 'WORK_SATURDAY', label: 'Có làm Thứ 7' },
+  { value: 'WORKING_SATURDAY', label: 'Có làm Thứ 7' },
   { value: 'OFF_SATURDAY', label: 'Nghỉ Thứ 7' },
 ];
 
