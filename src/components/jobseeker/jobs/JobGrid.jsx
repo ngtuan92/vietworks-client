@@ -53,7 +53,8 @@ const mapJobToCard = (job) => ({
   salary: formatSalary(job.salary),
   updatedTime: formatUpdatedTime(job.publishedAt || job.createdAt),
   tags: getTags(job),
-  headcount: job.headcount,
+  neededCount: job.neededCount || job.applicationCount,
+  isHiringFull: Boolean(job.isHiringFull),
 });
 
 const JobGrid = () => {

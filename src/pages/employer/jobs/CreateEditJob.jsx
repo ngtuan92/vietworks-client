@@ -78,7 +78,7 @@ const formatWorkingSchedule = (workingDays, from, to) => {
 
 const CreateEditJob = () => {
   const [step, setStep] = useState(1);
-  const [isCompanyVerified, setIsCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
+  const [isCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 const [companyLocations, setCompanyLocations] = useState([]);
@@ -153,7 +153,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
         if (resGroups.success) setCareerGroups(resGroups.data);
         if (resExp.success) setExperienceLevels(resExp.data);
         if (resLevels.success) setGlobalJobLevels(resLevels.data);
-      } catch (err) {
+      } catch {
         showToast('error', 'Không thể tải dữ liệu danh mục hệ thống.');
       }
     };
@@ -163,9 +163,11 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // --- Xử lý Load danh mục phụ thuộc (Dependent Dropdowns) ---
   useEffect(() => {
     if (!form.careerGroupId) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setCareers([]);
       setJobLevels([]);
       setSkills([]);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     
@@ -195,11 +197,13 @@ const [companyLocations, setCompanyLocations] = useState([]);
       }
     };
     fetchDependentByGroup();
-  }, [form.careerGroupId]);
+  }, [form.careerGroupId, careerGroups, globalJobLevels]);
 
   useEffect(() => {
     if (!form.careerId) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setPositions([]);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     const fetchPositions = async () => {
@@ -266,10 +270,10 @@ const [companyLocations, setCompanyLocations] = useState([]);
     });
   };
 
-  const showToast = (type, text) => {
+  function showToast(type, text) {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
-  };
+  }
 
   // --- Điều kiện validate qua từng bước (Frontend Guard) ---
   const canNext = useMemo(() => {
@@ -1018,19 +1022,7 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
   </div>
 );
 
-const TextArea = ({ label, value, onChange, required = false, placeholder = '' }) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full min-h-[120px] rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-primary whitespace-pre-line"
-      placeholder={placeholder}
-    />
-  </div>
-);
+
 
 const InfoCard = ({ label, value }) => (
   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
