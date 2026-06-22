@@ -51,7 +51,8 @@ const JobCard = ({
   level,
   workType,
   deadline,
-  headcount,
+  neededCount,
+  isHiringFull = false,
   showExtra = false,
 }) => {
   const navigate = useNavigate();
@@ -143,9 +144,9 @@ const JobCard = ({
               <MapPin className="w-4 h-4" />
               <span className="text-sm">{location}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-gray-600">
+            <div className={`flex items-center gap-1.5 ${isHiringFull ? 'text-red-600' : 'text-gray-600'}`}>
               <Users className="w-4 h-4" />
-              <span className="text-sm">Cần tuyển: {headcount || 1}</span>
+              <span className="text-sm font-medium">{isHiringFull ? 'Đã tuyển đủ' : `Cần tuyển: ${neededCount || 1}`}</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-600">
               <Clock className="w-4 h-4" />

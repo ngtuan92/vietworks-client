@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import ApplyJobModal from './ApplyJobModal';
 import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
 import JobseekerAuthModal from '../../common/JobseekerAuthModal';
@@ -38,16 +38,16 @@ const DEFAULT_LOGO =
   'https://ui-avatars.com/api/?name=Company&background=EAF2FF&color=003F87&bold=true';
 
 const formatSalary = (salary) => {
-  if (!salary || salary.type === 'NEGOTIABLE') return 'Thỏa thuận';
+  if (!salary || salary.type === 'NEGOTIABLE') return 'Thá»a thuáº­n';
 
   if (salary.minMillion && salary.maxMillion) {
-    return `${salary.minMillion} - ${salary.maxMillion} triệu`;
+    return `${salary.minMillion} - ${salary.maxMillion} triá»‡u`;
   }
 
-  if (salary.minMillion) return `Từ ${salary.minMillion} triệu`;
-  if (salary.maxMillion) return `Đến ${salary.maxMillion} triệu`;
+  if (salary.minMillion) return `Tá»« ${salary.minMillion} triá»‡u`;
+  if (salary.maxMillion) return `Äáº¿n ${salary.maxMillion} triá»‡u`;
 
-  return 'Thỏa thuận';
+  return 'Thá»a thuáº­n';
 };
 
 const formatLocation = (locations = []) => {
@@ -56,22 +56,22 @@ const formatLocation = (locations = []) => {
   return (
     first?.address ||
     [first?.wardName, first?.districtName, first?.provinceName].filter(Boolean).join(', ') ||
-    'Không xác định'
+    'KhÃ´ng xÃ¡c Ä‘á»‹nh'
   );
 };
 
 const formatUpdatedTime = (dateValue) => {
-  if (!dateValue) return 'Vừa cập nhật';
+  if (!dateValue) return 'Vá»«a cáº­p nháº­t';
 
   const diffMs = Date.now() - new Date(dateValue).getTime();
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffHours < 1) return 'Vừa cập nhật';
-  if (diffHours < 24) return `Đăng ${diffHours} giờ trước`;
-  if (diffDays < 30) return `Đăng ${diffDays} ngày trước`;
+  if (diffHours < 1) return 'Vá»«a cáº­p nháº­t';
+  if (diffHours < 24) return `ÄÄƒng ${diffHours} giá» trÆ°á»›c`;
+  if (diffDays < 30) return `ÄÄƒng ${diffDays} ngÃ y trÆ°á»›c`;
 
-  return `Đăng ${new Date(dateValue).toLocaleDateString('vi-VN')}`;
+  return `ÄÄƒng ${new Date(dateValue).toLocaleDateString('vi-VN')}`;
 };
 
 const JobDetailHeader = ({
@@ -89,8 +89,10 @@ const JobDetailHeader = ({
 
   const company = job?.companyId;
   const companyAvatar = company?.avatarUrl || DEFAULT_LOGO;
-  const companyName = company?.name || 'Công ty không xác định';
+  const companyName = company?.name || 'CÃ´ng ty khÃ´ng xÃ¡c Ä‘á»‹nh';
   const isVerified = company?.verificationStatus === 'VERIFIED';
+  const isHiringFull = Boolean(job?.isHiringFull || cannotApplyReason === 'Tin tuyển dụng đã tuyển đủ số lượng');
+  const neededCount = job?.neededCount || job?.applicationCount || 1;
 
   useEffect(() => {
     if (!isAuthenticated || !job?._id) return;
@@ -156,23 +158,23 @@ const JobDetailHeader = ({
             <div className="flex flex-wrap items-center gap-3 mb-2">
               {job?.isUrgent ? (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-label-md">
-                  Tuyển gấp
+                  Tuyá»ƒn gáº¥p
                 </span>
               ) : (
                 <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-1 rounded-full text-label-md">
-                  Mới
+                  Má»›i
                 </span>
               )}
 
               {isVerified ? (
                 <span className="bg-primary-fixed text-on-primary-fixed-variant px-3 py-1 rounded-full text-label-md">
-                  Nhà tuyển dụng Xác minh
+                  NhÃ  tuyá»ƒn dá»¥ng XÃ¡c minh
                 </span>
               ) : null}
 
               {job?.premium?.isActive ? (
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-label-md">
-                  Nổi bật
+                  Ná»•i báº­t
                 </span>
               ) : null}
             </div>
@@ -196,9 +198,9 @@ const JobDetailHeader = ({
                 <span>{formatLocation(job?.workLocations)}</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 ${isHiringFull ? 'text-red-600' : ''}`}>
                 <Users className="w-5 h-5" />
-                <span>Cần tuyển: {job?.headcount || 1} người</span>
+                <span>{isHiringFull ? 'Đã tuyển đủ' : `Cần tuyển: ${neededCount} người`}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -215,14 +217,14 @@ const JobDetailHeader = ({
                 className="w-full md:w-48 py-3 bg-green-100 text-green-700 font-bold rounded-lg cursor-not-allowed text-body-md flex items-center justify-center gap-2"
               >
                 <CheckCircle className="w-5 h-5" />
-                Đã Ứng Tuyển
+                ÄÃ£ á»¨ng Tuyá»ƒn
               </button>
             ) : canApply ? (
               <button
                 onClick={handleApply}
                 className="w-full md:w-48 py-3 bg-primary text-white font-bold rounded-lg hover:shadow-lg active:scale-95 transition-all text-body-md"
               >
-                Ứng Tuyển Ngay
+                á»¨ng Tuyá»ƒn Ngay
               </button>
             ) : (
               <div className="relative group">
@@ -230,7 +232,7 @@ const JobDetailHeader = ({
                   disabled
                   className="w-full md:w-48 py-3 bg-gray-300 text-gray-500 font-bold rounded-lg cursor-not-allowed text-body-md"
                 >
-                  {cannotApplyReason === 'Tin tuyển dụng đã tuyển đủ số lượng' ? 'Đã tuyển đủ' : 'Không thể ứng tuyển'}
+                  {cannotApplyReason === 'Tin tuyá»ƒn dá»¥ng Ä‘Ã£ tuyá»ƒn Ä‘á»§ sá»‘ lÆ°á»£ng' ? 'ÄÃ£ tuyá»ƒn Ä‘á»§' : 'KhÃ´ng thá»ƒ á»©ng tuyá»ƒn'}
                 </button>
                 {cannotApplyReason && (
                   <div className="absolute right-0 top-full mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
@@ -250,7 +252,7 @@ const JobDetailHeader = ({
               } disabled:opacity-60`}
             >
               <BookmarkPlus className={`w-5 h-5 ${isSaved ? 'fill-white' : ''}`} />
-              {isSaved ? 'Đã lưu' : 'Lưu Việc Làm'}
+              {isSaved ? 'ÄÃ£ lÆ°u' : 'LÆ°u Viá»‡c LÃ m'}
             </button>
           </div>
         </div>
