@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../services/api';
+import { createDeposit } from '../../../services/paymentService';
+import useSepayPolling from '../../../hooks/useSepayPolling';
 
 const quickAmounts = [
   { label: '500k', value: 500000 },
@@ -25,9 +26,9 @@ const TopUp = () => {
     event.preventDefault();
     setLoading(true);
     try {
-      const res = await api.post('/employer/wallet/deposit', { amount });
-      if (res.data.success) {
-        setQrData(res.data.data);
+      const res = await createDeposit(amount);
+      if (res.success) {
+        setQrData(res.data);
       }
     } catch (error) {
       console.error('Deposit error:', error);
@@ -40,6 +41,17 @@ const TopUp = () => {
   const handleCloseQr = () => {
     setQrData(null);
   };
+
+  // Polling SePay - khi paid → tự navigate sang trang Payment Result
+  const { paid } = useSepayPolling(qrData?.orderCode, {
+    enabled: !!qrData?.orderCode,
+    onPaid: (orderCode) => {
+      // Delay 1.5s để user thấy ✓ rồi mới chuyển trang
+      setTimeout(() => {
+        navigate(`/employer/wallet/payment-result?orderCode=${orderCode}`);
+      }, 1500);
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -206,23 +218,32 @@ const TopUp = () => {
                   <span className="font-black text-[#003f87]">{qrData.transferContent}</span>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mb-4">
-                Hệ thống sẽ tự động cộng tiền vào ví khi nhận được thanh toán
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => navigate('/employer/wallet/payment-result?status=success&amount=' + encodeURIComponent(amount))}
-                  className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all"
-                >
-                  Tôi đã thanh toán xong
-                </button>
-                <button
-                  onClick={handleCloseQr}
-                  className="px-6 py-3 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
-                >
-                  Hủy
-                </button>
-              </div>
+              {paid ? (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center">
+                  <span className="material-symbols-outlined text-emerald-600 text-[40px]">check_circle</span>
+                  <p className="font-black text-emerald-700 mt-1">Nạp tiền thành công!</p>
+                  <p className="text-sm text-emerald-600 mb-3">Đang chuyển sang trang xác nhận...</p>
+                  <button
+                    onClick={() => navigate(`/employer/wallet/payment-result?orderCode=${qrData.orderCode}`)}
+                    className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all"
+                  >
+                    Xem chi tiết giao dịch
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-4">
+                    <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    Đang chờ thanh toán... (tự cộng tiền khi nhận được)
+                  </div>
+                  <button
+                    onClick={handleCloseQr}
+                    className="w-full px-6 py-3 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
+                  >
+                    Đóng
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

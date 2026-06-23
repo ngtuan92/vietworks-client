@@ -13,6 +13,8 @@ import AppliedJobs from './pages/jobseeker/jobs/AppliedJobs';
 import ApplicationStatusDetail from './pages/jobseeker/jobs/ApplicationStatusDetail';
 import AICvReview from './pages/jobseeker/cv/AICvReview';
 import JobseekerTransactions from './pages/jobseeker/billing/JobseekerTransactions';
+import PaymentSuccess from './pages/jobseeker/billing/PaymentSuccess';
+import JobseekerMySubscriptions from './pages/jobseeker/subscription/MySubscriptions';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
@@ -54,6 +56,7 @@ import PaymentResult from './pages/employer/billing/PaymentResult';
 import Transactions from './pages/employer/billing/Transactions';
 import BuyFeaturedPackage from './pages/employer/billing/BuyFeaturedPackage';
 import ActivePackages from './pages/employer/billing/ActivePackages';
+import MySubscriptions from './pages/employer/billing/MySubscriptions';
 import Messages from './pages/employer/interactions/Messages';
 import Notifications from './pages/employer/interactions/Notifications';
 import AccountSettings from './pages/employer/profile/AccountSettings';
@@ -124,6 +127,8 @@ function App() {
               <Route path="privacy-settings" element={<PrivacySettings />} />
               <Route path="ai-cv-review" element={<AICvReview />} />
               <Route path="my-transactions" element={<JobseekerTransactions />} />
+              <Route path="my-subscriptions" element={<JobseekerMySubscriptions />} />
+              <Route path="payment-success" element={<PaymentSuccess />} />
               <Route path="followed-companies" element={<FollowedCompanies />} />
             </Route>
           </Route>
@@ -169,6 +174,7 @@ function App() {
               <Route path="packages" element={<BuyPackages />} />
               <Route path="packages/featured-job" element={<BuyFeaturedPackage />} />
               <Route path="active-packages" element={<ActivePackages />} />
+              <Route path="my-subscriptions" element={<MySubscriptions />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notifications" element={<Notifications />} />
