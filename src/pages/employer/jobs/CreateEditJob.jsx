@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 console.log('companyLocationService:', companyLocationService);
 const STEPS = [
   'Thông tin cơ bản',
@@ -23,6 +25,19 @@ const WORKING_DAYS = [
   { code: 'SUN', label: 'Chủ nhật' },
 ];
 const WORKING_DAY_ORDER = WORKING_DAYS.map((d) => d.code);
+
+const quillModules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+    ['link'],
+    ['clean']
+  ],
+};
 
 // Gộp các ngày liên tiếp thành dạng "Thứ 2 - Thứ 6" cho gọn, thay vì liệt kê từng ngày
 const compressWorkingDays = (days) => {
@@ -63,7 +78,7 @@ const formatWorkingSchedule = (workingDays, from, to) => {
 
 const CreateEditJob = () => {
   const [step, setStep] = useState(1);
-  const [isCompanyVerified, setIsCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
+  const [isCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 const [companyLocations, setCompanyLocations] = useState([]);
@@ -89,7 +104,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
     salaryFrom: '',
     salaryTo: '',
     workLocations: [], // Lưu danh sách các object địa điểm snapshot chi tiết
-    saturdayPolicy: 'NOT_SPECIFIED', // 'WORK_SATURDAY', 'OFF_SATURDAY', 'NOT_SPECIFIED'
+    saturdayPolicy: 'NOT_SPECIFIED', // 'WORKING_SATURDAY', 'OFF_SATURDAY', 'NOT_SPECIFIED'
     description: '',
     requirements: '',
     benefits: '',
@@ -100,6 +115,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
     deadline: '',
     isUrgent: false,
     applicationCount: '',
+    headcount: 1,
   });
   useEffect(() => {
   const fetchCompanyLocations = async () => {
@@ -137,7 +153,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
         if (resGroups.success) setCareerGroups(resGroups.data);
         if (resExp.success) setExperienceLevels(resExp.data);
         if (resLevels.success) setGlobalJobLevels(resLevels.data);
-      } catch (err) {
+      } catch {
         showToast('error', 'Không thể tải dữ liệu danh mục hệ thống.');
       }
     };
@@ -147,9 +163,11 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // --- Xử lý Load danh mục phụ thuộc (Dependent Dropdowns) ---
   useEffect(() => {
     if (!form.careerGroupId) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setCareers([]);
       setJobLevels([]);
       setSkills([]);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     
@@ -179,11 +197,13 @@ const [companyLocations, setCompanyLocations] = useState([]);
       }
     };
     fetchDependentByGroup();
-  }, [form.careerGroupId]);
+  }, [form.careerGroupId, careerGroups, globalJobLevels]);
 
   useEffect(() => {
     if (!form.careerId) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setPositions([]);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     const fetchPositions = async () => {
@@ -240,8 +260,8 @@ const [companyLocations, setCompanyLocations] = useState([]);
       let saturdayPolicy = prev.saturdayPolicy;
       if (hasSaturday) {
         // Đã chọn làm Thứ 7 trong lịch tuần -> chính sách phải phản ánh đúng là CÓ làm Thứ 7
-        saturdayPolicy = 'WORK_SATURDAY';
-      } else if (!hasSunday && saturdayPolicy === 'WORK_SATURDAY') {
+        saturdayPolicy = 'WORKING_SATURDAY';
+      } else if (!hasSunday && saturdayPolicy === 'WORKING_SATURDAY') {
         // Lịch tuần chỉ chọn Thứ 2 - Thứ 6 (không có Thứ 7/CN) -> không thể giữ chính sách "có làm Thứ 7"
         saturdayPolicy = 'OFF_SATURDAY';
       }
@@ -250,10 +270,10 @@ const [companyLocations, setCompanyLocations] = useState([]);
     });
   };
 
-  const showToast = (type, text) => {
+  function showToast(type, text) {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
-  };
+  }
 
   // --- Điều kiện validate qua từng bước (Frontend Guard) ---
   const canNext = useMemo(() => {
@@ -526,6 +546,8 @@ const StepBasicInfo = ({ form, setField, careerGroups, careers, positions, jobLe
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Field label="Tiêu đề công việc" required value={form.title} onChange={(v) => setField('title', v)} placeholder="VD: Senior Backend Developer (NodeJS)" />
       
+      <Field label="Số lượng cần tuyển" type="number" required value={form.headcount} onChange={(v) => setField('headcount', Number(v))} placeholder="1" />
+      
       <Select 
         label="Nhóm ngành nghề" 
         required 
@@ -610,7 +632,12 @@ const StepSalary = ({ form, setField }) => {
 const StepDescription = ({ form, setField, toggleWorkingDay }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 3: Bản mô tả công việc</h2>
-    <TextArea label="Chi tiết công việc diễn ra" required value={form.description} onChange={(v) => setField('description', v)} placeholder="- Chịu trách nhiệm kiến trúc hệ thống dữ liệu API Backend...&#10;- Xây dựng tài liệu kỹ thuật dự án..." />
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">Chi tiết mô tả công việc <span className="text-red-500">*</span></label>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <ReactQuill theme="snow" value={form.description} onChange={(v) => setField('description', v)} modules={quillModules} className="h-48 mb-12" />
+      </div>
+    </div>
 
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -663,7 +690,12 @@ const StepDescription = ({ form, setField, toggleWorkingDay }) => (
 const StepRequirements = ({ form, setField, skills, toggleMulti }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 4: Tiêu chí và Yêu cầu ứng viên</h2>
-    <TextArea label="Yêu cầu năng lực chuyên môn" required value={form.requirements} onChange={(v) => setField('requirements', v)} placeholder="- Tối thiểu từ 2 năm chinh chiến thực tế với hệ sinh thái Node.JS...&#10;- Tư duy cấu trúc dữ liệu giải thuật tốt..." />
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">Yêu cầu năng lực chuyên môn <span className="text-red-500">*</span></label>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <ReactQuill theme="snow" value={form.requirements} onChange={(v) => setField('requirements', v)} modules={quillModules} className="h-48 mb-12" />
+      </div>
+    </div>
     
     <div className="mt-4">
       <label className="block text-sm font-semibold text-slate-700 mb-2">Bộ kỹ năng bổ trợ đính kèm (Lọc động theo nhóm nghề)</label>
@@ -695,7 +727,12 @@ const StepRequirements = ({ form, setField, skills, toggleMulti }) => (
 const StepBenefits = ({ form, setField }) => (
   <div className="space-y-4">
     <h2 className="text-lg font-bold text-slate-900">Bước 5: Chế độ đãi ngộ & Quyền lợi</h2>
-    <TextArea label="Quyền lợi ứng viên được hưởng" required value={form.benefits} onChange={(v) => setField('benefits', v)} placeholder="- Thu nhập tháng 13 + thưởng KPI hiệu suất cuối năm hấp dẫn...&#10;- Đóng đầy đủ BHXH, BHYT theo luật định..." />
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">Quyền lợi và Đãi ngộ dành cho ứng viên <span className="text-red-500">*</span></label>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <ReactQuill theme="snow" value={form.benefits} onChange={(v) => setField('benefits', v)} modules={quillModules} className="h-48 mb-12" />
+      </div>
+    </div>
   </div>
 );
 
@@ -745,7 +782,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
   const saturdayPolicyOptions = [
     { value: 'NOT_SPECIFIED', label: 'Không đề cập chi tiết' },
     {
-      value: 'WORK_SATURDAY',
+      value: 'WORKING_SATURDAY',
       label: 'Có làm việc ngày Thứ 7',
       disabled: scheduleSelected && !includesSaturday,
     },
@@ -856,19 +893,12 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
         />
       </div>
 
-      <TextArea
-        label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
-        required
-        value={form.applyInstruction}
-        onChange={(v) => setField('applyInstruction', v)}
-      />
-      <TextArea
-        label="Hướng dẫn nộp hồ sơ chi tiết cho ứng viên"
-        required
-        value={form.applyInstruction}
-        onChange={(v) => setField('applyInstruction', v)}
-      />
-
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Hướng dẫn nộp hồ sơ chi tiết cho ứng viên <span className="text-red-500">*</span></label>
+        <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+          <ReactQuill theme="snow" value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} className="h-48 mb-12" />
+        </div>
+      </div>
       <label className="flex items-center gap-2 font-semibold text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-100 max-w-max cursor-pointer">
         <input
           type="checkbox"
@@ -992,19 +1022,7 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
   </div>
 );
 
-const TextArea = ({ label, value, onChange, required = false, placeholder = '' }) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full min-h-[120px] rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-primary whitespace-pre-line"
-      placeholder={placeholder}
-    />
-  </div>
-);
+
 
 const InfoCard = ({ label, value }) => (
   <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">

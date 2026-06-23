@@ -238,6 +238,7 @@ const Navbar = () => {
                         <>
                           <MenuLink to="/profile" icon={<User className="w-4 h-4" />} label="Cài đặt tài khoản" onClick={() => setIsMenuOpen(false)} />
                           <MenuLink to="/job-preferences" icon={<Sliders className="w-4 h-4" />} label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
+                          <MenuLink to="/my-transactions" icon={<CreditCard className="w-4 h-4" />} label="Lịch sử giao dịch" onClick={() => setIsMenuOpen(false)} />
                         </>
                       )}
 

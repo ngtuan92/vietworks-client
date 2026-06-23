@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import adminCompanyVerificationService from '../../../services/adminCompanyVerificationService';
+import InlinePdfViewer from '../../../components/shared/InlinePdfViewer';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs } from '../shared/AdminPrimitives';
+import { Eye, Download, X } from 'lucide-react';
 
 const tabs = [
   'Thông tin công ty',
@@ -19,6 +21,7 @@ const CompanyDetail = () => {
   const [loading, setLoading] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   const fetchCompanyDetail = async () => {
     try {
@@ -202,10 +205,9 @@ const CompanyDetail = () => {
                       )}
 
                       {isPdf && (
-                        <iframe 
-                          src={fileUrl} 
-                          className="w-full h-[650px] rounded-xl bg-white" 
-                          title="Bản xem trước giấy phép kinh doanh"
+                        <InlinePdfViewer 
+                          url={fileUrl} 
+                          className="w-full h-[650px] rounded-xl bg-white border border-slate-200" 
                         />
                       )}
 

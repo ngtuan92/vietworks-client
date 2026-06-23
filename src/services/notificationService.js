@@ -7,14 +7,17 @@ const notificationService = {
   },
   async markAsRead(id) {
     const response = await api.patch(`/notifications/${id}/read`);
+    window.dispatchEvent(new CustomEvent('vietworks:notification-read'));
     return response.data;
   },
   async markAllAsRead() {
     const response = await api.patch('/notifications/read-all');
+    window.dispatchEvent(new CustomEvent('vietworks:notification-read'));
     return response.data;
   },
   async deleteNotification(id) {
     const response = await api.delete(`/notifications/${id}`);
+    window.dispatchEvent(new CustomEvent('vietworks:notification-read'));
     return response.data;
   },
   async getSettings() {

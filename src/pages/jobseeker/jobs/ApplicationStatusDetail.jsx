@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
 import { getSimilarAppliedJobs } from '../../../services/jobseekerService';
+import { getOrCreateConversation } from '../../../services/chatService';
 import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
 const statusConfig = {
@@ -9,6 +10,7 @@ const statusConfig = {
   APPLIED: { label: 'Đã nộp', bg: 'bg-blue-100', text: 'text-blue-600', icon: 'send' },
   VIEWED: { label: 'Đã xem', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'visibility' },
   APPROVED: { label: 'Được duyệt', bg: 'bg-green-100', text: 'text-green-600', icon: 'check_circle' },
+  INTERVIEW_INVITED: { label: 'Đã mời phỏng vấn', bg: 'bg-purple-100', text: 'text-purple-600', icon: 'event' },
   REJECTED: { label: 'Từ chối', bg: 'bg-red-100', text: 'text-red-600', icon: 'cancel' },
   HIRED: { label: 'Được tuyển', bg: 'bg-green-100', text: 'text-green-700', icon: 'workspace_premium' },
 };
@@ -116,6 +118,24 @@ const ApplicationStatusDetail = () => {
                 <h1 className="text-2xl font-bold">Trạng thái hồ sơ</h1>
                 <p className={`text-lg font-semibold ${status.text}`}>{status.label}</p>
               </div>
+              
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await getOrCreateConversation(application.applicationId || application.id);
+                    if (res.success) {
+                      const event = new CustomEvent('open_chat', { detail: { conversationId: res.data._id } });
+                      window.dispatchEvent(event);
+                    }
+                  } catch (err) {
+                    console.error('Lỗi tạo phòng chat', err);
+                  }
+                }}
+                className="ml-auto px-6 py-2.5 bg-white text-primary font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 animate-bounce"
+              >
+                <span className="material-symbols-outlined text-xl">chat</span>
+                Nhắn tin với NTD
+              </button>
             </div>
           </div>
 
@@ -231,17 +251,17 @@ const ApplicationStatusDetail = () => {
               </div>
             )}
 
-            {application.rejectionReason && (
+            {application.status === 'REJECTED' && application.rejectionReason && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <h3 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
                   <span className="material-symbols-outlined text-base">info</span>
                   Lý do từ chối
                 </h3>
-                <p className="text-red-800">{application.rejectionReason}</p>
+                <div className="text-red-800 break-words [&>p]:mb-2 [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5" dangerouslySetInnerHTML={{ __html: application.rejectionReason }} />
               </div>
             )}
 
-            {application.interviewInvitation && (
+            {application.status === 'INTERVIEW_INVITED' && application.interviewInvitation && (
               <div className="mb-6 p-5 bg-blue-50 border border-blue-200 rounded-xl">
                 <h3 className="text-base font-bold text-blue-800 mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined">event_available</span>
@@ -265,15 +285,21 @@ const ApplicationStatusDetail = () => {
                     )}
                   </div>
                   {application.interviewInvitation.contactPerson && (
-                    <div className="sm:col-span-2">
+                    <div>
                       <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Người liên hệ</p>
                       <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.contactPerson}</p>
+                    </div>
+                  )}
+                  {application.interviewInvitation.contactPhone && (
+                    <div>
+                      <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Số điện thoại</p>
+                      <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.contactPhone}</p>
                     </div>
                   )}
                   {application.interviewInvitation.note && (
                     <div className="sm:col-span-2">
                       <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Ghi chú thêm</p>
-                      <p className="font-semibold text-blue-900 mt-1">{application.interviewInvitation.note}</p>
+                      <div className="font-semibold text-blue-900 mt-1 break-words [&>p]:mb-2 [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5" dangerouslySetInnerHTML={{ __html: application.interviewInvitation.note }} />
                     </div>
                   )}
                 </div>
@@ -314,3 +340,4 @@ const ApplicationStatusDetail = () => {
 };
 
 export default ApplicationStatusDetail;
+

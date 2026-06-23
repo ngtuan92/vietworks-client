@@ -7,7 +7,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { getPublicJobs } from '../../../services/jobService';
 import { getPublicCompanies } from '../../../services/jobseekerService';
 import CompanyCard from '../../../components/common/CompanyCard';
-import { Heart, UserPlus, ShieldCheck, MessageCircle } from 'lucide-react';
+import { Heart, UserPlus, ShieldCheck } from 'lucide-react';
 
 const formatSalary = (salary) => {
   if (!salary || salary.type === 'NEGOTIABLE') return 'Thỏa thuận';
@@ -182,7 +182,6 @@ const Home = () => {
         <FloatingActionButton onClick={() => goProtected('/jobs')} icon={<Heart className="w-5 h-5" />} label="Việc làm đã lưu" />
         <FloatingActionButton onClick={() => goProtected('/manage-cv')} icon={<UserPlus className="w-5 h-5" />} label="Hồ sơ sự nghiệp" />
         <FloatingActionButton onClick={() => goProtected('/profile')} icon={<ShieldCheck className="w-5 h-5" />} label="Xác thực tài khoản" />
-        <FloatingActionButton onClick={() => navigate('/companies')} icon={<MessageCircle className="w-5 h-5" />} label="Trung tâm trợ giúp" isPrimary animate="animate-bounce hover:animate-none" />
       </div>
     </div>
   );

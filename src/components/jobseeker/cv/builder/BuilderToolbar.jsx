@@ -423,9 +423,6 @@ export const BuilderToolbar = ({
                     </div>
                     <div className="p-1.5 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[10px] font-bold text-slate-700 truncate max-w-[80px]">{tpl.name}</span>
-                      {tpl.isPremium && (
-                        <span className="px-1 py-0.2 bg-[#fff8e1] text-[#f57f17] text-[7px] font-extrabold rounded">PRO</span>
-                      )}
                     </div>
                   </div>
                 ))

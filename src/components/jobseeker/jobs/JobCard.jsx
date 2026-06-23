@@ -1,7 +1,7 @@
 
 
 import { useNavigate } from 'react-router-dom';
-import { BookmarkPlus, Banknote, MapPin, Clock, Award, Briefcase, Calendar } from 'lucide-react';
+import { BookmarkPlus, Banknote, MapPin, Clock, Award, Briefcase, Calendar, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
 import JobseekerAuthModal from '../../common/JobseekerAuthModal';
@@ -51,6 +51,8 @@ const JobCard = ({
   level,
   workType,
   deadline,
+  neededCount,
+  isHiringFull = false,
   showExtra = false,
 }) => {
   const navigate = useNavigate();
@@ -114,8 +116,8 @@ const JobCard = ({
       onClick={handleClick}
     >
       <div className="flex flex-col sm:flex-row gap-6">
-        <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-100 p-2">
-          <img className="w-full h-full object-contain group-hover:scale-110 transition-transform" src={avatarSrc} alt={company} />
+        <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-100">
+          <img className="w-full h-full object-cover group-hover:scale-110 transition-transform" src={avatarSrc} alt={company} />
         </div>
 
         <div className="flex-1">
@@ -141,6 +143,10 @@ const JobCard = ({
             <div className="flex items-center gap-1.5 text-gray-600">
               <MapPin className="w-4 h-4" />
               <span className="text-sm">{location}</span>
+            </div>
+            <div className={`flex items-center gap-1.5 ${isHiringFull ? 'text-red-600' : 'text-gray-600'}`}>
+              <Users className="w-4 h-4" />
+              <span className="text-sm font-medium">{isHiringFull ? 'Đã tuyển đủ' : `Cần tuyển: ${neededCount || 1}`}</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-600">
               <Clock className="w-4 h-4" />
