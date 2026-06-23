@@ -12,6 +12,7 @@ import {
   OptimizeSuggestion,
   NewApplicants,
   ServiceCostChart,
+  MySubscriptionsWidget,
 } from '../../../components/employer/dashboard/DashboardWidgets';
 
 const EmployerDashboard = () => {
@@ -64,6 +65,7 @@ const EmployerDashboard = () => {
 
         {/* Right - Sidebar Widgets */}
         <div className="lg:col-span-4 space-y-6">
+          <MySubscriptionsWidget />
           <RecruitmentFunnel />
           <OptimizeSuggestion />
           <NewApplicants />

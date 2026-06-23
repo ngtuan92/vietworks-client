@@ -88,15 +88,33 @@ const categoryConfig = {
 const PackageCard = ({ pkg, price, isFeatured }) => {
   const cat = categoryConfig[pkg.packageType] || { label: pkg.packageType, tone: 'bg-slate-100 text-slate-700' };
   const durationLabel = pkg.durationDays ? `${pkg.durationDays} ngày` : 'Theo lượt dùng';
+  const isOwned = !!pkg.isOwned;
+  const activeCount = pkg.activeCount || 0;
+  // Tính số ngày còn lại MAX trong tất cả subscription active của gói này (cho user hiểu đang còn bao lâu)
+  const maxDaysRemaining = Array.isArray(pkg.activeSubscriptions) && pkg.activeSubscriptions.length
+    ? Math.max(...pkg.activeSubscriptions.map(s => s.daysRemaining ?? 0))
+    : null;
 
   return (
-    <div className={`bg-white rounded-2xl p-4 flex flex-col h-full border transition-all hover:shadow-md ${
-      isFeatured ? 'border-[#003f87] ring-1 ring-[#003f87]/30 shadow-sm' : 'border-slate-200'
+    <div className={`bg-white rounded-2xl p-4 flex flex-col h-full border transition-all hover:shadow-md relative ${
+      isOwned
+        ? 'border-emerald-400 ring-2 ring-emerald-300/40 shadow-md'
+        : isFeatured
+        ? 'border-[#003f87] ring-1 ring-[#003f87]/30 shadow-sm'
+        : 'border-slate-200'
     }`}>
+      {/* Badge "Đang dùng" góc trên phải */}
+      {isOwned && (
+        <div className="absolute -top-2 -right-2 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1">
+          <span className="material-symbols-outlined text-[12px]">verified</span>
+          Đang dùng
+        </div>
+      )}
+
       {/* Category badge */}
       <div className="flex items-center justify-between gap-1 mb-2">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cat.tone} truncate`}>{cat.label}</span>
-        {isFeatured && (
+        {isFeatured && !isOwned && (
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#003f87] text-white uppercase tracking-wider shrink-0">
             Hot
           </span>
@@ -110,6 +128,22 @@ const PackageCard = ({ pkg, price, isFeatured }) => {
         <span className="text-xl font-black text-[#003f87]">{price}</span>
       </div>
       <p className="text-[11px] text-slate-500">/ {durationLabel}</p>
+
+      {/* Thông báo đang dùng */}
+      {isOwned && (
+        <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-2 text-xs">
+          <div className="font-bold text-emerald-700 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+            Bạn đang sử dụng gói này
+          </div>
+          {activeCount > 1 && (
+            <div className="text-emerald-600 mt-0.5">Đã kích hoạt cho {activeCount} đối tượng</div>
+          )}
+          {maxDaysRemaining !== null && (
+            <div className="text-emerald-600 mt-0.5">Còn {maxDaysRemaining} ngày sử dụng</div>
+          )}
+        </div>
+      )}
 
       <ul className="mt-3 space-y-1.5 text-xs text-slate-600 flex-1">
         {(pkg.benefits?.cvAccessLimit > 0) && (
@@ -138,7 +172,15 @@ const PackageCard = ({ pkg, price, isFeatured }) => {
         )}
       </ul>
 
-      {isFeatured ? (
+      {isOwned ? (
+        <Link
+          to="/employer/my-subscriptions"
+          className="mt-4 w-full py-2 rounded-xl text-sm font-bold text-center bg-emerald-500 text-white hover:bg-emerald-600 transition-all flex items-center justify-center gap-1.5"
+        >
+          <span className="material-symbols-outlined text-[16px]">visibility</span>
+          Xem chi tiết
+        </Link>
+      ) : isFeatured ? (
         <Link
           to="/employer/packages/featured-job"
           className="mt-4 w-full py-2 rounded-xl text-sm font-bold text-center bg-[#003f87] text-white hover:bg-[#0b4e9f] transition-all"

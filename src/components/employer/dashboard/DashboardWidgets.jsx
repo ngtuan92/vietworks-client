@@ -1,5 +1,7 @@
-import { AlertTriangle, Briefcase, Users, Wallet, CreditCard, Sparkles, RefreshCw, Star, Clock, AlertCircle, ArrowUpRight, CheckCircle2, TrendingUp, ChevronRight, Activity } from 'lucide-react';
-import React from 'react';
+import { AlertTriangle, Briefcase, Users, Wallet, CreditCard, Sparkles, RefreshCw, Star, Clock, AlertCircle, ArrowUpRight, CheckCircle2, TrendingUp, ChevronRight, Activity, Crown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../../../services/api';
 
 // Cập nhật: Nhận prop verificationStatus để ẩn khi đã upload (PENDING hoặc VERIFIED)
 const WarningBanner = ({ verificationStatus }) => {
@@ -475,6 +477,110 @@ const ServiceCostChart = () => (
   </div>
 );
 
+// ───────────────────────────────────────────────
+// WIDGET: Gói dịch vụ đang dùng (top 3 sắp hết hạn)
+// ───────────────────────────────────────────────
+const MySubscriptionsWidget = () => {
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    api.get('/employer/my-subscriptions', { params: { status: 'ACTIVE', limit: 3 } })
+      .then(r => {
+        if (r.data?.success) {
+          setSubs(r.data.data || []);
+          setTotal(r.data.pagination?.total || 0);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <Crown className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="font-black text-slate-900 text-sm">Gói đang dùng</h3>
+            <p className="text-[11px] text-slate-500 font-medium">
+              {loading ? 'Đang tải...' : total > 0 ? `${total} gói đang hoạt động` : 'Chưa có gói nào'}
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/employer/my-subscriptions"
+          className="text-primary text-xs font-bold hover:underline flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-full"
+        >
+          Xem tất cả <ArrowUpRight className="w-3 h-3" />
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2].map(i => (
+            <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />
+          ))}
+        </div>
+      ) : subs.length === 0 ? (
+        <div className="text-center py-6 rounded-xl border border-dashed border-slate-200">
+          <Sparkles className="w-8 h-8 text-slate-300 mx-auto" />
+          <p className="text-xs text-slate-500 mt-2 font-medium">Bạn chưa có gói nào đang dùng</p>
+          <Link
+            to="/employer/packages"
+            className="inline-block mt-3 text-xs font-bold text-primary hover:underline"
+          >
+            Khám phá gói ngay →
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {subs.map(sub => {
+            const pkg = sub.packageId; // populated
+            const daysRemaining = sub.daysRemaining;
+            const isCritical = daysRemaining !== null && daysRemaining <= 3;
+            return (
+              <Link
+                key={sub._id}
+                to="/employer/my-subscriptions"
+                className="block p-3 rounded-xl border border-slate-200 hover:border-primary/40 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <p className="font-bold text-slate-900 text-xs truncate">
+                        {pkg?.name || sub.packageCode}
+                      </p>
+                    </div>
+                    {sub.targetTitle && (
+                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                        {sub.targetType === 'JOB' ? '📌' : '📄'} {sub.targetTitle}
+                      </p>
+                    )}
+                  </div>
+                  {daysRemaining !== null && (
+                    <span
+                      className={`text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap ${
+                        isCritical ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {daysRemaining}d
+                    </span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export {
   WarningBanner,
   StatsGrid,
@@ -485,4 +591,5 @@ export {
   OptimizeSuggestion,
   NewApplicants,
   ServiceCostChart,
+  MySubscriptionsWidget,
 };
