@@ -21,6 +21,11 @@ const adminService = {
     return response.data;
   },
 
+  deleteTemplate: async (id) => {
+    const response = await api.delete(`/cv-templates/admin/${id}`);
+    return response.data;
+  },
+
   uploadTemplatePreview: async (id, file) => {
     const formData = new FormData();
     formData.append('previewImage', file);
