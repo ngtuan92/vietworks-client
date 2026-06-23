@@ -1,8 +1,10 @@
 import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Settings, PlusCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useSocket } from '../../../contexts/SocketContext';
+import notificationService from '../../../services/notificationService';
 import logoImg from '../../../assets/logo.png';
 
 const iconClass = 'w-5 h-5';
@@ -61,7 +63,7 @@ const navItems = [
   {
     icon: <BellRing className={iconClass} />,
     label: 'Thông báo',
-    children: [{ label: 'Quản lý thông báo', to: '/admin/notifications' }],
+    children: [{ label: 'Quản lý thông báo', to: '/admin/notifications', id: 'notifications' }],
   },
   {
     icon: <BarChart2 className={iconClass} />,
@@ -93,6 +95,32 @@ const AdminSidebar = () => {
   const location = useLocation();
   const { logout } = useAuth();
   const { confirm } = useNotification();
+  const socket = useSocket();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await notificationService.getMyNotifications({ limit: 1 });
+        setUnreadCount(res.unreadCount || 0);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUnread();
+
+    const handleLocalRead = () => fetchUnread();
+    window.addEventListener('vietworks:notification-read', handleLocalRead);
+
+    if (socket) {
+      socket.on('new_notification', fetchUnread);
+    }
+    
+    return () => {
+      window.removeEventListener('vietworks:notification-read', handleLocalRead);
+      if (socket) socket.off('new_notification', fetchUnread);
+    };
+  }, [socket]);
 
   const isActive = (to) => {
     if (!to) return false;
@@ -185,6 +213,11 @@ const AdminSidebar = () => {
                       {item.badge}
                     </span>
                   )}
+                  {item.label === 'Thông báo' && unreadCount > 0 && (
+                    <span className="rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
                   <ChevronDown
                     className="w-4 h-4 transition-transform duration-200"
                     style={{ transform: openGroup === item.label ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -231,6 +264,11 @@ const AdminSidebar = () => {
                         {child.badge && (
                           <span className="rounded-md bg-[#0056B3]/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-800 transition-all group-hover:bg-[#0056B3] group-hover:text-white">
                             {child.badge}
+                          </span>
+                        )}
+                        {child.id === 'notifications' && unreadCount > 0 && (
+                          <span className="rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">
+                            {unreadCount}
                           </span>
                         )}
                       </Link>

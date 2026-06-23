@@ -6,7 +6,7 @@ import { getConversations, getMessages, sendMessage, uploadChatFile, markAsRead 
 import useAuth from '../../../hooks/useAuth';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const getAttachmentMeta = (attachment) => {
   const fileName = attachment?.fileName || 'Tệp đính kèm';
@@ -79,6 +79,7 @@ const UserAvatar = ({ userInfo, className = '', textClassName = '' }) => {
 const Messages = () => {
   const { user } = useAuth();
   const socket = useSocket();
+  const { error: notifyError } = useNotification();
   const [conversations, setConversations] = useState([]);
   const [activeConv, setActiveConv] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -231,7 +232,7 @@ const Messages = () => {
       }
     } catch (error) {
       console.error('Lỗi khi gửi tin nhắn:', error);
-      alert(error.response?.data?.message || error.message || 'Không thể gửi tin nhắn');
+      notifyError(error.response?.data?.message || error.message || 'Không thể gửi tin nhắn');
     } finally {
       setSending(false);
     }

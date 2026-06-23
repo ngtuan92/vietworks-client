@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const quickAmounts = [
   { label: '500k', value: 500000 },
@@ -15,6 +16,7 @@ const formatPrice = (price) => {
 
 const TopUp = () => {
   const navigate = useNavigate();
+  const { error } = useNotification();
   const [amount, setAmount] = useState(500000);
   const [method, setMethod] = useState('SePay');
   const [needInvoice, setNeedInvoice] = useState(false);
@@ -29,9 +31,9 @@ const TopUp = () => {
       if (res.data.success) {
         setQrData(res.data.data);
       }
-    } catch (error) {
-      console.error('Deposit error:', error);
-      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+    } catch (err) {
+      console.error('Deposit error:', err);
+      error('Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

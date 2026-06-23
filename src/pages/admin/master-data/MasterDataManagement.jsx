@@ -11,8 +11,10 @@ import {
   ActionButton,
   StatusBadge
 } from '../shared/AdminPrimitives';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const MasterDataManagement = () => {
+  const { confirm } = useNotification();
   // --- 1. Quản lý Tabs hệ thống ---
   const [tab, setTab] = useState('Danh mục'); 
   const tabs = ['Địa điểm', 'Danh mục', 'Cấp bậc', 'Kinh nghiệm', 'Kỹ năng / Tags', 'Lĩnh vực công ty', 'Quy mô công ty'];
@@ -176,7 +178,7 @@ const MasterDataManagement = () => {
   };
 
   const handleToggleHide = async (type, id, name) => {
-    if (window.confirm(`Xác nhận ẩn danh mục "${name}"?`)) {
+    confirm(`Xác nhận ẩn danh mục "${name}"?`, async () => {
       let res;
       if (type === 'GROUP') res = await jobApi.deleteCareerGroup(id);
       if (type === 'CAREER') res = await jobApi.deleteCareer(id);
@@ -185,7 +187,7 @@ const MasterDataManagement = () => {
       if (type === 'SKILL') res = await jobApi.deleteSkill(id);
       if (type === 'EXP') res = await jobApi.deleteExperienceLevel(id);
       if (res?.success) { loadGlobalData(); loadDependentData(); }
-    }
+    });
   };
 
   const renderStatusBadge = (status) => {

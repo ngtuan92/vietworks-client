@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Send, Trash2, Plus } from 'lucide-react';
 import jobService from '../../../services/jobService'; // Đường dẫn tới file API của bạn
 import JobDetailModal from './JobDetailModal';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 // Ánh xạ màu sắc và text hiển thị tiếng Việt tương ứng cho từng trạng thái
 const statusMeta = {
@@ -36,6 +37,7 @@ const statusMeta = {
 };
 
 const JobList = () => {
+  const { confirm, success, error } = useNotification();
   const [jobs, setJobs] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [loading, setLoading] = useState(false);
@@ -94,8 +96,8 @@ const JobList = () => {
         setJobs(response.data);
         setPagination(response.pagination);
       }
-    } catch (error) {
-      alert('Không thể tải danh sách công việc: ' + error.message);
+    } catch (err) {
+      error('Không thể tải danh sách công việc: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -111,38 +113,41 @@ const JobList = () => {
 
   // Xử lý Gửi duyệt nhanh tại hàng
   const handleSubmitReview = async (jobId) => {
-    if (!window.confirm('Bạn có chắc muốn gửi duyệt tin này không?')) return;
-    try {
-      await jobService.submitJobForReview(jobId);
-      alert('Gửi duyệt thành công!');
-      fetchJobs();
-    } catch (error) {
-      alert('Gửi duyệt thất bại: ' + (error.response?.data?.message || error.message));
-    }
+    confirm('Bạn có chắc muốn gửi duyệt tin này không?', async () => {
+      try {
+        await jobService.submitJobForReview(jobId);
+        success('Gửi duyệt thành công!');
+        fetchJobs();
+      } catch (err) {
+        error('Gửi duyệt thất bại: ' + (err.response?.data?.message || err.message));
+      }
+    });
   };
 
   // Xử lý Xóa nhanh tại hàng
   const handleDeleteJob = async (jobId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa tin nháp này không? Hành động này không thể hoàn tác.')) return;
-    try {
-      await jobService.deleteJob(jobId);
-      alert('Xóa tin tuyển dụng thành công!');
-      fetchJobs();
-    } catch (error) {
-      alert('Xóa thất bại: ' + (error.response?.data?.message || error.message));
-    }
+    confirm('Bạn có chắc chắn muốn xóa tin nháp này không? Hành động này không thể hoàn tác.', async () => {
+      try {
+        await jobService.deleteJob(jobId);
+        success('Xóa tin tuyển dụng thành công!');
+        fetchJobs();
+      } catch (err) {
+        error('Xóa thất bại: ' + (err.response?.data?.message || err.message));
+      }
+    });
   };
 
   // Xử lý Đóng job
   const handleCloseJob = async (jobId) => {
-    if (!window.confirm('Bạn có chắc muốn đóng tin tuyển dụng này? Job sẽ không còn hiển thị công khai.')) return;
-    try {
-      await jobService.closeJob(jobId);
-      alert('Đóng tin tuyển dụng thành công!');
-      fetchJobs();
-    } catch (error) {
-      alert('Đóng thất bại: ' + (error.response?.data?.message || error.message));
-    }
+    confirm('Bạn có chắc muốn đóng tin tuyển dụng này? Job sẽ không còn hiển thị công khai.', async () => {
+      try {
+        await jobService.closeJob(jobId);
+        success('Đóng tin tuyển dụng thành công!');
+        fetchJobs();
+      } catch (err) {
+        error('Đóng thất bại: ' + (err.response?.data?.message || err.message));
+      }
+    });
   };
 
   return (

@@ -5,6 +5,7 @@ import ReactQuill, { Quill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import atsService from '../../../services/atsService';
 import { getOrCreateConversation } from '../../../services/chatService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const Size = Quill.import('attributors/style/size');
 Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px'];
@@ -41,6 +42,7 @@ const QUILL_MODULES = {
 const ApplicationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm, warning } = useNotification();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [markingViewed, setMarkingViewed] = useState(false);
@@ -69,23 +71,27 @@ const ApplicationDetail = () => {
   };
 
   const handleApprove = async () => {
-    if (!window.confirm('Bạn muốn chuyển hồ sơ này sang trạng thái Đã duyệt?')) return;
-    try {
-      setActionLoading(true);
-      setError(''); setSuccessMessage('');
-      const res = await atsService.approveApplication(id, 'Hồ sơ của bạn đã được duyệt và đang chờ sắp xếp lịch phỏng vấn.');
-      setApplication(prev => ({ ...prev, status: res.data.status, approvedMessage: res.data.approvedMessage, statusHistory: res.data.statusHistory }));
-      setSuccessMessage('Đã duyệt hồ sơ thành công.');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi duyệt hồ sơ');
-    } finally {
-      setActionLoading(false);
-    }
+    confirm('Bạn muốn chuyển hồ sơ này sang trạng thái Đã duyệt?', async () => {
+      try {
+        setActionLoading(true);
+        setError(''); setSuccessMessage('');
+        const res = await atsService.approveApplication(id, 'Hồ sơ của bạn đã được duyệt và đang chờ sắp xếp lịch phỏng vấn.');
+        setApplication(prev => ({ ...prev, status: res.data.status, approvedMessage: res.data.approvedMessage, statusHistory: res.data.statusHistory }));
+        setSuccessMessage('Đã duyệt hồ sơ thành công.');
+      } catch (err) {
+        setError(err.response?.data?.message || 'Lỗi khi duyệt hồ sơ');
+      } finally {
+        setActionLoading(false);
+      }
+    });
   };
 
   const handleReject = async (e) => {
     e.preventDefault();
-    if (!rejectReason.trim()) return alert('Vui lòng nhập lý do từ chối');
+    if (!rejectReason.trim()) {
+      warning('Vui lòng nhập lý do từ chối');
+      return;
+    }
     try {
       setActionLoading(true);
       setError(''); setSuccessMessage('');

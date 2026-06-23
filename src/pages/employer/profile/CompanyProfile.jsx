@@ -11,6 +11,8 @@ import employerCompanyService from '../../../services/employerCompanyService.js'
 import uploadService from '../../../services/uploadService.js';
 import companyMasterDataService from '../../../services/companyMasterDataService.js';
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn';
+import { useNotification } from '../../../contexts/NotificationContext';
+
 const TABS = [
   { key: 'general', label: 'Thông tin chung' },
   { key: 'locations', label: 'Địa điểm làm việc' },
@@ -20,6 +22,7 @@ const TABS = [
 ];
 
 const CompanyProfile = () => {
+  const { warning } = useNotification();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('general');
   const [verificationStatus, setVerificationStatus] = useState('UNVERIFIED'); // UNVERIFIED | PENDING | VERIFIED | REJECTED
@@ -316,7 +319,7 @@ const upsertLocation = async () => {
 
   const removeLocation = (loc) => {
     if (loc.isUsedInPublishedJob) {
-      window.alert('Địa điểm đang dùng trong tin đang hiển thị, không thể xóa. Bạn chỉ có thể chỉnh sửa/ẩn.');
+      warning('Địa điểm đang dùng trong tin đang hiển thị, không thể xóa. Bạn chỉ có thể chỉnh sửa/ẩn.');
       return;
     }
     setLocations((prev) => prev.filter((l) => l.id !== loc.id));
@@ -919,6 +922,7 @@ const normalizeVietMapPlace = (item, detail) => {
 };
 
 const LocationModal = ({ title, initial, onClose, onSubmit }) => {
+  const { warning, error } = useNotification();
   const [saving, setSaving] = useState(false);
   
   // 1. Khởi tạo danh sách địa lý từ sub-vn
@@ -1016,7 +1020,7 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
   // 7. Xử lý lưu Form lên Database
   const handleSubmit = async () => {
     if (!data.name || !data.province || !data.district || !data.ward || !data.addressLine) {
-      window.alert('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
+      warning('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
       return;
     }
 
@@ -1035,8 +1039,8 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
       setSaving(true);
       await companyLocationService.createMyCompanyLocation(payload);
       onSubmit?.(payload);
-    } catch (error) {
-      window.alert(error.response?.data?.message || 'Lưu địa điểm thất bại.');
+    } catch (err) {
+      error(err.response?.data?.message || 'Lưu địa điểm thất bại.');
     } finally {
       setSaving(false);
     }

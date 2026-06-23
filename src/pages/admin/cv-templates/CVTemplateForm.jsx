@@ -267,11 +267,11 @@ const CVTemplateForm = () => {
     if (files && files[0]) {
       const file = files[0];
       if (!file.type.startsWith('image/')) {
-        alert('Vui lòng chọn tệp hình ảnh hợp lệ.');
+        warning('Vui lòng chọn tệp hình ảnh hợp lệ.');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhẹ hơn.');
+        warning('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhẹ hơn.');
         return;
       }
       const reader = new FileReader();

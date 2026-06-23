@@ -7,7 +7,7 @@ import { Plus, Edit, Image as ImageIcon, SearchX, Inbox, LayoutGrid, List, Eye, 
 
 const CVTemplateList = () => {
   const navigate = useNavigate();
-  const { error } = useNotification();
+  const { error, confirm } = useNotification();
   const [templates, setTemplates] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,7 @@ const CVTemplateList = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa mẫu CV này? Hành động này không thể hoàn tác.')) {
+    confirm('Bạn có chắc chắn muốn xóa mẫu CV này? Hành động này không thể hoàn tác.', async () => {
       try {
         const res = await adminService.deleteTemplate(id);
         if (res.success) {
@@ -99,7 +99,7 @@ const CVTemplateList = () => {
       } catch (err) {
         error(err.response?.data?.message || 'Có lỗi xảy ra khi xóa!');
       }
-    }
+    });
   };
 
   return (

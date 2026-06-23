@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const formatPrice = (p) => new Intl.NumberFormat('vi-VN').format(p || 0) + 'đ';
 
@@ -29,6 +30,7 @@ const Check = ({ ok }) => (
 );
 
 const UpgradePremium = () => {
+  const { error } = useNotification();
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [buyPkg, setBuyPkg] = useState(null);
@@ -66,7 +68,7 @@ const UpgradePremium = () => {
       const r = await api.post(`/jobseeker/cvs/${selectedCv}/boost/payment`, { packageId: buyPkg._id });
       if (r.data.success) setQrData(r.data.data);
     } catch (e) {
-      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      error('Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setPaying(false);
     }

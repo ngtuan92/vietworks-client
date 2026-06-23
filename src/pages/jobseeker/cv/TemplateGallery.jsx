@@ -8,7 +8,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 const TemplateGallery = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { confirm } = useNotification();
+  const { confirm, error } = useNotification();
   const [templates, setTemplates] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,8 +57,8 @@ const TemplateGallery = () => {
       if (response.success) {
         navigate(`/cv-builder/${response.data._id}`);
       }
-    } catch (error) {
-      alert('Có lỗi xảy ra khi tạo CV mới');
+    } catch (err) {
+      error('Có lỗi xảy ra khi tạo CV mới');
     }
   };
 
