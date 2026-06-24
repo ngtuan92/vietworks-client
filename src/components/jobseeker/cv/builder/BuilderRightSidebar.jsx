@@ -30,7 +30,7 @@ export const BuilderRightSidebar = ({
   }, [activeTab, templates.length]);
 
   return (
-    <div className="w-[320px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[calc(100vh-100px)] sticky top-24 shrink-0 overflow-hidden">
+    <div className={`${activeTab === 'templates' ? 'w-[420px]' : 'w-[320px]'} bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[calc(100vh-100px)] sticky top-24 shrink-0 overflow-hidden transition-[width] duration-300`}>
       {/* Tabs */}
       <div className="flex border-b border-slate-100 shrink-0">
         <button onClick={() => setActiveTab('design')} className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${activeTab === 'design' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
@@ -114,13 +114,13 @@ export const BuilderRightSidebar = ({
             {loadingTemplates ? (
               <div className="col-span-2 py-10 text-center text-slate-400 text-sm">Đang tải danh sách mẫu...</div>
             ) : templates.map((tpl) => (
-              <div key={tpl._id} onClick={() => onTemplateChange(tpl)} className={`group bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative ${currentTemplateId === tpl._id ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200 hover:border-slate-400'}`}>
-                <div className="relative h-28 bg-slate-50 flex items-center justify-center p-2 overflow-hidden">
-                  {tpl.previewImageUrl ? <img src={tpl.previewImageUrl} alt={tpl.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" /> : <FileText className="w-8 h-8 text-slate-300" />}
+              <div key={tpl._id} onClick={() => onTemplateChange(tpl)} className={`group bg-white border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative ${currentTemplateId === tpl._id ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200 hover:border-slate-400'}`}>
+                <div className="relative aspect-[210/297] bg-white flex items-start justify-center overflow-hidden">
+                  {tpl.previewImageUrl ? <img src={tpl.previewImageUrl} alt={tpl.name} className="w-full h-full object-contain object-top" /> : <FileText className="w-8 h-8 text-slate-300" />}
                   {currentTemplateId === tpl._id && <div className="absolute top-2 right-2 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md"><Check className="w-3 h-3 font-black" /></div>}
                 </div>
                 <div className="p-2 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-700 truncate max-w-[90px]">{tpl.name}</span>
+                  <span className="text-xs font-bold text-slate-700 truncate">{tpl.name}</span>
                 </div>
               </div>
             ))}
