@@ -248,8 +248,24 @@ const JobList = () => {
                   return (
                     <tr key={job._id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-5 py-4 max-w-[300px]">
-                        <div className="font-semibold text-slate-900 truncate">{job.title}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="font-semibold text-slate-900 truncate">{job.title}</div>
+                          {job.activeBoost && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm shrink-0"
+                              title={`${job.activeBoost.packageName} - còn ${job.activeBoost.daysRemaining} ngày`}
+                            >
+                              <span className="material-symbols-outlined text-[12px]">workspace_premium</span>
+                              Premium
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-slate-400 mt-0.5">ID: {job._id}</div>
+                        {job.activeBoost && (
+                          <div className="text-[11px] text-amber-700 mt-0.5 font-semibold">
+                            🔥 {job.activeBoost.packageName} • Còn {job.activeBoost.daysRemaining} ngày
+                          </div>
+                        )}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${currentStatus.className}`}>

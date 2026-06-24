@@ -1,6 +1,6 @@
 ﻿import { Wallet, Plus, Bell, ShieldCheck, ShieldAlert, ShieldQuestion, ChevronDown, Building2 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import employerCompanyService from '../../../services/employerCompanyService';
 import api from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
@@ -49,39 +49,42 @@ const getEmployerDisplayName = (user, company) => {
 
 const EmployerHeader = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [company, setCompany] = useState(null);
   const [wallet, setWallet] = useState(null);
 
-  useEffect(() => {
-    let mounted = true;
+  // Tách loadHeaderData ra useCallback để có thể gọi lại từ listener event.
+  const loadHeaderData = useCallback(async () => {
+    try {
+      const [companyRes, walletRes] = await Promise.allSettled([
+        employerCompanyService.getMyCompanyProfile(),
+        api.get('/employer/wallet'),
+      ]);
 
-    const loadHeaderData = async () => {
-      try {
-        const [companyRes, walletRes] = await Promise.allSettled([
-          employerCompanyService.getMyCompanyProfile(),
-          api.get('/employer/wallet'),
-        ]);
-
-        if (!mounted) return;
-
-        if (companyRes.status === 'fulfilled' && companyRes.value?.success) {
-          setCompany(companyRes.value.data || null);
-        }
-
-        if (walletRes.status === 'fulfilled' && walletRes.value?.data?.success) {
-          setWallet(walletRes.value.data.data || null);
-        }
-      } catch (error) {
-        console.error('Không thể tải dữ liệu header nhà tuyển dụng:', error);
+      if (companyRes.status === 'fulfilled' && companyRes.value?.success) {
+        setCompany(companyRes.value.data || null);
       }
-    };
 
-    loadHeaderData();
-    return () => {
-      mounted = false;
-    };
+      if (walletRes.status === 'fulfilled' && walletRes.value?.data?.success) {
+        setWallet(walletRes.value.data.data || null);
+      }
+    } catch (error) {
+      console.error('Không thể tải dữ liệu header nhà tuyển dụng:', error);
+    }
   }, []);
+
+  // 1) Refresh khi navigate (vì header + sidebar render chung trong EmployerLayout → không unmount giữa các trang con)
+  useEffect(() => {
+    loadHeaderData();
+  }, [loadHeaderData, location.pathname]);
+
+  // 2) Refresh khi có page nào dispatch 'vietworks:wallet-updated' (vd: TopUp khi SePay paid, Transactions sau load)
+  useEffect(() => {
+    const onWalletUpdated = () => loadHeaderData();
+    window.addEventListener('vietworks:wallet-updated', onWalletUpdated);
+    return () => window.removeEventListener('vietworks:wallet-updated', onWalletUpdated);
+  }, [loadHeaderData]);
 
   const verificationMeta = useMemo(
     () => getVerificationMeta(company?.verificationStatus),

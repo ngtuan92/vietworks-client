@@ -13,10 +13,18 @@ const TYPE_LABEL = {
   APPLICATION_RESULT: 'Hồ sơ',
   JOB_APPROVED: 'Việc làm',
   JOB_REJECTED: 'Việc làm',
+  JOB_BANNED: 'Việc làm',
   COMPANY_VERIFIED: 'Công ty',
   COMPANY_REJECTED: 'Công ty',
   SYSTEM_UPDATE: 'Hệ thống',
-  NEW_MESSAGE: 'Tin nhắn'
+  NEW_MESSAGE: 'Tin nhắn',
+  WALLET_DEPOSIT_SUCCESS: 'Thanh toán',
+  PACKAGE_PURCHASE_SUCCESS: 'Thanh toán',
+  PAYMENT_SUCCESS: 'Thanh toán',
+  PAYMENT_FAILED: 'Thanh toán',
+  PAYMENT_CANCELLED: 'Thanh toán',
+  PACKAGE_EXPIRING_SOON: 'Gói dịch vụ',
+  PACKAGE_EXPIRED: 'Gói dịch vụ'
 };
 
 const formatDateTimeShort = (value) => {
