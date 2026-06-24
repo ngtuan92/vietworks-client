@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import jobApi from '../../../services/jobService'; 
 import {
   PageHeader,
@@ -51,8 +51,11 @@ const MasterDataManagement = () => {
 
       const resExp = await jobApi.getExperienceLevels();
       if (resExp?.success) setExperienceLevels(resExp.data);
-    } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setLoading(false); 
+    }
   }, []);
 
   const loadDependentData = useCallback(async (careerGroupId = selectedCareerGroupId) => {
@@ -68,15 +71,18 @@ const MasterDataManagement = () => {
 
       const resLevels = await jobApi.getJobLevels(careerGroupId);
       if (resLevels?.success) setJobLevels(resLevels.data);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+    }
   }, [selectedCareerGroupId]);
 
+  // SỬA ĐỔI: Loại bỏ queueMicrotask để React theo dõi luồng State chuẩn xác hơn
   useEffect(() => {
-    queueMicrotask(() => { loadGlobalData(); });
+    loadGlobalData();
   }, [loadGlobalData]);
 
   useEffect(() => {
-    queueMicrotask(() => { loadDependentData(selectedCareerGroupId); });
+    loadDependentData(selectedCareerGroupId);
   }, [loadDependentData, selectedCareerGroupId]);
 
   useEffect(() => {
@@ -87,6 +93,35 @@ const MasterDataManagement = () => {
     };
     loadPositions();
   }, [selectedCareerId]);
+
+  // --- 5. LOGIC FILTER TRÊN CLIENT (SỬA LỖI BUG BỘ LỌC) ---
+  const filterItem = useCallback((item) => {
+    // 1. Lọc theo trạng thái (status)
+    if (statusFilter) {
+      // Riêng tab SKILL nếu API trả về không có trường status, mặc định coi như ACTIVE
+      const currentStatus = item.status || 'ACTIVE';
+      if (currentStatus !== statusFilter) return false;
+    }
+    // 2. Lọc theo từ khóa tìm kiếm (name hoặc code)
+    if (searchKeyword) {
+      const keyword = searchKeyword.toLowerCase().trim();
+      const matchName = item.name?.toLowerCase().includes(keyword);
+      const matchCode = item.code?.toLowerCase().includes(keyword);
+      // Hỗ trợ tìm kiếm theo cả alias trong tag kỹ năng
+      const matchAlias = item.aliases?.some(alias => alias.toLowerCase().includes(keyword));
+      
+      if (!matchName && !matchCode && !matchAlias) return false;
+    }
+    return true;
+  }, [searchKeyword, statusFilter]);
+
+  // Gói các mảng đã được lọc vào useMemo để tối ưu hóa re-render
+  const filteredCareerGroups = useMemo(() => careerGroups.filter(filterItem), [careerGroups, filterItem]);
+  const filteredCareers = useMemo(() => careers.filter(filterItem), [careers, filterItem]);
+  const filteredPositions = useMemo(() => positions.filter(filterItem), [positions, filterItem]);
+  const filteredSkills = useMemo(() => skills.filter(filterItem), [skills, filterItem]);
+  const filteredJobLevels = useMemo(() => jobLevels.filter(filterItem), [jobLevels, filterItem]);
+  const filteredExperienceLevels = useMemo(() => experienceLevels.filter(filterItem), [experienceLevels, filterItem]);
 
   const openCreateModal = (type) => {
     setEditMode(false); setTargetType(type); setSelectedId(null);
@@ -164,8 +199,10 @@ const MasterDataManagement = () => {
       case 'Danh mục':
         return (
           <>
-            <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">Nhóm ngành nghề chính ({careerGroups.length})</td></tr>
-            {careerGroups.map(g => (
+            <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">Nhóm ngành nghề chính ({filteredCareerGroups.length})</td></tr>
+            {filteredCareerGroups.length === 0 ? (
+              <tr><td colSpan="5" className="px-6 py-4 text-center text-xs italic text-slate-400">Không tìm thấy nhóm ngành nào khớp bộ lọc</td></tr>
+            ) : filteredCareerGroups.map(g => (
               <tr key={g._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 text-sm font-semibold text-slate-900">{g.code || g._id.slice(-6).toUpperCase()}</td>
                 <td className="px-6 py-4 text-sm font-medium text-slate-800">{g.name}</td>
@@ -182,10 +219,10 @@ const MasterDataManagement = () => {
 
             {selectedCareerGroupId && (
               <>
-                <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Ngành nghề thuộc nhóm ({careers.length})</td></tr>
-                {careers.length === 0 ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm font-bold text-slate-400">Chưa có dữ liệu cấp 2</td></tr>
-                ) : careers.map(c => (
+                <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Ngành nghề thuộc nhóm ({filteredCareers.length})</td></tr>
+                {filteredCareers.length === 0 ? (
+                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm font-bold text-slate-400">Không tìm thấy ngành nghề nào khớp bộ lọc</td></tr>
+                ) : filteredCareers.map(c => (
                   <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 text-sm text-slate-400">↳ {c._id.slice(-6).toUpperCase()}</td>
                     <td className="px-6 py-4 text-sm text-slate-800 pl-10 font-medium">↳ {c.name}</td>
@@ -204,10 +241,10 @@ const MasterDataManagement = () => {
 
             {selectedCareerId && (
               <>
-                <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Vị trí chuyên môn ({positions.length})</td></tr>
-                {positions.length === 0 ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm font-bold text-slate-400">Chưa có dữ liệu cấp 3</td></tr>
-                ) : positions.map(p => (
+                <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Vị trí chuyên môn ({filteredPositions.length})</td></tr>
+                {filteredPositions.length === 0 ? (
+                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm font-bold text-slate-400">Không tìm thấy vị trí nào khớp bộ lọc</td></tr>
+                ) : filteredPositions.map(p => (
                   <tr key={p._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 text-sm text-slate-400">↳ ↳ {p._id.slice(-6).toUpperCase()}</td>
                     <td className="px-6 py-4 text-sm text-slate-800 pl-16">↳ ↳ {p.name}</td>
@@ -227,7 +264,8 @@ const MasterDataManagement = () => {
         );
 
       case 'Kỹ năng / Tags':
-        return skills.map(s => (
+        if (filteredSkills.length === 0) return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu kỹ năng thỏa mãn bộ lọc</td></tr>;
+        return filteredSkills.map(s => (
           <tr key={s._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
             <td className="px-6 py-4 text-sm font-semibold text-slate-900">{s._id.slice(-6).toUpperCase()}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-800">{s.name}</td>
@@ -243,7 +281,8 @@ const MasterDataManagement = () => {
         ));
 
       case 'Cấp bậc':
-        return jobLevels.map(l => (
+        if (filteredJobLevels.length === 0) return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu cấp bậc thỏa mãn bộ lọc</td></tr>;
+        return filteredJobLevels.map(l => (
           <tr key={l._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
             <td className="px-6 py-4 text-sm font-semibold text-slate-900">{l.code}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-800">{l.name}</td>
@@ -259,7 +298,8 @@ const MasterDataManagement = () => {
         ));
 
       case 'Kinh nghiệm':
-        return experienceLevels.map(e => (
+        if (filteredExperienceLevels.length === 0) return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu mức kinh nghiệm thỏa mãn bộ lọc</td></tr>;
+        return filteredExperienceLevels.map(e => (
           <tr key={e._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
             <td className="px-6 py-4 text-sm font-semibold text-slate-900">{e.code}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-800">{e.name}</td>
@@ -304,7 +344,7 @@ const MasterDataManagement = () => {
         {tabs.map((t) => (
           <button
             key={t}
-            onClick={() => { setTab(t); setSearchKeyword(''); }}
+            onClick={() => { setTab(t); setSearchKeyword(''); setStatusFilter(''); }} // Cập nhật: Reset filter trạng thái khi chuyển Tab
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${tab === t ? 'bg-primary text-white border border-primary' : 'bg-white text-slate-500 border border-slate-200/80 hover:bg-slate-50'}`}
           >
             {t}
@@ -314,7 +354,7 @@ const MasterDataManagement = () => {
 
       <SectionCard title="Bộ lọc & Tìm kiếm">
         <FilterGrid>
-          <InputField label="Tìm kiếm từ khóa" value={searchKeyword} onChange={setSearchKeyword} placeholder="Nhập tên danh mục..." />
+          <InputField label="Tìm kiếm từ khóa" value={searchKeyword} onChange={setSearchKeyword} placeholder="Nhập tên hoặc mã danh mục..." />
           
           {['Danh mục', 'Cấp bậc', 'Kỹ năng / Tags'].includes(tab) && (
             <SelectField

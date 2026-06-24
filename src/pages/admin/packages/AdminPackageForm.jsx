@@ -7,9 +7,11 @@ const targetRoleOptions = [
   { value: 'JOBSEEKER', label: 'Ứng viên' },
 ];
 
+// Khớp với enum ServicePackageType ở BE
 const employerPackageTypes = [
-  { value: 'CV_UNLOCK', label: 'Mở khóa CV' },
-  { value: 'PREMIUM_JOB', label: 'Boost Job' },
+  { value: 'CV_UNLOCK', label: 'Mở khóa CV (lẻ)' },
+  { value: 'CV_UNLOCK_BUNDLE', label: 'Gói mở khóa CV (combo)' },
+  { value: 'PREMIUM_JOB', label: 'Tin nổi bật + Gấp' },
 ];
 
 const jobseekerPackageTypes = [
@@ -55,15 +57,12 @@ const defaultJobseekerForm = {
   targetRole: 'JOBSEEKER',
   packageType: 'CV_BOOST',
   unit: 'CV',
-  boostDays: 7,
-  visibilityMultiplier: 3,
-  aiCredits: 50,
   benefits: {
     jobPostsAllowed: 0,
     featuredDays: 0,
     cvAccessLimit: 0,
     aiPremiumAccess: false,
-    priorityDisplay: false,
+    priorityDisplay: true,
   },
   isActive: true,
   sortOrder: 0,
@@ -106,9 +105,6 @@ const AdminPackageForm = () => {
           jobPostsAllowed: pkg.jobPostsAllowed ?? (pkg.benefits?.jobPostsAllowed ?? 1),
           featuredDays: pkg.featuredDays ?? (pkg.benefits?.featuredDays ?? 0),
           cvAccessLimit: pkg.cvAccessLimit ?? (pkg.benefits?.cvAccessLimit ?? 0),
-          boostDays: pkg.boostDays ?? 7,
-          visibilityMultiplier: pkg.visibilityMultiplier ?? 3,
-          aiCredits: pkg.aiCredits ?? 50,
           benefits: {
             jobPostsAllowed: pkg.benefits?.jobPostsAllowed ?? 1,
             featuredDays: pkg.benefits?.featuredDays ?? 0,
@@ -158,15 +154,15 @@ const AdminPackageForm = () => {
         price: form.price,
         currency: form.currency,
         durationDays: form.durationDays,
-        quantity: 1,
+        quantity: form.quantity ?? 1,
         unit: form.unit,
         description: form.description,
         benefits: {
           jobPostsAllowed: form.jobPostsAllowed || 0,
           featuredDays: form.featuredDays || 0,
           cvAccessLimit: form.cvAccessLimit || 0,
-          aiPremiumAccess: form.aiPremiumAccess || false,
-          priorityDisplay: form.priorityDisplay || false,
+          aiPremiumAccess: form.benefits?.aiPremiumAccess || false,
+          priorityDisplay: form.benefits?.priorityDisplay || false,
         },
         status: form.isActive ? 'ACTIVE' : 'INACTIVE',
         sortOrder: form.sortOrder || 0,
@@ -427,44 +423,32 @@ const AdminPackageForm = () => {
         )}
 
         {/* Jobseeker-specific fields */}
-        {targetRole === 'JOBSEEKER' && form.packageType === 'BOOST_CV' && (
+        {targetRole === 'JOBSEEKER' && form.packageType === 'CV_BOOST' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-[#5e5e62] mb-2">Số ngày Boost</label>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#c2c6d4]">
               <input
-                type="number"
-                value={form.boostDays}
-                onChange={(e) => handleChange('boostDays', Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
-                min="1"
+                id="aiPremiumAccess"
+                type="checkbox"
+                checked={form.benefits?.aiPremiumAccess || false}
+                onChange={(e) => setForm((prev) => ({ ...prev, benefits: { ...prev.benefits, aiPremiumAccess: e.target.checked } }))}
+                className="w-4 h-4"
               />
+              <label htmlFor="aiPremiumAccess" className="text-sm font-bold text-[#5e5e62] cursor-pointer">
+                Kèm AI Premium (review CV bằng AI)
+              </label>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-[#5e5e62] mb-2">Hệ số hiển thị (x)</label>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#c2c6d4]">
               <input
-                type="number"
-                value={form.visibilityMultiplier}
-                onChange={(e) => handleChange('visibilityMultiplier', Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
-                min="1"
+                id="priorityDisplay"
+                type="checkbox"
+                checked={form.benefits?.priorityDisplay || false}
+                onChange={(e) => setForm((prev) => ({ ...prev, benefits: { ...prev.benefits, priorityDisplay: e.target.checked } }))}
+                className="w-4 h-4"
               />
-              <p className="text-xs text-[#5e5e62] mt-1">VD: 3 = hiển thị gấp 3 lần bình thường</p>
+              <label htmlFor="priorityDisplay" className="text-sm font-bold text-[#5e5e62] cursor-pointer">
+                Ưu tiên hiển thị (priority display)
+              </label>
             </div>
-          </div>
-        )}
-
-        {targetRole === 'JOBSEEKER' && form.packageType === 'AI_PREMIUM' && (
-          <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">
-              AI Credits {form.aiCredits === -1 ? '( -1 = Không giới hạn)' : ''}
-            </label>
-            <input
-              type="number"
-              value={form.aiCredits}
-              onChange={(e) => handleChange('aiCredits', Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
-              placeholder="-1 = Không giới hạn"
-            />
           </div>
         )}
 

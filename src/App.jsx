@@ -13,6 +13,9 @@ import AppliedJobs from './pages/jobseeker/jobs/AppliedJobs';
 import ApplicationStatusDetail from './pages/jobseeker/jobs/ApplicationStatusDetail';
 import AICvReview from './pages/jobseeker/cv/AICvReview';
 import JobseekerTransactions from './pages/jobseeker/billing/JobseekerTransactions';
+import PaymentSuccess from './pages/jobseeker/billing/PaymentSuccess';
+import JobseekerMySubscriptions from './pages/jobseeker/subscription/MySubscriptions';
+import JobseekerWallet from './pages/jobseeker/wallet/JobseekerWallet';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
@@ -28,6 +31,7 @@ import MatchedJobs from './pages/jobseeker/jobs/MatchedJobs';
 import LinkedinCallback from './pages/jobseeker/auth/LinkedinCallback';
 import CompanyList from './pages/jobseeker/companies/CompanyList';
 import CompanyDetail from './pages/jobseeker/companies/CompanyDetail';
+import FollowedCompanies from './pages/jobseeker/companies/FollowedCompanies';
 import SalaryInsight from './pages/jobseeker/premium/SalaryInsight';
 import UpgradePremium from './pages/jobseeker/premium/UpgradePremium';
 import EmployerRegister from './pages/employer/auth/Register';
@@ -53,6 +57,7 @@ import PaymentResult from './pages/employer/billing/PaymentResult';
 import Transactions from './pages/employer/billing/Transactions';
 import BuyFeaturedPackage from './pages/employer/billing/BuyFeaturedPackage';
 import ActivePackages from './pages/employer/billing/ActivePackages';
+import MySubscriptions from './pages/employer/billing/MySubscriptions';
 import Messages from './pages/employer/interactions/Messages';
 import Notifications from './pages/employer/interactions/Notifications';
 import AccountSettings from './pages/employer/profile/AccountSettings';
@@ -73,6 +78,7 @@ import CVTemplateManagement from './pages/admin/master-data/CVTemplateManagement
 import NotificationCenter from './pages/admin/notifications/NotificationCenter';
 import AnalyticsDashboard from './pages/admin/dashboard/AnalyticsDashboard';
 import AdminAccountSettings from './pages/admin/dashboard/AdminAccountSettings';
+import AnalyticsCharts from './pages/admin/analytics/AnalyticsCharts';
 
 // New Admin Pages from pull/merge
 import AdminPackages from './pages/admin/packages/AdminPackages';
@@ -89,11 +95,13 @@ import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
 import CVTemplateForm from './pages/admin/cv-templates/CVTemplateForm';
 
 import { NotificationProvider } from './contexts/NotificationContext';
+import { SocketProvider } from './contexts/SocketContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
     <NotificationProvider>
+      <SocketProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<JobseekerLayout />}>
@@ -121,6 +129,10 @@ function App() {
               <Route path="privacy-settings" element={<PrivacySettings />} />
               <Route path="ai-cv-review" element={<AICvReview />} />
               <Route path="my-transactions" element={<JobseekerTransactions />} />
+              <Route path="my-subscriptions" element={<JobseekerMySubscriptions />} />
+              <Route path="wallet" element={<JobseekerWallet />} />
+              <Route path="payment-success" element={<PaymentSuccess />} />
+              <Route path="followed-companies" element={<FollowedCompanies />} />
             </Route>
           </Route>
 
@@ -165,6 +177,7 @@ function App() {
               <Route path="packages" element={<BuyPackages />} />
               <Route path="packages/featured-job" element={<BuyFeaturedPackage />} />
               <Route path="active-packages" element={<ActivePackages />} />
+              <Route path="my-subscriptions" element={<MySubscriptions />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="messages" element={<Messages />} />
               <Route path="notifications" element={<Notifications />} />
@@ -215,6 +228,7 @@ function App() {
               <Route path="analytics" element={<AnalyticsDashboard />} />
               <Route path="revenue-report" element={<AdminRevenueReport />} />
               <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
+              <Route path="analytics/charts" element={<AnalyticsCharts />} />
               <Route path="email-logs" element={<EmailLogs />} />
 
               <Route path="account" element={<AdminAccountSettings />} />
@@ -222,6 +236,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </SocketProvider>
     </NotificationProvider>
   );
 }

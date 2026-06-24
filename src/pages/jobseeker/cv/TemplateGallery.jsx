@@ -117,7 +117,7 @@ const TemplateGallery = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-surface-container-high rounded flex items-center justify-center text-on-surface-variant">
-                      Chưa có ảnh preview
+                      Chưa có ảnh đại diện
                     </div>
                   )}
                   {/* Hover Overlay */}
@@ -133,11 +133,6 @@ const TemplateGallery = () => {
                 <div className="p-stack-md flex-1 flex flex-col">
                   <h3 className="font-headline-sm text-on-surface mb-1">{tpl.name}</h3>
                   <p className="text-body-sm text-on-surface-variant flex-1">{tpl.careerGroupId?.name || 'Chung'}</p>
-                  {tpl.isPremium && (
-                    <span className="mt-stack-sm inline-block px-2 py-1 bg-[#fff8e1] text-[#f57f17] text-[10px] font-bold rounded w-max">
-                      PREMIUM
-                    </span>
-                  )}
                 </div>
               </div>
             ))

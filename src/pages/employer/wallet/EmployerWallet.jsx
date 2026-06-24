@@ -1,6 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/api';
+import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
+
+// Tooltip mô tả chi tiết cho từng transaction (hiện khi hover badge status).
+// - SUCCESS  → đã cộng / đã thanh toán
+// - PENDING  → đang chờ SePay; nếu >10p thì cảnh báo timeout
+// - FAILED   → lấy metadata.failedReason do backend set khi webhook amount sai
+const describeTransaction = (tx) => {
+  if (!tx) return '';
+  if (tx.status === 'SUCCESS') {
+    if (tx.type === 'WALLET_DEPOSIT') return 'Đã cộng vào ví';
+    if (tx.type === 'PACKAGE_PURCHASE') return 'Đã thanh toán — dịch vụ đang được kích hoạt';
+    return 'Giao dịch đã hoàn tất';
+  }
+  if (tx.status === 'PENDING') {
+    const ageMs = Date.now() - new Date(tx.createdAt).getTime();
+    if (ageMs > 10 * 60 * 1000) {
+      return 'Đang chờ SePay xác nhận — quá thời gian, kiểm tra nội dung chuyển khoản hoặc liên hệ hỗ trợ';
+    }
+    return 'Đang chờ SePay xử lý — tiền sẽ tự cộng khi ngân hàng xác nhận';
+  }
+  if (tx.status === 'FAILED') {
+    return tx?.metadata?.failedReason || 'Thanh toán thất bại — liên hệ hỗ trợ để được hướng dẫn';
+  }
+  return tx.status;
+};
 
 const typeConfig = {
   WALLET_DEPOSIT:       { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
@@ -22,14 +47,28 @@ const formatPrice = (price) => {
 };
 
 const EmployerWallet = () => {
+  const navigate = useNavigate();
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [notification, setNotification] = useState(null);
+  const notificationTimeoutRef = useRef(null);
+
+  // Hiện notification tự ẩn sau 4s
+  const showNotification = (payload) => {
+    setNotification(payload);
+    if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
+    notificationTimeoutRef.current = setTimeout(() => setNotification(null), 4000);
+  };
+
+  useEffect(() => () => {
+    if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     fetchWallet();
@@ -39,20 +78,32 @@ const EmployerWallet = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
-      setNotification({ type: 'success', message: 'Nạp tiền thành công!' });
+      showNotification({ type: 'success', message: 'Nạp tiền thành công!' });
       fetchWallet();
       fetchTransactions();
     } else if (paymentStatus === 'error') {
-      setNotification({ type: 'error', message: 'Nạp tiền thất bại. Vui lòng thử lại.' });
+      const reason = searchParams.get('reason');
+      showNotification({
+        type: 'error',
+        message: reason
+          ? `Nạp tiền thất bại: ${decodeURIComponent(reason)}`
+          : 'Nạp tiền thất bại. Vui lòng kiểm tra giao dịch và thử lại.'
+      });
+      fetchTransactions();
     } else if (paymentStatus === 'cancel') {
-      setNotification({ type: 'info', message: 'Đã hủy nạp tiền.' });
+      showNotification({ type: 'info', message: 'Đã hủy nạp tiền.' });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const fetchWallet = async () => {
     try {
       const res = await api.get('/employer/wallet');
-      if (res.data.success) setWallet(res.data.data);
+      if (res.data.success) {
+        setWallet(res.data.data);
+        // Báo cho header (và các nơi khác) biết balance vừa đổi
+        window.dispatchEvent(new Event('vietworks:wallet-updated'));
+      }
     } catch (error) {
       console.error('Fetch wallet error:', error);
     }
@@ -88,7 +139,8 @@ const EmployerWallet = () => {
       }
     } catch (error) {
       console.error('Deposit error:', error);
-      setNotification({ type: 'error', message: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+      const message = error?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+      showNotification({ type: 'error', message });
     }
   };
 
@@ -178,7 +230,11 @@ const EmployerWallet = () => {
           <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
             <h3 className="font-bold text-[#1b1c1c] mb-4">Thao tác nhanh</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left">
+              <button
+                type="button"
+                onClick={() => navigate('/employer/packages')}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left"
+              >
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
                   <span className="material-symbols-outlined text-emerald-600">shopping_cart</span>
                 </div>
@@ -187,7 +243,11 @@ const EmployerWallet = () => {
                   <p className="text-xs text-[#5e5e62]">Chọn gói phù hợp</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left">
+              <button
+                type="button"
+                onClick={() => navigate('/employer/transactions')}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left"
+              >
                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
                   <span className="material-symbols-outlined text-indigo-600">history</span>
                 </div>
@@ -196,7 +256,11 @@ const EmployerWallet = () => {
                   <p className="text-xs text-[#5e5e62]">Xem chi tiết</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left">
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left"
+              >
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                   <span className="material-symbols-outlined text-amber-600">receipt_long</span>
                 </div>
@@ -244,7 +308,10 @@ const EmployerWallet = () => {
                   </td>
                   <td className="py-4 px-4 text-sm text-[#5e5e62]">{tx.description}</td>
                   <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.text}`}>
+                    <span
+                      title={describeTransaction(tx)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold cursor-help ${status.bg} ${status.text}`}
+                    >
                       {status.label}
                     </span>
                   </td>
@@ -385,6 +452,13 @@ const EmployerWallet = () => {
           </div>
         </>
       )}
+
+      {/* Request Invoice Modal */}
+      <RequestInvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        transactions={transactions}
+      />
     </div>
   );
 };

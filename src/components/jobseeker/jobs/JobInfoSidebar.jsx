@@ -7,7 +7,7 @@ const formatDate = (date) => {
 
 const saturdayMap = {
   NOT_SPECIFIED: 'Không đề cập',
-  WORK_SATURDAY: 'Có làm Thứ 7',
+  WORKING_SATURDAY: 'Có làm Thứ 7',
   OFF_SATURDAY: 'Nghỉ Thứ 7',
 };
 

@@ -1,68 +1,178 @@
-import { Wallet, Plus, Bell, ShieldAlert, ChevronDown } from 'lucide-react';
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { Wallet, Plus, Bell, ShieldCheck, ShieldAlert, ShieldQuestion, ChevronDown, Building2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import employerCompanyService from '../../../services/employerCompanyService';
+import api from '../../../services/api';
+import { useAuth } from '../../../hooks/useAuth';
+
+const formatMoney = (value) => {
+  const amount = Number(value || 0);
+  return `${new Intl.NumberFormat('vi-VN').format(amount)} đ`;
+};
+
+const getVerificationMeta = (status) => {
+  switch (status) {
+    case 'VERIFIED':
+      return {
+        label: 'Hồ sơ công ty đã xác thực',
+        className: 'bg-emerald-50 border-emerald-200/70 text-emerald-700',
+        icon: ShieldCheck,
+      };
+    case 'PENDING':
+      return {
+        label: 'Hồ sơ công ty đang chờ duyệt',
+        className: 'bg-amber-50 border-amber-200/70 text-amber-700',
+        icon: ShieldAlert,
+      };
+    case 'REJECTED':
+      return {
+        label: 'Hồ sơ công ty bị từ chối',
+        className: 'bg-rose-50 border-rose-200/70 text-rose-700',
+        icon: ShieldAlert,
+      };
+    default:
+      return {
+        label: 'Hồ sơ công ty chưa hoàn thiện',
+        className: 'bg-slate-100 border-slate-200 text-slate-600',
+        icon: ShieldQuestion,
+      };
+  }
+};
+
+const getCompanyDisplayName = (company, user) => {
+  return company?.name || user?.companyName || 'Nhà tuyển dụng';
+};
+
+const getEmployerDisplayName = (user, company) => {
+  return user?.fullName || user?.name || company?.name || user?.email || 'Nhà tuyển dụng';
+};
 
 const EmployerHeader = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const [company, setCompany] = useState(null);
+  const [wallet, setWallet] = useState(null);
+
+  // Tách loadHeaderData ra useCallback để có thể gọi lại từ listener event.
+  const loadHeaderData = useCallback(async () => {
+    try {
+      const [companyRes, walletRes] = await Promise.allSettled([
+        employerCompanyService.getMyCompanyProfile(),
+        api.get('/employer/wallet'),
+      ]);
+
+      if (companyRes.status === 'fulfilled' && companyRes.value?.success) {
+        setCompany(companyRes.value.data || null);
+      }
+
+      if (walletRes.status === 'fulfilled' && walletRes.value?.data?.success) {
+        setWallet(walletRes.value.data.data || null);
+      }
+    } catch (error) {
+      console.error('Không thể tải dữ liệu header nhà tuyển dụng:', error);
+    }
+  }, []);
+
+  // 1) Refresh khi navigate (vì header + sidebar render chung trong EmployerLayout → không unmount giữa các trang con)
+  useEffect(() => {
+    loadHeaderData();
+  }, [loadHeaderData, location.pathname]);
+
+  // 2) Refresh khi có page nào dispatch 'vietworks:wallet-updated' (vd: TopUp khi SePay paid, Transactions sau load)
+  useEffect(() => {
+    const onWalletUpdated = () => loadHeaderData();
+    window.addEventListener('vietworks:wallet-updated', onWalletUpdated);
+    return () => window.removeEventListener('vietworks:wallet-updated', onWalletUpdated);
+  }, [loadHeaderData]);
+
+  const verificationMeta = useMemo(
+    () => getVerificationMeta(company?.verificationStatus),
+    [company?.verificationStatus]
+  );
+
+  const StatusIcon = verificationMeta.icon;
+  const companyName = getCompanyDisplayName(company, user);
+  const employerName = getEmployerDisplayName(user, company);
+  const walletBalance = formatMoney(wallet?.balance);
 
   return (
-    <header className="h-20 flex-shrink-0 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-8 z-40 sticky top-0 transition-all flex items-center justify-between">
-      {/* Left: Company info */}
+    <header className="sticky top-0 z-40 flex h-20 flex-shrink-0 items-center justify-between border-b border-slate-200/60 bg-white/92 px-8 backdrop-blur-2xl transition-all">
       <div className="flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-primary shadow-sm">
+          <Building2 className="h-5 w-5" />
+        </div>
+
         <div>
-          <h1 className="text-xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">
-            Công ty TNHH TechViet
+          <h1 className="text-xl font-black tracking-tight text-slate-900">
+            {companyName}
           </h1>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200/60 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-              <ShieldAlert className="w-3 h-3 text-amber-500" />
-              Chưa xác thực ĐKKD
+          <div className="mt-1 flex items-center gap-2">
+            <span className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${verificationMeta.className}`}>
+              <StatusIcon className="h-3.5 w-3.5" />
+              {verificationMeta.label}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Right: Wallet, bell, profile */}
       <div className="flex items-center gap-6">
-        {/* Wallet Button */}
-        <div className="hidden lg:flex items-center gap-3 rounded-full border border-slate-200/60 bg-white px-1.5 py-1.5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all group cursor-pointer pr-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
-            <Wallet className="w-4 h-4" />
+        <button
+          type="button"
+          onClick={() => navigate('/employer/wallet')}
+          className="hidden cursor-pointer items-center gap-3 rounded-full border border-slate-200/70 bg-white px-1.5 py-1.5 pr-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md lg:flex"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform hover:scale-110">
+            <Wallet className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">Số dư ví</p>
+          <div className="text-left">
+            <p className="mb-1 text-[10px] font-bold uppercase leading-none tracking-wider text-slate-400">
+              Số dư ví
+            </p>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-black text-slate-900 tracking-tight leading-none">5.000.000 đ</p>
-              <button className="text-[10px] font-bold text-white bg-slate-900 hover:bg-primary px-2 py-0.5 rounded-full transition-colors flex items-center gap-0.5 shadow-sm">
-                <Plus className="w-3 h-3" /> Nạp
-              </button>
+              <p className="text-sm font-black leading-none tracking-tight text-slate-900">{walletBalance}</p>
+              <span
+                onClick={(event) => {
+                  event.stopPropagation();
+                  navigate('/employer/wallet/topup');
+                }}
+                className="inline-flex items-center gap-0.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
+              >
+                <Plus className="h-3 w-3" /> Nạp
+              </span>
             </div>
           </div>
-        </div>
+        </button>
 
-        {/* Notification bell */}
-        <button type="button" onClick={() => navigate('/employer/notifications')} className="relative rounded-full p-2.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-95 border border-transparent hover:border-slate-200">
-          <Bell className="w-5 h-5" />
+        <button
+          type="button"
+          onClick={() => navigate('/employer/notifications')}
+          className="relative rounded-full border border-transparent p-2.5 text-slate-400 transition-all hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+        >
+          <Bell className="h-5 w-5" />
           <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500 animate-pulse"></span>
         </button>
 
-        <div className="h-8 w-px bg-slate-200/80 hidden sm:block"></div>
+        <div className="hidden h-8 w-px bg-slate-200/80 sm:block"></div>
 
-        {/* Profile */}
-        <div className="flex cursor-pointer items-center gap-3 group">
-          <div className="hidden text-right sm:block group-hover:opacity-80 transition-opacity">
-            <p className="text-sm font-extrabold text-slate-900 tracking-tight">Admin TechViet</p>
-            <p className="text-[10px] font-bold text-slate-500">Quản trị viên</p>
+        <div className="group flex cursor-pointer items-center gap-3">
+          <div className="hidden text-right transition-opacity group-hover:opacity-80 sm:block">
+            <p className="text-sm font-extrabold tracking-tight text-slate-900">{employerName}</p>
+            <p className="text-[10px] font-bold text-slate-500">Nhà tuyển dụng</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-full border-2 border-slate-100 group-hover:border-primary/50 shadow-sm group-hover:shadow-md transition-all overflow-hidden p-0.5">
-              <img
-                alt="Profile"
-                className="w-full h-full object-cover rounded-full"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWDAtODmZAisTOrnKjJRf2EtistnX0YaBVpEbF4st2Ma8EQcKLl36NDIpyPXLviT4O9R_CSLHJkRfzD1qdyUKGl9TBni_O27zjMoQNTnxs9GthRXI6lvdruK-X-NE0GRmhrruDsxp_apNYzI872ATu2zp1q9doBX_yyTXOTE_pOhjWCYM8c42JBW9H_DLT0mef-640fQG7A4f7vtlSWyb0jArj6Tgm5vluiP7I9siDcRPI3uruW3PXS-XV-63sYA-mR5cdvGmS-HhO"
-              />
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-slate-100 bg-slate-100 text-sm font-black text-slate-700 shadow-sm transition-all group-hover:border-primary/50 group-hover:shadow-md">
+              {company?.avatarUrl ? (
+                <img
+                  alt={companyName}
+                  className="h-full w-full object-cover"
+                  src={company.avatarUrl}
+                />
+              ) : (
+                <span>{companyName.charAt(0).toUpperCase()}</span>
+              )}
             </div>
-            <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors hidden sm:block" />
+            <ChevronDown className="hidden h-4 w-4 text-slate-400 transition-colors group-hover:text-slate-900 sm:block" />
           </div>
         </div>
       </div>
@@ -71,4 +181,3 @@ const EmployerHeader = () => {
 };
 
 export default EmployerHeader;
-

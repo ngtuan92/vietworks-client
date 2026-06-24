@@ -117,7 +117,7 @@ const AdminRevenueReport = () => {
               </div>
             </div>
           <div className="h-64 flex items-end justify-between gap-4 px-4">
-            {data.monthlyData.map((m) => {
+            {(data.monthlyData || []).map((m) => {
               const monthLabel = new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
               return (
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-2">
@@ -153,7 +153,7 @@ const AdminRevenueReport = () => {
         <div className="lg:col-span-4 bg-white p-6 rounded-xl border border-[#c2c6d4]/50">
           <h3 className="font-bold text-[#1b1c1c] mb-6">Doanh thu theo vai trò</h3>
           <div className="space-y-4">
-            {Object.entries(data.revenueByRole).map(([role, amount]) => {
+            {Object.entries(data.revenueByRole || {}).map(([role, amount]) => {
               const percentage = (amount / data.summary.totalRevenue) * 100;
               const colors = {
                 JOBSEEKER: { bg: 'bg-emerald-500', text: 'text-emerald-600', label: 'Ứng viên' },
@@ -195,7 +195,7 @@ const AdminRevenueReport = () => {
             </tr>
           </thead>
           <tbody>
-            {data.monthlyData.map((m) => (
+            {(data.monthlyData || []).map((m) => (
               <tr key={m.month} className="border-b border-[#c2c6d4]/30 hover:bg-[#f5f3f3]/50">
                 <td className="py-4 px-4 font-bold text-[#1b1c1c]">
                   {new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}

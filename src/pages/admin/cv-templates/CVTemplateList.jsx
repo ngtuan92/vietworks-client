@@ -202,14 +202,7 @@ const CVTemplateList = () => {
                       </button>
                     </div>
 
-                    {/* Premium Tag Overlay */}
-                    {tpl.isPremium && (
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-amber-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md border border-amber-400/20">
-                          Premium
-                        </span>
-                      </div>
-                    )}
+
                   </div>
 
                   {/* Info Block */}
@@ -305,7 +298,6 @@ const CVTemplateList = () => {
                         {tpl.name}
                       </div>
                       <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">Mã: {tpl.code}</div>
-                      {tpl.isPremium && <span className="inline-block mt-1.5 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/60 text-[10px] font-black rounded-md uppercase tracking-wider shadow-sm">Premium</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-slate-600">

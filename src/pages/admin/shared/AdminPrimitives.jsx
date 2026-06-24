@@ -84,7 +84,11 @@ export const SelectField = ({ label, required, value, onChange, options = [], pl
     <div className="relative">
       <select value={value} onChange={(e) => onChange?.(e.target.value)} className={fieldSelectClass}>
         <option value="">{placeholder}</option>
-        {options.map((option) => Array.isArray(option) ? <option key={option[0]} value={option[0]}>{option[1]}</option> : <option key={option} value={option}>{option}</option>)}
+        {options.map((option) => {
+          if (Array.isArray(option)) return <option key={option[0]} value={option[0]}>{option[1]}</option>;
+          if (typeof option === 'object' && option !== null) return <option key={option.value} value={option.value}>{option.label}</option>;
+          return <option key={option} value={option}>{option}</option>;
+        })}
       </select>
       <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>

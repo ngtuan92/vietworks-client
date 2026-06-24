@@ -31,7 +31,7 @@ const CVBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const cvRef = useRef(null);
-  const { error: showError } = useNotification();
+  const { error: showError, success: showSuccess } = useNotification();
 
   const [cvData, setCvData] = useState(null);
   const [sections, setSections] = useState([]);
@@ -241,6 +241,26 @@ const CVBuilder = () => {
     } finally {
       setSaving(false);
       navigate('/manage-cv');
+    }
+  };
+
+  const handleSaveOfficial = async () => {
+    try {
+      setSaving(true);
+      const previewUrl = await generatePreviewImage();
+      await cvService.updateCv(id, {
+        sections,
+        style,
+        previewImageUrl: previewUrl || undefined,
+        isMain: true
+      });
+      showSuccess('Đã lưu thành CV chính thức!');
+      navigate('/manage-cv');
+    } catch (err) {
+      console.error('Lỗi khi lưu chính thức:', err);
+      showError('Không thể lưu CV');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -981,6 +1001,7 @@ const CVBuilder = () => {
         style={style}
         onStyleChange={handleStyleChange}
         onExport={handleExportPDF}
+        onSaveOfficial={handleSaveOfficial}
         isSaving={saving}
         navigateBack={handleExitBuilder}
         currentTemplateId={cvData?.templateId?._id}

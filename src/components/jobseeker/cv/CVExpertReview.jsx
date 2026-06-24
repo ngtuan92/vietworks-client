@@ -318,7 +318,7 @@ const CVExpertReview = () => {
                         
                         {/* Score Circle Card */}
                         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Điểm Tương Thích (Job Fit)</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Điểm Tương Thích</h4>
                           
                           <div className="relative w-36 h-36 flex items-center justify-center">
                             <svg className="w-full h-full transform -rotate-90">
@@ -371,7 +371,7 @@ const CVExpertReview = () => {
                             <div className="flex items-center gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
                               <span className="material-symbols-outlined text-slate-500">warning_amber</span>
                               <div className="flex-1">
-                                <span className="text-[10px] text-slate-400 font-bold block">Thổi phồng chức danh (Title Inflation)</span>
+                                <span className="text-[10px] text-slate-400 font-bold block">Thổi phồng chức danh</span>
                                 <span className={`text-xs font-bold ${analysisData.candidate_overview?.title_inflation_detected ? 'text-amber-600' : 'text-emerald-600'}`}>
                                   {analysisData.candidate_overview?.title_inflation_detected 
                                     ? 'Phát hiện chức danh thực tế cao hơn năng lực ghi nhận' 
@@ -393,7 +393,7 @@ const CVExpertReview = () => {
                         <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-rose-500 text-[18px]">warning</span>
-                            Điểm đáng chú ý / Cảnh báo (Red Flags)
+                            Điểm đáng chú ý / Cảnh báo
                           </h4>
                           
                           {analysisData.candidate_overview?.red_flags && analysisData.candidate_overview.red_flags.length > 0 ? (
@@ -426,7 +426,7 @@ const CVExpertReview = () => {
                           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
                               <span className="material-symbols-outlined text-emerald-500 text-[18px]">task_alt</span>
-                              Kỹ năng đã xác thực (Verified)
+                              Kỹ năng đã xác thực
                             </h4>
                             <p className="text-[10px] text-slate-400 mb-4 italic">Kỹ năng được chứng minh bằng các dự án/kinh nghiệm thực tế trên CV</p>
                             
@@ -470,7 +470,7 @@ const CVExpertReview = () => {
 
                         {/* Achievements Comparison */}
                         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Đo lường Hiệu quả Mô tả (Impact Analysis)</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Đo lường Hiệu quả Mô tả</h4>
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             

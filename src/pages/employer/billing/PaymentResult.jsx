@@ -1,48 +1,207 @@
-
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { getTransactionByOrderCode, checkSepayPayment } from '../../../services/paymentService';
 
 const PaymentResult = () => {
   const [params] = useSearchParams();
-  const status = (params.get('status') || 'success').toLowerCase();
-  const amount = params.get('amount') || '0';
-  const success = status === 'success' || status === 'approved';
+  const orderCode = params.get('orderCode');
+
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [polling, setPolling] = useState(false);
+
+  // Fetch chi tiết giao dịch
+  useEffect(() => {
+    if (!orderCode) {
+      setError('Không tìm thấy mã đơn hàng trong URL.');
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchOnce = async () => {
+      try {
+        const res = await getTransactionByOrderCode(orderCode);
+        if (cancelled) return;
+        setData(res);
+        if (res?.transaction?.status === 'PENDING') {
+          setPolling(true); // Polling chờ webhook
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setError(e.response?.data?.message || 'Lỗi khi lấy thông tin giao dịch');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchOnce();
+    return () => { cancelled = true; };
+  }, [orderCode]);
+
+  // Polling nếu vẫn PENDING - mỗi 4s gọi checkSepayPayment + reload data
+  useEffect(() => {
+    if (!polling || !orderCode) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await checkSepayPayment(orderCode);
+        if (r?.paid) {
+          const fresh = await getTransactionByOrderCode(orderCode);
+          setData(fresh);
+          setPolling(false);
+        }
+      } catch { /* ignore */ }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [polling, orderCode]);
+
+  if (loading) {
+    return (
+      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-10 text-center">
+        <div className="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-slate-600 mt-4">Đang tải thông tin giao dịch...</p>
+      </div>
+    );
+  }
+
+  if (error || !data?.transaction) {
+    return (
+      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-10 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-700 flex items-center justify-center mx-auto">
+          <span className="material-symbols-outlined text-4xl">error</span>
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 mt-4">Không tìm thấy giao dịch</h1>
+        <p className="text-slate-600 mt-2">{error || 'Mã đơn hàng không hợp lệ hoặc đã hết hạn.'}</p>
+        <Link to="/employer/transactions" className="inline-block mt-6 px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95">
+          Xem lịch sử giao dịch
+        </Link>
+      </div>
+    );
+  }
+
+  const { transaction, package: pkg, userServicePackage, target } = data;
+  const isPending = transaction.status === 'PENDING';
+  const isSuccess = transaction.status === 'SUCCESS';
+  const isFailed = transaction.status === 'FAILED';
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6">
+      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-6">
         <div className="flex items-start gap-4">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${success ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-            <span className="material-symbols-outlined text-3xl">{success ? 'check_circle' : 'cancel'}</span>
+          <div
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+              isSuccess
+                ? 'bg-emerald-50 text-emerald-700'
+                : isPending
+                ? 'bg-amber-50 text-amber-700 animate-pulse'
+                : 'bg-red-50 text-red-700'
+            }`}
+          >
+            <span className="material-symbols-outlined text-4xl">
+              {isSuccess ? 'check_circle' : isPending ? 'hourglass_top' : 'cancel'}
+            </span>
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-slate-900">{success ? 'Thanh toán thành công' : 'Thanh toán thất bại'}</h1>
-            <p className="text-slate-600 mt-1">Số tiền: <b>{Number(amount).toLocaleString('vi-VN')} VNĐ</b></p>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <Info label="Mã giao dịch" value="TXN-123456" />
-              <Info label="Thời gian" value={new Date().toLocaleString('vi-VN')} />
-              <Info label="Trạng thái" value={success ? 'SUCCESS' : 'FAILED'} />
-              <Info label="Số dư mới" value="1.250.000 VNĐ" />
-            </div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {isSuccess
+                ? 'Thanh toán thành công'
+                : isPending
+                ? 'Đang chờ xác nhận thanh toán'
+                : 'Thanh toán thất bại'}
+            </h1>
+            <p className="text-slate-600 mt-1">
+              Số tiền: <b>{Number(transaction.amount).toLocaleString('vi-VN')} {transaction.currency || 'VNĐ'}</b>
+            </p>
+            {isPending && (
+              <p className="text-amber-600 text-sm mt-2">
+                Đang chờ ngân hàng xác nhận giao dịch. Trang sẽ tự cập nhật khi nhận được tiền (tối đa 1–2 phút).
+              </p>
+            )}
           </div>
         </div>
 
+        {/* Thông tin giao dịch */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <Info label="Mã giao dịch" value={transaction._id} mono />
+          <Info label="Mã đơn hàng" value={transaction.orderCode || '-'} mono />
+          <Info label="Thời gian tạo" value={new Date(transaction.createdAt).toLocaleString('vi-VN')} />
+          <Info
+            label="Thời gian thanh toán"
+            value={transaction.paidAt ? new Date(transaction.paidAt).toLocaleString('vi-VN') : '-'}
+          />
+          <Info label="Phương thức" value={transaction.paymentMethod} />
+          <Info
+            label="Trạng thái"
+            value={transaction.status}
+            valueClassName={
+              isSuccess ? 'text-emerald-700' : isPending ? 'text-amber-700' : 'text-red-700'
+            }
+          />
+        </div>
+
+        {/* Thông tin gói (nếu là PACKAGE_PURCHASE) */}
+        {pkg && (
+          <div className="mt-6 rounded-xl border border-primary/20 bg-blue-50/30 p-4">
+            <h2 className="font-bold text-slate-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">workspace_premium</span>
+              Gói đã kích hoạt
+            </h2>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <Info label="Tên gói" value={pkg.name} />
+              <Info label="Loại" value={pkg.packageType} />
+              {target && <Info label={target.type === 'CV' ? 'CV được boost' : 'Tin tuyển dụng'} value={target.title} />}
+              <Info label="Thời hạn" value={`${pkg.durationDays || 0} ngày`} />
+              {userServicePackage?.startedAt && (
+                <Info label="Bắt đầu" value={new Date(userServicePackage.startedAt).toLocaleDateString('vi-VN')} />
+              )}
+              {userServicePackage?.expiredAt && (
+                <Info
+                  label="Hết hạn"
+                  value={new Date(userServicePackage.expiredAt).toLocaleDateString('vi-VN')}
+                  valueClassName="text-primary font-bold"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* CTA */}
         <div className="mt-6 flex flex-wrap gap-2 justify-end">
-          <Link to="/employer/wallet" className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50">
-            Quay lại ví
-          </Link>
-          <Link to="/employer/transactions" className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-            Xem lịch sử giao dịch
-          </Link>
+          {isPending ? (
+            <Link
+              to="/employer/transactions"
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Xem lịch sử giao dịch
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/employer/wallet"
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Về ví
+              </Link>
+              <Link
+                to="/employer/my-subscriptions"
+                className="px-4 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all"
+              >
+                Xem gói đang dùng
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-const Info = ({ label, value }) => (
+const Info = ({ label, value, mono = false, valueClassName = '' }) => (
   <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
     <div className="text-xs text-slate-500">{label}</div>
-    <div className="font-semibold text-slate-900 mt-1">{value}</div>
+    <div className={`font-semibold text-slate-900 mt-1 break-all ${mono ? 'font-mono text-xs' : ''} ${valueClassName}`}>
+      {value}
+    </div>
   </div>
 );
 

@@ -7,9 +7,9 @@ import useAuth from '../../../hooks/useAuth';
 
 
 const accountStatusLabel = {
-  ACTIVE: 'Đã xác thực (ACTIVE)',
-  UNVERIFIED: 'Chưa xác thực (UNVERIFIED)',
-  BANNED: 'Bị khóa (BANNED)',
+  ACTIVE: 'Đã xác thực',
+  UNVERIFIED: 'Chưa xác thực',
+  BANNED: 'Bị khóa',
 };
 
 const Profile = () => {
@@ -25,7 +25,9 @@ const Profile = () => {
     allowEmployerSearch: true,
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const { updateUser } = useAuth();
 
   const [security, setSecurity] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
@@ -44,15 +46,44 @@ const Profile = () => {
             allowEmployerSearch: d.allowEmployerSearch ?? true,
           });
           setAvatarPreview(d.avatarUrl || null);
+          // Đồng bộ avatar vào auth store để Navbar hiển thị đúng
+          updateUser({ avatarUrl: d.avatarUrl || null });
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
-    if (file) setAvatarPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    // Hiện preview ngay từ file local trong lúc upload
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarUploading(true);
+    try {
+      const uploaded = await jobseekerProfileService.uploadAvatar(file);
+      const url = uploaded?.data?.fileUrl;
+      if (!url) throw new Error('Upload thất bại');
+
+      // Lưu URL ảnh vào hồ sơ
+      const res = await jobseekerProfileService.updateMyProfile({
+        fullName: profile.fullName,
+        phone: profile.phone,
+        avatarUrl: url,
+      });
+      if (!res.success) throw new Error('Lưu hồ sơ thất bại');
+
+      setProfile((prev) => ({ ...prev, avatarUrl: url }));
+      setAvatarPreview(url);
+      updateUser({ avatarUrl: url }); // đồng bộ avatar lên Navbar
+    } catch {
+      // Khôi phục lại ảnh đã lưu nếu lỗi
+      setAvatarPreview(profile.avatarUrl || null);
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const initials = (profile.fullName || profile.email || 'U').trim().charAt(0).toUpperCase();
@@ -72,15 +103,17 @@ const Profile = () => {
         <section className="rounded-3xl hero-gradient p-6 text-white shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="flex items-center gap-4">
-              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current.click()}>
+              <div className="relative group cursor-pointer" onClick={() => { if (!avatarUploading) fileInputRef.current.click(); }}>
                 <div className="h-20 w-20 rounded-3xl bg-white/15 border border-white/20 flex items-center justify-center text-3xl font-black overflow-hidden relative">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span>{initials}</span>
                   )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Camera className="w-6 h-6 text-white" />
+                  <div className={`absolute inset-0 bg-black/40 transition-opacity flex items-center justify-center ${avatarUploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    {avatarUploading
+                      ? <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      : <Camera className="w-6 h-6 text-white" />}
                   </div>
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />

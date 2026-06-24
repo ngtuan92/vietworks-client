@@ -1,10 +1,40 @@
 
 
 import { useNavigate } from 'react-router-dom';
-import { BookmarkPlus, Banknote, MapPin, Clock, Award, Briefcase, Calendar } from 'lucide-react';
-import { useState } from 'react';
+import { BookmarkPlus, Banknote, MapPin, Clock, Award, Briefcase, Calendar, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
 import JobseekerAuthModal from '../../common/JobseekerAuthModal';
+import { useAuthStore } from '../../../store/authStore';
+import { getSavedJobs, saveJob, unsaveJob } from '../../../services/jobseekerService';
+
+let savedJobsCache = null;
+let savedJobsCachePromise = null;
+const loadSavedJobIds = async () => {
+  if (savedJobsCache) return savedJobsCache;
+  if (savedJobsCachePromise) return savedJobsCachePromise;
+  savedJobsCachePromise = (async () => {
+    try {
+      const res = await getSavedJobs({ limit: 50 });
+      const list = res.data || [];
+      const ids = new Set();
+      list.forEach((item) => {
+        const id = item.job?.id || item.job?._id || item.jobId?._id || item.jobId;
+        if (id) ids.add(id.toString());
+      });
+      savedJobsCache = ids;
+    } catch {
+      savedJobsCache = new Set();
+    } finally {
+      savedJobsCachePromise = null;
+    }
+    return savedJobsCache;
+  })();
+  return savedJobsCachePromise;
+};
+const invalidateSavedCache = () => {
+  savedJobsCache = null;
+};
 
 const JobCard = ({
   id,
@@ -21,14 +51,62 @@ const JobCard = ({
   level,
   workType,
   deadline,
+  neededCount,
+  isHiringFull = false,
   showExtra = false,
 }) => {
   const navigate = useNavigate();
   const { guard, modalState, closeModal } = useJobseekerAuth();
+  const { isAuthenticated } = useAuthStore();
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const avatarSrc = companyAvatar || logo || 'https://placehold.co/64x64/png?text=C';
 
+  useEffect(() => {
+    if (!isAuthenticated || !id) return;
+    let cancelled = false;
+    loadSavedJobIds().then((set) => {
+      if (!cancelled) setIsSaved(set.has(String(id)));
+    });
+    return () => { cancelled = true; };
+  }, [id, isAuthenticated]);
+
   const handleClick = () => { if (id) navigate(`/jobs/${id}`); };
-  const handleSave = guard((e) => { e.stopPropagation(); console.log('save', id); }, 'save_job');
+  const handleSave = guard(async (e) => {
+    e.stopPropagation();
+    if (saving || !id) return;
+    setSaving(true);
+    const wasSaved = isSaved;
+    try {
+      if (wasSaved) {
+        await unsaveJob(id);
+        setIsSaved(false);
+        invalidateSavedCache();
+      } else {
+        const set = await loadSavedJobIds();
+        if (set.has(String(id))) {
+          setIsSaved(true);
+        } else {
+          await saveJob(id);
+          setIsSaved(true);
+          invalidateSavedCache();
+        }
+      }
+    } catch (err) {
+      const status = err?.response?.status;
+      if (!wasSaved && status === 400) {
+        setIsSaved(true);
+        invalidateSavedCache();
+      } else if (wasSaved && status === 404) {
+        setIsSaved(false);
+        invalidateSavedCache();
+      } else {
+        setIsSaved(wasSaved);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, 'save_job');
 
   return (
     <>
@@ -38,8 +116,8 @@ const JobCard = ({
       onClick={handleClick}
     >
       <div className="flex flex-col sm:flex-row gap-6">
-        <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-100 p-2">
-          <img className="w-full h-full object-contain group-hover:scale-110 transition-transform" src={avatarSrc} alt={company} />
+        <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-100">
+          <img className="w-full h-full object-cover group-hover:scale-110 transition-transform" src={avatarSrc} alt={company} />
         </div>
 
         <div className="flex-1">
@@ -49,10 +127,11 @@ const JobCard = ({
               <p className="text-gray-600 font-medium">{company}</p>
             </div>
             <button
-              className="text-gray-400 hover:text-primary transition-colors"
+              className={`transition-colors ${isSaved ? 'text-primary' : 'text-gray-400 hover:text-primary'}`}
               onClick={handleSave}
+              title={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
             >
-              <BookmarkPlus className="w-6 h-6" />
+              <BookmarkPlus className={`w-6 h-6 ${isSaved ? 'fill-primary' : ''}`} />
             </button>
           </div>
 
@@ -64,6 +143,10 @@ const JobCard = ({
             <div className="flex items-center gap-1.5 text-gray-600">
               <MapPin className="w-4 h-4" />
               <span className="text-sm">{location}</span>
+            </div>
+            <div className={`flex items-center gap-1.5 ${isHiringFull ? 'text-red-600' : 'text-gray-600'}`}>
+              <Users className="w-4 h-4" />
+              <span className="text-sm font-medium">{isHiringFull ? 'Đã tuyển đủ' : `Cần tuyển: ${neededCount || 1}`}</span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-600">
               <Clock className="w-4 h-4" />

@@ -1,24 +1,37 @@
-import { AlertTriangle, Briefcase, Users, Wallet, CreditCard, Sparkles, RefreshCw, Star, Clock, AlertCircle, ArrowUpRight, CheckCircle2, TrendingUp, ChevronRight, Activity } from 'lucide-react';
-import React from 'react';
+import { AlertTriangle, Briefcase, Users, Wallet, CreditCard, Sparkles, RefreshCw, Star, Clock, AlertCircle, ArrowUpRight, CheckCircle2, TrendingUp, ChevronRight, Activity, Crown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../../../services/api';
 
-const WarningBanner = () => (
-  <div className="bg-gradient-to-r from-amber-50 to-orange-50/30 border border-amber-200/60 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:shadow-md">
-    <div className="flex items-start gap-4">
-      <div className="p-3 bg-amber-100/80 rounded-2xl text-amber-600 shadow-sm">
-        <AlertTriangle className="w-6 h-6 animate-pulse" />
+// Cập nhật: Nhận prop verificationStatus để ẩn khi đã upload (PENDING hoặc VERIFIED)
+const WarningBanner = ({ verificationStatus }) => {
+  if (verificationStatus === 'PENDING' || verificationStatus === 'VERIFIED') {
+    return null;
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-amber-50 to-orange-50/30 border border-amber-200/60 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:shadow-md">
+      <div className="flex items-start gap-4">
+        <div className="p-3 bg-amber-100/80 rounded-2xl text-amber-600 shadow-sm">
+          <AlertTriangle className="w-6 h-6 animate-pulse" />
+        </div>
+        <div>
+          <h3 className="font-bold text-amber-900 text-sm md:text-base tracking-tight">
+            {verificationStatus === 'REJECTED' ? 'Hồ sơ xác thực bị từ chối' : 'Hồ sơ công ty của bạn chưa được xác thực'}
+          </h3>
+          <p className="text-xs md:text-sm text-amber-700/80 mt-1 leading-relaxed">
+            {verificationStatus === 'REJECTED' 
+              ? 'Vui lòng cập nhật lại giấy phép ĐKKD chính xác để Admin duyệt lại.' 
+              : 'Vui lòng cập nhật giấy phép ĐKKD để mở khóa toàn bộ tính năng đăng tin tuyển dụng.'}
+          </p>
+        </div>
       </div>
-      <div>
-        <h3 className="font-bold text-amber-900 text-sm md:text-base tracking-tight">Hồ sơ công ty của bạn chưa được xác thực</h3>
-        <p className="text-xs md:text-sm text-amber-700/80 mt-1 leading-relaxed">
-          Vui lòng cập nhật giấy phép ĐKKD để mở khóa toàn bộ tính năng đăng tin tuyển dụng.
-        </p>
-      </div>
+      <button className="bg-amber-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all flex-shrink-0 whitespace-nowrap">
+        Cập nhật ngay
+      </button>
     </div>
-    <button className="bg-amber-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all flex-shrink-0 whitespace-nowrap">
-      Cập nhật ngay
-    </button>
-  </div>
-);
+  );
+};
 
 const StatsGrid = () => {
   const stats = [
@@ -128,9 +141,7 @@ const ApplicationTrend = () => (
       </select>
     </div>
 
-    {/* Elegant SVG Area Chart */}
     <div className="h-64 relative w-full pt-4">
-      {/* Background grid lines */}
       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 z-0">
         <div className="w-full border-t border-slate-100 border-dashed"></div>
         <div className="w-full border-t border-slate-100 border-dashed"></div>
@@ -156,13 +167,11 @@ const ApplicationTrend = () => (
           </filter>
         </defs>
 
-        {/* Smoother, Subtle Spline Area */}
         <path
           d="M 0 150 C 60 150, 70 110, 100 110 C 140 110, 160 135, 200 135 C 240 135, 260 65, 300 65 C 340 65, 360 95, 400 95 C 440 95, 460 140, 500 140 L 500 200 L 0 200 Z"
           fill="url(#areaGrad)"
         />
 
-        {/* Elegant Thin Stroke Line */}
         <path
           d="M 0 150 C 60 150, 70 110, 100 110 C 140 110, 160 135, 200 135 C 240 135, 260 65, 300 65 C 340 65, 360 95, 400 95 C 440 95, 460 140, 500 140"
           fill="none"
@@ -173,7 +182,6 @@ const ApplicationTrend = () => (
           filter="url(#softGlow)"
         />
 
-        {/* Elegant Data Markers */}
         <g transform="translate(100, 110)">
           <circle cx="0" cy="0" r="3" className="fill-white stroke-blue-400 stroke-[2px]" />
         </g>
@@ -182,7 +190,6 @@ const ApplicationTrend = () => (
         </g>
         <g transform="translate(300, 65)">
           <circle cx="0" cy="0" r="4.5" className="fill-white stroke-primary stroke-[3px]" />
-          {/* Subtle Tooltip */}
           <rect x="-26" y="-36" width="52" height="22" rx="6" fill="#0f172a" />
           <polygon points="-4,-14 4,-14 0,-10" fill="#0f172a" />
           <text x="0" y="-21" fill="white" fontSize="10" fontWeight="bold" textAnchor="middle">125 CV</text>
@@ -427,7 +434,6 @@ const ServiceCostChart = () => (
       <p className="text-xs text-slate-500 mt-1 font-medium">Thống kê 6 tháng gần nhất</p>
     </div>
 
-    {/* Enhanced Custom Column Chart */}
     <div className="h-32 relative w-full pt-4">
       <svg className="w-full h-full drop-shadow-md overflow-visible relative z-10" viewBox="0 0 300 100" preserveAspectRatio="none">
         <defs>
@@ -441,19 +447,16 @@ const ServiceCostChart = () => (
           </linearGradient>
         </defs>
 
-        {/* Background Grid */}
         <line x1="0" y1="25" x2="300" y2="25" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
         <line x1="0" y1="50" x2="300" y2="50" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
         <line x1="0" y1="75" x2="300" y2="75" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
 
-        {/* Animated Columns */}
         <rect x="15" y="80" width="24" height="20" rx="8" fill="#e2e8f0" className="hover:fill-[#cbd5e1] transition-all cursor-pointer" />
         <rect x="63" y="65" width="24" height="35" rx="8" fill="#cbd5e1" className="hover:fill-[#94a3b8] transition-all cursor-pointer" />
         <rect x="111" y="50" width="24" height="50" rx="8" fill="#94a3b8" className="hover:fill-[#64748b] transition-all cursor-pointer" />
         <rect x="159" y="25" width="24" height="75" rx="8" fill="url(#barGrad)" fillOpacity="0.7" className="hover:fill-[url(#barGradActive)] transition-all cursor-pointer" />
         <rect x="207" y="35" width="24" height="65" rx="8" fill="url(#barGrad)" fillOpacity="0.85" className="hover:fill-[url(#barGradActive)] transition-all cursor-pointer" />
         
-        {/* Highest column with a tooltip */}
         <g className="group cursor-pointer">
           <rect x="255" y="10" width="24" height="90" rx="8" fill="url(#barGradActive)" className="hover:opacity-90 transition-opacity" />
           <rect x="242" y="-15" width="50" height="20" rx="6" fill="#1e293b" className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -474,6 +477,110 @@ const ServiceCostChart = () => (
   </div>
 );
 
+// ───────────────────────────────────────────────
+// WIDGET: Gói dịch vụ đang dùng (top 3 sắp hết hạn)
+// ───────────────────────────────────────────────
+const MySubscriptionsWidget = () => {
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    api.get('/employer/my-subscriptions', { params: { status: 'ACTIVE', limit: 3 } })
+      .then(r => {
+        if (r.data?.success) {
+          setSubs(r.data.data || []);
+          setTotal(r.data.pagination?.total || 0);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <Crown className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="font-black text-slate-900 text-sm">Gói đang dùng</h3>
+            <p className="text-[11px] text-slate-500 font-medium">
+              {loading ? 'Đang tải...' : total > 0 ? `${total} gói đang hoạt động` : 'Chưa có gói nào'}
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/employer/my-subscriptions"
+          className="text-primary text-xs font-bold hover:underline flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-full"
+        >
+          Xem tất cả <ArrowUpRight className="w-3 h-3" />
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2].map(i => (
+            <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />
+          ))}
+        </div>
+      ) : subs.length === 0 ? (
+        <div className="text-center py-6 rounded-xl border border-dashed border-slate-200">
+          <Sparkles className="w-8 h-8 text-slate-300 mx-auto" />
+          <p className="text-xs text-slate-500 mt-2 font-medium">Bạn chưa có gói nào đang dùng</p>
+          <Link
+            to="/employer/packages"
+            className="inline-block mt-3 text-xs font-bold text-primary hover:underline"
+          >
+            Khám phá gói ngay →
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {subs.map(sub => {
+            const pkg = sub.packageId; // populated
+            const daysRemaining = sub.daysRemaining;
+            const isCritical = daysRemaining !== null && daysRemaining <= 3;
+            return (
+              <Link
+                key={sub._id}
+                to="/employer/my-subscriptions"
+                className="block p-3 rounded-xl border border-slate-200 hover:border-primary/40 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <p className="font-bold text-slate-900 text-xs truncate">
+                        {pkg?.name || sub.packageCode}
+                      </p>
+                    </div>
+                    {sub.targetTitle && (
+                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                        {sub.targetType === 'JOB' ? '📌' : '📄'} {sub.targetTitle}
+                      </p>
+                    )}
+                  </div>
+                  {daysRemaining !== null && (
+                    <span
+                      className={`text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap ${
+                        isCritical ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {daysRemaining}d
+                    </span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export {
   WarningBanner,
   StatsGrid,
@@ -484,4 +591,5 @@ export {
   OptimizeSuggestion,
   NewApplicants,
   ServiceCostChart,
+  MySubscriptionsWidget,
 };

@@ -17,7 +17,7 @@ const formatPrice = (price) => {
 const AdminInvoices = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState(''); // '' = tất cả trạng thái (khớp placeholder)
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {

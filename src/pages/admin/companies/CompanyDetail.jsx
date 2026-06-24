@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import adminCompanyVerificationService from '../../../services/adminCompanyVerificationService';
+import InlinePdfViewer from '../../../components/shared/InlinePdfViewer';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs } from '../shared/AdminPrimitives';
+import { Eye, Download, X } from 'lucide-react';
 
 const tabs = [
   'Thông tin công ty',
@@ -19,6 +21,7 @@ const CompanyDetail = () => {
   const [loading, setLoading] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   const fetchCompanyDetail = async () => {
     try {
@@ -165,10 +168,9 @@ const CompanyDetail = () => {
           {company?.businessLicenseFile ? (
             <div className="space-y-4">
               {(() => {
-                // Xác định chính xác url, loại file, và tên file dựa trên cấu trúc dữ liệu trả về từ backend
                 const isObject = typeof company.businessLicenseFile === 'object' && company.businessLicenseFile !== null;
                 const fileUrl = isObject ? company.businessLicenseFile.fileUrl : company.businessLicenseFile;
-                const fileName = isObject ? (company.businessLicenseFile.fileName || 'Giấy phép kinh doanh') : 'Giấy phép kinh doanh';
+                const fileName = isObject ? (company.businessLicenseFile.fileName || 'Giay_phep_kinh_doanh') : 'Giay_phep_kinh_doanh';
                 const fileType = isObject ? company.businessLicenseFile.fileType : '';
 
                 const isImage = fileType?.startsWith('image/') || /\.(jpeg|jpg|gif|png|webp)$/i.test(fileUrl);
@@ -177,32 +179,41 @@ const CompanyDetail = () => {
                 return (
                   <>
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-primary hover:underline">
-                        📄 {fileName} <span className="text-xs font-normal text-slate-400">(Mở trong tab mới ↗)</span>
+                      <div className="flex items-center gap-4">
+                        <a href={fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-primary hover:underline">
+                          📄 {fileName} <span className="text-xs font-normal text-slate-400">(Mở trong tab mới ↗)</span>
+                        </a>
+                      </div>
+                      
+                      {/* Nút tải về máy */}
+                      <a 
+                        href={fileUrl} 
+                        download={fileName}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg transition-colors shadow-sm"
+                      >
+                        📥 Tải xuống file
                       </a>
                     </div>
 
                     <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-2 shadow-inner">
-                      {/* Xử lý hiển thị Preview nếu là Ảnh */}
                       {isImage && (
                         <div className="flex justify-center p-2 bg-white rounded-xl">
                           <img src={fileUrl} alt="Giấy phép kinh doanh" className="max-h-[600px] object-contain rounded-lg" />
                         </div>
                       )}
 
-                      {/* Xử lý hiển thị Preview trực tiếp nếu là PDF */}
                       {isPdf && (
-                        <iframe 
-                          src={fileUrl} 
-                          className="w-full h-[650px] rounded-xl bg-white" 
-                          title="Bản xem trước giấy phép kinh doanh"
+                        <InlinePdfViewer 
+                          url={fileUrl} 
+                          className="w-full h-[650px] rounded-xl bg-white border border-slate-200" 
                         />
                       )}
 
-                      {/* Fallback nếu không phải định dạng hỗ trợ xem trực tiếp */}
                       {!isImage && !isPdf && (
                         <div className="p-8 text-center text-sm text-slate-500">
-                          Định dạng file không hỗ trợ xem trước trực tiếp. Vui lòng bấm vào liên kết phía trên để tải xuống hoặc kiểm tra.
+                          Định dạng file không hỗ trợ xem trước trực tiếp. Vui lòng bấm vào liên kết phía trên hoặc nút tải xuống để kiểm tra.
                         </div>
                       )}
                     </div>

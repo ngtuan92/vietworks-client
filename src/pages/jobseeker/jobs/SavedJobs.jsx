@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, DollarSign, Calendar, Eye, Send, Briefcase, Loader2 } from 'lucide-react';
-import { getSavedJobs, unsaveJob } from '../../../services/jobseekerService';
+import { getSavedJobs, unsaveJob, getSimilarSavedJobs } from '../../../services/jobseekerService';
+import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
 const SavedJobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -15,7 +16,7 @@ const SavedJobs = () => {
     try {
       const data = await getSavedJobs({ page, limit: 10 });
       setJobs(data.data || []);
-      setTotalPages(data.totalPages || 1);
+      setTotalPages(data.pagination?.pages || 1);
     } catch {
       setStatusMsg('Không thể tải danh sách việc làm đã lưu.');
     } finally {
@@ -28,11 +29,17 @@ const SavedJobs = () => {
   const handleUnsave = async (jobId, title) => {
     try {
       await unsaveJob(jobId);
-      setJobs(prev => prev.filter(j => j._id !== jobId));
+      setJobs(prev => prev.filter(j => (j.job?.id || j.job?._id) !== jobId));
       setStatusMsg(`Đã bỏ lưu công việc "${title}"`);
       setTimeout(() => setStatusMsg(''), 3000);
-    } catch {
-      setStatusMsg('Không thể bỏ lưu. Vui lòng thử lại.');
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 404) {
+        setJobs(prev => prev.filter(j => (j.job?.id || j.job?._id) !== jobId));
+        setStatusMsg('Công việc này không còn trong danh sách đã lưu.');
+      } else {
+        setStatusMsg('Không thể bỏ lưu. Vui lòng thử lại.');
+      }
       setTimeout(() => setStatusMsg(''), 3000);
     }
   };
@@ -41,10 +48,11 @@ const SavedJobs = () => {
     new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   const formatSalary = (job) => {
-    if (!job.salaryMin && !job.salaryMax) return 'Thỏa thuận';
-    if (job.salaryMin && job.salaryMax) return `${job.salaryMin} - ${job.salaryMax} triệu`;
-    if (job.salaryMin) return `Từ ${job.salaryMin} triệu`;
-    return `Đến ${job.salaryMax} triệu`;
+    const s = job.salary;
+    if (!s || s.type === 'NEGOTIABLE' || (!s.minMillion && !s.maxMillion)) return 'Thỏa thuận';
+    if (s.minMillion && s.maxMillion) return `${s.minMillion} - ${s.maxMillion} triệu`;
+    if (s.minMillion) return `Từ ${s.minMillion} triệu`;
+    return `Đến ${s.maxMillion} triệu`;
   };
 
   return (
@@ -74,28 +82,29 @@ const SavedJobs = () => {
           <>
             <div className="space-y-4">
               {jobs.map((item) => {
-                const job = item.jobId || item;
+                const job = item.job || {};
+                const jobId = job.id || job._id;
                 const savedAt = item.savedAt || item.createdAt;
                 return (
-                  <div key={item._id} className="bg-white rounded-2xl border border-slate-200 p-5 hover:border-primary/40 hover:shadow-sm transition-all">
+                  <div key={item._id || item.savedId} className="bg-white rounded-2xl border border-slate-200 p-5 hover:border-primary/40 hover:shadow-sm transition-all">
                     <div className="flex flex-col md:flex-row gap-4 justify-between">
                       <div className="flex gap-4">
                         <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 font-bold text-sm overflow-hidden">
-                          {job.companySnapshot?.logoUrl
-                            ? <img src={job.companySnapshot.logoUrl} alt="" className="w-full h-full object-cover" />
-                            : (job.companySnapshot?.name || job.title || '?').charAt(0)
+                          {job.company?.avatarUrl
+                            ? <img src={job.company.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            : (job.company?.name || job.title || '?').charAt(0)
                           }
                         </div>
                         <div className="space-y-1">
                           <h3 className="font-bold text-slate-950 text-base md:text-lg hover:text-primary transition-colors">
-                            <Link to={`/jobs/${job._id}`}>{job.title}</Link>
+                            <Link to={`/jobs/${jobId}`}>{job.title}</Link>
                           </h3>
-                          <p className="text-sm text-slate-600">{job.companySnapshot?.name || '—'}</p>
+                          <p className="text-sm text-slate-600">{job.company?.name || '—'}</p>
                           <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-2">
-                            {job.locations?.[0] && (
+                            {job.workLocations?.[0] && (
                               <span className="flex items-center gap-1">
                                 <MapPin className="w-3.5 h-3.5" />
-                                {job.locations[0].provinceName}
+                                {job.workLocations[0].provinceName}
                               </span>
                             )}
                             <span className="flex items-center gap-1 font-semibold text-emerald-600">
@@ -109,40 +118,38 @@ const SavedJobs = () => {
                               </span>
                             )}
                           </div>
-                          {job.skills?.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-2">
-                              {job.skills.slice(0, 4).map((s) => (
-                                <span key={s._id || s} className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold">
-                                  {s.name || s}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center md:flex-col justify-between md:justify-center gap-3 mt-4 md:mt-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
                         <button
-                          onClick={() => handleUnsave(item._id, job.title)}
+                          onClick={() => handleUnsave(jobId, job.title)}
                           className="p-2.5 rounded-xl border border-slate-200 text-red-500 hover:bg-red-50 transition cursor-pointer flex items-center justify-center"
                           title="Bỏ lưu công việc này"
                         >
                           <Heart className="w-4 h-4 fill-red-500 text-red-500" />
                         </button>
                         <div className="flex gap-2">
-                          <Link to={`/jobs/${job._id}`} className="px-4 py-2 text-xs font-bold border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition flex items-center gap-1">
+                          <Link to={`/jobs/${jobId}`} className="px-4 py-2 text-xs font-bold border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition flex items-center gap-1">
                             <Eye className="w-3.5 h-3.5" /> Chi tiết
                           </Link>
-                          <Link to={`/jobs/${job._id}`} className="px-4 py-2 text-xs font-bold bg-primary text-white rounded-xl hover:bg-primary/95 transition flex items-center gap-1">
+                          <Link to={`/jobs/${jobId}`} className="px-4 py-2 text-xs font-bold bg-primary text-white rounded-xl hover:bg-primary/95 transition flex items-center gap-1">
                             <Send className="w-3.5 h-3.5" /> Ứng tuyển
                           </Link>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            {totalPages > 1 && (
+              );
+            })}
+
+            <SimilarJobsSection
+              title="Việc làm tương tự"
+              subtitle="Các công việc cùng ngành với những việc bạn đã lưu"
+              fetchFn={getSimilarSavedJobs}
+              limit={6}
+            />
+          </div>
+          {totalPages > 1 && (
               <div className="flex justify-center gap-2 pt-4">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                   <button

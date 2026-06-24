@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jobService from '../../../services/jobService';
+import { getSimilarAppliedJobs } from '../../../services/jobseekerService';
+import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
 const statusConfig = {
   UNREAD: { label: 'Chưa đọc', bg: 'bg-gray-100', text: 'text-gray-600' },
   APPLIED: { label: 'Đã ứng tuyển', bg: 'bg-blue-100', text: 'text-blue-600' },
   VIEWED: { label: 'Đã xem', bg: 'bg-blue-100', text: 'text-blue-700' },
   APPROVED: { label: 'Được duyệt', bg: 'bg-green-100', text: 'text-green-600' },
+  INTERVIEW_INVITED: { label: 'Đã mời phỏng vấn', bg: 'bg-purple-100', text: 'text-purple-600' },
   REJECTED: { label: 'Từ chối', bg: 'bg-red-100', text: 'text-red-600' },
   HIRED: { label: 'Được tuyển', bg: 'bg-green-100', text: 'text-green-700' },
 };
@@ -20,30 +23,34 @@ const AppliedJobs = () => {
   const [filterStatus, setFilterStatus] = useState('');
 
   useEffect(() => {
-    fetchApplications();
-  }, [filterStatus]);
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = {};
+        if (filterStatus) params.status = filterStatus;
 
-  const fetchApplications = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = {};
-      if (filterStatus) params.status = filterStatus;
-      
-      const result = await jobService.getMyApplications(params);
-      if (result.success) {
-        setApplications(result.data.applications);
-        setPagination(result.data.pagination);
-      } else {
-        setError(result.message || 'Không thể tải danh sách ứng tuyển');
+        const result = await jobService.getMyApplications(params);
+        if (cancelled) return;
+        if (result.success) {
+          setApplications(result.data.applications);
+          setPagination(result.data.pagination);
+        } else {
+          setError(result.message || 'Không thể tải danh sách ứng tuyển');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to fetch applications:', error);
+          setError('Đã xảy ra lỗi khi tải danh sách. Vui lòng thử lại.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch applications:', error);
-      setError('Đã xảy ra lỗi khi tải danh sách. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [filterStatus]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -122,7 +129,7 @@ const AppliedJobs = () => {
             <h3 className="text-lg font-semibold text-red-600 mb-2">Đã xảy ra lỗi</h3>
             <p className="text-red-500 mb-4">{error}</p>
             <button
-              onClick={fetchApplications}
+              onClick={() => setFilterStatus((s) => s)}
               className="px-6 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors"
             >
               Thử lại
@@ -241,6 +248,13 @@ const AppliedJobs = () => {
                 </div>
               );
             })}
+
+            <SimilarJobsSection
+              title="Việc làm tương tự"
+              subtitle="Các công việc cùng ngành với những việc bạn đã ứng tuyển"
+              fetchFn={getSimilarAppliedJobs}
+              limit={6}
+            />
           </div>
         )}
 

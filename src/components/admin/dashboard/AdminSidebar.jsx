@@ -67,9 +67,9 @@ const navItems = [
     icon: <BarChart2 className={iconClass} />,
     label: 'Báo cáo',
     children: [
-      { label: 'Thống kê hệ thống', to: '#' },
+      { label: 'Thống kê hệ thống', to: '/admin/analytics/charts' },
       { label: 'Thống kê người dùng', to: '/admin/analytics/user-growth' },
-      { label: 'Thống kê tuyển dụng', to: '#' },
+      { label: 'Thống kê tuyển dụng', to: '/admin/analytics/charts' },
       { label: 'Thống kê doanh thu', to: '/admin/revenue-report' },
     ],
   },
