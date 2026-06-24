@@ -1,4 +1,4 @@
-﻿export const getNotificationTarget = (item, user) => {
+export const getNotificationTarget = (item, user) => {
   const metadata = item?.metadata || {};
   const role = user?.role;
 
@@ -60,14 +60,16 @@
         : { path: '/premium' };
 
     case 'SYSTEM_UPDATE':
+      if (metadata.actionUrl) return { path: metadata.actionUrl };
       return role === 'EMPLOYER'
         ? { path: '/employer/notifications' }
-        : { path: '/notifications' };
+        : { path: '/' }; // Jobseekers don't have a dedicated notifications page, so route to home or do nothing
 
     default:
+      if (metadata.actionUrl) return { path: metadata.actionUrl };
       return role === 'EMPLOYER'
         ? { path: '/employer/notifications' }
-        : { path: '/notifications' };
+        : { path: '/' };
   }
 };
 

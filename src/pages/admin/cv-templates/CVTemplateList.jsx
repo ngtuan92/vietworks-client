@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import adminService from '../../../services/adminService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { PageHeader, SectionCard, FilterGrid, InputField, SelectField, SimpleTable, ActionButton, StatusBadge } from '../shared/AdminPrimitives';
-import { Plus, Edit, Image as ImageIcon, SearchX, Inbox, LayoutGrid, List, Eye, Users, Calendar, X } from 'lucide-react';
+import { Plus, Edit, Image as ImageIcon, SearchX, Inbox, LayoutGrid, List, Eye, Users, Calendar, X, Trash2 } from 'lucide-react';
 
 const CVTemplateList = () => {
   const navigate = useNavigate();
-  const { error } = useNotification();
+  const { error, confirm } = useNotification();
   const [templates, setTemplates] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +85,21 @@ const CVTemplateList = () => {
 
   const handleEdit = (tpl) => {
     navigate(`/admin/cv-templates/edit/${tpl._id}`, { state: tpl });
+  };
+
+  const handleDelete = async (id) => {
+    confirm('Bạn có chắc chắn muốn xóa mẫu CV này? Hành động này không thể hoàn tác.', async () => {
+      try {
+        const res = await adminService.deleteTemplate(id);
+        if (res.success) {
+          fetchTemplates();
+        } else {
+          error(res.message || 'Xóa thất bại!');
+        }
+      } catch (err) {
+        error(err.response?.data?.message || 'Có lỗi xảy ra khi xóa!');
+      }
+    });
   };
 
   return (
@@ -200,6 +215,13 @@ const CVTemplateList = () => {
                       >
                         <Edit className="w-5 h-5" />
                       </button>
+                      <button
+                        onClick={() => handleDelete(tpl._id)}
+                        className="p-3 bg-red-600 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-700 cursor-pointer"
+                        title="Xóa mẫu CV"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
 
 
@@ -268,6 +290,9 @@ const CVTemplateList = () => {
                       <ActionButton tone="soft" onClick={() => handleEdit(tpl)} className="!py-1 px-3">
                         <span className="flex items-center gap-1"><Edit className="w-3 h-3" /> Sửa</span>
                       </ActionButton>
+                      <ActionButton tone="danger" onClick={() => handleDelete(tpl._id)} className="!py-1 px-3 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none">
+                        <span className="flex items-center gap-1"><Trash2 className="w-3 h-3" /> Xóa</span>
+                      </ActionButton>
                     </div>
                   </div>
                 </div>
@@ -332,9 +357,14 @@ const CVTemplateList = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <ActionButton tone="soft" onClick={() => handleEdit(tpl)}>
-                      <span className="flex items-center gap-1.5"><Edit className="w-4 h-4" /> Sửa</span>
-                    </ActionButton>
+                    <div className="flex gap-2">
+                      <ActionButton tone="soft" onClick={() => handleEdit(tpl)}>
+                        <span className="flex items-center gap-1.5"><Edit className="w-4 h-4" /> Sửa</span>
+                      </ActionButton>
+                      <ActionButton tone="danger" onClick={() => handleDelete(tpl._id)} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none">
+                        <span className="flex items-center gap-1.5"><Trash2 className="w-4 h-4" /> Xóa</span>
+                      </ActionButton>
+                    </div>
                   </td>
                 </tr>
               ))}

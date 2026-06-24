@@ -234,7 +234,9 @@ const CVBuilder = () => {
       await cvService.updateCv(id, {
         sections,
         style,
-        previewImageUrl: previewUrl || undefined
+        previewImageUrl: previewUrl || undefined,
+        status: 'DRAFT',
+        isMain: false
       });
     } catch (err) {
       console.error('Lỗi khi lưu và thoát:', err);
@@ -252,7 +254,8 @@ const CVBuilder = () => {
         sections,
         style,
         previewImageUrl: previewUrl || undefined,
-        isMain: true
+        isMain: true,
+        status: 'ACTIVE'
       });
       showSuccess('Đã lưu thành CV chính thức!');
       navigate('/manage-cv');
@@ -354,7 +357,7 @@ const CVBuilder = () => {
 
   if (loading) return <div className="h-screen flex items-center justify-center font-body-md bg-surface">Đang tải Canvas CV...</div>;
 
-  const selectedLayout = cvData?.templateId?.templateCode || 'left-col';
+  const selectedLayout = cvData?.templateCode || cvData?.templateId?.templateCode || 'left-col';
 
   const leftSections = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
   const rightSections = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);

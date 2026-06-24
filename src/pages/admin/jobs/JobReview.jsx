@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField } from '../shared/AdminPrimitives';
 import jobAdminService from '../../../services/jobAdminService'; 
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const checks = [
   'Công ty đã được xác minh',
@@ -17,6 +18,7 @@ const checks = [
 const JobReview = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const { success, error: notifyError } = useNotification();
 
   const [checked, setChecked] = useState(() => Object.fromEntries(checks.map((item) => [item, false])));
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -61,11 +63,11 @@ const JobReview = () => {
       setSubmitting(true);
       const response = await jobAdminService.approveJob(jobId, 'Đạt yêu cầu qua bảng danh sách kiểm duyệt hệ thống.');
       if (response.success) {
-        alert('Phê duyệt tin tuyển dụng thành công!');
+        success('Phê duyệt tin tuyển dụng thành công!');
         navigate('/admin/jobs');
       }
     } catch (err) {
-      alert('Lỗi phê duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
+      notifyError('Lỗi phê duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
@@ -77,12 +79,12 @@ const JobReview = () => {
       setSubmitting(true);
       const response = await jobAdminService.rejectJob(jobId, reason, reviewNote || reason);
       if (response.success) {
-        alert('Đã từ chối duyệt tin. Tin tuyển dụng chuyển về dạng bản nháp!');
+        success('Đã từ chối duyệt tin. Tin tuyển dụng chuyển về dạng bản nháp!');
         setRejectOpen(false);
         navigate('/admin/jobs');
       }
     } catch (err) {
-      alert('Lỗi từ chối duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
+      notifyError('Lỗi từ chối duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
@@ -94,12 +96,12 @@ const JobReview = () => {
       setSubmitting(true);
       const response = await jobAdminService.banJob(jobId, reason);
       if (response.success) {
-        alert('Đã khóa tin tuyển dụng thành công do vi phạm điều khoản!');
+        success('Đã khóa tin tuyển dụng thành công do vi phạm điều khoản!');
         setBanOpen(false);
         navigate('/admin/jobs');
       }
     } catch (err) {
-      alert('Lỗi khi khóa tin: ' + (err?.message || 'Hệ thống trục trặc.'));
+      notifyError('Lỗi khi khóa tin: ' + (err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }

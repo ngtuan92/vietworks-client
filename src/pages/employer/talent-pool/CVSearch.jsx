@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getOrCreateConversation } from '../../../services/chatService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const maskEmail = (email) => {
   if (!email) return '****';
@@ -12,6 +13,7 @@ const maskPhone = (phone) => { if (!phone) return '******'; return `${phone.slic
 
 const CVSearch = () => {
   const navigate = useNavigate();
+  const { error } = useNotification();
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [experience, setExperience] = useState('');
@@ -88,7 +90,7 @@ const CVSearch = () => {
       }
     } catch (err) {
       console.error('Cannot create chat', err);
-      alert('Lỗi tạo phòng chat. Vui lòng thử lại.');
+      error('Lỗi tạo phòng chat. Vui lòng thử lại.');
     } finally {
       setChatLoadingId(null);
     }

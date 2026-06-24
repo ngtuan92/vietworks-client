@@ -1,7 +1,33 @@
 import { Bell, Search, Wallet, ChevronDown, ShieldCheck } from 'lucide-react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import useAuth from '../../../hooks/useAuth';
+import api from '../../../services/api';
 
 const AdminHeader = () => {
+  const { user } = useAuth();
+  const [revenue, setRevenue] = useState(0);
+
+  useEffect(() => {
+    const fetchRevenue = async () => {
+      try {
+        const res = await api.get('/admin/revenue-report?range=all');
+        if (res.data?.success) {
+          setRevenue(res.data.data.summary.totalRevenue || 0);
+        }
+      } catch (err) {
+        console.error('Lỗi lấy doanh thu:', err);
+      }
+    };
+    fetchRevenue();
+  }, []);
+
+  const getInitials = (name) => {
+    if (!name) return 'SA';
+    const parts = name.split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <header className="h-20 flex-shrink-0 border-b border-slate-200/60 bg-white/80 backdrop-blur-2xl px-8 z-40 sticky top-0 transition-all flex items-center justify-between">
       <div className="flex h-full items-center gap-6">
@@ -35,30 +61,34 @@ const AdminHeader = () => {
             <Wallet className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">Ví Hệ thống</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">Doanh thu hệ thống</p>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-black text-slate-900 tracking-tight leading-none">125.000.000 đ</p>
+              <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{new Intl.NumberFormat('vi-VN').format(revenue)} đ</p>
             </div>
           </div>
         </div>
 
-        {/* Notification bell */}
-        <button className="relative rounded-full p-2.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900 active:scale-95 border border-transparent hover:border-slate-200">
-          <Bell className="w-5 h-5" />
-          <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500 animate-pulse"></span>
-        </button>
+
 
         <div className="h-8 w-px bg-slate-200/80 hidden sm:block"></div>
 
         {/* Profile */}
         <div className="flex cursor-pointer items-center gap-3 group">
           <div className="hidden text-right sm:block group-hover:opacity-80 transition-opacity">
-            <p className="text-sm font-extrabold text-slate-900 tracking-tight">Quản trị viên</p>
-            <p className="text-[10px] font-bold text-slate-500">Toàn quyền</p>
+            <p className="text-sm font-extrabold text-slate-900 tracking-tight">{user?.fullName || 'Quản trị viên'}</p>
+            <p className="text-[10px] font-bold text-slate-500">{user?.role === 'ADMIN' ? 'Toàn quyền' : 'Quản lý'}</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-100 group-hover:border-primary/50 shadow-sm group-hover:shadow-md transition-all overflow-hidden bg-gradient-to-br from-primary to-blue-700 font-black text-white p-0.5">
-              SA
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-slate-100 bg-slate-100 text-sm font-black text-slate-700 shadow-sm transition-all group-hover:border-primary/50 group-hover:shadow-md">
+              {user?.avatarUrl ? (
+                <img
+                  alt="Admin Avatar"
+                  className="h-full w-full object-cover"
+                  src={user.avatarUrl}
+                />
+              ) : (
+                <span>{getInitials(user?.fullName)}</span>
+              )}
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors hidden sm:block" />
           </div>

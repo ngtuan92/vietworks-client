@@ -103,7 +103,7 @@ const ManageCV = () => {
 
   const handleSetMain = async (id) => {
     try {
-      const res = await cvService.updateCv(id, { isMain: true });
+      const res = await cvService.updateCv(id, { isMain: true, status: 'ACTIVE' });
       if (res.success) {
         success('Đặt CV làm CV chính thành công!');
         await fetchCvs();
@@ -119,14 +119,14 @@ const ManageCV = () => {
   // Tính số lượng CV cho các filter
   const counts = {
     all: cvs.length,
-    active: cvs.filter(cv => cv.isMain).length,
-    draft: cvs.filter(cv => !cv.isMain).length
+    active: cvs.filter(cv => cv.status === 'ACTIVE').length,
+    draft: cvs.filter(cv => cv.status === 'DRAFT').length
   };
 
   // Lọc CV theo filter hiện tại
   const filteredCvs = cvs.filter(cv => {
-    if (filter === 'active') return cv.isMain;
-    if (filter === 'draft') return !cv.isMain;
+    if (filter === 'active') return cv.status === 'ACTIVE';
+    if (filter === 'draft') return cv.status === 'DRAFT';
     return true;
   });
 

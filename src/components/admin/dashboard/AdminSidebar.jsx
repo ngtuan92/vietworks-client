@@ -1,8 +1,10 @@
 import { LayoutDashboard, ChevronDown, Users, Building2, Briefcase, Database, FileText, CreditCard, Package, BellRing, BarChart2, Receipt, Settings, PlusCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useSocket } from '../../../contexts/SocketContext';
+import notificationService from '../../../services/notificationService';
 import logoImg from '../../../assets/logo.png';
 
 const iconClass = 'w-5 h-5';
@@ -12,9 +14,7 @@ const navItems = [
     icon: <Users className={iconClass} />,
     label: 'Người dùng',
     children: [
-      { label: 'Tất cả người dùng', to: '/admin/users' },
-      { label: 'Ứng viên', to: '/admin/users?role=JOBSEEKER' },
-      { label: 'Nhà tuyển dụng', to: '/admin/users?role=EMPLOYER' },
+      { label: 'Quản lý người dùng', to: '/admin/users' },
     ],
   },
   {
@@ -61,7 +61,7 @@ const navItems = [
   {
     icon: <BellRing className={iconClass} />,
     label: 'Thông báo',
-    children: [{ label: 'Quản lý thông báo', to: '/admin/notifications' }],
+    children: [{ label: 'Quản lý thông báo', to: '/admin/notifications', id: 'notifications' }],
   },
   {
     icon: <BarChart2 className={iconClass} />,
@@ -93,6 +93,32 @@ const AdminSidebar = () => {
   const location = useLocation();
   const { logout } = useAuth();
   const { confirm } = useNotification();
+  const socket = useSocket();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await notificationService.getMyNotifications({ limit: 1 });
+        setUnreadCount(res.unreadCount || 0);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUnread();
+
+    const handleLocalRead = () => fetchUnread();
+    window.addEventListener('vietworks:notification-read', handleLocalRead);
+
+    if (socket) {
+      socket.on('new_notification', fetchUnread);
+    }
+    
+    return () => {
+      window.removeEventListener('vietworks:notification-read', handleLocalRead);
+      if (socket) socket.off('new_notification', fetchUnread);
+    };
+  }, [socket]);
 
   const isActive = (to) => {
     if (!to) return false;
@@ -134,7 +160,7 @@ const AdminSidebar = () => {
       <div className="p-5 flex items-center gap-3 border-b border-slate-100/80">
         <img src={logoImg} alt="VietWorks Logo" className="h-10 w-auto object-contain" />
         <div>
-          <span className="block text-xl font-black tracking-tight vw-gradient-text">VietWorks</span>
+          <span className="block text-xl font-black text-primary tracking-tight">VietWorks</span>
           <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Admin Suite</span>
         </div>
       </div>
@@ -143,9 +169,9 @@ const AdminSidebar = () => {
         <Link
           to="/admin/dashboard"
           className={`mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
-            isActive('/admin/dashboard')
-              ? 'bg-gradient-to-r from-[#004491] to-[#0056B3] text-white shadow-glow'
-              : 'text-slate-600 hover:-translate-y-0.5 hover:bg-blue-50 hover:text-[#0056B3]'
+              isActive('/admin/dashboard')
+                ? 'bg-blue-50 text-primary premium-shadow'
+                : 'text-slate-600 hover:-translate-y-0.5 hover:bg-slate-100/80 hover:text-slate-900'
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
@@ -159,8 +185,8 @@ const AdminSidebar = () => {
               to={item.to}
               className={`mb-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                 isActive(item.to)
-                  ? 'bg-gradient-to-r from-[#004491] to-[#0056B3] text-white shadow-glow'
-                  : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                  ? 'bg-blue-50 text-primary premium-shadow'
+                  : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
               }`}
             >
               {item.icon}
@@ -172,7 +198,7 @@ const AdminSidebar = () => {
                 type="button"
                 onClick={() => toggle(item.label)}
                 className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
-                  openGroup === item.label ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                  openGroup === item.label ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -183,6 +209,11 @@ const AdminSidebar = () => {
                   {item.badge && (
                     <span className="rounded-full bg-[#0056B3] px-1.5 text-[10px] font-bold text-white">
                       {item.badge}
+                    </span>
+                  )}
+                  {item.label === 'Thông báo' && unreadCount > 0 && (
+                    <span className="rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                      {unreadCount}
                     </span>
                   )}
                   <ChevronDown
@@ -207,7 +238,7 @@ const AdminSidebar = () => {
                         type="button"
                         onClick={handleLogout}
                         className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold transition-all ${
-                          child.isDanger ? 'text-blue-800 hover:bg-blue-50' : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                          child.isDanger ? 'text-red-600 hover:bg-red-50' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                         }`}
                       >
                         <span>{child.label}</span>
@@ -218,10 +249,10 @@ const AdminSidebar = () => {
                         to={child.to}
                         className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
                           isActive(child.to)
-                            ? 'bg-blue-50 text-[#0056B3] font-black'
+                            ? 'text-primary font-bold bg-blue-50/50'
                             : child.isDanger
-                            ? 'text-blue-800 font-bold hover:bg-blue-50'
-                            : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3] font-semibold'
+                            ? 'text-red-600 font-bold hover:bg-red-50'
+                            : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-semibold'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -231,6 +262,11 @@ const AdminSidebar = () => {
                         {child.badge && (
                           <span className="rounded-md bg-[#0056B3]/10 px-1.5 py-0.5 text-[9px] font-bold text-blue-800 transition-all group-hover:bg-[#0056B3] group-hover:text-white">
                             {child.badge}
+                          </span>
+                        )}
+                        {child.id === 'notifications' && unreadCount > 0 && (
+                          <span className="rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">
+                            {unreadCount}
                           </span>
                         )}
                       </Link>
@@ -243,11 +279,8 @@ const AdminSidebar = () => {
         )}
       </nav>
 
-      <div className="border-t border-slate-100 p-4">
-        <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-white p-3 text-[11px] font-bold text-slate-500 shadow-insetLight">
-          <p className="text-slate-900">Quản trị viên hệ thống</p>
-          <p className="mt-1">Vận hành an toàn · minh bạch</p>
-        </div>
+      <div className="border-t border-slate-200/60 p-4 text-[11px] font-bold text-slate-400">
+        Nhà quản trị hệ thống
       </div>
     </aside>
   );

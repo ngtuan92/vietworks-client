@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import jobService from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
+import { useNotification } from '../../../contexts/NotificationContext';
 const formatSalaryText = (salaryField) => {
   if (!salaryField) return 'Thỏa thuận';
   if (typeof salaryField === 'object') {
@@ -50,6 +51,7 @@ const buildWorkLocationSnapshot = (location) => {
 };
 
 const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
+  const { confirm, success, error, warning } = useNotification();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -171,8 +173,8 @@ workLocations: Array.isArray(loadedJob.workLocations)
           }));
         }
 
-      } catch (error) {
-        alert('Lỗi khởi tạo dữ liệu: ' + error.message);
+      } catch (err) {
+        error('Lỗi khởi tạo dữ liệu: ' + err.message);
         onClose();
       } finally {
         loading && setLoading(false);
@@ -245,7 +247,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
 
   const handleSaveChanges = async () => {
   if (formData.workLocations.length === 0) {
-    alert('Vui lòng chọn ít nhất một địa điểm làm việc!');
+    warning('Vui lòng chọn ít nhất một địa điểm làm việc!');
     return;
   }
 
@@ -282,11 +284,11 @@ workLocations: Array.isArray(loadedJob.workLocations)
     const response = await jobService.updateJob(jobId, payload);
 
     if (response.success) {
-      alert('Cập nhật thông tin tin tuyển dụng thành công!');
+      success('Cập nhật thông tin tin tuyển dụng thành công!');
       onSuccess();
     }
-  } catch (error) {
-    alert('Cập nhật thất bại: ' + (error.response?.data?.message || error.message));
+  } catch (err) {
+    error('Cập nhật thất bại: ' + (err.response?.data?.message || err.message));
   }
 };
   const handleSalaryChange = (subField, value) => {
@@ -336,25 +338,27 @@ workLocations: Array.isArray(loadedJob.workLocations)
 };
 
   const handleSendToReview = async () => {
-    if (!window.confirm('Bạn có chắc muốn gửi duyệt tin này trực tiếp không?')) return;
-    try {
-      await jobService.submitJobForReview(jobId);
-      alert('Đã gửi duyệt tin thành công!');
-      onSuccess();
-    } catch (error) {
-      alert('Không thể gửi duyệt: ' + (error.response?.data?.message || error.message));
-    }
+    confirm('Bạn có chắc muốn gửi duyệt tin này trực tiếp không?', async () => {
+      try {
+        await jobService.submitJobForReview(jobId);
+        success('Đã gửi duyệt tin thành công!');
+        onSuccess();
+      } catch (err) {
+        error('Không thể gửi duyệt: ' + (err.response?.data?.message || err.message));
+      }
+    });
   };
 
   const handleCloseJob = async () => {
-    if (!window.confirm('Bạn có chắc muốn đóng tin tuyển dụng này? Job sẽ không còn hiển thị công khai.')) return;
-    try {
-      await jobService.closeJob(jobId);
-      alert('Đóng tin tuyển dụng thành công!');
-      onSuccess();
-    } catch (error) {
-      alert('Không thể đóng job: ' + (error.response?.data?.message || error.message));
-    }
+    confirm('Bạn có chắc muốn đóng tin tuyển dụng này? Job sẽ không còn hiển thị công khai.', async () => {
+      try {
+        await jobService.closeJob(jobId);
+        success('Đóng tin tuyển dụng thành công!');
+        onSuccess();
+      } catch (err) {
+        error('Không thể đóng job: ' + (err.response?.data?.message || err.message));
+      }
+    });
   };
 
   if (loading) return (
