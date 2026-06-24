@@ -3,11 +3,43 @@ import api from './api';
 // ==================== WALLET DEPOSIT ====================
 
 /**
- * Tạo giao dịch nạp tiền vào ví (trả về QR SePay)
+ * Tạo giao dịch nạp tiền vào ví Employer (trả về QR SePay)
  */
 export const createDeposit = async (amount) => {
   const res = await api.post('/employer/wallet/deposit', { amount });
   return res.data;
+};
+
+/**
+ * Lấy thông tin ví Employer
+ */
+export const getEmployerWallet = async () => {
+  const res = await api.get('/employer/wallet');
+  return res.data?.data;
+};
+
+/**
+ * Tạo giao dịch nạp tiền vào ví Jobseeker (trả về QR SePay)
+ */
+export const createJobseekerDeposit = async (amount) => {
+  const res = await api.post('/jobseeker/wallet/deposit', { amount });
+  return res.data;
+};
+
+/**
+ * Lấy thông tin ví Jobseeker
+ */
+export const getJobseekerWallet = async () => {
+  const res = await api.get('/jobseeker/wallet');
+  return res.data?.data;
+};
+
+/**
+ * Tạo ví Jobseeker (idempotent — nếu đã có thì trả ví cũ)
+ */
+export const createJobseekerWallet = async () => {
+  const res = await api.post('/jobseeker/wallet');
+  return res.data?.data;
 };
 
 // ==================== BOOST CV / JOB ====================
@@ -48,6 +80,16 @@ export const checkSepayPayment = async (orderCode) => {
 export const getTransactionByOrderCode = async (orderCode) => {
   const res = await api.get(`/transactions/by-order-code/${orderCode}`);
   return res.data?.data;
+};
+
+/**
+ * Yêu cầu xuất hóa đơn VAT cho 1 giao dịch PACKAGE_PURCHASE thành công.
+ * @param {string} transactionId
+ * @param {{ taxId?: string, address?: string }} payload
+ */
+export const requestInvoice = async (transactionId, payload = {}) => {
+  const res = await api.post(`/transactions/${transactionId}/invoice`, payload);
+  return res.data;
 };
 
 // ==================== MY SUBSCRIPTIONS ====================

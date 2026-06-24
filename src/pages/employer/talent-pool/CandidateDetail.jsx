@@ -1,14 +1,28 @@
 
 import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 const CandidateDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const unlocked = id === '2';
+  // ?boosted=true trên URL sẽ hiển thị badge (giả lập trong khi chờ BE trả isBoosted)
+  const isBoosted = searchParams.get('boosted') === 'true';
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Chi tiết ứng viên Talent Pool</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-2xl font-bold text-slate-900">Chi tiết ứng viên Talent Pool</h1>
+          {isBoosted && (
+            <span
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm"
+              title="Ứng viên này đang dùng gói Boost CV - ưu tiên hiển thị"
+            >
+              ⚡ Boosted
+            </span>
+          )}
+        </div>
         <p className="text-slate-600 mt-1">Ứng viên #{id}</p>
       </div>
 

@@ -146,6 +146,7 @@ const Navbar = () => {
                     <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-4 h-4" />} label="Việc làm phù hợp" />
                     <MenuLink to="/ai-cv-review" icon={<Award className="w-4 h-4 text-yellow-500" />} label="AI CV Review" />
                     <MenuLink to="/followed-companies" icon={<Building2 className="w-4 h-4" />} label="Công ty đang theo dõi" />
+                    <MenuLink to="/wallet" icon={<CreditCard className="w-4 h-4" />} label="Ví của tôi" />
                     <MenuLink to="/my-subscriptions" icon={<CreditCard className="w-4 h-4" />} label="Gói của tôi" />
                     <MenuLink to="/my-transactions" icon={<Receipt className="w-4 h-4" />} label="Lịch sử giao dịch" />
                   </div>

@@ -15,6 +15,7 @@ import AICvReview from './pages/jobseeker/cv/AICvReview';
 import JobseekerTransactions from './pages/jobseeker/billing/JobseekerTransactions';
 import PaymentSuccess from './pages/jobseeker/billing/PaymentSuccess';
 import JobseekerMySubscriptions from './pages/jobseeker/subscription/MySubscriptions';
+import JobseekerWallet from './pages/jobseeker/wallet/JobseekerWallet';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
@@ -77,6 +78,7 @@ import CVTemplateManagement from './pages/admin/master-data/CVTemplateManagement
 import NotificationCenter from './pages/admin/notifications/NotificationCenter';
 import AnalyticsDashboard from './pages/admin/dashboard/AnalyticsDashboard';
 import AdminAccountSettings from './pages/admin/dashboard/AdminAccountSettings';
+import AnalyticsCharts from './pages/admin/analytics/AnalyticsCharts';
 
 // New Admin Pages from pull/merge
 import AdminPackages from './pages/admin/packages/AdminPackages';
@@ -128,6 +130,7 @@ function App() {
               <Route path="ai-cv-review" element={<AICvReview />} />
               <Route path="my-transactions" element={<JobseekerTransactions />} />
               <Route path="my-subscriptions" element={<JobseekerMySubscriptions />} />
+              <Route path="wallet" element={<JobseekerWallet />} />
               <Route path="payment-success" element={<PaymentSuccess />} />
               <Route path="followed-companies" element={<FollowedCompanies />} />
             </Route>
@@ -225,6 +228,7 @@ function App() {
               <Route path="analytics" element={<AnalyticsDashboard />} />
               <Route path="revenue-report" element={<AdminRevenueReport />} />
               <Route path="analytics/user-growth" element={<AdminUserGrowth />} />
+              <Route path="analytics/charts" element={<AnalyticsCharts />} />
               <Route path="email-logs" element={<EmailLogs />} />
 
               <Route path="account" element={<AdminAccountSettings />} />

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../../../services/api';
+import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
 
 const TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -9,16 +10,51 @@ const TABS = [
   { key: 'job_package', label: 'Gói tin nổi bật' },
 ];
 
+// Tooltip giải thích trạng thái (hover vào StatusPill để xem).
+// - SUCCESS  → đã cộng / đã thanh toán
+// - PENDING  → đang chờ SePay; nếu >10p thì cảnh báo timeout
+// - FAILED   → lấy metadata.failedReason do backend set khi webhook amount sai
+const describeTransaction = (tx) => {
+  if (!tx) return '';
+  if (tx.status === 'SUCCESS') {
+    if (tx.type === 'WALLET_DEPOSIT') return 'Đã cộng vào ví';
+    if (tx.type === 'PACKAGE_PURCHASE') return 'Đã thanh toán — dịch vụ đang được kích hoạt';
+    return 'Giao dịch đã hoàn tất';
+  }
+  if (tx.status === 'PENDING') {
+    const ageMs = Date.now() - new Date(tx.createdAt).getTime();
+    if (ageMs > 10 * 60 * 1000) {
+      return 'Đang chờ SePay xác nhận — quá thời gian, kiểm tra nội dung chuyển khoản hoặc liên hệ hỗ trợ';
+    }
+    return 'Đang chờ SePay xử lý — tiền sẽ tự cộng khi ngân hàng xác nhận';
+  }
+  if (tx.status === 'FAILED') {
+    return tx?.metadata?.failedReason || 'Thanh toán thất bại — liên hệ hỗ trợ để được hướng dẫn';
+  }
+  return tx.status;
+};
+
 const Transactions = () => {
   const [active, setActive] = useState('all');
   const [keyword, setKeyword] = useState('');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [preselectTxId, setPreselectTxId] = useState(null);
+
+  const openInvoiceFor = (txId) => {
+    setPreselectTxId(txId);
+    setShowInvoiceModal(true);
+  };
 
   useEffect(() => {
     api.get('/employer/transactions')
       .then(r => {
-        if (r.data.success) setRows(r.data.data);
+        if (r.data.success) {
+          setRows(r.data.data);
+          // Báo header refresh số dư (event vietworks:wallet-updated)
+          window.dispatchEvent(new Event('vietworks:wallet-updated'));
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -98,19 +134,19 @@ const Transactions = () => {
                     <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-900">{r._id}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{typeLabel(r.type)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={r.type === 'DEPOSIT' ? 'text-emerald-700 font-semibold' : 'text-red-700 font-semibold'}>
-                        {r.type === 'DEPOSIT' ? '+' : '-'}{Number(r.amount).toLocaleString('vi-VN')} VNĐ
+                      <span className={r.type === 'WALLET_DEPOSIT' ? 'text-emerald-700 font-semibold' : 'text-red-700 font-semibold'}>
+                        {r.type === 'WALLET_DEPOSIT' ? '+' : '-'}{Number(r.amount).toLocaleString('vi-VN')} VNĐ
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <StatusPill status={r.status} />
+                      <span title={describeTransaction(r)} className="cursor-help">
+                        <StatusPill status={r.status} />
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</td>
                     <td className="px-4 py-3">{r.description}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <button className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50">
-                        Tải
-                      </button>
+                      <InvoiceActionButton tx={r} onRequest={openInvoiceFor} />
                     </td>
                   </tr>
                 ))
@@ -119,13 +155,62 @@ const Transactions = () => {
           </table>
         </div>
       </section>
+
+      {/* Modal yêu cầu xuất hóa đơn — mở khi user click "Xuất HĐ" ở 1 dòng */}
+      <RequestInvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        transactions={rows}
+        defaultSelectedId={preselectTxId}
+      />
     </div>
   );
 };
 
+// Nút thao tác hóa đơn trên từng dòng giao dịch:
+// - Đã yêu cầu rồi (invoiceRequested=true)  → disable, label "Đã yêu cầu"
+// - SUCCESS + PACKAGE_PURCHASE + chưa yêu cầu → enable "Xuất HĐ", mở modal
+// - Còn lại (PENDING/FAILED, WALLET_DEPOSIT, …) → disable, label "—"
+const InvoiceActionButton = ({ tx, onRequest }) => {
+  if (tx?.invoiceRequested) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Đã gửi yêu cầu — đang chờ admin xử lý"
+        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-400 font-medium cursor-not-allowed"
+      >
+        Đã yêu cầu
+      </button>
+    );
+  }
+  if (tx?.status === 'SUCCESS' && tx?.type === 'PACKAGE_PURCHASE') {
+    return (
+      <button
+        type="button"
+        onClick={() => onRequest?.(tx._id)}
+        className="px-3 py-1.5 rounded-lg border border-primary/40 text-primary font-semibold hover:bg-primary/10"
+      >
+        Xuất HĐ
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      disabled
+      title="Chỉ giao dịch mua gói dịch vụ thành công mới được xuất hóa đơn"
+      className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-400 font-medium cursor-not-allowed"
+    >
+      —
+    </button>
+  );
+};
+
 const typeLabel = (t) => {
-  if (t === 'DEPOSIT') return 'Nạp tiền';
-  if (t === 'PAYMENT') return 'Thanh toán';
+  if (t === 'WALLET_DEPOSIT') return 'Nạp tiền';
+  if (t === 'PACKAGE_PURCHASE') return 'Mua dịch vụ';
+  if (t === 'CV_UNLOCK_SINGLE' || t === 'CV_UNLOCK_BY_PACKAGE') return 'Mở khóa CV';
   if (t === 'REFUND') return 'Hoàn tiền';
   return 'Khác';
 };
