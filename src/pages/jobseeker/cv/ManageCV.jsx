@@ -249,7 +249,13 @@ const ManageCV = () => {
                         onSetMain={handleSetMain}
                       />
                     ))}
-                    {filter !== 'active' && <CVPlaceholderCard />}
+                    {filter !== 'active' && cvs.length < 5 && <CVPlaceholderCard />}
+                    {filter !== 'active' && cvs.length >= 5 && (
+                      <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-slate-500 text-center h-full min-h-[280px]">
+                        <p className="font-semibold mb-1">Giới hạn mẫu CV</p>
+                        <p className="text-sm">Bạn đã tạo đủ 5 mẫu CV. Vui lòng xóa bớt để tạo mới.</p>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -276,7 +282,14 @@ const ManageCV = () => {
                     onRename={handleRenameUploadedCv}
                   />
                 ))}
-                <UploadedCVPlaceholderCard onClick={() => fileInputRef.current?.click()} />
+                {uploadedCvs.length < 5 ? (
+                  <UploadedCVPlaceholderCard onClick={() => fileInputRef.current?.click()} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-slate-500 text-center h-full min-h-[200px]">
+                    <p className="font-semibold mb-1">Giới hạn tải lên</p>
+                    <p className="text-sm">Bạn đã tải lên đủ 5 CV. Vui lòng xóa bớt để tải tệp mới.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

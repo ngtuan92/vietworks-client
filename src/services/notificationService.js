@@ -20,6 +20,11 @@ const notificationService = {
     window.dispatchEvent(new CustomEvent('vietworks:notification-read'));
     return response.data;
   },
+  async bulkDeleteNotifications(ids) {
+    const response = await api.post('/notifications/bulk-delete', { ids });
+    window.dispatchEvent(new CustomEvent('vietworks:notification-read'));
+    return response.data;
+  },
   async getSettings() {
     const response = await api.get('/notification-settings');
     return response.data;
