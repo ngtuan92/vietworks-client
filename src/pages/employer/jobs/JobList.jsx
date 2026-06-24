@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Send, Trash2, Plus } from 'lucide-react';
 import jobService from '../../../services/jobService'; // Đường dẫn tới file API của bạn
+import api from '../../../services/api';
+import companyLocationService from '../../../services/companyLocationService';
 import JobDetailModal from './JobDetailModal';
 import { useNotification } from '../../../contexts/NotificationContext';
 
@@ -37,10 +40,12 @@ const statusMeta = {
 };
 
 const JobList = () => {
+  const navigate = useNavigate();
   const { confirm, success, error } = useNotification();
   const [jobs, setJobs] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [loading, setLoading] = useState(false);
+  const [provinces, setProvinces] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState(null); // Quản lý job đang xem chi tiết
 
   // State lưu bộ lọc tìm kiếm
@@ -56,6 +61,16 @@ const JobList = () => {
     page: 1,
     limit: 10
   });
+
+  const [searchTerm, setSearchTerm] = useState(filters.search);
+
+  // Debounce search input để tự động tìm kiếm khi dừng gõ
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   const formatSalary = (salaryField) => {
     // Nếu không có dữ liệu lương
@@ -87,8 +102,10 @@ const JobList = () => {
       const params = {
         page: filters.page,
         limit: filters.limit,
-        ...(filters.status && { status: filters.status })
-        // Bạn có thể mở rộng backend để nhận thêm search, location... nếu cần
+        ...(filters.status && { status: filters.status }),
+        ...(filters.search && { search: filters.search }),
+        ...(filters.location && { location: filters.location }),
+        ...(filters.package && { package: filters.package })
       };
 
       const response = await jobService.getMyJobs(params);
@@ -105,7 +122,20 @@ const JobList = () => {
 
   useEffect(() => {
     fetchJobs();
-  }, [filters.page, filters.status]); // Tự động gọi lại khi đổi trang hoặc đổi nhanh trạng thái
+  }, [filters.page, filters.status, filters.package, filters.location, filters.search]); 
+
+  // Fetch provinces
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const res = await companyLocationService.getProvinces();
+        setProvinces(res || []);
+      } catch (err) {
+        console.error('Lỗi khi tải tỉnh/thành', err);
+      }
+    };
+    fetchProvinces();
+  }, []);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value, page: 1 })); // Reset về trang 1 khi lọc
@@ -158,7 +188,7 @@ const JobList = () => {
           <h1 className="text-2xl font-bold text-slate-900">Danh sách tin tuyển dụng</h1>
           <p className="text-slate-600 mt-1">Quản lý toàn bộ Job của công ty theo trạng thái và hiệu quả tuyển dụng.</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+        <button onClick={() => navigate('/employer/jobs/create')} className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
           <Plus className="w-5 h-5" />
           Tạo tin mới
         </button>
@@ -170,7 +200,7 @@ const JobList = () => {
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Từ khóa</label>
             <input 
-              type="text" value={filters.search} onChange={(e) => handleFilterChange('search', e.target.value)}
+              type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tên job..." className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary" 
             />
           </div>
@@ -181,7 +211,9 @@ const JobList = () => {
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary bg-white text-slate-800"
             >
               <option value="">Tất cả trạng thái</option>
-              {Object.keys(statusMeta).map(st => (
+              {Object.keys(statusMeta)
+                .filter(st => !['BANNED', 'LOCKED'].includes(st))
+                .map(st => (
                 <option key={st} value={st}>{statusMeta[st].label}</option>
               ))}
             </select>
@@ -193,9 +225,14 @@ const JobList = () => {
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary bg-white text-slate-800"
             >
               <option value="">Chọn địa điểm...</option>
-              <option value="Hồ Chí Minh">TP. Hồ Chí Minh</option>
-              <option value="Hà Nội">Hà Nội</option>
-              <option value="Đà Nẵng">Đà Nẵng</option>
+              {provinces.map((prov) => {
+                const val = prov.name || prov.provinceName;
+                return (
+                  <option key={prov.code || prov.provinceCode || val} value={val}>
+                    {val}
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div>
@@ -206,18 +243,11 @@ const JobList = () => {
             >
               <option value="">Chọn loại tin...</option>
               <option value="Thường">Thường</option>
-              <option value="Nổi bật">Nổi bật</option>
               <option value="GẤP">GẤP</option>
             </select>
           </div>
         </div>
-        
-        {/* Nút tìm kiếm thủ công nếu cần kích hoạt toàn bộ filter cùng lúc */}
-        <div className="flex justify-end mt-4">
-          <button onClick={fetchJobs} className="px-4 py-2 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-700">
-            Áp dụng bộ lọc
-          </button>
-        </div>
+
       </section>
 
       {/* Bảng danh sách Job */}
