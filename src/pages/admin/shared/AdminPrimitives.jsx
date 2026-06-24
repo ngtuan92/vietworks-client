@@ -108,6 +108,7 @@ export const TextAreaField = ({ label, required, value, onChange, placeholder = 
 export const StatusBadge = ({ value, map = {} }) => {
   const defaultMap = {
     'PENDING': 'bg-amber-50 text-amber-700 border-amber-200/60',
+    'PENDING_APPROVAL': 'bg-amber-50 text-amber-700 border-amber-200/60',
     'PUBLISHED': 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     'BANNED': 'bg-red-50 text-red-700 border-red-200/60',
     'CLOSED': 'bg-slate-50 text-slate-700 border-slate-200',
@@ -119,6 +120,7 @@ export const StatusBadge = ({ value, map = {} }) => {
 
   const labelMap = {
     'PENDING': 'ĐANG CHỜ',
+    'PENDING_APPROVAL': 'ĐANG CHỜ DUYỆT',
     'PUBLISHED': 'ĐÃ DUYỆT',
     'BANNED': 'BỊ KHÓA',
     'CLOSED': 'ĐÃ ĐÓNG',

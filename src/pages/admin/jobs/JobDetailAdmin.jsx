@@ -170,15 +170,24 @@ const JobDetailAdmin = () => {
               <div className="space-y-4 text-sm text-slate-700 whitespace-pre-line">
                 <div>
                   <h4 className="font-bold text-slate-900 mb-1">Mô tả công việc:</h4>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">{job.description || 'Không có mô tả'}</div>
+                  <div 
+                    className="bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: job.description || 'Không có mô tả' }}
+                  />
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 mb-1">Yêu cầu ứng viên:</h4>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">{job.requirements || 'Không có yêu cầu'}</div>
+                  <div 
+                    className="bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: job.requirements || 'Không có yêu cầu' }}
+                  />
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 mb-1">Quyền lợi được hưởng:</h4>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">{job.benefits || 'Không có thông tin quyền lợi'}</div>
+                  <div 
+                    className="bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: job.benefits || 'Không có thông tin quyền lợi' }}
+                  />
                 </div>
               </div>
             </SectionCard>

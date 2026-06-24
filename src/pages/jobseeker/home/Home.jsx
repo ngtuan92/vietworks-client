@@ -36,7 +36,7 @@ const Home = () => {
   const [featuredCompanies, setFeaturedCompanies] = useState([]);
 
   useEffect(() => {
-    getPublicJobs({ limit: 3, sortBy: 'publishedAt', sortOrder: 'desc' })
+    getPublicJobs({ limit: 3, sortBy: 'publishedAt', sortOrder: 'desc', isUrgent: 'true', isPremium: 'true' })
       .then((res) => setFeaturedJobs(res.data || []))
       .catch(() => setFeaturedJobs([]));
 

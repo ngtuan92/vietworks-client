@@ -5,9 +5,16 @@ const CompanyCard = ({ company }) => {
         Về {company?.name || 'công ty'}
       </h2>
 
-      <p className="text-on-surface-variant font-body-md text-body-md mb-6 whitespace-pre-line">
-        {company?.description || 'Công ty chưa cập nhật mô tả.'}
-      </p>
+      {company?.description ? (
+        <div 
+          className="text-on-surface-variant font-body-md text-body-md mb-6 whitespace-pre-line prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+          dangerouslySetInnerHTML={{ __html: company.description }} 
+        />
+      ) : (
+        <p className="text-on-surface-variant font-body-md text-body-md mb-6 whitespace-pre-line">
+          Công ty chưa cập nhật mô tả.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
         <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
