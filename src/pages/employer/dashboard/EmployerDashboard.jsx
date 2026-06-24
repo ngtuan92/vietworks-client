@@ -7,7 +7,6 @@ import {
   StatsGrid,
   ApplicationTrend,
   AttentionJobs,
-  RecruitmentFunnel,
   NewApplicants,
   ServiceCostChart,
   MySubscriptionsWidget,
@@ -122,23 +121,18 @@ const EmployerDashboard = () => {
 
       {/* Main Grid — Phân tích & Hành động */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left — Phân tích chính */}
+        {/* Left — Cột rộng (Biểu đồ & Bảng) */}
         <div className="lg:col-span-8 space-y-6">
           <ApplicationTrend analytics={dashboardData?.analytics} atsJobs={dashboardData?.atsJobs || []} />
+          <ServiceCostChart analytics={dashboardData?.analytics} />
+        </div>
+
+        {/* Right — Cột hẹp (Danh sách & Tóm tắt) */}
+        <div className="lg:col-span-4 space-y-6">
+          <NewApplicants topJobs={dashboardData?.topJobs || []} />
+          <MySubscriptionsWidget />
           <AttentionJobs jobs={dashboardData?.attentionJobs || []} />
         </div>
-
-        {/* Right — Sidebar tóm tắt */}
-        <div className="lg:col-span-4 space-y-6">
-          <RecruitmentFunnel funnel={dashboardData?.funnelTotals} />
-          <NewApplicants topJobs={dashboardData?.topJobs || []} />
-        </div>
-      </div>
-
-      {/* Bottom Row — Gói dịch vụ & Chi tiêu (luôn hiển thị rõ) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MySubscriptionsWidget />
-        <ServiceCostChart analytics={dashboardData?.analytics} />
       </div>
     </div>
   );

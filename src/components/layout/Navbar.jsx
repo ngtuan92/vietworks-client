@@ -121,37 +121,71 @@ const Navbar = () => {
             >
               Việc làm
             </Link>
-            <Link
-              className={`text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap relative ${isActive('/companies') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-[60%] after:h-[3px] after:bg-primary after:rounded-full' : 'text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95'}`}
-              to="/companies"
-            >
-              Công ty
-            </Link>
-            <button
-              className={`text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap relative cursor-pointer ${isActive('/manage-cv') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-[60%] after:h-[3px] after:bg-primary after:rounded-full' : 'text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95'}`}
-              onClick={() => handleProtectedNavigation('/manage-cv')}
-            >
-              Hồ sơ & CV
-            </button>
-
-            {isAuthenticated && !isEmployer && !isAdmin && (
-              <div className="relative group">
-                <button className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap cursor-pointer text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95`}>
-                  Việc của tôi <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
-                </button>
-                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
-                    <MenuLink to="/applied-jobs" icon={<CheckSquare className="w-4 h-4" />} label="Việc đã ứng tuyển" />
-                    <MenuLink to="/saved-jobs" icon={<Heart className="w-4 h-4" />} label="Việc đã lưu" />
-                    <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-4 h-4" />} label="Việc làm phù hợp" />
-                    <MenuLink to="/ai-cv-review" icon={<Award className="w-4 h-4 text-yellow-500" />} label="AI CV Review" />
-                    <MenuLink to="/followed-companies" icon={<Building2 className="w-4 h-4" />} label="Công ty đang theo dõi" />
-                    <MenuLink to="/wallet" icon={<CreditCard className="w-4 h-4" />} label="Ví của tôi" />
-                    <MenuLink to="/my-subscriptions" icon={<CreditCard className="w-4 h-4" />} label="Gói của tôi" />
-                    <MenuLink to="/my-transactions" icon={<Receipt className="w-4 h-4" />} label="Lịch sử giao dịch" />
-                  </div>
+            <div className="relative group">
+              <button className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap cursor-pointer ${(isActive('/companies') || isActive('/followed-companies')) ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-[60%] after:h-[3px] after:bg-primary after:rounded-full' : 'text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95'}`}>
+                Công ty <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
+              </button>
+              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
+                  <MenuLink to="/companies" icon={<Building2 className="w-4 h-4" />} label="Khám phá công ty" />
+                  {isAuthenticated && !isEmployer && !isAdmin && (
+                    <MenuLink to="/followed-companies" icon={<Heart className="w-4 h-4 text-rose-500" />} label="Công ty đang theo dõi" />
+                  )}
                 </div>
               </div>
+            </div>
+
+            <div className="relative group">
+              <button className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap cursor-pointer ${(isActive('/manage-cv') || isActive('/ai-cv-review')) ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-[60%] after:h-[3px] after:bg-primary after:rounded-full' : 'text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95'}`}>
+                Hồ sơ & CV <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
+              </button>
+              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
+                  <MenuLink 
+                    to="/manage-cv" 
+                    icon={<User className="w-4 h-4" />} 
+                    label="Quản lý CV" 
+                    onClick={(e) => { e.preventDefault(); handleProtectedNavigation('/manage-cv'); }} 
+                  />
+                  <MenuLink 
+                    to="/ai-cv-review" 
+                    icon={<Award className="w-4 h-4 text-yellow-500" />} 
+                    label="AI CV Review" 
+                    onClick={(e) => { e.preventDefault(); handleProtectedNavigation('/ai-cv-review'); }} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {isAuthenticated && !isEmployer && !isAdmin && (
+              <>
+                <div className="relative group">
+                  <button className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap cursor-pointer text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95`}>
+                    Việc của tôi <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
+                  </button>
+                  <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
+                      <MenuLink to="/applied-jobs" icon={<CheckSquare className="w-4 h-4" />} label="Việc đã ứng tuyển" />
+                      <MenuLink to="/saved-jobs" icon={<Heart className="w-4 h-4 text-rose-500" />} label="Việc đã lưu" />
+                      <MenuLink to="/matched-jobs" icon={<ThumbsUp className="w-4 h-4 text-blue-500" />} label="Việc làm phù hợp" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative group">
+                  <button className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap cursor-pointer text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95`}>
+                    Dịch vụ <ChevronDown className="w-4 h-4 opacity-50 group-hover:rotate-180 transition-transform" />
+                  </button>
+                  <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="w-56 rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden p-2 flex flex-col gap-1">
+                      <MenuLink to="/premium" icon={<Award className="w-4 h-4 text-orange-500" />} label="Gói Premium" />
+                      <MenuLink to="/wallet" icon={<CreditCard className="w-4 h-4 text-emerald-500" />} label="Ví của tôi" />
+                      <MenuLink to="/my-subscriptions" icon={<Award className="w-4 h-4 text-purple-500" />} label="Gói của tôi" />
+                      <MenuLink to="/my-transactions" icon={<Receipt className="w-4 h-4 text-slate-500" />} label="Lịch sử giao dịch" />
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
 
             <button
@@ -160,11 +194,6 @@ const Navbar = () => {
             >
               Tra cứu lương
             </button>
-
-            <Link to="/premium" className="text-sm font-bold flex items-center gap-1.5 px-4 lg:px-5 py-2 ml-1 rounded-full whitespace-nowrap bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 hover:shadow-md hover:-translate-y-0.5 transition-all">
-              <Award className="w-4 h-4 text-orange-500" />
-              Gói Premium
-            </Link>
           </nav>
         </div>
 
@@ -239,7 +268,6 @@ const Navbar = () => {
                         <>
                           <MenuLink to="/profile" icon={<User className="w-4 h-4" />} label="Cài đặt tài khoản" onClick={() => setIsMenuOpen(false)} />
                           <MenuLink to="/job-preferences" icon={<Sliders className="w-4 h-4" />} label="Nhu cầu việc làm" onClick={() => setIsMenuOpen(false)} />
-                          <MenuLink to="/my-transactions" icon={<CreditCard className="w-4 h-4" />} label="Lịch sử giao dịch" onClick={() => setIsMenuOpen(false)} />
                         </>
                       )}
 

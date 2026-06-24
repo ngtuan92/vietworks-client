@@ -1,9 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 console.log('companyLocationService:', companyLocationService);
 const STEPS = [
   'Thông tin cơ bản',
@@ -26,18 +24,7 @@ const WORKING_DAYS = [
 ];
 const WORKING_DAY_ORDER = WORKING_DAYS.map((d) => d.code);
 
-const quillModules = {
-  toolbar: [
-    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-    [{ 'size': ['small', false, 'large', 'huge'] }],
-    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-    [{ 'color': [] }, { 'background': [] }],
-    [{ 'align': [] }],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-    ['link'],
-    ['clean']
-  ],
-};
+
 
 // Gộp các ngày liên tiếp thành dạng "Thứ 2 - Thứ 6" cho gọn, thay vì liệt kê từng ngày
 const compressWorkingDays = (days) => {
@@ -114,7 +101,6 @@ const [companyLocations, setCompanyLocations] = useState([]);
     applyInstruction: 'Ứng viên nộp hồ sơ trực tuyến bằng cách bấm trực tiếp vào nút Ứng tuyển.',
     deadline: '',
     isUrgent: false,
-    applicationCount: '',
     headcount: 1,
   });
   useEffect(() => {
@@ -304,7 +290,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
       return Boolean(form.benefits);
     }
     if (step === 6) {
-      if (!form.deadline || form.workLocations.length === 0 || !form.applyInstruction || !form.applicationCount) return false;
+      if (!form.deadline || form.workLocations.length === 0 || !form.applyInstruction) return false;
       const today = new Date().setHours(0, 0, 0, 0);
       return new Date(form.deadline) >= today;
     }
@@ -432,10 +418,10 @@ const [companyLocations, setCompanyLocations] = useState([]);
         </div>
       </div>
 
-      {/* GRID LAYOUT CHIA ĐÔI */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Cột trái: Form */}
-        <div className="lg:col-span-7 space-y-6">
+      {/* SINGLE COLUMN LAYOUT */}
+      <div className="max-w-5xl mx-auto w-full gap-8 items-start mt-6">
+        {/* Form Container */}
+        <div className="space-y-6">
 
       {/* Khối hiển thị các bước dạng Tab trực quan trên cùng */}
       <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-4 shadow-sm">
@@ -518,20 +504,6 @@ const [companyLocations, setCompanyLocations] = useState([]);
           </div>
         </div>
       </section>
-        </div>
-
-        {/* Cột phải: Live Preview Sticky */}
-        <div className="hidden lg:block lg:col-span-5 sticky top-6">
-          <StepPreview 
-            form={form} 
-            isCompanyVerified={isCompanyVerified} 
-            careerGroups={careerGroups}
-            careers={careers}
-            positions={positions}
-            jobLevels={jobLevels}
-            experienceLevels={experienceLevels}
-            skills={skills}
-          />
         </div>
       </div>
     </div>
@@ -635,7 +607,7 @@ const StepDescription = ({ form, setField, toggleWorkingDay }) => (
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-2">Chi tiết mô tả công việc <span className="text-red-500">*</span></label>
       <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
-        <ReactQuill theme="snow" value={form.description} onChange={(v) => setField('description', v)} modules={quillModules} className="h-48 mb-12" />
+        <RichTextEditor value={form.description} onChange={(v) => setField('description', v)} placeholder="Nhập chi tiết mô tả công việc..." />
       </div>
     </div>
 
@@ -693,7 +665,7 @@ const StepRequirements = ({ form, setField, skills, toggleMulti }) => (
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-2">Yêu cầu năng lực chuyên môn <span className="text-red-500">*</span></label>
       <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
-        <ReactQuill theme="snow" value={form.requirements} onChange={(v) => setField('requirements', v)} modules={quillModules} className="h-48 mb-12" />
+        <RichTextEditor value={form.requirements} onChange={(v) => setField('requirements', v)} placeholder="Nhập yêu cầu chi tiết đối với ứng viên..." />
       </div>
     </div>
     
@@ -730,7 +702,7 @@ const StepBenefits = ({ form, setField }) => (
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-2">Quyền lợi và Đãi ngộ dành cho ứng viên <span className="text-red-500">*</span></label>
       <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
-        <ReactQuill theme="snow" value={form.benefits} onChange={(v) => setField('benefits', v)} modules={quillModules} className="h-48 mb-12" />
+        <RichTextEditor value={form.benefits} onChange={(v) => setField('benefits', v)} placeholder="Nhập các quyền lợi & gói chế độ phúc lợi..." />
       </div>
     </div>
   </div>
@@ -881,22 +853,10 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           ⚠️ Lỗi: Ngày hết hạn không hợp lệ (không thể chọn ngày trong quá khứ).
         </p>
       ) : null}
-{/* ◄ THÊM Ô NHẬP LỆU APPLICATION COUNT VÀO ĐÂY */}
-      <div className="max-w-xs pt-2">
-        <Field
-          label="Số lượng hồ sơ tối đa / Số lượng ứng tuyển ban đầu"
-          required
-          type="number"
-          placeholder="Ví dụ: 50"
-          value={form.applicationCount}
-          onChange={(v) => setField('applicationCount', v)}
-        />
-      </div>
-
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2">Hướng dẫn nộp hồ sơ chi tiết cho ứng viên <span className="text-red-500">*</span></label>
         <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
-          <ReactQuill theme="snow" value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} className="h-48 mb-12" />
+          <RichTextEditor value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} placeholder="Nhập quy chuẩn & cách thức nhận CV..." />
         </div>
       </div>
       <label className="flex items-center gap-2 font-semibold text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-100 max-w-max cursor-pointer">
@@ -912,79 +872,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
   );
 };
 
-const StepPreview = ({ form, isCompanyVerified, careerGroups, careers, positions, jobLevels, experienceLevels, skills }) => {
-  const groupLabel = careerGroups.find(g => g._id === form.careerGroupId)?.name || '-';
-  const careerLabel = careers.find(c => c._id === form.careerId)?.name || '-';
-  const positionLabel = positions.find(p => p._id === form.careerPositionId)?.name || '-';
-  const levelLabel = jobLevels.find(l => l._id === form.jobLevelId)?.name || '-';
-  const expLabel = experienceLevels.find(e => e._id === form.experienceLevelId)?.name || '-';
-  const chosenSkills = skills.filter(s => form.skills.includes(s._id)).map(s => s.name);
-  
-  // Cập nhật cấu trúc hiển thị preview địa điểm mới từ chuỗi fullAddress đã được gộp sẵn
-  const locationLabels = form.workLocations.map(loc => loc.address || loc.provinceName).filter(Boolean);
 
-  return (
-    <div className="space-y-4 bg-slate-50 p-5 rounded-3xl border-4 border-slate-200/50 shadow-inner max-h-[85vh] overflow-y-auto custom-scrollbar">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
-          Live Preview
-        </h2>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giao diện ứng viên</span>
-      </div>
-      {!isCompanyVerified && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 text-sm font-medium">
-          🔒 Tài khoản doanh nghiệp chưa xác thực.
-        </div>
-      )}
-
-      <div className="rounded-2xl border border-slate-200/60 p-6 bg-white space-y-6 premium-shadow">
-        <div className="flex justify-between items-start gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black text-slate-900">{form.title || 'Chưa đặt tiêu đề tuyển dụng'}</h3>
-              {form.isUrgent && <span className="bg-red-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">Tuyển gấp</span>}
-            </div>
-            <p className="text-sm font-semibold text-slate-500 mt-1">Phân loại danh mục: {groupLabel} ➜ {careerLabel} ({positionLabel})</p>
-          </div>
-          <div className="text-right shrink-0">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-              BẢN NHÁP
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <InfoCard label="Hạn định mức lương" value={form.salaryType === 'NEGOTIABLE' ? 'Thỏa thuận' : `${form.salaryFrom || 0} - ${form.salaryTo || 'Nhiều'} Triệu`} />
-          <InfoCard label="Khu vực làm việc" value={locationLabels.join('; ') || 'Chưa định vị'} /> 
-          <InfoCard label="Cấp bậc mong muốn" value={levelLabel} />
-          <InfoCard label="Yêu cầu kinh nghiệm" value={expLabel} />
-        </div>
-
-        <div className="space-y-4 pt-2">
-          <PreviewSection title="1. Chi tiết Mô tả Công việc" content={form.description} />
-          <PreviewSection title="2. Yêu cầu chi tiết đối với ứng viên" content={form.requirements} />
-          
-          {chosenSkills.length > 0 && (
-            <div>
-              <h4 className="font-bold text-slate-900 text-sm mb-1.5">Từ khóa công nghệ / Kỹ năng bắt buộc kèm theo:</h4>
-              <div className="flex flex-wrap gap-1.5">
-                {chosenSkills.map(name => <span key={name} className="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-md border border-slate-200 font-medium">{name}</span>)}
-              </div>
-            </div>
-          )}
-
-          <PreviewSection title="3. Các quyền lợi & Gói chế độ phúc lợi được hưởng" content={form.benefits} />
-          <PreviewSection title="4. Khung giờ làm việc hành chính" content={formatWorkingSchedule(form.workingDays, form.workingTimeFrom, form.workingTimeTo)} />
-          <PreviewSection title="5. Quy chuẩn & Cách thức nhận CV ứng tuyển" content={form.applyInstruction} />
-
-          <div className="text-xs text-slate-400 font-medium pt-2">Hạn chót đóng cổng nhận hồ sơ trực tuyến: {form.deadline ? new Date(form.deadline).toLocaleDateString('vi-VN') : 'Chưa thiết lập'}</div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ==================== REUSABLE ATOM COMPONENT UI ELEMENTS ====================
 
@@ -1024,20 +912,100 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
 
 
 
-const InfoCard = ({ label, value }) => (
-  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-    <span className="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">{label}</span>
-    <span className="font-bold text-slate-800 text-sm mt-0.5 block">{value || 'N/A'}</span>
-  </div>
-);
 
-const PreviewSection = ({ title, content }) => (
-  <div className="space-y-1">
-    <h4 className="font-bold text-slate-900 text-sm">{title}</h4>
-    <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
-      {content || <span className="text-slate-400 italic">Nội dung này chưa được nhập liệu...</span>}
-    </p>
-  </div>
-);
+
+const RichTextEditor = ({ value, onChange, placeholder }) => {
+  const editorRef = useRef(null);
+  const [fontSize, setFontSize] = useState('3');
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
+
+  const apply = (command, commandValue = null) => {
+    editorRef.current?.focus();
+    try {
+      document.execCommand(command, false, commandValue);
+    } catch {
+      // no-op
+    }
+    onChange(editorRef.current?.innerHTML || '');
+  };
+
+  const handleInput = () => onChange(editorRef.current?.innerHTML || '');
+
+  return (
+    <div className="bg-white">
+      <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border-b border-slate-200">
+        <button type="button" onClick={() => apply('bold')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
+          B
+        </button>
+        <button type="button" onClick={() => apply('italic')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold italic">
+          I
+        </button>
+        <button type="button" onClick={() => apply('underline')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold underline">
+          U
+        </button>
+        <span className="w-px h-6 bg-slate-200 mx-1" />
+        <button type="button" onClick={() => apply('insertUnorderedList')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
+          • List
+        </button>
+        <button type="button" onClick={() => apply('insertOrderedList')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
+          1. List
+        </button>
+        <span className="w-px h-6 bg-slate-200 mx-1" />
+        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer" title="Màu chữ">
+          <input type="color" className="w-6 h-6 p-0 border-0 rounded cursor-pointer" onChange={(e) => apply('foreColor', e.target.value)} />
+        </label>
+        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer" title="Màu nền chữ">
+          <input type="color" className="w-6 h-6 p-0 border-0 rounded cursor-pointer" onChange={(e) => apply('hiliteColor', e.target.value)} />
+        </label>
+        <span className="w-px h-6 bg-slate-200 mx-1" />
+        <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          Cỡ chữ
+          <select
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm"
+            value={fontSize}
+            onChange={(e) => {
+              setFontSize(e.target.value);
+              apply('fontSize', e.target.value);
+            }}
+          >
+            <option value="2">Nhỏ</option>
+            <option value="3">Vừa</option>
+            <option value="4">Lớn</option>
+            <option value="5">Rất lớn</option>
+          </select>
+        </label>
+        <span className="w-px h-6 bg-slate-200 mx-1" />
+        <button
+          type="button"
+          onClick={() => {
+            const url = window.prompt('Nhập link (URL):');
+            if (!url) return;
+            apply('createLink', url);
+          }}
+          className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold"
+        >
+          Link
+        </button>
+        <button type="button" onClick={() => apply('removeFormat')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
+          Xóa format
+        </button>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        onInput={handleInput}
+        className="min-h-48 px-4 py-3 outline-none prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:ml-4"
+        data-placeholder={placeholder}
+        style={{ whiteSpace: 'pre-wrap' }}
+        suppressContentEditableWarning
+      />
+    </div>
+  );
+};
 
 export default CreateEditJob;

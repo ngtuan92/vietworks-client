@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import AiChatbotBubble from '../chat/AiChatbotBubble';
+import JobseekerChatBubble from '../chat/JobseekerChatBubble';
 import useAuth from '../../hooks/useAuth';
 import { Handshake } from 'lucide-react';
 
@@ -56,6 +57,7 @@ const JobseekerLayout = () => {
 
       {/* Footer dùng chung */}
       <Footer />
+      <JobseekerChatBubble />
       <AiChatbotBubble />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField } from '../shared/AdminPrimitives';
+import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField, StatusBadge } from '../shared/AdminPrimitives';
 import jobAdminService from '../../../services/jobAdminService'; 
 import { useNotification } from '../../../contexts/NotificationContext';
 
@@ -124,7 +124,11 @@ const JobReview = () => {
     <div className="space-y-7 pb-10 animate-rise-in max-w-7xl mx-auto">
       <PageHeader 
         title="Duyệt Tin Tuyển Dụng" 
-        description={`Đang kiểm duyệt hồ sơ: ID ${job._id} • Trạng thái hiện tại: ${job.status}`} 
+        description={
+          <span className="flex items-center gap-2 mt-1">
+            Đang kiểm duyệt hồ sơ: ID {job._id} • Trạng thái hiện tại: <StatusBadge value={job.status} />
+          </span>
+        } 
       />
       
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
@@ -152,16 +156,18 @@ const JobReview = () => {
 
             <div>
               <h4 className="mb-2 font-semibold text-slate-900 text-sm">Mô tả công việc</h4>
-              <div className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
-                {job.description || 'Không có mô tả chi tiết'}
-              </div>
+              <div 
+                className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                dangerouslySetInnerHTML={{ __html: job.description || 'Không có mô tả chi tiết' }}
+              />
             </div>
 
             <div>
               <h4 className="mb-2 font-semibold text-slate-900 text-sm">Yêu cầu ứng viên</h4>
-              <div className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
-                {job.requirements || 'Không có yêu cầu cụ thể'}
-              </div>
+              <div 
+                className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                dangerouslySetInnerHTML={{ __html: job.requirements || 'Không có yêu cầu cụ thể' }}
+              />
             </div>
           </div>
         </SectionCard>

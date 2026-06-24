@@ -96,7 +96,7 @@ const StatsGrid = ({ data }) => {
       isText: true,
       icon: <Wallet className="w-6 h-6 text-emerald-500" />,
       badgeBg: 'bg-emerald-50 border-emerald-100',
-      footer: <p className="mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1"><Activity className="w-3 h-3"/>Số dư hiện tại</p>,
+      footer: <p className="mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1"><Activity className="w-3 h-3" />Số dư hiện tại</p>,
     },
     {
       label: 'Trạng thái hồ sơ',
@@ -117,7 +117,7 @@ const StatsGrid = ({ data }) => {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="font-black text-slate-900 text-lg flex items-center gap-2.5 tracking-tight">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Activity className="w-4 h-4"/></div>
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Activity className="w-4 h-4" /></div>
           Thống kê tổng quan
         </h2>
       </div>
@@ -170,12 +170,20 @@ const ApplicationTrend = ({ analytics, atsJobs }) => {
         <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.18} />
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.18} />
               <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradApproved" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#10b981" stopOpacity={0.15} />
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
               <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradUnread" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradViewed" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -187,8 +195,10 @@ const ApplicationTrend = ({ analytics, atsJobs }) => {
           />
           <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
           <Area type="monotone" dataKey="Tổng hồ sơ" stroke="#3b82f6" strokeWidth={2.5} fill="url(#gradTotal)" dot={{ r: 3, fill: '#fff', stroke: '#3b82f6', strokeWidth: 2 }} activeDot={{ r: 5 }} />
-          <Area type="monotone" dataKey="Đã duyệt"   stroke="#10b981" strokeWidth={2}   fill="url(#gradApproved)" dot={{ r: 3, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 5 }} />
-          <Area type="monotone" dataKey="Từ chối"    stroke="#ef4444" strokeWidth={2}   fill="none" strokeDasharray="4 2" dot={false} />
+          <Area type="monotone" dataKey="Chưa xem" stroke="#8b5cf6" strokeWidth={2} fill="url(#gradUnread)" dot={{ r: 3, fill: '#fff', stroke: '#8b5cf6', strokeWidth: 2 }} activeDot={{ r: 5 }} />
+          <Area type="monotone" dataKey="Đã xem" stroke="#f59e0b" strokeWidth={2} fill="url(#gradViewed)" dot={{ r: 3, fill: '#fff', stroke: '#f59e0b', strokeWidth: 2 }} activeDot={{ r: 5 }} />
+          <Area type="monotone" dataKey="Đã duyệt" stroke="#10b981" strokeWidth={2} fill="url(#gradApproved)" dot={{ r: 3, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 5 }} />
+          <Area type="monotone" dataKey="Từ chối" stroke="#ef4444" strokeWidth={2} fill="none" strokeDasharray="4 2" dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -222,15 +232,14 @@ const QuickServicePacks = () => {
         {packages.map((pkg, idx) => (
           <div
             key={idx}
-            className={`p-6 rounded-2xl border flex flex-col justify-between text-center relative transition-all duration-300 hover:-translate-y-1 ${
-              pkg.isPopular
+            className={`p-6 rounded-2xl border flex flex-col justify-between text-center relative transition-all duration-300 hover:-translate-y-1 ${pkg.isPopular
                 ? 'border-primary bg-gradient-to-b from-blue-50/50 to-white shadow-md shadow-primary/10 ring-1 ring-primary/20'
                 : 'border-slate-200/60 bg-white hover:shadow-lg'
-            }`}
+              }`}
           >
             {pkg.isPopular && (
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1 whitespace-nowrap">
-                <Star className="w-3 h-3 fill-white"/> Bán chạy
+                <Star className="w-3 h-3 fill-white" /> Bán chạy
               </span>
             )}
             <div>
@@ -240,11 +249,10 @@ const QuickServicePacks = () => {
             </div>
             <button
               onClick={() => navigate(pkg.to)}
-              className={`w-full py-2.5 text-sm font-bold rounded-xl transition-all cursor-pointer ${
-                pkg.isAltButton
+              className={`w-full py-2.5 text-sm font-bold rounded-xl transition-all cursor-pointer ${pkg.isAltButton
                   ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-lg'
                   : 'bg-primary text-white hover:bg-blue-600 hover:shadow-lg hover:shadow-primary/20'
-              }`}
+                }`}
             >
               Mua ngay
             </button>
@@ -300,9 +308,8 @@ const AttentionJobs = ({ jobs }) => {
                       </p>
                     </td>
                     <td className="px-4 py-4 text-center">
-                      <span className={`inline-flex text-[11px] px-3 py-1 rounded-lg font-bold whitespace-nowrap ${
-                        isExpired ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
-                      }`}>
+                      <span className={`inline-flex text-[11px] px-3 py-1 rounded-lg font-bold whitespace-nowrap ${isExpired ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                        }`}>
                         {isExpired ? 'Hết hạn' : 'Sắp hết hạn'}
                       </span>
                     </td>
@@ -311,7 +318,7 @@ const AttentionJobs = ({ jobs }) => {
                         onClick={() => navigate('/employer/jobs')}
                         className="text-primary font-bold hover:text-blue-700 text-sm cursor-pointer flex items-center justify-end gap-1 w-full opacity-80 group-hover:opacity-100 transition-opacity whitespace-nowrap"
                       >
-                        Xem chi tiết <ChevronRight className="w-4 h-4"/>
+                        Xem chi tiết <ChevronRight className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
@@ -321,47 +328,6 @@ const AttentionJobs = ({ jobs }) => {
           </table>
         </div>
       )}
-    </div>
-  );
-};
-
-// ─── RecruitmentFunnel ────────────────────────────────
-const RecruitmentFunnel = ({ funnel }) => {
-  const total = funnel?.total || 0;
-  const items = [
-    { label: 'Chưa xem', count: funnel?.UNREAD || 0, barColor: 'bg-primary' },
-    { label: 'Đã xem', count: funnel?.VIEWED || 0, barColor: 'bg-blue-400' },
-    { label: 'Đã duyệt', count: funnel?.APPROVED || 0, barColor: 'bg-emerald-400' },
-    { label: 'Từ chối', count: funnel?.REJECTED || 0, barColor: 'bg-red-400', isDanger: true },
-  ];
-
-  return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-black text-slate-900 text-base tracking-tight">Phễu tuyển dụng</h3>
-        <span className="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
-          Tổng: {total} hồ sơ
-        </span>
-      </div>
-      <div className="space-y-5">
-        {items.map((item) => {
-          const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-          return (
-            <div key={item.label} className="group">
-              <div className={`flex justify-between text-sm mb-2 font-bold ${item.isDanger ? 'text-red-500' : 'text-slate-700'}`}>
-                <span>{item.label}</span>
-                <span className="bg-slate-50 px-2 py-0.5 rounded text-xs">{pct}% ({item.count})</span>
-              </div>
-              <div className="w-full h-2.5 rounded-full overflow-hidden bg-slate-100">
-                <div
-                  className={`h-full ${item.barColor} rounded-full group-hover:scale-y-125 transition-all origin-left`}
-                  style={{ width: `${pct}%` }}
-                ></div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };
@@ -486,7 +452,7 @@ const ServiceCostChart = ({ analytics }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000000 ? `${(v/1000000).toFixed(1)}Tr` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000000 ? `${(v / 1000000).toFixed(1)}Tr` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v} />
             <Tooltip
               contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12, fontWeight: 600 }}
               formatter={(v) => [new Intl.NumberFormat('vi-VN').format(v) + 'đ', 'Chi tiêu']}
@@ -523,7 +489,7 @@ const MySubscriptionsWidget = () => {
           setTotal(r.data.pagination?.total || 0);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -590,9 +556,8 @@ const MySubscriptionsWidget = () => {
                     )}
                   </div>
                   {daysRemaining !== null && (
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap ${
-                      isCritical ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap ${isCritical ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
                       {daysRemaining}d
                     </span>
                   )}
@@ -611,7 +576,6 @@ export {
   StatsGrid,
   ApplicationTrend,
   AttentionJobs,
-  RecruitmentFunnel,
   NewApplicants,
   ServiceCostChart,
   MySubscriptionsWidget,
