@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -13,7 +13,8 @@ import { BuilderRightSidebar } from '../../../components/jobseeker/cv/builder/Bu
 import { renderSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
 import uploadService from '../../../services/uploadService';
-import { User, UploadCloud } from 'lucide-react';
+import { ArrowLeft, User, UploadCloud } from 'lucide-react';
+import { CVTemplateRenderer } from '../../../components/cv/CVTemplateRenderer';
 
 const base64ToFile = (base64String, filename = 'avatar.jpg') => {
   const arr = base64String.split(',');
@@ -27,10 +28,78 @@ const base64ToFile = (base64String, filename = 'avatar.jpg') => {
   return new File([u8arr], filename, { type: mime });
 };
 
+const buildCvStateFromTemplate = (template) => {
+  const layoutConfig = template?.layoutConfig || {};
+  const nextSections = Array.isArray(layoutConfig.sections)
+    ? layoutConfig.sections.map((sec) => ({
+        sectionCode: sec.sectionCode,
+        order: sec.order,
+        column: sec.column,
+        position: sec.position || { x: 0, y: 0 },
+        isVisible: sec.isVisible !== undefined ? sec.isVisible : true,
+        items: sec.items || []
+      }))
+    : [];
+
+  const nextStyle = {
+    fontId: layoutConfig.defaultFontId || 'Inter',
+    themeColorId: layoutConfig.defaultColorId || '#0056b3',
+    fontSize: layoutConfig.fontSize || 'medium',
+    density: layoutConfig.density || 'normal',
+    titleStyle: layoutConfig.titleStyle || 'underline',
+    avatarShape: layoutConfig.avatarShape || 'circle',
+    avatarZoom: layoutConfig.avatarZoom || 1,
+    avatarX: layoutConfig.avatarX || 0,
+    avatarY: layoutConfig.avatarY || 0
+  };
+
+  return { sections: nextSections, style: nextStyle };
+};
+
+const blankTemplateValue = (value) => {
+  if (Array.isArray(value)) return value.map(blankTemplateValue);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, blankTemplateValue(val)]));
+  }
+  return '';
+};
+
+const mergeSectionsWithTemplate = (templateSections, currentSections) => {
+  const currentByCode = new Map(currentSections.map((section) => [section.sectionCode, section]));
+
+  return templateSections.map((templateSection) => {
+    const currentSection = currentByCode.get(templateSection.sectionCode);
+    const templateItems = templateSection.items || [];
+    const currentItems = currentSection?.items || [];
+    const itemCount = Math.max(currentItems.length, templateItems.length);
+
+    const mergedItems = Array.from({ length: itemCount }).map((_, index) => {
+      const blankTemplateItem = blankTemplateValue(templateItems[index] || templateItems[0] || {});
+      return {
+        ...blankTemplateItem,
+        ...(currentItems[index] || {})
+      };
+    });
+
+    return {
+      ...templateSection,
+      items: mergedItems
+    };
+  });
+};
+
+const buildTemplateSnapshot = (template) => ({
+  templateId: template?._id,
+  templateCode: template?.templateCode,
+  layoutConfig: template?.layoutConfig || {},
+  versionedAt: new Date().toISOString()
+});
+
 const CVBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const cvRef = useRef(null);
+  const cvDisplayRef = useRef(null);
   const { error: showError, success: showSuccess } = useNotification();
 
   const [cvData, setCvData] = useState(null);
@@ -78,7 +147,7 @@ const CVBuilder = () => {
         }
       } catch (err) {
         console.error(err);
-        showError('Không thể tải dữ liệu CV');
+        showError('Kh么ng th峄?t岷 d峄?li峄噓 CV');
         navigate('/manage-cv');
       } finally {
         setLoading(false);
@@ -151,16 +220,35 @@ const CVBuilder = () => {
   const handleTemplateChange = async (newTemplate) => {
     try {
       setSaving(true);
-      const res = await cvService.updateCv(id, { templateId: newTemplate._id });
+      const templateState = buildCvStateFromTemplate(newTemplate);
+      const mergedSections = templateState.sections.length > 0
+        ? mergeSectionsWithTemplate(templateState.sections, sections)
+        : sections;
+      const templateSnapshot = buildTemplateSnapshot(newTemplate);
+      const payload = {
+        templateId: newTemplate._id,
+        templateSnapshot,
+        ...(templateState.sections.length > 0 ? { sections: mergedSections } : {}),
+        style: {
+          ...style,
+          ...templateState.style
+        }
+      };
+      const res = await cvService.updateCv(id, payload);
       if (res.success) {
         setCvData(prev => ({
           ...prev,
-          templateId: newTemplate
+          templateId: newTemplate,
+          templateSnapshot
         }));
+        if (templateState.sections.length > 0) {
+          setSections(mergedSections.sort((a, b) => a.order - b.order));
+        }
+        setStyle(prev => ({ ...prev, ...templateState.style }));
       }
     } catch (err) {
       console.error(err);
-      showError('Không thể đổi mẫu thiết kế CV');
+      showError('Kh么ng th峄?膽峄昳 m岷玼 thi岷縯 k岷?CV');
     } finally {
       setSaving(false);
     }
@@ -182,14 +270,33 @@ const CVBuilder = () => {
         style: currentStyle
       });
     } catch (error) {
-      console.error('Lỗi tự động lưu', error);
+      console.error('L峄梚 t峄?膽峄檔g l瓢u', error);
     } finally {
       setSaving(false);
     }
   };
 
+  const prepareCvCapture = async () => {
+    const node = cvDisplayRef.current;
+    if (!node) return () => {};
+
+    const previousTransform = node.style.transform;
+    const previousTransition = node.style.transition;
+
+    node.style.transition = 'none';
+    node.style.transform = 'none';
+
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    return () => {
+      node.style.transform = previousTransform;
+      node.style.transition = previousTransition;
+    };
+  };
+
   const generatePreviewImage = async () => {
     if (!cvRef.current) return null;
+    const restoreCvDisplay = await prepareCvCapture();
     try {
       const pages = cvRef.current.querySelectorAll('.cv-page');
       const targetElement = pages.length > 0 ? pages[0] : cvRef.current;
@@ -216,14 +323,16 @@ const CVBuilder = () => {
               resolve(null);
             }
           } catch (uploadErr) {
-            console.error('Lỗi upload ảnh preview:', uploadErr);
+            console.error('L峄梚 upload 岷h preview:', uploadErr);
             resolve(null);
           }
         }, 'image/jpeg', 0.8);
       });
     } catch (err) {
-      console.error('Lỗi tạo ảnh preview:', err);
+      console.error('L峄梚 t岷 岷h preview:', err);
       return null;
+    } finally {
+      restoreCvDisplay();
     }
   };
 
@@ -239,7 +348,7 @@ const CVBuilder = () => {
         isMain: false
       });
     } catch (err) {
-      console.error('Lỗi khi lưu và thoát:', err);
+      console.error('L峄梚 khi l瓢u v脿 tho谩t:', err);
     } finally {
       setSaving(false);
       navigate('/manage-cv');
@@ -257,11 +366,11 @@ const CVBuilder = () => {
         isMain: true,
         status: 'ACTIVE'
       });
-      showSuccess('Đã lưu thành CV chính thức!');
+      showSuccess('膼茫 l瓢u th脿nh CV ch铆nh th峄ヽ!');
       navigate('/manage-cv');
     } catch (err) {
-      console.error('Lỗi khi lưu chính thức:', err);
-      showError('Không thể lưu CV');
+      console.error('L峄梚 khi l瓢u ch铆nh th峄ヽ:', err);
+      showError('Kh么ng th峄?l瓢u CV');
     } finally {
       setSaving(false);
     }
@@ -269,8 +378,10 @@ const CVBuilder = () => {
 
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
+    let restoreCvDisplay = () => {};
     try {
       setSaving(true);
+      restoreCvDisplay = await prepareCvCapture();
       const pages = cvRef.current.querySelectorAll('.cv-page');
 
       const pdf = new jsPDF({
@@ -343,21 +454,23 @@ const CVBuilder = () => {
           sections,
           style,
           previewImageUrl: previewUrl
-        }).catch(err => console.error('Lỗi lưu previewUrl:', err));
+        }).catch(err => console.error('L峄梚 l瓢u previewUrl:', err));
       }
 
       pdf.save(`${cvData?.title || 'CV'}.pdf`);
     } catch (err) {
-      showError('Có lỗi khi xuất PDF');
+      showError('C贸 l峄梚 khi xu岷 PDF');
       console.error(err);
     } finally {
+      restoreCvDisplay();
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-body-md bg-surface">Đang tải Canvas CV...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center font-body-md bg-surface">膼ang t岷 Canvas CV...</div>;
 
-  const selectedLayout = cvData?.templateCode || cvData?.templateId?.templateCode || 'left-col';
+  const selectedLayout = cvData?.templateSnapshot?.templateCode || cvData?.templateCode || cvData?.templateId?.templateCode || 'left-col';
+  const PAGE_CONTENT_MAX_HEIGHT = 1040;
 
   const leftSections = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
   const rightSections = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
@@ -380,7 +493,7 @@ const CVBuilder = () => {
     'Fira Code': 'monospace'
   };
 
-  const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1000) => {
+  const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1250) => {
     const pages = [];
     let currentPageSecs = [];
     let currentHeight = initialHeight;
@@ -455,7 +568,7 @@ const CVBuilder = () => {
         continue;
       }
 
-      // Xử lý khi section danh sách rỗng (items.length === 0)
+      // X峄?l媒 khi section danh s谩ch r峄梟g (items.length === 0)
       if (items.length === 0) {
         const addButtonH = (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 16) * fontScale;
         const emptySecHeight = secHeaderHeight + addButtonH;
@@ -537,24 +650,24 @@ const CVBuilder = () => {
   };
 
   // 1. left-col pagination
-  const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 1000);
-  const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 1000);
+  const leftPages = paginateSectionsWithItemRanges(leftSections, 90, PAGE_CONTENT_MAX_HEIGHT);
+  const rightPages = paginateSectionsWithItemRanges(rightSections, 110, PAGE_CONTENT_MAX_HEIGHT);
 
   // 2. header-left pagination
-  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1000);
+  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, PAGE_CONTENT_MAX_HEIGHT);
 
   // 3. two-col-equal pagination
-  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 1000);
-  const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 1000);
+  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, PAGE_CONTENT_MAX_HEIGHT);
+  const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, PAGE_CONTENT_MAX_HEIGHT);
 
   // 4. full-width pagination
-  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 1000);
+  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, PAGE_CONTENT_MAX_HEIGHT);
 
   // 5. harvard-classic pagination
-  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1000);
+  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, PAGE_CONTENT_MAX_HEIGHT);
 
   // 6. harvard-gsas pagination
-  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 1000);
+  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, PAGE_CONTENT_MAX_HEIGHT);
 
   // Determine total pages depending on selected layout
   let totalPages = 1;
@@ -585,17 +698,78 @@ const CVBuilder = () => {
 
   const queryParams = new URLSearchParams(window.location.search);
   const isAutoDownloading = queryParams.get('download') === 'true';
-
+  const renderLeftAvatar = () => (
+    style.avatarShape !== 'hidden' && (
+      <div className="px-5 pt-4 pb-2 text-center shrink-0">
+        <div
+          className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shadow-inner cursor-pointer ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'}`}
+          title="Click 膽峄?t岷 岷h 膽岷 di峄噉 l锚n"
+        >
+          {profileSection?.items[0]?.avatar ? (
+            <img
+              src={profileSection.items[0].avatar}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <User className="w-5 h-5 text-white/70" />
+          )}
+          <label
+            data-html2canvas-ignore="true"
+            className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+            title="Click 膽峄?t岷 岷h 膽岷 di峄噉 l锚n"
+          >
+            <UploadCloud className="text-white w-5 h-5" />
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    handleOpenCropModal(reader.result, (croppedBase64) => {
+                      const updatedItems = [...(profileSection.items || [])];
+                      if (!updatedItems[0]) updatedItems[0] = {};
+                      updatedItems[0].avatar = croppedBase64;
+                      handleSectionContentUpdate('PROFILE', updatedItems);
+                      handleMultipleStyleChange({
+                        avatarZoom: 1,
+                        avatarX: 0,
+                        avatarY: 0
+                      });
+                    });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+          </label>
+        </div>
+      </div>
+    )
+  );
   return (
-    <div className="min-h-screen bg-slate-50 font-body-md flex p-6 gap-6 max-w-[1600px] mx-auto w-full relative justify-center">
+    <div className="min-h-screen bg-slate-50 font-body-md flex p-5 pt-16 gap-5 max-w-[1720px] mx-auto w-full relative justify-center">
       {/* Auto-downloading PDF Overlay */}
       {isAutoDownloading && (
         <div className="fixed inset-0 bg-[#f9fafb] z-[9999] flex flex-col items-center justify-center gap-4">
           <div className="w-16 h-16 border-4 border-t-primary border-gray-200 rounded-full animate-spin"></div>
-          <h2 className="text-xl font-bold text-gray-900 mt-2">Đang xuất bản file PDF của bạn...</h2>
-          <p className="text-sm text-gray-500">Quá trình này có thể mất vài giây để đảm bảo độ sắc nét cao nhất.</p>
+          <h2 className="text-xl font-bold text-gray-900 mt-2">膼ang xu岷 b岷 file PDF c峄 b岷...</h2>
+          <p className="text-sm text-gray-500">Qu谩 tr矛nh n脿y c贸 th峄?m岷 v脿i gi芒y 膽峄?膽岷 b岷 膽峄?s岷痗 n茅t cao nh岷.</p>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={handleExitBuilder}
+        disabled={saving}
+        className="absolute top-4 left-5 z-20 mb-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Quay lại trang CV
+      </button>
       
       {/* Left Sidebar Toolbox */}
       <BuilderLeftSidebar
@@ -606,396 +780,55 @@ const CVBuilder = () => {
       />
 
       {/* Main Canvas Area */}
-      <div className="flex-grow flex justify-center bg-transparent relative">
+      <div className="flex-grow flex justify-center bg-transparent relative overflow-x-auto py-2">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <div
-            ref={cvRef}
-            className="flex flex-col gap-6"
-            style={{
-              fontFamily: fontMapping[style.fontId] || 'sans-serif',
-              color: '#374151'
-            }}
+            ref={cvDisplayRef}
+            className="origin-top transition-transform duration-200"
+            style={{ transform: 'scale(0.9)' }}
           >
-            <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-              <SortableContext items={rightSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                <SortableContext items={headerLeftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                  {Array.from({ length: totalPages }).map((_, pageIdx) => {
-                    const pLeft = leftPages[pageIdx] || [];
-                    const pRight = rightPages[pageIdx] || [];
-                    const pHeaderLeft = headerLeftPages[pageIdx] || [];
-                    const pEqualLeft = equalLeftPages[pageIdx] || [];
-                    const pEqualRight = equalRightPages[pageIdx] || [];
-                    const pFullWidth = fullWidthPages[pageIdx] || [];
-                    const pHarvardClassic = harvardClassicPages[pageIdx] || [];
-                    const pHarvardGsas = harvardGsasPages[pageIdx] || [];
-
-                    return (
-                      <div
-                        key={pageIdx}
-                        className="cv-page bg-white shadow-xl flex flex-col relative overflow-hidden pb-[40px]"
-                        style={{
-                          width: '210mm',
-                          height: '297mm',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        {/* Left Column Layout */}
-                        {selectedLayout === 'left-col' && (
-                          <div className="flex-1 flex w-full overflow-hidden">
-                            {/* Left Sidebar */}
-                            <div
-                              style={{ backgroundColor: style.themeColorId }}
-                              className="w-[35%] p-6 text-white flex flex-col gap-6"
-                            >
-                              {/* Avatar in Left Sidebar */}
-                              {pageIdx === 0 && style.avatarShape !== 'hidden' && (
-                                <div className="px-5 pt-4 pb-2 text-center shrink-0">
-                                  <div
-                                    className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden relative shadow-inner cursor-pointer ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
-                                      }`}
-                                    title="Click để tải ảnh đại diện lên"
-                                  >
-                                    {profileSection?.items[0]?.avatar ? (
-                                      <img 
-                                        src={profileSection.items[0].avatar} 
-                                        alt="Avatar" 
-                                        className="w-full h-full object-cover" 
-                                      />
-                                    ) : (
-                                      <User className="w-5 h-5 text-white/70"  />
-                                    )}
-                                    <label
-                                      data-html2canvas-ignore="true"
-                                      className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
-                                      title="Click để tải ảnh đại diện lên"
-                                    >
-                                      <UploadCloud className="text-white w-5 h-5"  />
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="sr-only"
-                                        onChange={(e) => {
-                                          const file = e.target.files[0];
-                                          if (file) {
-                                            const reader = new FileReader();
-                                            reader.onload = () => {
-                                              handleOpenCropModal(reader.result, (croppedBase64) => {
-                                                const updatedItems = [...(profileSection.items || [])];
-                                                if (!updatedItems[0]) updatedItems[0] = {};
-                                                updatedItems[0].avatar = croppedBase64;
-                                                handleSectionContentUpdate('PROFILE', updatedItems);
-                                                handleMultipleStyleChange({
-                                                  avatarZoom: 1,
-                                                  avatarX: 0,
-                                                  avatarY: 0
-                                                });
-                                              });
-                                            };
-                                            reader.readAsDataURL(file);
-                                          }
-                                        }}
-                                      />
-                                    </label>
-                                  </div>
-                                </div>
-                              )}
-
-                              {pLeft.map(sec => {
-                                const isCont = isSectionContinuation(sec.sectionCode, pageIdx, leftPages);
-                                return isCont ? (
-                                  <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'left', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </div>
-                                ) : (
-                                  <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'left', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </SortableItem>
-                                );
-                              })}
-                            </div>
-
-                            {/* Right Main area */}
-                            <div className="flex-1 p-6 bg-white flex flex-col gap-6">
-                              {/* Header Box */}
-                              {pageIdx === 0 && profileSection && (
-                                <div className="border-b pb-4" style={{ borderColor: `${style.themeColorId}20` }}>
-                                  <SortableItem id="PROFILE">
-                                    {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </SortableItem>
-                                </div>
-                              )}
-
-                              <div className="space-y-6">
-                                {pRight.map(sec => {
-                                  const isCont = isSectionContinuation(sec.sectionCode, pageIdx, rightPages);
-                                  return isCont ? (
-                                    <div key={sec.sectionCode} className="w-full">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </div>
-                                  ) : (
-                                    <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Header Left Layout */}
-                        {selectedLayout === 'header-left' && (
-                          <div className="flex-1 p-8 bg-white flex flex-col gap-6 w-full overflow-hidden">
-                            {/* Header block */}
-                            {pageIdx === 0 && (
-                              <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: `${style.themeColorId}30` }}>
-                                {profileSection && (
-                                  <div className="flex-1">
-                                    <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                                {contactSection && (
-                                  <div className="text-right shrink-0">
-                                    <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Main Wide Area */}
-                            <div className="space-y-6">
-                              {pHeaderLeft.map(sec => {
-                                const isCont = isSectionContinuation(sec.sectionCode, pageIdx, headerLeftPages);
-                                return isCont ? (
-                                  <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </div>
-                                ) : (
-                                  <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </SortableItem>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Two Column Equal */}
-                        {selectedLayout === 'two-col-equal' && (
-                          <div className="flex-1 p-8 bg-white flex flex-col gap-6 w-full overflow-hidden">
-                            {/* Full Width Top Header */}
-                            {pageIdx === 0 && profileSection && (
-                              <div className="p-6 rounded-xl text-white flex justify-between items-center" style={{ backgroundColor: style.themeColorId }}>
-                                <div className="flex-1">
-                                  <SortableItem id="PROFILE">
-                                    {renderSection(profileSection, style, handleSectionContentUpdate, 'left', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </SortableItem>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Split Columns */}
-                            <div className="grid grid-cols-2 gap-6 flex-1">
-                              {/* Left Column */}
-                              <div className="space-y-6 border-r pr-6" style={{ borderColor: `${style.themeColorId}10` }}>
-                                {pLeft.map(sec => {
-                                  const isCont = isSectionContinuation(sec.sectionCode, pageIdx, equalLeftPages);
-                                  return isCont ? (
-                                    <div key={sec.sectionCode} className="w-full">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </div>
-                                  ) : (
-                                    <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  );
-                                })}
-                              </div>
-
-                              {/* Right Column */}
-                              <div className="space-y-6">
-                                {pRight.map(sec => {
-                                  const isCont = isSectionContinuation(sec.sectionCode, pageIdx, equalRightPages);
-                                  return isCont ? (
-                                    <div key={sec.sectionCode} className="w-full">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </div>
-                                  ) : (
-                                    <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Full Width Layout */}
-                        {selectedLayout === 'full-width' && (
-                          <div className="flex-1 p-8 bg-white flex flex-col gap-6 w-full overflow-hidden">
-                            {/* Center Header Banner */}
-                            {pageIdx === 0 && (
-                              <div className="flex flex-col items-center justify-center border-b pb-6" style={{ borderColor: `${style.themeColorId}20` }}>
-                                {profileSection && (
-                                  <div className="text-center w-full">
-                                    <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                                {contactSection && (
-                                  <div className="mt-4 flex justify-center w-full max-w-sm">
-                                    <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Main Content Area */}
-                            <div className="space-y-6 flex-1">
-                              {pFullWidth.map(sec => {
-                                const isCont = isSectionContinuation(sec.sectionCode, pageIdx, fullWidthPages);
-                                return isCont ? (
-                                  <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </div>
-                                ) : (
-                                  <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </SortableItem>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Harvard Classic Layout */}
-                        {selectedLayout === 'harvard-classic' && (
-                          <div className="flex-1 p-8 bg-white flex flex-col gap-6 w-full overflow-hidden text-left">
-                            {/* Centered Harvard Header Banner */}
-                            {pageIdx === 0 && (
-                              <div className="flex flex-col items-center justify-center border-b-2 pb-6" style={{ borderColor: style.themeColorId }}>
-                                {profileSection && (
-                                  <div className="text-center w-full">
-                                    <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                                {contactSection && (
-                                  <div className="mt-3 flex justify-center w-full">
-                                    <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Main Content Area */}
-                            <div className="space-y-6 flex-1">
-                              {pHarvardClassic.map(sec => {
-                                const isCont = isSectionContinuation(sec.sectionCode, pageIdx, harvardClassicPages);
-                                return isCont ? (
-                                  <div key={sec.sectionCode} className="w-full">
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </div>
-                                ) : (
-                                  <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                  </SortableItem>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Harvard GSAS Asymmetric Layout */}
-                        {selectedLayout === 'harvard-gsas' && (
-                          <div className="flex-1 p-8 bg-white flex flex-col gap-6 w-full overflow-hidden text-left">
-                            {/* Asymmetric Header */}
-                            {pageIdx === 0 && (
-                              <div className="flex items-start justify-between border-b pb-4" style={{ borderColor: `${style.themeColorId}20` }}>
-                                {profileSection && (
-                                  <div className="flex-1">
-                                    <SortableItem id="PROFILE">
-                                      {renderSection(profileSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                                {contactSection && (
-                                  <div className="text-right shrink-0">
-                                    <SortableItem id="CONTACT">
-                                      {renderSection(contactSection, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </SortableItem>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Main Content Area: Left Title / Right Content grid */}
-                            <div className="space-y-6 flex-1">
-                              {pHarvardGsas.map(sec => {
-                                const isCont = isSectionContinuation(sec.sectionCode, pageIdx, harvardGsasPages);
-                                return isCont ? (
-                                  <div key={sec.sectionCode} className="grid grid-cols-[1fr_3.5fr] gap-6 border-b border-gray-100 pb-4 last:border-b-0">
-                                    <div className="text-right pr-2">
-                                      <h4 className="text-[12.5px] font-bold uppercase tracking-wider font-sans" style={{ color: style.themeColorId }}>
-                                        {sec.sectionCode === 'EDUCATION' ? 'HỌC VẤN' :
-                                          sec.sectionCode === 'EXPERIENCE' ? 'KINH NGHIỆM' :
-                                            sec.sectionCode === 'SKILLS' ? 'KỸ NĂNG' :
-                                              sec.sectionCode === 'OBJECTIVE' ? 'MỤC TIÊU' :
-                                                sec.sectionCode === 'PROJECTS' ? 'DỰ ÁN' :
-                                                  sec.sectionCode === 'CERTIFICATES' ? 'CHỨNG CHỈ' :
-                                                    sec.sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' : sec.sectionCode}
-                                      </h4>
-                                    </div>
-                                    <div className="text-left">
-                                      {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, true, handleMultipleStyleChange, handleOpenCropModal)}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                                    <div className="grid grid-cols-[1fr_3.5fr] gap-6 border-b border-gray-100 pb-4 last:border-b-0">
-                                      <div className="text-right pr-2">
-                                        <h4 className="text-[12.5px] font-bold uppercase tracking-wider font-sans" style={{ color: style.themeColorId }}>
-                                          {sec.sectionCode === 'EDUCATION' ? 'HỌC VẤN' :
-                                            sec.sectionCode === 'EXPERIENCE' ? 'KINH NGHIỆM' :
-                                              sec.sectionCode === 'SKILLS' ? 'KỸ NĂNG' :
-                                                sec.sectionCode === 'OBJECTIVE' ? 'MỤC TIÊU' :
-                                                  sec.sectionCode === 'PROJECTS' ? 'DỰ ÁN' :
-                                                    sec.sectionCode === 'CERTIFICATES' ? 'CHỨNG CHỈ' :
-                                                      sec.sectionCode === 'ACTIVITIES' ? 'HOẠT ĐỘNG' : sec.sectionCode}
-                                        </h4>
-                                      </div>
-                                      <div className="text-left">
-                                        {renderSection(sec, style, handleSectionContentUpdate, 'right', selectedLayout, false, handleMultipleStyleChange, handleOpenCropModal)}
-                                      </div>
-                                    </div>
-                                  </SortableItem>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Page Footer Watermark */}
-                        <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-white px-12 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none z-20">
-                          <span>© VietWorks</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+            <div
+              ref={cvRef}
+              className="flex flex-col gap-6"
+              style={{
+                fontFamily: fontMapping[style.fontId] || 'sans-serif',
+                color: '#374151'
+              }}
+            >
+              <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={rightSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={headerLeftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                    <CVTemplateRenderer
+                      selectedLayout={selectedLayout}
+                      style={style}
+                      totalPages={totalPages}
+                      pages={{
+                        left: leftPages,
+                        right: rightPages,
+                        headerLeft: headerLeftPages,
+                        equalLeft: equalLeftPages,
+                        equalRight: equalRightPages,
+                        fullWidth: fullWidthPages,
+                        harvardClassic: harvardClassicPages,
+                        harvardGsas: harvardGsasPages,
+                        isSectionContinuation
+                      }}
+                      profileSection={profileSection}
+                      contactSection={contactSection}
+                      renderLeftAvatar={renderLeftAvatar}
+                      renderSection={(sec, columnContext, isContinuation = false) => (
+                        renderSection(sec, style, handleSectionContentUpdate, columnContext, selectedLayout, isContinuation, handleMultipleStyleChange, handleOpenCropModal)
+                      )}
+                      wrapSection={(sec, node) => (
+                        <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
+                          {node}
+                        </SortableItem>
+                      )}
+                    />
+                  </SortableContext>
                 </SortableContext>
               </SortableContext>
-            </SortableContext>
+            </div>
           </div>
                 </DndContext>
       </div>

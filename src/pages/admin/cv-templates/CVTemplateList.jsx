@@ -181,14 +181,14 @@ const CVTemplateList = () => {
               {templates.map((tpl) => (
                 <div 
                   key={tpl._id} 
-                  className="group bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full hover:-translate-y-1"
+                  className="group bg-white border border-slate-200/60 rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full hover:-translate-y-1"
                 >
                   {/* Thumbnail Block */}
                   <div className="relative aspect-[210/297] w-full bg-slate-50 border-b border-slate-100 overflow-hidden select-none">
                     {tpl.thumbnailUrl ? (
                       <img
                         alt={tpl.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-contain object-top"
                         src={tpl.thumbnailUrl}
                       />
                     ) : (
@@ -199,7 +199,7 @@ const CVTemplateList = () => {
                     )}
 
                     {/* Hover Action Overlay */}
-                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+                    <div className="absolute inset-0 bg-slate-950/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
                       <button
                         onClick={() => setPreviewImage(tpl.thumbnailUrl)}
                         disabled={!tpl.thumbnailUrl}
@@ -304,12 +304,12 @@ const CVTemplateList = () => {
                 <tr key={tpl._id} className="border-t border-slate-100 transition-colors">
                   <td className="px-6 py-4 flex items-center gap-4">
                     <div 
-                      className="w-16 rounded-xl border border-slate-200/60 bg-slate-50 flex items-center justify-center shadow-sm relative overflow-hidden group cursor-pointer aspect-[210/297] shrink-0"
+                      className="w-16 rounded-none border border-slate-200/60 bg-white flex items-center justify-center shadow-sm relative overflow-hidden group cursor-pointer aspect-[210/297] shrink-0"
                       onClick={() => setPreviewImage(tpl.thumbnailUrl)}
                     >
                       {tpl.thumbnailUrl ? (
                         <>
-                          <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                          <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-contain object-top" />
                           <div className="absolute inset-0 bg-slate-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                             <Eye className="w-4 h-4 text-white" />
                           </div>
@@ -408,7 +408,7 @@ const CVTemplateList = () => {
           onClick={() => setPreviewImage(null)}
         >
           <div 
-            className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl p-2 animate-scale-in"
+            className="relative max-w-2xl w-full bg-white rounded-none overflow-hidden shadow-2xl p-2 animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
             <button 
@@ -417,7 +417,7 @@ const CVTemplateList = () => {
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="aspect-[210/297] w-full bg-slate-100 overflow-y-auto max-h-[85vh] rounded-xl custom-scrollbar">
+            <div className="aspect-[210/297] w-full bg-slate-100 overflow-y-auto max-h-[85vh] rounded-none custom-scrollbar">
               <img 
                 src={previewImage} 
                 alt="CV Template Preview Full" 

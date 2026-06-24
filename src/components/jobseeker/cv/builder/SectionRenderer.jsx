@@ -134,22 +134,16 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
             <div className="w-full text-center">
               <EditableText 
                 tag="h1" 
-                className={`${nameSize} font-black uppercase mb-1 tracking-tight`} 
+                className={`${nameSize} font-black uppercase mb-1 tracking-tight block leading-none`} 
                 style={{ color: headingColor }}
                 html={profile.name} 
                 onChange={v => updateItem(0, 'name', v)} 
               />
               <EditableText 
                 tag="h2" 
-                className={`${subHeadingSize} font-extrabold mb-2 uppercase tracking-wider text-gray-500`} 
+                className={`${subHeadingSize} font-extrabold mb-2 uppercase tracking-wider text-gray-500 block mt-1.5`} 
                 html={profile.title} 
                 onChange={v => updateItem(0, 'title', v)} 
-              />
-              <EditableText 
-                className={`${bodySize} leading-relaxed max-w-2xl mx-auto`} 
-                style={{ color: textColor }}
-                html={profile.summary} 
-                onChange={v => updateItem(0, 'summary', v)} 
               />
             </div>
           </div>
@@ -295,11 +289,6 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
               html={profile.title} 
               onChange={v => updateItem(0, 'title', v)} 
             />
-            <EditableText 
-              className={`${bodySize} text-gray-600 mt-2 max-w-xl block`} 
-              html={profile.summary} 
-              onChange={v => updateItem(0, 'summary', v)} 
-            />
           </div>
         );
       }
@@ -407,11 +396,19 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
       );
 
     case 'CONTACT':
-      const contact = items[0] || { phone: '0123 456 789', email: 'email@example.com', address: 'Hà Nội, Việt Nam' };
+      const contact = items[0] || { phone: '0123 456 789', email: 'email@example.com', address: 'Hà Nội, Việt Nam', link: 'linkedin.com/in/username' };
+      const contactFields = [
+        { key: 'phone', icon: 'phone', placeholder: 'Điện thoại', className: 'break-words' },
+        { key: 'email', icon: 'mail', placeholder: 'Email', className: 'break-all' },
+        { key: 'address', icon: 'location_on', placeholder: 'Địa chỉ', className: 'break-words' },
+        { key: 'link', icon: 'link', placeholder: 'Link', className: 'break-all' }
+      ];
+      const visibleContactFields = contactFields.filter(field => contact[field.key]);
+      const hiddenContactFields = contactFields.filter(field => !contact[field.key]);
       if (layoutCode === 'harvard-classic') {
         return (
           <div className={marginClass}>
-            <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] font-medium font-sans">
+            <div className="group/contact-section flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] font-medium font-sans">
               {contact.address && (
                 <div className="flex items-center gap-1">
                   <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>location_on</span>
@@ -447,6 +444,29 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                   />
                 </div>
               )}
+              {(contact.email && contact.link) && <span className="text-gray-400">|</span>}
+              {contact.link && (
+              <div className="group/contact-field flex items-center gap-1">
+                <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>link</span>
+                <EditableText 
+                  html={contact.link || ''} 
+                  onChange={v => updateItem(0, 'link', v)} 
+                  placeholder="Link"
+                  className="break-all"
+                />
+                <button data-html2canvas-ignore="true" onClick={() => updateItem(0, 'link', '')} className="text-red-500 opacity-0 group-hover/contact-field:opacity-100 transition-opacity text-[10px] font-bold">×</button>
+              </div>
+              )}
+              {hiddenContactFields.map(field => (
+                <button
+                  key={field.key}
+                  data-html2canvas-ignore="true"
+                  onClick={() => updateItem(0, field.key, field.placeholder)}
+                  className="text-blue-500 hover:underline opacity-0 group-hover/contact-section:opacity-100 transition-opacity"
+                >
+                  + {field.placeholder}
+                </button>
+              ))}
             </div>
           </div>
         );
@@ -454,8 +474,8 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
       return (
         <div className={marginClass}>
           <SectionHeader title="Liên Hệ" />
-          <div className={`space-y-1.5 ${bodySize}`} style={{ color: textColor }}>
-            <div className="flex items-center gap-1.5 py-0.5">
+          <div className={`group/contact-section space-y-1.5 ${bodySize}`} style={{ color: textColor }}>
+            <div className={`group/contact-field items-center gap-1.5 py-0.5 ${contact.phone ? 'flex' : 'hidden'}`}>
               <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>phone</span>
               <EditableText 
                 html={contact.phone} 
@@ -463,8 +483,9 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 placeholder="Điện thoại"
                 className="flex-1 break-words"
               />
+              <button data-html2canvas-ignore="true" onClick={() => updateItem(0, 'phone', '')} className="text-red-500 opacity-0 group-hover/contact-field:opacity-100 transition-opacity" title="Xóa trường"><Trash2 className="w-5 h-5" /></button>
             </div>
-            <div className="flex items-center gap-1.5 py-0.5">
+            <div className={`group/contact-field items-center gap-1.5 py-0.5 ${contact.email ? 'flex' : 'hidden'}`}>
               <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>mail</span>
               <EditableText 
                 html={contact.email} 
@@ -472,8 +493,9 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 placeholder="Email"
                 className="flex-1 break-all"
               />
+              <button data-html2canvas-ignore="true" onClick={() => updateItem(0, 'email', '')} className="text-red-500 opacity-0 group-hover/contact-field:opacity-100 transition-opacity" title="Xóa trường"><Trash2 className="w-5 h-5" /></button>
             </div>
-            <div className="flex items-center gap-1.5 py-0.5">
+            <div className={`group/contact-field items-center gap-1.5 py-0.5 ${contact.address ? 'flex' : 'hidden'}`}>
               <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>location_on</span>
               <EditableText 
                 html={contact.address} 
@@ -481,7 +503,31 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
                 placeholder="Địa chỉ"
                 className="flex-1 break-words"
               />
+              <button data-html2canvas-ignore="true" onClick={() => updateItem(0, 'address', '')} className="text-red-500 opacity-0 group-hover/contact-field:opacity-100 transition-opacity" title="Xóa trường"><Trash2 className="w-5 h-5" /></button>
             </div>
+            <div className={`group/contact-field items-center gap-1.5 py-0.5 ${contact.link ? 'flex' : 'hidden'}`}>
+              <span className={`material-symbols-outlined ${iconSizeClass} opacity-75 shrink-0`}>link</span>
+              <EditableText 
+                html={contact.link} 
+                onChange={v => updateItem(0, 'link', v)} 
+                placeholder="Link"
+                className="flex-1 break-all"
+              />
+              <button data-html2canvas-ignore="true" onClick={() => updateItem(0, 'link', '')} className="text-red-500 opacity-0 group-hover/contact-field:opacity-100 transition-opacity" title="Xóa trường"><Trash2 className="w-5 h-5" /></button>
+            </div>
+            {hiddenContactFields.length > 0 && (
+              <div data-html2canvas-ignore="true" className="flex flex-wrap gap-2 pt-1 opacity-0 group-hover/contact-section:opacity-100 transition-opacity">
+                {hiddenContactFields.map(field => (
+                  <button
+                    key={field.key}
+                    onClick={() => updateItem(0, field.key, field.placeholder)}
+                    className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+                  >
+                    <Plus className="w-4 h-4" /> {field.placeholder}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
