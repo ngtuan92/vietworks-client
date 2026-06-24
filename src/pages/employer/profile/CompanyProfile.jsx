@@ -18,8 +18,7 @@ const TABS = [
   { key: 'general', label: 'Thông tin chung' },
   { key: 'locations', label: 'Địa điểm làm việc' },
   { key: 'description', label: 'Mô tả công ty' },
-  { key: 'images', label: 'Hình ảnh công ty' },
-  { key: 'legal', label: 'Xác thực pháp lý' },
+  { key: 'legal', label: 'Giấy phép kinh doanh' },
 ];
 
 const CompanyProfile = () => {
@@ -598,43 +597,7 @@ useEffect(() => {
         </section>
       ) : null}
 
-      {activeTab === 'images' ? (
-        <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
-          <h2 className="text-lg font-bold text-slate-900">Hình ảnh công ty</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <FileField label="Logo" accept="image/*" onChange={(e) => setImages((p) => ({ ...p, logo: e.target.files?.[0] || null }))} hint="PNG/JPG, vuông" />
-            <FileField label="Ảnh bìa" accept="image/*" onChange={(e) => setImages((p) => ({ ...p, cover: e.target.files?.[0] || null }))} hint="Ảnh ngang" />
-          </div>
 
-          <div className="rounded-2xl border border-slate-200 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-slate-900">Thư viện ảnh</h3>
-                <p className="text-sm text-slate-600">Tối đa 10 ảnh.</p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  const next = Array.from(e.target.files || []).slice(0, 10);
-                  setImages((p) => ({ ...p, gallery: next }));
-                }}
-              />
-            </div>
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-              {(images.gallery || []).map((file, idx) => (
-                <div key={idx} className="h-24 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-500">
-                  {file.name}
-                </div>
-              ))}
-              {(images.gallery || []).length === 0 ? (
-                <div className="text-sm text-slate-500">Chưa có ảnh.</div>
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       {activeTab === 'legal' ? (
         <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 space-y-5">
@@ -837,15 +800,12 @@ const RichTextEditor = ({ label, value, onChange, placeholder }) => {
             1. List
           </button>
           <span className="w-px h-6 bg-slate-200 mx-1" />
-          <button type="button" onClick={() => apply('formatBlock', 'h2')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
-            H2
-          </button>
-          <button type="button" onClick={() => apply('formatBlock', 'h3')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
-            H3
-          </button>
-          <button type="button" onClick={() => apply('formatBlock', 'p')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
-            P
-          </button>
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer" title="Màu chữ">
+            <input type="color" className="w-6 h-6 p-0 border-0 rounded cursor-pointer" onChange={(e) => apply('foreColor', e.target.value)} />
+          </label>
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer" title="Màu nền chữ">
+            <input type="color" className="w-6 h-6 p-0 border-0 rounded cursor-pointer" onChange={(e) => apply('hiliteColor', e.target.value)} />
+          </label>
           <span className="w-px h-6 bg-slate-200 mx-1" />
           <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             Cỡ chữ
@@ -883,7 +843,7 @@ const RichTextEditor = ({ label, value, onChange, placeholder }) => {
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className="min-h-40 px-4 py-3 outline-none prose max-w-none"
+          className="min-h-40 px-4 py-3 outline-none prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:ml-4"
           data-placeholder={placeholder}
           style={{ whiteSpace: 'pre-wrap' }}
           suppressContentEditableWarning

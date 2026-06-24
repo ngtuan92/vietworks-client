@@ -1,4 +1,4 @@
-﻿import { Wallet, Plus, Bell, ShieldCheck, ShieldAlert, ShieldQuestion, ChevronDown, Building2 } from 'lucide-react';
+import { Wallet, Plus, Bell, ShieldCheck, ShieldAlert, ShieldQuestion, ChevronDown, Building2 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import employerCompanyService from '../../../services/employerCompanyService';
@@ -99,9 +99,13 @@ const EmployerHeader = () => {
   return (
     <header className="sticky top-0 z-40 flex h-20 flex-shrink-0 items-center justify-between border-b border-slate-200/60 bg-white/92 px-8 backdrop-blur-2xl transition-all">
       <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-primary shadow-sm">
-          <Building2 className="h-5 w-5" />
-        </div>
+        {company?.avatarUrl ? (
+          <img src={company.avatarUrl} alt="Company Logo" className="h-12 w-12 rounded-2xl border border-slate-200 object-cover shadow-sm" />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-primary shadow-sm">
+            <Building2 className="h-5 w-5" />
+          </div>
+        )}
 
         <div>
           <h1 className="text-xl font-black tracking-tight text-slate-900">
