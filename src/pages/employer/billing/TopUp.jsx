@@ -46,6 +46,8 @@ const TopUp = () => {
   const { paid } = useSepayPolling(qrData?.orderCode, {
     enabled: !!qrData?.orderCode,
     onPaid: (orderCode) => {
+      // Báo header + EmployerWallet refresh số dư (event mới: vietworks:wallet-updated)
+      window.dispatchEvent(new Event('vietworks:wallet-updated'));
       // Delay 1.5s để user thấy ✓ rồi mới chuyển trang
       setTimeout(() => {
         navigate(`/employer/wallet/payment-result?orderCode=${orderCode}`);

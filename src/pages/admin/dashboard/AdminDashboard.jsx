@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
+  BarChart2,
   Building2,
   CheckCircle2,
   Clock3,
@@ -35,6 +36,7 @@ const quickLinks = [
   { to: '/admin/jobs', icon: FileText, title: 'Kiểm duyệt tin', description: '45 tin đang chờ xử lý', bg: 'bg-amber-50/50', iconColor: 'text-amber-600', iconBg: 'bg-amber-100' },
   { to: '/admin/companies', icon: Building2, title: 'Xác minh công ty', description: '12 hồ sơ cần đối chiếu', bg: 'bg-blue-50/50', iconColor: 'text-blue-600', iconBg: 'bg-blue-100' },
   { to: '/admin/users', icon: Users, title: 'Quản lý tài khoản', description: 'Lọc theo vai trò và rủi ro', bg: 'bg-indigo-50/50', iconColor: 'text-indigo-600', iconBg: 'bg-indigo-100' },
+  { to: '/admin/analytics/charts', icon: BarChart2, title: 'Xem phân tích', description: 'Jobs · Applications · Hiring', bg: 'bg-emerald-50/50', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-100' },
 ];
 
 const AdminDashboard = () => {
