@@ -79,8 +79,16 @@ const AdminHeader = () => {
             <p className="text-[10px] font-bold text-slate-500">{user?.role === 'ADMIN' ? 'Toàn quyền' : 'Quản lý'}</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-100 group-hover:border-primary/50 shadow-sm group-hover:shadow-md transition-all overflow-hidden bg-gradient-to-br from-primary to-blue-700 font-black text-white p-0.5">
-              {getInitials(user?.fullName)}
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-slate-100 bg-slate-100 text-sm font-black text-slate-700 shadow-sm transition-all group-hover:border-primary/50 group-hover:shadow-md">
+              {user?.avatarUrl ? (
+                <img
+                  alt="Admin Avatar"
+                  className="h-full w-full object-cover"
+                  src={user.avatarUrl}
+                />
+              ) : (
+                <span>{getInitials(user?.fullName)}</span>
+              )}
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors hidden sm:block" />
           </div>

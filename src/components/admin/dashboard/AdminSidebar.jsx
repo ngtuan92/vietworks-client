@@ -14,9 +14,7 @@ const navItems = [
     icon: <Users className={iconClass} />,
     label: 'Người dùng',
     children: [
-      { label: 'Tất cả người dùng', to: '/admin/users' },
-      { label: 'Ứng viên', to: '/admin/users?role=JOBSEEKER' },
-      { label: 'Nhà tuyển dụng', to: '/admin/users?role=EMPLOYER' },
+      { label: 'Quản lý người dùng', to: '/admin/users' },
     ],
   },
   {
@@ -162,7 +160,7 @@ const AdminSidebar = () => {
       <div className="p-5 flex items-center gap-3 border-b border-slate-100/80">
         <img src={logoImg} alt="VietWorks Logo" className="h-10 w-auto object-contain" />
         <div>
-          <span className="block text-xl font-black tracking-tight vw-gradient-text">VietWorks</span>
+          <span className="block text-xl font-black text-primary tracking-tight">VietWorks</span>
           <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Admin Suite</span>
         </div>
       </div>
@@ -171,9 +169,9 @@ const AdminSidebar = () => {
         <Link
           to="/admin/dashboard"
           className={`mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
-            isActive('/admin/dashboard')
-              ? 'bg-gradient-to-r from-[#004491] to-[#0056B3] text-white shadow-glow'
-              : 'text-slate-600 hover:-translate-y-0.5 hover:bg-blue-50 hover:text-[#0056B3]'
+              isActive('/admin/dashboard')
+                ? 'bg-blue-50 text-primary premium-shadow'
+                : 'text-slate-600 hover:-translate-y-0.5 hover:bg-slate-100/80 hover:text-slate-900'
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
@@ -187,8 +185,8 @@ const AdminSidebar = () => {
               to={item.to}
               className={`mb-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                 isActive(item.to)
-                  ? 'bg-gradient-to-r from-[#004491] to-[#0056B3] text-white shadow-glow'
-                  : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                  ? 'bg-blue-50 text-primary premium-shadow'
+                  : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
               }`}
             >
               {item.icon}
@@ -200,7 +198,7 @@ const AdminSidebar = () => {
                 type="button"
                 onClick={() => toggle(item.label)}
                 className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
-                  openGroup === item.label ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                  openGroup === item.label ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -240,7 +238,7 @@ const AdminSidebar = () => {
                         type="button"
                         onClick={handleLogout}
                         className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold transition-all ${
-                          child.isDanger ? 'text-blue-800 hover:bg-blue-50' : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3]'
+                          child.isDanger ? 'text-red-600 hover:bg-red-50' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                         }`}
                       >
                         <span>{child.label}</span>
@@ -251,10 +249,10 @@ const AdminSidebar = () => {
                         to={child.to}
                         className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-all ${
                           isActive(child.to)
-                            ? 'bg-blue-50 text-[#0056B3] font-black'
+                            ? 'text-primary font-bold bg-blue-50/50'
                             : child.isDanger
-                            ? 'text-blue-800 font-bold hover:bg-blue-50'
-                            : 'text-slate-600 hover:bg-blue-50 hover:text-[#0056B3] font-semibold'
+                            ? 'text-red-600 font-bold hover:bg-red-50'
+                            : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-semibold'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -281,11 +279,8 @@ const AdminSidebar = () => {
         )}
       </nav>
 
-      <div className="border-t border-slate-100 p-4">
-        <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-white p-3 text-[11px] font-bold text-slate-500 shadow-insetLight">
-          <p className="text-slate-900">Quản trị viên hệ thống</p>
-          <p className="mt-1">Vận hành an toàn · minh bạch</p>
-        </div>
+      <div className="border-t border-slate-200/60 p-4 text-[11px] font-bold text-slate-400">
+        Nhà quản trị hệ thống
       </div>
     </aside>
   );

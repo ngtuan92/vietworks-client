@@ -30,6 +30,26 @@ const NotificationCenter = () => {
     targetType: 'ALL',
     actionUrl: ''
   });
+  const [urlMode, setUrlMode] = useState('');
+
+  const PRESET_URLS = [
+    { label: 'Không gắn liên kết', value: '' },
+    // ỨNG VIÊN
+    { label: '[Ứng viên] Trang Việc làm', value: '/jobs' },
+    { label: '[Ứng viên] Trang Mẫu CV', value: '/cv-templates/gallery' },
+    { label: '[Ứng viên] Trang Công ty nổi bật', value: '/companies' },
+    { label: '[Ứng viên] Quản lý Việc làm đã ứng tuyển', value: '/applied-jobs' },
+    { label: '[Ứng viên] Xem Việc làm phù hợp', value: '/matched-jobs' },
+    // NHÀ TUYỂN DỤNG
+    { label: '[Nhà TD] Đăng tin tuyển dụng mới', value: '/employer/jobs/create' },
+    { label: '[Nhà TD] Quản lý tin tuyển dụng', value: '/employer/jobs' },
+    { label: '[Nhà TD] Quản lý ứng viên (ATS)', value: '/employer/candidates' },
+    { label: '[Nhà TD] Trang Nạp tiền', value: '/employer/billing' },
+    { label: '[Nhà TD] Trang Mua gói dịch vụ', value: '/employer/packages' },
+    { label: '[Nhà TD] Hồ sơ công ty', value: '/employer/company-profile' },
+    // KHÁC
+    { label: 'Nhập URL tùy chỉnh...', value: 'CUSTOM' }
+  ];
 
   // --- System Alerts State ---
   const [systemAlerts, setSystemAlerts] = useState([]);
@@ -42,7 +62,7 @@ const NotificationCenter = () => {
     try {
       setLoadingList(true);
       const res = await adminNotificationService.getBroadcasts({ limit: 20 });
-      setBroadcasts(res.data?.broadcasts || []);
+      setBroadcasts(res.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,12 +120,13 @@ const NotificationCenter = () => {
       setLoadingSubmit(true);
       await adminNotificationService.sendBroadcast({
         title: formData.title,
-        message: formData.message,
-        targetType: formData.targetType,
+        content: formData.message,
+        targetRole: formData.targetType,
         actionUrl: formData.actionUrl
       });
       notifySuccess('Đã gửi thông báo hàng loạt thành công!');
       setFormData({ title: '', message: '', targetType: 'ALL', actionUrl: '' });
+      setUrlMode('');
       loadBroadcasts();
     } catch (err) {
       notifyError(err.response?.data?.message || 'Lỗi khi gửi thông báo');
@@ -296,16 +317,25 @@ const NotificationCenter = () => {
         <div className="space-y-7 animate-in fade-in zoom-in-95 duration-200">
           <SectionCard title="Tạo thông báo mới">
             <FilterGrid>
-              <InputField label="Tiêu đề (*)" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Nhập tiêu đề thông báo..." />
-              <SelectField label="Đối tượng (*)" value={formData.targetType} onChange={e => setFormData({...formData, targetType: e.target.value})} options={[
+              <InputField label="Tiêu đề (*)" value={formData.title} onChange={val => setFormData({...formData, title: val})} placeholder="Nhập tiêu đề thông báo..." />
+              <SelectField label="Đối tượng (*)" value={formData.targetType} onChange={val => setFormData({...formData, targetType: val})} options={[
                 { label: 'Tất cả người dùng', value: 'ALL' },
                 { label: 'Tất cả Ứng viên', value: 'JOBSEEKER' },
                 { label: 'Tất cả Nhà tuyển dụng', value: 'EMPLOYER' }
               ]} placeholder="Chọn đối tượng" />
-              <InputField label="Liên kết (URL) tùy chọn" value={formData.actionUrl} onChange={e => setFormData({...formData, actionUrl: e.target.value})} placeholder="VD: /jobs/123" />
+              <SelectField label="Liên kết đích (Tùy chọn)" value={urlMode} onChange={val => {
+                setUrlMode(val);
+                if (val !== 'CUSTOM') setFormData(prev => ({ ...prev, actionUrl: val }));
+                else setFormData(prev => ({ ...prev, actionUrl: '' }));
+              }} options={PRESET_URLS} placeholder="Chọn liên kết..." />
+              {urlMode === 'CUSTOM' && (
+                <div className="animate-in fade-in zoom-in-95 duration-200">
+                  <InputField label="Nhập URL tùy chỉnh" value={formData.actionUrl} onChange={val => setFormData({...formData, actionUrl: val})} placeholder="VD: https://google.com" />
+                </div>
+              )}
             </FilterGrid>
             <div className="mt-6">
-              <TextAreaField label="Nội dung (*)" value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} required placeholder="Nhập nội dung chi tiết của thông báo..." rows={4} />
+              <TextAreaField label="Nội dung (*)" value={formData.message} onChange={val => setFormData({...formData, message: val})} required placeholder="Nhập nội dung chi tiết của thông báo..." rows={4} />
             </div>
             <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button disabled={loadingSubmit} onClick={handleSend} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2 disabled:opacity-50 transition-colors">
@@ -325,12 +355,23 @@ const NotificationCenter = () => {
                 <tr key={b.id || b._id} className="border-t border-slate-100/50 hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 font-bold text-slate-900 max-w-xs truncate">{b.title}</td>
                   <td className="px-6 py-4 text-slate-600 font-medium">
-                    <span className="inline-flex rounded-md border border-blue-200/60 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
-                      {b.targetType}
+                    <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      (b.targetRole || b.targetType) === 'ALL' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      (b.targetRole || b.targetType) === 'JOBSEEKER' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      (b.targetRole || b.targetType) === 'EMPLOYER' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}>
+                      {(b.targetRole || b.targetType) === 'ALL' ? 'Tất cả người dùng' : 
+                       (b.targetRole || b.targetType) === 'JOBSEEKER' ? 'Ứng viên' : 
+                       (b.targetRole || b.targetType) === 'EMPLOYER' ? 'Nhà tuyển dụng' : (b.targetRole || b.targetType)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-700 font-bold text-sm">{b.admin?.name || b.adminId || 'Admin'}</td>
-                  <td className="px-6 py-4 font-semibold text-slate-800">{b.totalRecipients || 0}</td>
+                  <td className="px-6 py-4 text-slate-700 font-bold text-sm">
+                    {b.admin?.name || 'Hệ thống / Admin'}
+                  </td>
+                  <td className="px-6 py-4 font-semibold text-slate-800">
+                    {b.sentCount || b.totalRecipients || 0} người
+                  </td>
                   <td className="px-6 py-4 text-slate-500 font-medium text-sm">{new Date(b.createdAt).toLocaleString('vi-VN')}</td>
                 </tr>
               ))}

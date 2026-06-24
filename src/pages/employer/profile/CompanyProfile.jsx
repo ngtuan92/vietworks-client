@@ -12,6 +12,7 @@ import uploadService from '../../../services/uploadService.js';
 import companyMasterDataService from '../../../services/companyMasterDataService.js';
 import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn';
 import { useNotification } from '../../../contexts/NotificationContext';
+import useAuth from '../../../hooks/useAuth';
 
 const TABS = [
   { key: 'general', label: 'Thông tin chung' },
@@ -22,6 +23,7 @@ const TABS = [
 ];
 
 const CompanyProfile = () => {
+  const { updateUser } = useAuth();
   const { warning } = useNotification();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('general');
@@ -257,6 +259,7 @@ const handleLegalFileChange = (event) => {
     }));
 
     setLogoPreview(res.data.avatarUrl || avatarUrl || '');
+    updateUser({ avatarUrl: res.data.avatarUrl || avatarUrl || '' });
     setCoverPreview(res.data.coverUrl || coverUrl || '');
 
     setLegal((prev) => ({
