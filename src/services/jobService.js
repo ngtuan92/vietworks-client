@@ -126,6 +126,11 @@ export const getSkillsByCareerGroup = async (careerGroupId) => {
   return response.data;
 };
 
+export const getAllSkills = async (params = {}) => {
+  const response = await api.get('/master-data/skills', { params });
+  return response.data;
+};
+
 export const getJobById = async (jobId) => {
   const response = await api.get(`/jobs/${jobId}`);
   return response.data;
@@ -287,6 +292,7 @@ export default {
   getJobLevels,
   getExperienceLevels,
   getSkillsByCareerGroup,
+  getAllSkills,
   getJobById,
   getJobs,
   getMyJobs,

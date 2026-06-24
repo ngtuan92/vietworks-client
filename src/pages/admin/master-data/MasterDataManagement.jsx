@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import jobApi from '../../../services/jobService'; 
+import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
+import jobApi from '../../../services/jobService';
+import companyMasterDataService from '../../../services/companyMasterDataService';
 import {
   PageHeader,
   SectionCard,
@@ -16,17 +17,20 @@ import { useNotification } from '../../../contexts/NotificationContext';
 const MasterDataManagement = () => {
   const { confirm } = useNotification();
   // --- 1. Quản lý Tabs hệ thống ---
-  const [tab, setTab] = useState('Danh mục'); 
-  const tabs = ['Địa điểm', 'Danh mục', 'Cấp bậc', 'Kinh nghiệm', 'Kỹ năng / Tags', 'Lĩnh vực công ty', 'Quy mô công ty'];
+  const [tab, setTab] = useState('Danh mục');
+  const tabs = ['Danh mục', 'Cấp bậc', 'Kinh nghiệm', 'Kỹ năng / Tags', 'Lĩnh vực công ty', 'Quy mô công ty'];
   const [loading, setLoading] = useState(false);
 
   // --- 2. Master Data States từ API ---
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
+  const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
   const [experienceLevels, setExperienceLevels] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [companyIndustries, setCompanyIndustries] = useState([]);
+  const [companySizes, setCompanySizes] = useState([]);
 
   // --- 3. Filters States ---
   const [selectedCareerGroupId, setSelectedCareerGroupId] = useState('');
@@ -37,7 +41,7 @@ const MasterDataManagement = () => {
   // --- 4. Form & Modal States ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [targetType, setTargetType] = useState(''); 
+  const [targetType, setTargetType] = useState('');
   const [selectedId, setSelectedId] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -46,33 +50,44 @@ const MasterDataManagement = () => {
   });
 
   const loadGlobalData = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const resGroups = await jobApi.getCareerGroups();
+      const [resGroups, resLevels, resExp, resInd, resSizes] = await Promise.all([
+        jobApi.getCareerGroups(),
+        jobApi.getJobLevels(),
+        jobApi.getExperienceLevels(),
+        companyMasterDataService.getCompanyIndustries(),
+        companyMasterDataService.getCompanySizes()
+      ]);
       if (resGroups?.success) setCareerGroups(resGroups.data);
-
-      const resExp = await jobApi.getExperienceLevels();
+      if (resLevels?.success) {
+        setJobLevels(resLevels.data);
+        setGlobalJobLevels(resLevels.data);
+      }
       if (resExp?.success) setExperienceLevels(resExp.data);
-    } catch (err) { 
-      console.error(err); 
-    } finally { 
-      setLoading(false); 
+      if (resInd?.success) setCompanyIndustries(resInd.data);
+      if (resSizes?.success) setCompanySizes(resSizes.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   const loadDependentData = useCallback(async (careerGroupId = selectedCareerGroupId) => {
-    if (!careerGroupId) {
-      setCareers([]); setPositions([]); setSkills([]); setJobLevels([]); return;
-    }
     try {
-      const resCareers = await jobApi.getCareersByGroup(careerGroupId);
-      if (resCareers?.success) setCareers(resCareers.data);
+      if (careerGroupId) {
+        const resCareers = await jobApi.getCareersByGroup(careerGroupId);
+        if (resCareers?.success) setCareers(resCareers.data);
 
-      const resSkills = await jobApi.getSkillsByCareerGroup(careerGroupId);
-      if (resSkills?.success) setSkills(resSkills.data);
-
-      const resLevels = await jobApi.getJobLevels(careerGroupId);
-      if (resLevels?.success) setJobLevels(resLevels.data);
+        const resSkills = await jobApi.getSkillsByCareerGroup(careerGroupId);
+        if (resSkills?.success) setSkills(resSkills.data);
+      } else {
+        setCareers([]); 
+        setPositions([]); 
+        const resSkills = await jobApi.getAllSkills();
+        if (resSkills?.success) setSkills(resSkills.data);
+      }
     } catch (err) { 
       console.error(err); 
     }
@@ -111,7 +126,7 @@ const MasterDataManagement = () => {
       const matchCode = item.code?.toLowerCase().includes(keyword);
       // Hỗ trợ tìm kiếm theo cả alias trong tag kỹ năng
       const matchAlias = item.aliases?.some(alias => alias.toLowerCase().includes(keyword));
-      
+
       if (!matchName && !matchCode && !matchAlias) return false;
     }
     return true;
@@ -122,14 +137,46 @@ const MasterDataManagement = () => {
   const filteredCareers = useMemo(() => careers.filter(filterItem), [careers, filterItem]);
   const filteredPositions = useMemo(() => positions.filter(filterItem), [positions, filterItem]);
   const filteredSkills = useMemo(() => skills.filter(filterItem), [skills, filterItem]);
-  const filteredJobLevels = useMemo(() => jobLevels.filter(filterItem), [jobLevels, filterItem]);
+  const filteredJobLevels = useMemo(() => {
+    let filtered = jobLevels;
+    if (selectedCareerGroupId) {
+      const selectedGroup = careerGroups.find(g => g._id === selectedCareerGroupId);
+      if (selectedGroup && selectedGroup.slug !== 'cong-nghe-thong-tin') {
+        const itLevels = [
+          'Thực tập sinh (IT)', 'Fresher', 'Junior', 'Senior',
+          'Technical Leader', 'IT Manager / Project Manager',
+          'Giám đốc công nghệ (CTO) / Director'
+        ];
+        filtered = filtered.filter(lvl => !itLevels.includes(lvl.name));
+      }
+    }
+    return filtered.filter(filterItem);
+  }, [jobLevels, filterItem, selectedCareerGroupId, careerGroups]);
   const filteredExperienceLevels = useMemo(() => experienceLevels.filter(filterItem), [experienceLevels, filterItem]);
+  const filteredIndustries = useMemo(() => companyIndustries.filter(filterItem), [companyIndustries, filterItem]);
+  const filteredSizes = useMemo(() => companySizes.filter(filterItem), [companySizes, filterItem]);
+
+  const generateSlug = (str) => {
+    return str.toString().toLowerCase()
+      .replace(/á|à|ả|ạ|ã|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ/gi, 'a')
+      .replace(/é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ/gi, 'e')
+      .replace(/i|í|ì|ỉ|ĩ|ị/gi, 'i')
+      .replace(/ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ/gi, 'o')
+      .replace(/ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự/gi, 'u')
+      .replace(/ý|ỳ|ỷ|ỹ|ỵ/gi, 'y')
+      .replace(/đ/gi, 'd')
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  };
 
   const openCreateModal = (type) => {
     setEditMode(false); setTargetType(type); setSelectedId(null);
     setFormData({
       name: '', slug: '', code: '', description: '', order: 0,
-      careerGroupId: selectedCareerGroupId || '', careerId: selectedCareerId || '', 
+      careerGroupId: selectedCareerGroupId || '', careerId: selectedCareerId || '',
       levelOrder: 1, minYear: 0, maxYear: '', aliases: ''
     });
     setIsModalOpen(true);
@@ -148,37 +195,49 @@ const MasterDataManagement = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      let response;
+      let res;
       const dataPayload = { ...formData };
       if (targetType === 'SKILL') {
         dataPayload.careerGroupIds = [formData.careerGroupId];
         dataPayload.aliases = formData.aliases ? formData.aliases.split(',').map(s => s.trim()) : [];
       }
 
+      // UPDATE
       if (editMode) {
-        if (targetType === 'GROUP') response = await jobApi.updateCareerGroup(selectedId, dataPayload);
-        if (targetType === 'CAREER') response = await jobApi.updateCareer(selectedId, dataPayload);
-        if (targetType === 'POSITION') response = await jobApi.updateCareerPosition(selectedId, dataPayload);
-        if (targetType === 'LEVEL') response = await jobApi.updateJobLevel(selectedId, dataPayload);
-        if (targetType === 'SKILL') response = await jobApi.updateSkill(selectedId, dataPayload);
-        if (targetType === 'EXP') response = await jobApi.updateExperienceLevel(selectedId, dataPayload);
-      } else {
-        if (targetType === 'GROUP') response = await jobApi.createCareerGroup(dataPayload);
-        if (targetType === 'CAREER') response = await jobApi.createCareer(dataPayload);
-        if (targetType === 'POSITION') response = await jobApi.createCareerPosition(dataPayload);
-        if (targetType === 'LEVEL') response = await jobApi.createJobLevel(dataPayload);
-        if (targetType === 'SKILL') response = await jobApi.createSkill(dataPayload);
-        if (targetType === 'EXP') response = await jobApi.createExperienceLevel(dataPayload);
+        if (targetType === 'GROUP') res = await jobApi.updateCareerGroup(selectedId, dataPayload);
+        if (targetType === 'CAREER') res = await jobApi.updateCareer(selectedId, dataPayload);
+        if (targetType === 'POSITION') res = await jobApi.updateCareerPosition(selectedId, dataPayload);
+        if (targetType === 'LEVEL') res = await jobApi.updateJobLevel(selectedId, dataPayload);
+        if (targetType === 'SKILL') res = await jobApi.updateSkill(selectedId, dataPayload);
+        if (targetType === 'EXP') res = await jobApi.updateExperienceLevel(selectedId, dataPayload);
+        if (targetType === 'INDUSTRY') res = await companyMasterDataService.updateCompanyIndustry(selectedId, dataPayload);
+        if (targetType === 'SIZE') res = await companyMasterDataService.updateCompanySize(selectedId, dataPayload);
+      } 
+      // CREATE
+      else {
+        if (targetType === 'GROUP') res = await jobApi.createCareerGroup(dataPayload);
+        if (targetType === 'CAREER') res = await jobApi.createCareer(dataPayload);
+        if (targetType === 'POSITION') res = await jobApi.createCareerPosition(dataPayload);
+        if (targetType === 'LEVEL') res = await jobApi.createJobLevel(dataPayload);
+        if (targetType === 'SKILL') res = await jobApi.createSkill(dataPayload);
+        if (targetType === 'EXP') res = await jobApi.createExperienceLevel(dataPayload);
+        if (targetType === 'INDUSTRY') res = await companyMasterDataService.createCompanyIndustry(dataPayload);
+        if (targetType === 'SIZE') res = await companyMasterDataService.createCompanySize(dataPayload);
       }
 
-      if (response?.success) {
-        setIsModalOpen(false); loadGlobalData(); loadDependentData();
+      if (res?.success) {
+        setIsModalOpen(false);
+        loadGlobalData();
+        loadDependentData();
       }
-    } catch (error) { console.error(error); }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra!');
+    }
   };
 
   const handleToggleHide = async (type, id, name) => {
-    confirm(`Xác nhận ẩn danh mục "${name}"?`, async () => {
+    if (!window.confirm(`Bạn có chắc muốn ẩn "${name}"?`)) return;
+    try {
       let res;
       if (type === 'GROUP') res = await jobApi.deleteCareerGroup(id);
       if (type === 'CAREER') res = await jobApi.deleteCareer(id);
@@ -186,12 +245,32 @@ const MasterDataManagement = () => {
       if (type === 'LEVEL') res = await jobApi.deleteJobLevel(id);
       if (type === 'SKILL') res = await jobApi.deleteSkill(id);
       if (type === 'EXP') res = await jobApi.deleteExperienceLevel(id);
+      if (type === 'INDUSTRY') res = await companyMasterDataService.deleteCompanyIndustry(id);
+      if (type === 'SIZE') res = await companyMasterDataService.deleteCompanySize(id);
       if (res?.success) { loadGlobalData(); loadDependentData(); }
-    });
+    } catch (err) {
+      alert('Lỗi hệ thống');
+    }
   };
 
   const renderStatusBadge = (status) => {
     return <StatusBadge value={status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE'} map={{ ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200/60', INACTIVE: 'bg-slate-100 text-slate-600 border-slate-200' }} />;
+  };
+
+  const getHeaders = () => {
+    if (tab === 'Cấp bậc' || tab === 'Kinh nghiệm') {
+      return ['Mã ID', 'Tên hạng mục', 'Trạng thái', 'Thao tác'];
+    }
+    if (tab === 'Kỹ năng / Tags') {
+      return ['Mã ID', 'Tên Kỹ năng', 'Từ khóa (Aliases)', 'Trạng thái', 'Thao tác'];
+    }
+    if (tab === 'Lĩnh vực công ty') {
+      return ['Mã ID', 'Tên Lĩnh vực', 'Trạng thái', 'Thao tác'];
+    }
+    if (tab === 'Quy mô công ty') {
+      return ['Mã Code', 'Quy mô nhân sự', 'Trạng thái', 'Thao tác'];
+    }
+    return ['Mã ID', 'Tên hạng mục', 'Phân cấp', 'Trạng thái', 'Thao tác'];
   };
 
   const renderTableContent = () => {
@@ -199,71 +278,83 @@ const MasterDataManagement = () => {
 
     switch (tab) {
       case 'Danh mục':
-        return (
-          <>
-            <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">Nhóm ngành nghề chính ({filteredCareerGroups.length})</td></tr>
-            {filteredCareerGroups.length === 0 ? (
-              <tr><td colSpan="5" className="px-6 py-4 text-center text-xs italic text-slate-400">Không tìm thấy nhóm ngành nào khớp bộ lọc</td></tr>
-            ) : filteredCareerGroups.map(g => (
-              <tr key={g._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 text-sm font-semibold text-slate-900">{g.code || g._id.slice(-6).toUpperCase()}</td>
-                <td className="px-6 py-4 text-sm font-medium text-slate-800">{g.name}</td>
+        if (filteredCareerGroups.length === 0) {
+          return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không tìm thấy danh mục nào khớp bộ lọc</td></tr>;
+        }
+
+        return filteredCareerGroups.map(g => {
+          const isGroupExpanded = selectedCareerGroupId === g._id;
+
+          return (
+            <Fragment key={g._id}>
+              <tr
+                className={`border-b border-slate-100 transition-colors cursor-pointer ${isGroupExpanded ? 'bg-blue-50/40' : 'hover:bg-slate-50/50'}`}
+                onClick={() => {
+                  setSelectedCareerGroupId(isGroupExpanded ? '' : g._id);
+                  setSelectedCareerId('');
+                }}
+              >
+                <td className="px-6 py-4 text-sm font-bold text-slate-900">{g.code || g._id.slice(-6).toUpperCase()}</td>
+                <td className="px-6 py-4 text-sm font-bold text-slate-900">{g.name}</td>
                 <td className="px-6 py-4"><span className="inline-flex rounded-md border border-blue-200/60 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">Cấp 1 (Nhóm)</span></td>
                 <td className="px-6 py-4">{renderStatusBadge(g.status)}</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-2">
                     <ActionButton tone="soft" onClick={() => openEditModal('GROUP', g)}>Sửa</ActionButton>
                     <ActionButton tone="danger" onClick={() => handleToggleHide('GROUP', g._id, g.name)}>Ẩn</ActionButton>
                   </div>
                 </td>
               </tr>
-            ))}
 
-            {selectedCareerGroupId && (
-              <>
-                <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Ngành nghề thuộc nhóm ({filteredCareers.length})</td></tr>
-                {filteredCareers.length === 0 ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm font-bold text-slate-400">Không tìm thấy ngành nghề nào khớp bộ lọc</td></tr>
-                ) : filteredCareers.map(c => (
-                  <tr key={c._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-slate-400">↳ {c._id.slice(-6).toUpperCase()}</td>
-                    <td className="px-6 py-4 text-sm text-slate-800 pl-10 font-medium">↳ {c.name}</td>
-                    <td className="px-6 py-4"><span className="inline-flex rounded-md border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Cấp 2 (Nghề)</span></td>
-                    <td className="px-6 py-4">{renderStatusBadge(c.status)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <ActionButton tone="soft" onClick={() => openEditModal('CAREER', c)}>Sửa</ActionButton>
-                        <ActionButton tone="danger" onClick={() => handleToggleHide('CAREER', c._id, c.name)}>Ẩn</ActionButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </>
-            )}
+              {isGroupExpanded && (
+                filteredCareers.length === 0 ? (
+                  <tr><td colSpan="5" className="px-6 py-4 text-center text-sm font-medium text-slate-400 bg-slate-50/30">Chưa có dữ liệu Nghề nghiệp (Cấp 2) cho nhóm này</td></tr>
+                ) : filteredCareers.map(c => {
+                  const isCareerExpanded = selectedCareerId === c._id;
 
-            {selectedCareerId && (
-              <>
-                <tr className="bg-slate-50/70 border-y border-slate-100"><td colSpan="5" className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Vị trí chuyên môn ({filteredPositions.length})</td></tr>
-                {filteredPositions.length === 0 ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm font-bold text-slate-400">Không tìm thấy vị trí nào khớp bộ lọc</td></tr>
-                ) : filteredPositions.map(p => (
-                  <tr key={p._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-slate-400">↳ ↳ {p._id.slice(-6).toUpperCase()}</td>
-                    <td className="px-6 py-4 text-sm text-slate-800 pl-16">↳ ↳ {p.name}</td>
-                    <td className="px-6 py-4"><span className="inline-flex rounded-md border border-amber-200/60 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Cấp 3 (Vị trí)</span></td>
-                    <td className="px-6 py-4">{renderStatusBadge(p.status)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <ActionButton tone="soft" onClick={() => openEditModal('POSITION', p)}>Sửa</ActionButton>
-                        <ActionButton tone="danger" onClick={() => handleToggleHide('POSITION', p._id, p.name)}>Ẩn</ActionButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </>
-            )}
-          </>
-        );
+                  return (
+                    <Fragment key={c._id}>
+                      <tr
+                        className={`border-b border-slate-100 transition-colors cursor-pointer ${isCareerExpanded ? 'bg-emerald-50/40' : 'hover:bg-slate-50/50 bg-slate-50/20'}`}
+                        onClick={() => setSelectedCareerId(isCareerExpanded ? '' : c._id)}
+                      >
+                        <td className="px-6 py-4 text-sm text-slate-400 pl-12"><span className="text-slate-300 mr-2">↳</span>{c._id.slice(-6).toUpperCase()}</td>
+                        <td className="px-6 py-4 text-sm text-slate-800 pl-12 font-semibold"><span className="text-slate-300 mr-2">↳</span>{c.name}</td>
+                        <td className="px-6 py-4"><span className="inline-flex rounded-md border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Cấp 2 (Nghề)</span></td>
+                        <td className="px-6 py-4">{renderStatusBadge(c.status)}</td>
+                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-2">
+                            <ActionButton tone="soft" onClick={() => openEditModal('CAREER', c)}>Sửa</ActionButton>
+                            <ActionButton tone="danger" onClick={() => handleToggleHide('CAREER', c._id, c.name)}>Ẩn</ActionButton>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {isCareerExpanded && (
+                        filteredPositions.length === 0 ? (
+                          <tr><td colSpan="5" className="px-6 py-4 text-center text-sm font-medium text-slate-400 bg-emerald-50/10">Chưa có dữ liệu Vị trí chuyên môn (Cấp 3) cho nghề này</td></tr>
+                        ) : filteredPositions.map(p => (
+                          <tr key={p._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors bg-amber-50/10">
+                            <td className="px-6 py-4 text-sm text-slate-400 pl-20"><span className="text-slate-300 mr-2">↳</span>{p._id.slice(-6).toUpperCase()}</td>
+                            <td className="px-6 py-4 text-sm text-slate-800 pl-20 font-medium"><span className="text-slate-300 mr-2">↳</span>{p.name}</td>
+                            <td className="px-6 py-4"><span className="inline-flex rounded-md border border-amber-200/60 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Cấp 3 (Vị trí)</span></td>
+                            <td className="px-6 py-4">{renderStatusBadge(p.status)}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <ActionButton tone="soft" onClick={() => openEditModal('POSITION', p)}>Sửa</ActionButton>
+                                <ActionButton tone="danger" onClick={() => handleToggleHide('POSITION', p._id, p.name)}>Ẩn</ActionButton>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </Fragment>
+                  );
+                })
+              )}
+            </Fragment>
+          );
+        });
 
       case 'Kỹ năng / Tags':
         if (filteredSkills.length === 0) return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu kỹ năng thỏa mãn bộ lọc</td></tr>;
@@ -272,7 +363,7 @@ const MasterDataManagement = () => {
             <td className="px-6 py-4 text-sm font-semibold text-slate-900">{s._id.slice(-6).toUpperCase()}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-800">{s.name}</td>
             <td className="px-6 py-4 text-sm text-slate-500">{s.aliases?.join(', ') || '--'}</td>
-            <td className="px-6 py-4">{renderStatusBadge('ACTIVE')}</td>
+            <td className="px-6 py-4">{renderStatusBadge(s.status)}</td>
             <td className="px-6 py-4">
               <div className="flex items-center gap-2">
                 <ActionButton tone="soft" onClick={() => openEditModal('SKILL', s)}>Sửa</ActionButton>
@@ -283,12 +374,11 @@ const MasterDataManagement = () => {
         ));
 
       case 'Cấp bậc':
-        if (filteredJobLevels.length === 0) return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu cấp bậc thỏa mãn bộ lọc</td></tr>;
+        if (filteredJobLevels.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu cấp bậc thỏa mãn bộ lọc</td></tr>;
         return filteredJobLevels.map(l => (
           <tr key={l._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
             <td className="px-6 py-4 text-sm font-semibold text-slate-900">{l.code}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-800">{l.name}</td>
-            <td className="px-6 py-4 text-sm text-slate-500">Mức ưu tiên: <span className="font-bold text-slate-900">{l.levelOrder}</span></td>
             <td className="px-6 py-4">{renderStatusBadge(l.status)}</td>
             <td className="px-6 py-4">
               <div className="flex items-center gap-2">
@@ -300,17 +390,48 @@ const MasterDataManagement = () => {
         ));
 
       case 'Kinh nghiệm':
-        if (filteredExperienceLevels.length === 0) return <tr><td colSpan="5" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu mức kinh nghiệm thỏa mãn bộ lọc</td></tr>;
+        if (filteredExperienceLevels.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu kinh nghiệm thỏa mãn bộ lọc</td></tr>;
         return filteredExperienceLevels.map(e => (
           <tr key={e._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
             <td className="px-6 py-4 text-sm font-semibold text-slate-900">{e.code}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-800">{e.name}</td>
-            <td className="px-6 py-4 text-sm text-slate-500">Từ {e.minYear} năm - {e.maxYear ? `${e.maxYear} năm` : 'Vô hạn'}</td>
             <td className="px-6 py-4">{renderStatusBadge(e.status)}</td>
             <td className="px-6 py-4">
               <div className="flex items-center gap-2">
                 <ActionButton tone="soft" onClick={() => openEditModal('EXP', e)}>Sửa</ActionButton>
                 <ActionButton tone="danger" onClick={() => handleToggleHide('EXP', e._id, e.name)}>Ẩn</ActionButton>
+              </div>
+            </td>
+          </tr>
+        ));
+
+      case 'Lĩnh vực công ty':
+        if (filteredIndustries.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu thỏa mãn bộ lọc</td></tr>;
+        return filteredIndustries.map(i => (
+          <tr key={i._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+            <td className="px-6 py-4 text-sm text-slate-500 font-mono">{i._id.substring(i._id.length - 6).toUpperCase()}</td>
+            <td className="px-6 py-4 text-sm font-semibold text-slate-900">{i.name}</td>
+            <td className="px-6 py-4">{renderStatusBadge(i.status)}</td>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-2">
+                <ActionButton tone="soft" onClick={() => openEditModal('INDUSTRY', i)}>Sửa</ActionButton>
+                <ActionButton tone="danger" onClick={() => handleToggleHide('INDUSTRY', i._id, i.name)}>Ẩn</ActionButton>
+              </div>
+            </td>
+          </tr>
+        ));
+
+      case 'Quy mô công ty':
+        if (filteredSizes.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu thỏa mãn bộ lọc</td></tr>;
+        return filteredSizes.map(s => (
+          <tr key={s._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+            <td className="px-6 py-4 text-sm font-semibold text-slate-900">{s.code}</td>
+            <td className="px-6 py-4 text-sm font-medium text-slate-800">{s.name}</td>
+            <td className="px-6 py-4">{renderStatusBadge(s.status)}</td>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-2">
+                <ActionButton tone="soft" onClick={() => openEditModal('SIZE', s)}>Sửa</ActionButton>
+                <ActionButton tone="danger" onClick={() => handleToggleHide('SIZE', s._id, s.name)}>Ẩn</ActionButton>
               </div>
             </td>
           </tr>
@@ -328,16 +449,12 @@ const MasterDataManagement = () => {
         description="Cấu trúc phân tầng cây danh mục dùng chung toàn sàn. Ưu tiên ẩn phân hệ thay vì xóa cứng."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {tab === 'Danh mục' && (
-              <>
-                <ActionButton tone="primary" onClick={() => openCreateModal('GROUP')}>+ Thêm nhóm (C1)</ActionButton>
-                {selectedCareerGroupId && <ActionButton tone="primary" onClick={() => openCreateModal('CAREER')}>+ Thêm nghề (C2)</ActionButton>}
-                {selectedCareerId && <ActionButton tone="primary" onClick={() => openCreateModal('POSITION')}>+ Thêm vị trí (C3)</ActionButton>}
-              </>
-            )}
-            {tab === 'Kỹ năng / Tags' && <ActionButton tone="primary" onClick={() => openCreateModal('SKILL')}>+ Thêm Kỹ Năng</ActionButton>}
+            {tab === 'Danh mục' && <ActionButton tone="primary" onClick={() => openCreateModal('GROUP')}>+ Thêm Nhóm Ngành</ActionButton>}
             {tab === 'Cấp bậc' && <ActionButton tone="primary" onClick={() => openCreateModal('LEVEL')}>+ Thêm Cấp Bậc</ActionButton>}
-            {tab === 'Kinh nghiệm' && <ActionButton tone="primary" onClick={() => openCreateModal('EXP')}>+ Thêm Mức Exp</ActionButton>}
+            {tab === 'Kinh nghiệm' && <ActionButton tone="primary" onClick={() => openCreateModal('EXP')}>+ Thêm Kinh Nghiệm</ActionButton>}
+            {tab === 'Kỹ năng / Tags' && <ActionButton tone="primary" onClick={() => openCreateModal('SKILL')}>+ Thêm Kỹ Năng</ActionButton>}
+            {tab === 'Lĩnh vực công ty' && <ActionButton tone="primary" onClick={() => openCreateModal('INDUSTRY')}>+ Thêm Lĩnh Vực</ActionButton>}
+            {tab === 'Quy mô công ty' && <ActionButton tone="primary" onClick={() => openCreateModal('SIZE')}>+ Thêm Quy Mô</ActionButton>}
           </div>
         }
       />
@@ -346,7 +463,7 @@ const MasterDataManagement = () => {
         {tabs.map((t) => (
           <button
             key={t}
-            onClick={() => { setTab(t); setSearchKeyword(''); setStatusFilter(''); }} // Cập nhật: Reset filter trạng thái khi chuyển Tab
+            onClick={() => { setTab(t); setSearchKeyword(''); setStatusFilter(''); }}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${tab === t ? 'bg-primary text-white border border-primary' : 'bg-white text-slate-500 border border-slate-200/80 hover:bg-slate-50'}`}
           >
             {t}
@@ -357,7 +474,7 @@ const MasterDataManagement = () => {
       <SectionCard title="Bộ lọc & Tìm kiếm">
         <FilterGrid>
           <InputField label="Tìm kiếm từ khóa" value={searchKeyword} onChange={setSearchKeyword} placeholder="Nhập tên hoặc mã danh mục..." />
-          
+
           {['Danh mục', 'Cấp bậc', 'Kỹ năng / Tags'].includes(tab) && (
             <SelectField
               label="Nhóm ngành nghề (C1)"
@@ -389,7 +506,7 @@ const MasterDataManagement = () => {
       </SectionCard>
 
       <SectionCard className="p-0 overflow-hidden">
-        <SimpleTable headers={['Mã ID', 'Tên hạng mục', 'Phân loại cấu trúc', 'Trạng thái', 'Thao tác']}>
+        <SimpleTable headers={getHeaders()}>
           {renderTableContent()}
         </SimpleTable>
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -399,7 +516,7 @@ const MasterDataManagement = () => {
 
       {isModalOpen && (
         <ModalShell
-          title={`${editMode ? 'Chỉnh sửa' : 'Cấu trúc'} - ${targetType}`}
+          title={`${editMode ? 'Chỉnh sửa' : 'Tạo mới'} - ${targetType}`}
           onClose={() => setIsModalOpen(false)}
           footer={
             <>
@@ -409,50 +526,78 @@ const MasterDataManagement = () => {
           }
         >
           <div className="space-y-4">
-            <InputField label="Tên danh mục gốc *" required value={formData.name} onChange={val => setFormData({...formData, name: val})} />
+            {editMode && (
+              <div className="mb-4">
+                <SelectField
+                  label="Trạng thái"
+                  value={formData.status || 'ACTIVE'}
+                  onChange={(v) => setFormData({ ...formData, status: v })}
+                  options={[['ACTIVE', 'Đang hoạt động'], ['INACTIVE', 'Đã ẩn']]}
+                />
+              </div>
+            )}
 
-            {['GROUP', 'CAREER', 'POSITION', 'SKILL'].includes(targetType) && (
-              <InputField label="Slug định danh hệ thống (URL) *" required value={formData.slug} onChange={val => setFormData({...formData, slug: val})} />
+            {['INDUSTRY', 'SKILL', 'CAREER', 'GROUP', 'POSITION', 'LEVEL', 'EXP'].includes(targetType) && (
+              <div className="mb-4">
+                <InputField label="Tên gọi" value={formData.name || ''} onChange={(v) => setFormData({ ...formData, name: v, slug: generateSlug(v) })} placeholder="Ví dụ: Công nghệ thông tin..." required />
+              </div>
             )}
 
             {['GROUP', 'LEVEL', 'EXP'].includes(targetType) && !editMode && (
-              <InputField label="Mã Code hệ thống (Bất biến) *" required value={formData.code} onChange={val => setFormData({...formData, code: val})} />
+              <div className="mb-4">
+                <InputField label="Mã Code hệ thống (Bất biến) *" required value={formData.code || ''} onChange={val => setFormData({ ...formData, code: val })} />
+              </div>
             )}
 
             {['CAREER', 'POSITION', 'LEVEL', 'SKILL'].includes(targetType) && !editMode && (
-              <SelectField
-                label="Thuộc Nhóm ngành nghề cha (C1) *"
-                required
-                value={formData.careerGroupId}
-                onChange={val => setFormData({...formData, careerGroupId: val})}
-                options={careerGroups.map(g => [g._id, g.name])}
-                placeholder="-- Chọn danh mục gốc --"
-              />
+              <div className="mb-4">
+                <SelectField
+                  label="Thuộc Nhóm ngành nghề cha (C1) *"
+                  required
+                  value={formData.careerGroupId || ''}
+                  onChange={val => setFormData({ ...formData, careerGroupId: val })}
+                  options={careerGroups.map(g => [g._id, g.name])}
+                  placeholder="-- Chọn danh mục gốc --"
+                />
+              </div>
             )}
 
             {targetType === 'POSITION' && !editMode && (
-              <SelectField
-                label="Thuộc Phân hệ nghề con (C2) *"
-                required
-                value={formData.careerId}
-                onChange={val => setFormData({...formData, careerId: val})}
-                options={careers.map(c => [c._id, c.name])}
-                placeholder="-- Chọn ngành nghề --"
-              />
-            )}
-
-            {targetType === 'LEVEL' && (
-              <InputField type="number" label="Thứ tự ưu tiên cấp bậc (levelOrder) *" required value={formData.levelOrder} onChange={val => setFormData({...formData, levelOrder: Number(val)})} />
+              <div className="mb-4">
+                <SelectField
+                  label="Thuộc Phân hệ nghề con (C2) *"
+                  required
+                  value={formData.careerId || ''}
+                  onChange={val => setFormData({ ...formData, careerId: val })}
+                  options={careers.map(c => [c._id, c.name])}
+                  placeholder="-- Chọn ngành nghề --"
+                />
+              </div>
             )}
 
             {targetType === 'SKILL' && (
-              <InputField label="Từ khóa alias (Phân tách bằng dấu phẩy)" placeholder="Ví dụ: reactjs, react" value={formData.aliases} onChange={val => setFormData({...formData, aliases: val})} />
+              <div className="mb-4">
+                <InputField label="Từ khóa alias (Phân tách bằng dấu phẩy)" value={formData.aliases || ''} onChange={(v) => setFormData({ ...formData, aliases: v })} placeholder="vd: js, javascript, nodejs" />
+              </div>
+            )}
+
+            {targetType === 'SIZE' && (
+              <>
+                <div className="mb-4 grid grid-cols-2 gap-4">
+                  <InputField label="Mã quy mô (VD: SIZE_1_10)" value={formData.code || ''} onChange={(v) => setFormData({ ...formData, code: v })} required />
+                  <InputField label="Tên hiển thị (VD: 1 - 10 NV)" value={formData.name || ''} onChange={(v) => setFormData({ ...formData, name: v })} required />
+                </div>
+                <div className="mb-4 grid grid-cols-2 gap-4">
+                  <InputField label="Số lượng tối thiểu" type="number" value={formData.minEmployees || 0} onChange={(v) => setFormData({ ...formData, minEmployees: Number(v) })} required />
+                  <InputField label="Số lượng tối đa (Bỏ trống = Vô hạn)" type="number" value={formData.maxEmployees || ''} onChange={(v) => setFormData({ ...formData, maxEmployees: v ? Number(v) : null })} />
+                </div>
+              </>
             )}
 
             {targetType === 'EXP' && (
-              <div className="grid grid-cols-2 gap-4">
-                <InputField type="number" label="Min Year *" required value={formData.minYear} onChange={val => setFormData({...formData, minYear: Number(val)})} />
-                <InputField type="number" label="Max Year" value={formData.maxYear} onChange={val => setFormData({...formData, maxYear: val})} />
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <InputField type="number" label="Số năm tối thiểu *" required value={formData.minYear || 0} onChange={val => setFormData({ ...formData, minYear: Number(val) })} />
+                <InputField type="number" label="Số năm tối đa (Để trống nếu Vô hạn)" value={formData.maxYear || ''} onChange={val => setFormData({ ...formData, maxYear: val ? Number(val) : null })} />
               </div>
             )}
           </div>
