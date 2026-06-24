@@ -37,15 +37,18 @@ const NotificationCenter = () => {
     // ỨNG VIÊN
     { label: '[Ứng viên] Trang Việc làm', value: '/jobs' },
     { label: '[Ứng viên] Trang Mẫu CV', value: '/cv-templates/gallery' },
+    { label: '[Ứng viên] Quản lý Hồ sơ CV', value: '/manage-cv' },
     { label: '[Ứng viên] Trang Công ty nổi bật', value: '/companies' },
     { label: '[Ứng viên] Quản lý Việc làm đã ứng tuyển', value: '/applied-jobs' },
     { label: '[Ứng viên] Xem Việc làm phù hợp', value: '/matched-jobs' },
+    { label: '[Ứng viên] Nâng cấp Premium', value: '/premium' },
     // NHÀ TUYỂN DỤNG
     { label: '[Nhà TD] Đăng tin tuyển dụng mới', value: '/employer/jobs/create' },
     { label: '[Nhà TD] Quản lý tin tuyển dụng', value: '/employer/jobs' },
     { label: '[Nhà TD] Quản lý ứng viên (ATS)', value: '/employer/candidates' },
-    { label: '[Nhà TD] Trang Nạp tiền', value: '/employer/billing' },
+    { label: '[Nhà TD] Trang Nạp tiền', value: '/employer/wallet' },
     { label: '[Nhà TD] Trang Mua gói dịch vụ', value: '/employer/packages' },
+    { label: '[Nhà TD] Lịch sử Giao dịch', value: '/employer/transactions' },
     { label: '[Nhà TD] Hồ sơ công ty', value: '/employer/company-profile' },
     // KHÁC
     { label: 'Nhập URL tùy chỉnh...', value: 'CUSTOM' }
@@ -177,9 +180,15 @@ const NotificationCenter = () => {
             {new Date(alert.createdAt).toLocaleString('vi-VN')}
           </p>
           {(alert.actionUrl || alert.metadata?.actionUrl) && (
-            <Link to={alert.actionUrl || alert.metadata?.actionUrl} className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 group">
-              Xem chi tiết <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            (alert.actionUrl || alert.metadata?.actionUrl).startsWith('http') ? (
+              <a href={alert.actionUrl || alert.metadata?.actionUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 group">
+                Xem chi tiết <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </a>
+            ) : (
+              <Link to={alert.actionUrl || alert.metadata?.actionUrl} className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 group">
+                Xem chi tiết <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            )
           )}
         </div>
       </div>

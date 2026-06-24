@@ -87,7 +87,7 @@ const SimilarJobsSection = ({
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500">
-                <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                <span className="flex items-center gap-1 text-primary font-semibold">
                   <DollarSign className="w-3 h-3" />
                   {formatSalary(job)}
                 </span>

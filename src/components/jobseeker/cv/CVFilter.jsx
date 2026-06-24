@@ -9,8 +9,8 @@ const CVFilter = ({ currentFilter = 'all', onFilterChange, counts = { all: 0, ac
         <button
           onClick={() => onFilterChange?.('all')}
           className={`px-stack-lg py-stack-sm rounded-full font-label-md cursor-pointer transition-colors ${currentFilter === 'all'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+            ? 'bg-primary-fixed text-on-primary-fixed'
+            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
             }`}
         >
           Tất cả ({counts.all})
@@ -18,8 +18,8 @@ const CVFilter = ({ currentFilter = 'all', onFilterChange, counts = { all: 0, ac
         <button
           onClick={() => onFilterChange?.('active')}
           className={`px-stack-lg py-stack-sm rounded-full font-label-md cursor-pointer transition-colors ${currentFilter === 'active'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+            ? 'bg-primary-fixed text-on-primary-fixed'
+            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
             }`}
         >
           Đang dùng ({counts.active})
@@ -27,8 +27,8 @@ const CVFilter = ({ currentFilter = 'all', onFilterChange, counts = { all: 0, ac
         <button
           onClick={() => onFilterChange?.('draft')}
           className={`px-stack-lg py-stack-sm rounded-full font-label-md cursor-pointer transition-colors ${currentFilter === 'draft'
-              ? 'bg-primary-fixed text-on-primary-fixed'
-              : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+            ? 'bg-primary-fixed text-on-primary-fixed'
+            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
             }`}
         >
           Bản nháp ({counts.draft})
@@ -36,7 +36,7 @@ const CVFilter = ({ currentFilter = 'all', onFilterChange, counts = { all: 0, ac
       </div>
       <div className="flex items-center gap-stack-sm text-on-surface-variant font-body-sm">
         <Info className="w-5 h-5" />
-        <span>Tối đa 5 CV được phép</span>
+        <span>Tối đa 10 CV được phép</span>
       </div>
     </div>
   );

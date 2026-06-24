@@ -76,7 +76,13 @@ export const getNotificationTarget = (item, user) => {
 export const navigateToNotificationTarget = (navigate, item, user) => {
   const target = getNotificationTarget(item, user);
   if (!target?.path) return;
-  navigate(target.path);
+  
+  if (target.path.startsWith('http://') || target.path.startsWith('https://')) {
+    window.open(target.path, '_blank', 'noopener,noreferrer');
+  } else {
+    navigate(target.path);
+  }
+  
   if (typeof target.afterNavigate === 'function') {
     window.setTimeout(target.afterNavigate, 100);
   }
