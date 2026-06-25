@@ -49,17 +49,26 @@ export const createJobseekerWallet = async () => {
  * @param {string} cvId
  * @param {string} packageId
  * @param {'new'|'upgrade'} action - 'upgrade' để huỷ gói cũ và mua gói mới
+ * @param {'WALLET'|'SEPAY'} [paymentMethod] - 'WALLET' = trừ ví (instant), 'SEPAY' = quét QR (mặc định)
  */
-export const createBoostCvPayment = async (cvId, packageId, action = 'new') => {
-  const res = await api.post(`/jobseeker/cvs/${cvId}/boost/payment`, { packageId, action });
+export const createBoostCvPayment = async (cvId, packageId, action = 'new', paymentMethod) => {
+  const body = { packageId, action };
+  if (paymentMethod) body.paymentMethod = paymentMethod;
+  const res = await api.post(`/jobseeker/cvs/${cvId}/boost/payment`, body);
   return res.data;
 };
 
 /**
  * Mua gói Premium Job (employer)
+ * @param {string} jobId
+ * @param {string} packageId
+ * @param {'new'|'upgrade'} action
+ * @param {'WALLET'|'SEPAY'} [paymentMethod] - 'WALLET' = trừ ví (instant), 'SEPAY' = quét QR (mặc định)
  */
-export const createBoostJobPayment = async (jobId, packageId, action = 'new') => {
-  const res = await api.post(`/employer/jobs/${jobId}/boost/payment`, { packageId, action });
+export const createBoostJobPayment = async (jobId, packageId, action = 'new', paymentMethod) => {
+  const body = { packageId, action };
+  if (paymentMethod) body.paymentMethod = paymentMethod;
+  const res = await api.post(`/employer/jobs/${jobId}/boost/payment`, body);
   return res.data;
 };
 

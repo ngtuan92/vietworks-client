@@ -120,7 +120,7 @@ const SubscriptionCard = ({ item }) => {
           </div>
           {item.targetTitle && (
             <p className="text-sm text-slate-600 mt-1">
-              <span className="text-slate-400">CV: </span>
+              <span className="text-slate-400">{item.targetType === 'JOB' ? 'Job: ' : 'CV: '}</span>
               <span className="font-medium">{item.targetTitle}</span>
             </p>
           )}

@@ -2,12 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../../../services/api';
 import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
 
+// Tab filter tổng quát — gộp các loại giao dịch mua gói/mở khóa/tin nổi bật
+// vào cùng 1 nhóm để UI gọn lại.
+// - 'all'     → tất cả giao dịch
+// - 'package' → các giao dịch mua gói (PACKAGE_PURCHASE, CV_UNLOCK_SINGLE, CV_UNLOCK_BY_PACKAGE)
+// - 'topup'   → nạp tiền vào ví (WALLET_DEPOSIT)
+const PACKAGE_TYPES = ['PACKAGE_PURCHASE', 'CV_UNLOCK_SINGLE', 'CV_UNLOCK_BY_PACKAGE'];
+
 const TABS = [
   { key: 'all', label: 'Tất cả' },
+  { key: 'package', label: 'Mua gói' },
   { key: 'topup', label: 'Nạp tiền' },
-  { key: 'service', label: 'Mua dịch vụ' },
-  { key: 'unlock', label: 'Mở khóa CV' },
-  { key: 'job_package', label: 'Gói tin nổi bật' },
 ];
 
 // Tooltip giải thích trạng thái (hover vào StatusPill để xem).
@@ -62,7 +67,8 @@ const Transactions = () => {
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      if (active !== 'all' && r.type !== active) return false;
+      if (active === 'package' && !PACKAGE_TYPES.includes(r.type)) return false;
+      if (active === 'topup' && r.type !== 'WALLET_DEPOSIT') return false;
       if (keyword) {
         const blob = `${r._id} ${r.description} ${r.status}`.toLowerCase();
         if (!blob.includes(keyword.toLowerCase())) return false;

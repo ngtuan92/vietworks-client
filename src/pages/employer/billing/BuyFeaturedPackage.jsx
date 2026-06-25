@@ -17,9 +17,11 @@ const BuyFeaturedPackage = () => {
   const [jobId, setJobId] = useState('');
   const [packageId, setPackageId] = useState('');
   const [confirmCost, setConfirmCost] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('SEPAY'); // 'WALLET' | 'SEPAY'
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
   const [qrData, setQrData] = useState(null);
+  const [walletResult, setWalletResult] = useState(null); // Kết quả thanh toán qua ví
   const [upgradeInfo, setUpgradeInfo] = useState(null);
 
   useEffect(() => {
@@ -80,10 +82,22 @@ const BuyFeaturedPackage = () => {
 
   const callPaymentApi = async (jobIdParam, pkgIdParam, action = 'new') => {
     try {
-      const res = await createBoostJobPayment(jobIdParam, pkgIdParam, action);
+      const res = await createBoostJobPayment(jobIdParam, pkgIdParam, action, paymentMethod);
       if (res.success) {
-        setQrData(res.data);
-        setUpgradeInfo(null);
+        // Phân nhánh theo paymentMethod trả về từ backend
+        if (res.data?.method === 'WALLET') {
+          // Thanh toán qua ví → instant success, không có QR
+          setWalletResult(res.data);
+          setQrData(null);
+          setUpgradeInfo(null);
+          // Báo header refresh số dư
+          window.dispatchEvent(new Event('vietworks:wallet-updated'));
+        } else {
+          // SEPAY: hiện QR như cũ
+          setQrData(res.data);
+          setWalletResult(null);
+          setUpgradeInfo(null);
+        }
       }
     } catch (e) {
       const errData = e.response?.data;
@@ -93,6 +107,10 @@ const BuyFeaturedPackage = () => {
           jobId: jobIdParam,
           packageId: pkgIdParam
         });
+      } else if (errData?.code === 'INSUFFICIENT_BALANCE') {
+        alert(errData.message || 'Số dư ví không đủ.');
+        // Auto-fallback về SEPAY để user không bị kẹt
+        setPaymentMethod('SEPAY');
       } else {
         alert(errData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
@@ -249,6 +267,53 @@ const BuyFeaturedPackage = () => {
           Tôi xác nhận chi phí và điều khoản gói dịch vụ.
         </label>
 
+        {/* Phương thức thanh toán: Ví (instant) hoặc SePay (QR) */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Phương thức thanh toán</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('WALLET')}
+              disabled={!selectedPackage || walletBalance < selectedPackage.price}
+              className={`text-left rounded-2xl border p-4 transition-all ${
+                paymentMethod === 'WALLET'
+                  ? 'border-primary bg-blue-50/50 shadow-sm ring-1 ring-primary/20'
+                  : !selectedPackage || walletBalance < selectedPackage.price
+                    ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
+                <span className="font-bold text-slate-900">Thanh toán qua ví</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">
+                Số dư: {formatVND(walletBalance)}
+                {selectedPackage && walletBalance < selectedPackage.price && (
+                  <span className="text-red-600 ml-1">(không đủ)</span>
+                )}
+              </div>
+              <div className="text-xs text-emerald-600 mt-1">Kích hoạt ngay lập tức</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('SEPAY')}
+              className={`text-left rounded-2xl border p-4 transition-all ${
+                paymentMethod === 'SEPAY'
+                  ? 'border-primary bg-blue-50/50 shadow-sm ring-1 ring-primary/20'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">qr_code_scanner</span>
+                <span className="font-bold text-slate-900">Quét QR SePay</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Chuyển khoản ngân hàng</div>
+              <div className="text-xs text-amber-600 mt-1">Xác nhận tự động sau 1–2 phút</div>
+            </button>
+          </div>
+        </div>
+
         <div className="flex justify-end gap-2">
           <button
             onClick={() => navigate('/employer/wallet')}
@@ -261,7 +326,11 @@ const BuyFeaturedPackage = () => {
             onClick={handleBuy}
             className={`px-4 py-2 rounded-xl font-semibold ${canBuy && !buying ? 'bg-[#003f87] text-white hover:bg-[#0b4e9f]' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
           >
-            {buying ? 'Đang xử lý...' : 'Mua gói'}
+            {buying
+              ? 'Đang xử lý...'
+              : paymentMethod === 'WALLET'
+                ? `Thanh toán ${selectedPackage ? formatVND(selectedPackage.price) : ''} qua ví`
+                : 'Mua gói'}
           </button>
         </div>
       </section>
@@ -306,6 +375,42 @@ const BuyFeaturedPackage = () => {
                   Đang chờ thanh toán...
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal thanh toán thành công qua ví */}
+      {walletResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-4xl">check_circle</span>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mt-4">Mua gói thành công!</h2>
+              <p className="text-slate-600 mt-2 text-sm">
+                Gói <b className="text-slate-900">{selectedPackage?.name}</b> đã được kích hoạt cho Job <b className="text-slate-900">{walletResult.target?.title}</b>.
+              </p>
+            </div>
+            <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-bold text-slate-900">{formatVND(walletResult.amount)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Phương thức:</span><span className="font-bold text-slate-900">Ví VietWorks</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Số dư còn lại:</span><span className="font-bold text-emerald-600">{formatVND(walletResult.newBalance)}</span></div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => navigate('/employer/active-packages')}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50"
+              >
+                Xem gói đang dùng
+              </button>
+              <button
+                onClick={() => navigate('/employer/wallet')}
+                className="flex-1 py-2.5 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f]"
+              >
+                Về ví
+              </button>
             </div>
           </div>
         </div>
