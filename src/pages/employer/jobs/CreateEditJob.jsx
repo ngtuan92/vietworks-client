@@ -63,6 +63,31 @@ const formatWorkingSchedule = (workingDays, from, to) => {
   return `${daysText}${timeText}`;
 };
 
+const INITIAL_FORM = {
+  title: '',
+  careerGroupId: '',
+  careerId: '',
+  careerPositionId: '',
+  jobLevelId: '',
+  experienceLevelId: '',
+  skills: [],
+  salaryType: 'RANGE', // 'NEGOTIABLE', 'RANGE', 'FROM', 'TO'
+  salaryFrom: '',
+  salaryTo: '',
+  workLocations: [], // Lưu danh sách các object địa điểm snapshot chi tiết
+  saturdayPolicy: 'NOT_SPECIFIED', // 'WORKING_SATURDAY', 'OFF_SATURDAY', 'NOT_SPECIFIED'
+  description: '',
+  requirements: '',
+  benefits: '',
+  workingDays: [], // ['MON', 'TUE', ...] - các ngày làm việc cố định trong tuần
+  workingTimeFrom: '08:30',
+  workingTimeTo: '17:30',
+  applyInstruction: 'Ứng viên nộp hồ sơ trực tuyến bằng cách bấm trực tiếp vào nút Ứng tuyển.',
+  deadline: '',
+  isUrgent: false,
+  headcount: 1,
+};
+
 const CreateEditJob = () => {
   const [step, setStep] = useState(1);
   const [isCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
@@ -79,30 +104,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
   const [skills, setSkills] = useState([]);
 
   // --- State Form chuẩn hóa theo DB Schema ---
-  const [form, setForm] = useState({
-    title: '',
-    careerGroupId: '',
-    careerId: '',
-    careerPositionId: '',
-    jobLevelId: '',
-    experienceLevelId: '',
-    skills: [],
-    salaryType: 'RANGE', // 'NEGOTIABLE', 'RANGE', 'FROM', 'TO'
-    salaryFrom: '',
-    salaryTo: '',
-    workLocations: [], // Lưu danh sách các object địa điểm snapshot chi tiết
-    saturdayPolicy: 'NOT_SPECIFIED', // 'WORKING_SATURDAY', 'OFF_SATURDAY', 'NOT_SPECIFIED'
-    description: '',
-    requirements: '',
-    benefits: '',
-    workingDays: [], // ['MON', 'TUE', ...] - các ngày làm việc cố định trong tuần
-    workingTimeFrom: '08:30',
-    workingTimeTo: '17:30',
-    applyInstruction: 'Ứng viên nộp hồ sơ trực tuyến bằng cách bấm trực tiếp vào nút Ứng tuyển.',
-    deadline: '',
-    isUrgent: false,
-    headcount: 1,
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
   useEffect(() => {
   const fetchCompanyLocations = async () => {
     try {
@@ -369,6 +371,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
         const resSubmit = await jobApi.submitJobForReview(resCreate.data._id);
         if (resSubmit.success) {
           showToast('success', 'Nộp tin tuyển dụng thành công! Vui lòng chờ quản trị viên phê duyệt.');
+          setForm(INITIAL_FORM);
           setStep(1); 
         } else {
           showToast('error', resSubmit.message || 'Lỗi gửi yêu cầu duyệt tin.');
