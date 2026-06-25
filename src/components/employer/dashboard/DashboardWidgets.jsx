@@ -579,4 +579,6 @@ export {
   NewApplicants,
   ServiceCostChart,
   MySubscriptionsWidget,
+  QuickServicePacks,
+  OptimizeSuggestion,
 };

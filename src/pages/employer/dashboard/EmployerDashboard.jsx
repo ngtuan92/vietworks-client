@@ -115,25 +115,20 @@ const EmployerDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       <WarningBanner verificationStatus={company?.verificationStatus || 'UNVERIFIED'} />
       <StatsGrid data={dashboardData} />
 
-      {/* Main Grid — Phân tích & Hành động */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left — Cột rộng (Biểu đồ & Bảng) */}
-        <div className="lg:col-span-8 space-y-6">
-          <ApplicationTrend analytics={dashboardData?.analytics} atsJobs={dashboardData?.atsJobs || []} />
-          <ServiceCostChart analytics={dashboardData?.analytics} />
-        </div>
-
-        {/* Right — Cột hẹp (Danh sách & Tóm tắt) */}
-        <div className="lg:col-span-4 space-y-6">
-          <NewApplicants topJobs={dashboardData?.topJobs || []} />
-          <MySubscriptionsWidget />
-          <AttentionJobs jobs={dashboardData?.attentionJobs || []} />
-        </div>
+      {/* Hàng 2 cột: Tin có hồ sơ mới & Gói đang dùng */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <NewApplicants topJobs={dashboardData?.topJobs || []} />
+        <MySubscriptionsWidget />
       </div>
+
+      {/* Còn lại dàn ngang toàn màn hình */}
+      <AttentionJobs jobs={dashboardData?.attentionJobs || []} />
+      <ApplicationTrend analytics={dashboardData?.analytics} atsJobs={dashboardData?.atsJobs || []} />
+      <ServiceCostChart analytics={dashboardData?.analytics} />
     </div>
   );
 };
