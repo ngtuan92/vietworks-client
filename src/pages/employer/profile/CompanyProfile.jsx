@@ -319,12 +319,19 @@ const upsertLocation = async () => {
   setTimeout(() => setBanner(null), 2500);
 };
 
-  const removeLocation = (loc) => {
+  const removeLocation = async (loc) => {
     if (loc.isUsedInPublishedJob) {
       warning('Địa điểm đang dùng trong tin đang hiển thị, không thể xóa. Bạn chỉ có thể chỉnh sửa/ẩn.');
       return;
     }
-    setLocations((prev) => prev.filter((l) => l.id !== loc.id));
+    try {
+      await companyLocationService.deleteMyCompanyLocation(loc._id);
+      await fetchCompanyLocations();
+      setBanner({ type: 'success', message: 'Đã xóa địa điểm.' });
+      setTimeout(() => setBanner(null), 2500);
+    } catch (err) {
+      error(err.response?.data?.message || 'Lỗi khi xóa địa điểm.');
+    }
   };
 
 
@@ -605,12 +612,6 @@ useEffect(() => {
             <div>
               <h2 className="text-lg font-bold text-slate-900">Xác thực pháp lý</h2>
               <p className="text-sm text-slate-600 mt-1">Upload giấy phép để Admin duyệt công ty.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setVerificationStatus('UNVERIFIED')} className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold">UNVERIFIED</button>
-              <button onClick={() => setVerificationStatus('PENDING')} className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold">PENDING</button>
-              <button onClick={() => setVerificationStatus('VERIFIED')} className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold">VERIFIED</button>
-              <button onClick={() => setVerificationStatus('REJECTED')} className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold">REJECTED</button>
             </div>
           </div>
 
@@ -1000,7 +1001,11 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
 
     try {
       setSaving(true);
-      await companyLocationService.createMyCompanyLocation(payload);
+      if (initial && initial._id) {
+        await companyLocationService.updateMyCompanyLocation(initial._id, payload);
+      } else {
+        await companyLocationService.createMyCompanyLocation(payload);
+      }
       onSubmit?.(payload);
     } catch (err) {
       error(err.response?.data?.message || 'Lưu địa điểm thất bại.');
