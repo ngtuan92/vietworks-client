@@ -41,7 +41,6 @@ const navItems = [
     children: [
       { label: 'Mua gói dịch vụ', to: '/employer/packages' },
       { label: 'Gói của tôi', to: '/employer/my-subscriptions' },
-      { label: 'Gói đang sử dụng', to: '/employer/active-packages' },
       { label: 'Ví của tôi', to: '/employer/wallet' },
       { label: 'Nạp tiền', to: '/employer/wallet/topup' },
       { label: 'Lịch sử giao dịch', to: '/employer/transactions' },

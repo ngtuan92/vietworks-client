@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
-import { createBoostCvPayment, getBoostCvPackages } from '../../../services/paymentService';
+import { createBoostCvPayment, getBoostCvPackages, getJobseekerWallet } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
 
 const formatPrice = (price) => `${new Intl.NumberFormat('vi-VN').format(price || 0)}đ`;
@@ -42,6 +42,9 @@ const UpgradePremium = () => {
   const [cvsLoaded, setCvsLoaded] = useState(false);
   const [selectedCv, setSelectedCv] = useState('');
   const [qrData, setQrData] = useState(null);
+  const [walletResult, setWalletResult] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState('SEPAY'); // 'WALLET' | 'SEPAY'
   const [paying, setPaying] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState(null);
   const [message, setMessage] = useState('');
@@ -82,10 +85,16 @@ const UpgradePremium = () => {
     setUpgradeInfo(null);
     setMessage('');
     setCvsLoaded(false);
+    setPaymentMethod('SEPAY');
+    setWalletResult(null);
 
     try {
-      const response = await api.get('/jobseeker/cvs');
-      setCvs(response.data?.data || []);
+      const [cvsRes, wallet] = await Promise.all([
+        api.get('/jobseeker/cvs'),
+        getJobseekerWallet().catch(() => null),
+      ]);
+      setCvs(cvsRes.data?.data || []);
+      if (wallet) setWalletBalance(wallet.balance || 0);
     } catch (error) {
       console.error('Không thể tải danh sách CV:', error);
       setCvs([]);
@@ -103,15 +112,25 @@ const UpgradePremium = () => {
     setSelectedCv('');
     setUpgradeInfo(null);
     setMessage('');
+    setBuyPkg(null); setQrData(null); setSelectedCv(''); setUpgradeInfo(null);
+    setWalletResult(null);
   };
 
   const callPaymentApi = async (cvId, packageId, action = 'new') => {
     try {
-      const response = await createBoostCvPayment(cvId, packageId, action);
+      const response = await createBoostCvPayment(cvId, packageId, action, paymentMethod);
       if (response.success) {
-        setQrData(response.data);
-        setUpgradeInfo(null);
-        setMessage('');
+        if (response.data?.method === 'WALLET') {
+          // Thanh toán qua ví → instant success
+          setWalletResult(response.data);
+          setQrData(null);
+          setUpgradeInfo(null);
+          window.dispatchEvent(new Event('vietworks:wallet-updated'));
+        } else {
+          setQrData(response.data);
+          setWalletResult(null);
+          setUpgradeInfo(null);
+        }
       }
     } catch (error) {
       const errorData = error.response?.data;
@@ -121,6 +140,9 @@ const UpgradePremium = () => {
           packageId,
           cvId,
         });
+      } else if (errorData?.code === 'INSUFFICIENT_BALANCE') {
+        alert(errorData.message || 'Số dư ví không đủ.');
+        setPaymentMethod('SEPAY');
       } else {
         const text = errorData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
         setMessage(text);
@@ -225,44 +247,131 @@ const UpgradePremium = () => {
               </div>
             )}
 
+            {message && (
+              <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                {message}
+              </div>
+            )}
+
             {!qrData ? (
               <div className="mt-5 space-y-5">
-                <div>
+                <div className="flex items-start justify-between gap-4">
                   <label className="mb-2 block text-sm font-bold text-slate-700">Chọn CV muốn Boost</label>
-                  {!cvsLoaded ? (
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Đang tải danh sách CV...</div>
-                  ) : cvs.length ? (
-                    <select
-                      value={selectedCv}
-                      onChange={(event) => setSelectedCv(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    >
-                      <option value="">-- Chọn CV --</option>
-                      {cvs.map((cv) => (
-                        <option key={cv._id} value={cv._id}>{getCvName(cv)}</option>
-                      ))}
-                    </select>
+                  {!walletResult ? (
+                    <button onClick={closeBuy} className="p-2 hover:bg-slate-100 rounded-lg">
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="p-6">
+                  {!walletResult ? (
+                    <>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Chọn CV muốn đẩy top</label>
+                      {!cvsLoaded ? (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Đang tải danh sách CV...</div>
+                      ) : cvs.length ? (
+                        <select
+                          value={selectedCv}
+                          onChange={(event) => setSelectedCv(event.target.value)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        >
+                          <option value="">-- Chọn CV --</option>
+                          {cvs.map((cv) => (
+                            <option key={cv._id} value={cv._id}>{getCvName(cv)}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                          Bạn chưa có CV. Vui lòng tạo hoặc tải CV lên trước khi mua Boost CV.
+                        </div>
+                      )}
+
+                      <div className="mt-5">
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Phương thức thanh toán</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod('WALLET')}
+                            disabled={walletBalance < buyPkg.price}
+                            className={`text-left rounded-xl border p-3 transition-all ${
+                              paymentMethod === 'WALLET'
+                                ? 'border-[#003f87] bg-blue-50'
+                                : walletBalance < buyPkg.price
+                                  ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+                                  : 'border-slate-200 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[#003f87] text-[18px]">account_balance_wallet</span>
+                              <span className="font-bold text-sm text-slate-900">Ví</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              {formatPrice(walletBalance)}
+                              {walletBalance < buyPkg.price && <span className="text-red-600 ml-1">(không đủ)</span>}
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod('SEPAY')}
+                            className={`text-left rounded-xl border p-3 transition-all ${
+                              paymentMethod === 'SEPAY'
+                                ? 'border-[#003f87] bg-blue-50'
+                                : 'border-slate-200 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[#003f87] text-[18px]">qr_code_scanner</span>
+                              <span className="font-bold text-sm text-slate-900">QR SePay</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Chuyển khoản NH</div>
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handlePay}
+                        disabled={!selectedCv || paying}
+                        className="mt-4 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {paying
+                          ? 'Đang xử lý...'
+                          : paymentMethod === 'WALLET'
+                            ? `Thanh toán ${formatPrice(buyPkg.price)} qua ví`
+                            : 'Thanh toán qua SePay'}
+                      </button>
+                    </>
                   ) : (
-                    <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-700">
-                      Bạn chưa có CV. Vui lòng tạo hoặc tải CV lên trước khi mua Boost CV.
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                        <span className="material-symbols-outlined text-4xl">check_circle</span>
+                      </div>
+                      <h2 className="text-2xl font-bold text-slate-900 mt-4">Mua gói thành công!</h2>
+                      <p className="text-slate-600 mt-2 text-sm">
+                        Gói <b className="text-slate-900">{buyPkg.name}</b> đã được kích hoạt cho CV <b className="text-slate-900">{walletResult.target?.title}</b>.
+                      </p>
+                      <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm text-left">
+                        <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-bold text-slate-900">{formatPrice(walletResult.amount)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Phương thức:</span><span className="font-bold text-slate-900">Ví VietWorks</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Số dư còn lại:</span><span className="font-bold text-emerald-600">{formatPrice(walletResult.newBalance)}</span></div>
+                      </div>
+                      <div className="mt-6 flex gap-3">
+                        <button
+                          onClick={() => navigate('/my-subscriptions')}
+                          className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50"
+                        >
+                          Xem gói của tôi
+                        </button>
+                        <button
+                          onClick={() => navigate('/manage-cv')}
+                          className="flex-1 py-2.5 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f]"
+                        >
+                          Về CV của tôi
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Số tiền thanh toán</span>
-                    <span className="text-xl font-black text-emerald-600">{formatPrice(buyPkg.price)}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handlePay}
-                  disabled={!selectedCv || paying}
-                  className="w-full rounded-2xl bg-[#003f87] py-3.5 font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0b4e9f] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {paying ? 'Đang tạo mã thanh toán...' : 'Tạo mã QR thanh toán'}
-                </button>
               </div>
             ) : (
               <div className="mt-5 text-center">
@@ -389,5 +498,4 @@ const InfoRow = ({ label, value, highlight, primary }) => (
 );
 
 export default UpgradePremium;
-
 

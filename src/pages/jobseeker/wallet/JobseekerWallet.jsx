@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiTrendingDown, FiZap } from 'react-icons/fi';
 import {
@@ -7,18 +7,22 @@ import {
   createJobseekerDeposit,
   getJobseekerTransactions
 } from '../../../services/paymentService';
+import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
 
 const typeConfig = {
-  WALLET_DEPOSIT:       { label: 'Nạp tiền',  bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
-  PACKAGE_PURCHASE:     { label: 'Mua gói',    bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: <FiZap/> },
-  CV_UNLOCK_SINGLE:     { label: 'Mở khóa CV', bg: 'bg-violet-100',  text: 'text-violet-700',  icon: <FiCreditCard/> },
-  REFUND:               { label: 'Hoàn tiền',  bg: 'bg-amber-100',   text: 'text-amber-700',   icon: <FiTrendingDown/> }
+  WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
+  PACKAGE_PURCHASE:      { label: 'Mua gói',         bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: <FiZap/> },
+  CV_UNLOCK_SINGLE:      { label: 'Mở khóa CV',      bg: 'bg-violet-100',  text: 'text-violet-700',  icon: <FiCreditCard/> },
+  CV_UNLOCK_BY_PACKAGE:  { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100', text: 'text-violet-700',  icon: <FiCreditCard/> },
+  REFUND:                { label: 'Hoàn tiền',       bg: 'bg-amber-100',   text: 'text-amber-700',   icon: <FiTrendingDown/> },
+  ADMIN_ADJUSTMENT:      { label: 'Điều chỉnh',      bg: 'bg-slate-100',   text: 'text-slate-700',   icon: <FiTrendingUp/> }
 };
 
 const statusConfig = {
   SUCCESS: { label: 'Thành công', bg: 'bg-emerald-100', text: 'text-emerald-700' },
   PENDING: { label: 'Đang chờ',   bg: 'bg-amber-100',   text: 'text-amber-700' },
-  FAILED:  { label: 'Thất bại',   bg: 'bg-rose-100',    text: 'text-rose-700' }
+  FAILED:  { label: 'Thất bại',   bg: 'bg-rose-100',    text: 'text-rose-700' },
+  REJECTED:{ label: 'Bị từ chối', bg: 'bg-red-100',     text: 'text-red-700' }
 };
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0) + ' đ';
@@ -27,11 +31,24 @@ const JobseekerWallet = () => {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [notification, setNotification] = useState(null);
+  const notificationTimeoutRef = useRef(null);
+
+  // Hiện notification tự ẩn sau 4s (đồng bộ với EmployerWallet)
+  const showNotification = (payload) => {
+    setNotification(payload);
+    if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
+    notificationTimeoutRef.current = setTimeout(() => setNotification(null), 4000);
+  };
+
+  useEffect(() => () => {
+    if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     fetchWallet();
@@ -41,20 +58,30 @@ const JobseekerWallet = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
-      setNotification({ type: 'success', message: 'Nạp tiền thành công!' });
+      showNotification({ type: 'success', message: 'Nạp tiền thành công!' });
       fetchWallet();
       fetchTransactions();
     } else if (paymentStatus === 'error') {
-      setNotification({ type: 'error', message: 'Nạp tiền thất bại. Vui lòng thử lại.' });
+      const reason = searchParams.get('reason');
+      showNotification({
+        type: 'error',
+        message: reason
+          ? `Nạp tiền thất bại: ${decodeURIComponent(reason)}`
+          : 'Nạp tiền thất bại. Vui lòng kiểm tra giao dịch và thử lại.'
+      });
+      fetchTransactions();
     } else if (paymentStatus === 'cancel') {
-      setNotification({ type: 'info', message: 'Đã hủy nạp tiền.' });
+      showNotification({ type: 'info', message: 'Đã hủy nạp tiền.' });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const fetchWallet = async () => {
     try {
       const data = await getJobseekerWallet();
       setWallet(data);
+      // Báo cho header (và các nơi khác) biết balance vừa đổi
+      window.dispatchEvent(new Event('vietworks:wallet-updated'));
     } catch (err) {
       console.error('Fetch wallet error:', err);
     }
@@ -64,6 +91,7 @@ const JobseekerWallet = () => {
     try {
       const res = await getJobseekerTransactions();
       setTransactions(res?.data || []);
+      window.dispatchEvent(new Event('vietworks:wallet-updated'));
     } catch (err) {
       console.error('Fetch transactions error:', err);
     } finally {
@@ -72,10 +100,10 @@ const JobseekerWallet = () => {
   };
 
   const totalDeposits = transactions
-    .filter(tx => tx.type === 'WALLET_DEPOSIT' && tx.status === 'SUCCESS')
+    .filter((tx) => tx.type === 'WALLET_DEPOSIT' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + tx.amount, 0);
   const totalSpent = transactions
-    .filter(tx => tx.type !== 'WALLET_DEPOSIT' && tx.type !== 'REFUND' && tx.status === 'SUCCESS')
+    .filter((tx) => tx.type !== 'WALLET_DEPOSIT' && tx.type !== 'REFUND' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
   const handleDeposit = async () => {
@@ -85,7 +113,8 @@ const JobseekerWallet = () => {
       if (res.success) setDepositData(res.data);
     } catch (err) {
       console.error('Deposit error:', err);
-      setNotification({ type: 'error', message: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+      const message = err?.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+      showNotification({ type: 'error', message });
     }
   };
 
@@ -96,7 +125,7 @@ const JobseekerWallet = () => {
   };
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       {/* Toast notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in ${
@@ -167,7 +196,7 @@ const JobseekerWallet = () => {
 
         {/* Quick Actions */}
         <div className="space-y-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200/50">
+          <div className="bg-white p-5 rounded-xl border border-slate-200/50 premium-shadow">
             <h3 className="font-bold text-slate-900 mb-4">Thao tác nhanh</h3>
             <div className="space-y-3">
               <Link to="/premium" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
@@ -197,6 +226,19 @@ const JobseekerWallet = () => {
                   <p className="text-xs text-slate-500">Tất cả giao dịch</p>
                 </div>
               </Link>
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 transition-all text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                  <FiCreditCard />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900">Yêu cầu xuất hóa đơn</p>
+                  <p className="text-xs text-slate-500">VAT cho gói Boost CV</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -227,7 +269,7 @@ const JobseekerWallet = () => {
               </tr>
             </thead>
             <tbody>
-              {transactions.slice(0, 10).map(tx => {
+              {transactions.slice(0, 10).map((tx) => {
                 const type = typeConfig[tx.type] || typeConfig.PACKAGE_PURCHASE;
                 const status = statusConfig[tx.status] || statusConfig.PENDING;
                 return (
@@ -374,6 +416,13 @@ const JobseekerWallet = () => {
           </div>
         </>
       )}
+
+      {/* Request Invoice Modal — chọn giao dịch PACKAGE_PURCHASE SUCCESS để xuất HĐ */}
+      <RequestInvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        transactions={transactions}
+      />
     </div>
   );
 };
