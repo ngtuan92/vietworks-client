@@ -1,4 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import adminService from '../../../services/adminService';
+import adminCompanyVerificationService from '../../../services/adminCompanyVerificationService';
+import jobAdminService from '../../../services/jobAdminService';
 import {
   ArrowUpRight,
   BarChart2,
@@ -10,28 +14,11 @@ import {
   TrendingUp,
   Users,
   AlertCircle,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 
-const userGrowth = [28, 36, 34, 48, 55, 62, 74, 83, 91, 105, 118, 132];
-const jobApproval = [
-  { label: 'Đã duyệt', value: 68, color: '#3b82f6' }, // blue-500
-  { label: 'Chờ duyệt', value: 22, color: '#f59e0b' }, // amber-500
-  { label: 'Từ chối', value: 10, color: '#ef4444' }, // red-500
-];
-
-const queueItems = [
-  { id: 'JOB-2481', title: 'Kỹ sư Backend Senior', owner: 'TechNova Solutions', type: 'Tin tuyển dụng', priority: 'Cao', status: 'Chờ duyệt', time: '12 phút trước' },
-  { id: 'COM-1022', title: 'FinTrust Group', owner: 'MST: 0319***', type: 'Hồ sơ công ty', priority: 'Trung bình', status: 'Cần xác minh', time: '28 phút trước' },
-  { id: 'JOB-2478', title: 'Nhà thiết kế sản phẩm UI/UX', owner: 'BrightSide Creative', type: 'Tin tuyển dụng', priority: 'Khẩn cấp', status: 'Cảnh báo', time: '42 phút trước' },
-];
-
-const stats = [
-  { label: 'Người dùng', value: '15,240', note: '+12.8% tháng này', icon: Users, badgeBg: 'bg-blue-50 border-blue-100', iconColor: 'text-blue-500', trend: '+12%', trendColor: 'text-emerald-500' },
-  { label: 'Job chờ duyệt', value: '45', note: '18 tin ưu tiên cao', icon: FileText, badgeBg: 'bg-amber-50 border-amber-100', iconColor: 'text-amber-500', trend: '+5', trendColor: 'text-amber-600' },
-  { label: 'Công ty mới', value: '12', note: 'Cần xác minh pháp lý', icon: Building2, badgeBg: 'bg-indigo-50 border-indigo-100', iconColor: 'text-indigo-500', trend: '+2', trendColor: 'text-indigo-600' },
-];
-
+// Hardcoded quick links
 const quickLinks = [
   { to: '/admin/jobs', icon: FileText, title: 'Kiểm duyệt tin', description: '45 tin đang chờ xử lý', bg: 'bg-amber-50/50', iconColor: 'text-amber-600', iconBg: 'bg-amber-100' },
   { to: '/admin/companies', icon: Building2, title: 'Xác minh công ty', description: '12 hồ sơ cần đối chiếu', bg: 'bg-blue-50/50', iconColor: 'text-blue-600', iconBg: 'bg-blue-100' },
@@ -40,6 +27,90 @@ const quickLinks = [
 ];
 
 const AdminDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [userGrowth, setUserGrowth] = useState([]);
+  const [jobApproval, setJobApproval] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [queueItems, setQueueItems] = useState([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [userData, jobData, pendingCompaniesRes, pendingJobsRes] = await Promise.all([
+          adminService.getUserGrowth({ range: 'year' }),
+          adminService.getJobAnalytics(),
+          adminCompanyVerificationService.getPendingCompanies(),
+          jobAdminService.getAllJobsPending({ page: 1, limit: 5 })
+        ]);
+
+        const growthArray = userData?.growthData?.map(g => g.total) || [0,0,0,0,0,0,0,0,0,0,0,0];
+        setUserGrowth(growthArray.length > 1 ? growthArray : [0, ...growthArray, 0]);
+
+        const jobStatus = jobData?.summary?.byStatus || {};
+        const totalJob = jobData?.summary?.totalJobs || 1; // prevent div by zero
+        setJobApproval([
+          { label: 'Đã duyệt', value: Math.round(((jobStatus.PUBLISHED || 0) / totalJob) * 100) || 0, color: '#3b82f6' },
+          { label: 'Chờ duyệt', value: Math.round(((jobStatus.PENDING_APPROVAL || 0) / totalJob) * 100) || 0, color: '#f59e0b' },
+          { label: 'Từ chối', value: Math.round(((jobStatus.REJECTED || 0) / totalJob) * 100) || 0, color: '#ef4444' },
+        ]);
+
+        const pendingJobsCount = jobStatus.PENDING_APPROVAL || 0;
+        const pendingCompaniesCount = pendingCompaniesRes?.data?.length || 0;
+        
+        setStats([
+          { label: 'Người dùng', value: userData?.summary?.totalUsers?.toLocaleString() || '0', note: 'Tổng số tài khoản hệ thống', icon: Users, badgeBg: 'bg-blue-50 border-blue-100', iconColor: 'text-blue-500' },
+          { label: 'Job chờ duyệt', value: pendingJobsCount.toString(), note: 'Cần kiểm duyệt ngay', icon: FileText, badgeBg: 'bg-amber-50 border-amber-100', iconColor: 'text-amber-500' },
+          { label: 'Công ty mới', value: pendingCompaniesCount.toString(), note: 'Cần xác minh pháp lý', icon: Building2, badgeBg: 'bg-indigo-50 border-indigo-100', iconColor: 'text-indigo-500' },
+        ]);
+
+        const pendingJobs = pendingJobsRes?.data?.jobs || [];
+        const pendingCompanies = pendingCompaniesRes?.data || [];
+        
+        const formatQueue = [];
+        pendingJobs.slice(0, 3).forEach(job => {
+          formatQueue.push({
+            id: job._id.substring(0, 8).toUpperCase(),
+            title: job.title,
+            owner: job.companyId?.name || 'Unknown',
+            type: 'Tin tuyển dụng',
+            priority: job.isUrgent ? 'Khẩn cấp' : 'Trung bình',
+            status: 'Chờ duyệt',
+            time: new Date(job.createdAt).toLocaleDateString('vi-VN')
+          });
+        });
+        
+        pendingCompanies.slice(0, 3).forEach(comp => {
+          formatQueue.push({
+            id: comp._id.substring(0, 8).toUpperCase(),
+            title: comp.name,
+            owner: `MST: ${comp.taxCode || 'N/A'}`,
+            type: 'Hồ sơ công ty',
+            priority: 'Cao',
+            status: 'Cần xác minh',
+            time: new Date(comp.createdAt).toLocaleDateString('vi-VN')
+          });
+        });
+        
+        setQueueItems(formatQueue.slice(0, 5));
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-[80vh] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-300" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-8">
       {/* Premium SaaS Hero Banner */}
@@ -118,9 +189,11 @@ const AdminDashboard = () => {
               <span className="text-right">Trạng thái</span>
             </div>
             <div className="divide-y divide-slate-50">
-              {queueItems.map((item) => (
+              {queueItems.length > 0 ? queueItems.map((item) => (
                 <QueueRow key={item.id} item={item} />
-              ))}
+              )) : (
+                <div className="p-8 text-center text-slate-500 font-medium">Không có hàng chờ xử lý nào</div>
+              )}
             </div>
           </div>
         </Panel>
@@ -230,6 +303,9 @@ const AreaChart = ({ values }) => {
 
 const DonutChart = ({ data }) => {
   const total = data.reduce((sum, item) => sum + item.value, 0);
+  if (total === 0) {
+    return <div className="p-8 text-center text-slate-500 font-medium">Không có dữ liệu thống kê</div>;
+  }
   let offset = 25;
   const radius = 72;
   const circumference = 2 * Math.PI * radius;

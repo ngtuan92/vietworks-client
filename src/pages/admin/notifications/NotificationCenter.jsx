@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { FilterGrid, InputField, PageHeader, SectionCard, SelectField, SimpleTable, TextAreaField, ActionButton } from '../shared/AdminPrimitives';
-import { Send, BellRing, Loader2, CheckCircle2, Circle, ExternalLink, Filter } from 'lucide-react';
+import { Send, BellRing, Loader2, CheckCircle2, Circle, ExternalLink, Filter, Trash2, Check, CheckCheck } from 'lucide-react';
 import adminNotificationService from '../../../services/adminNotificationService';
 import notificationService from '../../../services/notificationService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useSocket } from '../../../contexts/SocketContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const isToday = (dateString) => {
   const date = new Date(dateString);
@@ -18,6 +18,7 @@ const isToday = (dateString) => {
 const NotificationCenter = () => {
   const { error: notifyError, success: notifySuccess } = useNotification();
   const socket = useSocket();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('SYSTEM_ALERTS');
 
   // --- Broadcast State ---
@@ -60,6 +61,8 @@ const NotificationCenter = () => {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const loadBroadcasts = async () => {
     try {
@@ -147,6 +150,65 @@ const NotificationCenter = () => {
     }
   };
 
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await notificationService.deleteNotification(id);
+      loadSystemAlerts();
+      notifySuccess('Đã xóa thông báo');
+    } catch (err) {
+      notifyError('Lỗi xóa thông báo');
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedIds([]);
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(systemAlerts.map(a => a._id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      await notificationService.bulkDeleteNotifications(selectedIds);
+      loadSystemAlerts();
+      notifySuccess(`Đã xóa ${selectedIds.length} thông báo`);
+      setIsSelectionMode(false);
+      setSelectedIds([]);
+    } catch (err) {
+      notifyError('Lỗi xóa thông báo');
+    }
+  };
+
+  const handleItemClick = (alert) => {
+    if (isSelectionMode) {
+      if (selectedIds.includes(alert._id)) {
+        setSelectedIds(selectedIds.filter(itemId => itemId !== alert._id));
+      } else {
+        setSelectedIds([...selectedIds, alert._id]);
+      }
+      return;
+    }
+    if (alert.status === 'UNREAD') {
+      handleMarkAsRead(alert._id);
+    }
+    const url = alert.actionUrl || alert.metadata?.actionUrl;
+    if (url) {
+      if (url.startsWith('http')) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        navigate(url);
+      }
+    }
+  };
+
   const handleMarkAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead();
@@ -162,7 +224,21 @@ const NotificationCenter = () => {
   const olderAlerts = systemAlerts.filter(a => !isToday(a.createdAt));
 
   const renderAlertItem = (alert) => (
-    <div key={alert._id} className={`p-4 flex gap-4 transition-colors ${alert.status === 'UNREAD' ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
+    <div 
+      key={alert._id} 
+      onClick={() => handleItemClick(alert)}
+      className={`p-4 flex gap-4 transition-colors cursor-pointer group ${alert.status === 'UNREAD' ? 'bg-blue-50/30' : 'hover:bg-slate-50'} ${selectedIds.includes(alert._id) ? 'bg-blue-50/50' : ''}`}
+    >
+      {isSelectionMode && (
+        <div className="flex items-start mt-1 mr-1">
+          <input 
+            type="checkbox" 
+            checked={selectedIds.includes(alert._id)}
+            readOnly
+            className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary pointer-events-none" 
+          />
+        </div>
+      )}
       <div className="mt-1">
         {alert.status === 'UNREAD' ? (
           <Circle className="w-3 h-3 text-blue-600 fill-blue-600" />
@@ -179,28 +255,28 @@ const NotificationCenter = () => {
           <p className="text-xs text-slate-400 font-medium">
             {new Date(alert.createdAt).toLocaleString('vi-VN')}
           </p>
-          {(alert.actionUrl || alert.metadata?.actionUrl) && (
-            (alert.actionUrl || alert.metadata?.actionUrl).startsWith('http') ? (
-              <a href={alert.actionUrl || alert.metadata?.actionUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 group">
-                Xem chi tiết <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </a>
-            ) : (
-              <Link to={alert.actionUrl || alert.metadata?.actionUrl} className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 group">
-                Xem chi tiết <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            )
-          )}
         </div>
       </div>
-      <div className="flex items-start">
+      <div className="flex items-start gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
         {alert.status === 'UNREAD' && (
           <button 
-            onClick={() => handleMarkAsRead(alert._id)}
-            className="text-xs text-blue-600 hover:text-blue-800 font-bold px-3 py-1 bg-white rounded-md border border-blue-100 shadow-sm transition-all active:scale-95"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMarkAsRead(alert._id);
+            }}
+            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+            title="Đánh dấu đã đọc"
           >
-            Đánh dấu đã đọc
+            <Check className="w-4 h-4" />
           </button>
         )}
+        <button 
+          onClick={(e) => handleDelete(e, alert._id)}
+          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+          title="Xóa thông báo"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
@@ -211,11 +287,30 @@ const NotificationCenter = () => {
         title="Quản lý Thông báo" 
         description="Quản lý cảnh báo hệ thống và gửi thông báo hàng loạt (Broadcast)." 
         actions={
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             {activeTab === 'SYSTEM_ALERTS' && (
-              <ActionButton tone="primary" onClick={handleMarkAllAsRead}>
-                Đánh dấu tất cả đã đọc
-              </ActionButton>
+              <>
+                {isSelectionMode && selectedIds.length > 0 && (
+                  <button onClick={handleBulkDelete} className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 border border-red-200 shadow-sm transition-all">
+                    <Trash2 className="w-4 h-4" />
+                    Xóa {selectedIds.length} mục
+                  </button>
+                )}
+                <button 
+                  onClick={toggleSelectionMode} 
+                  className={`p-2 rounded-lg border transition-all ${isSelectionMode ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-inner' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 shadow-sm'}`}
+                  title="Chọn thông báo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={handleMarkAllAsRead} 
+                  className="p-2 rounded-lg border bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100 transition-colors shadow-sm"
+                  title="Đánh dấu tất cả đã đọc"
+                >
+                  <CheckCheck className="w-4 h-4" />
+                </button>
+              </>
             )}
           </div>
         }
@@ -247,25 +342,38 @@ const NotificationCenter = () => {
           title="Danh sách thông báo" 
           className="p-0 overflow-hidden"
           right={
-            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
-              <button 
-                onClick={() => setFilterStatus('ALL')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'ALL' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                Tất cả
-              </button>
-              <button 
-                onClick={() => setFilterStatus('UNREAD')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'UNREAD' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                Chưa đọc
-              </button>
-              <button 
-                onClick={() => setFilterStatus('READ')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'READ' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                Đã đọc
-              </button>
+            <div className="flex items-center gap-4">
+              {isSelectionMode && (
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer pl-3 pr-2 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    checked={selectedIds.length === systemAlerts.length && systemAlerts.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                  Chọn tất cả
+                </label>
+              )}
+              <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+                <button 
+                  onClick={() => setFilterStatus('ALL')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'ALL' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  Tất cả
+                </button>
+                <button 
+                  onClick={() => setFilterStatus('UNREAD')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'UNREAD' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  Chưa đọc
+                </button>
+                <button 
+                  onClick={() => setFilterStatus('READ')}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'READ' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  Đã đọc
+                </button>
+              </div>
             </div>
           }
         >
