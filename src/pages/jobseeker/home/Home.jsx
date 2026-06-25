@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from '../../../components/jobseeker/home/Hero';
 import JobGrid from '../../../components/jobseeker/jobs/JobGrid';
+import JobCard from '../../../components/jobseeker/jobs/JobCard';
 import useAuth from '../../../hooks/useAuth';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { getPublicJobs } from '../../../services/jobService';
 import { getPublicCompanies } from '../../../services/jobseekerService';
 import CompanyCard from '../../../components/common/CompanyCard';
-import { Heart, UserPlus, ShieldCheck } from 'lucide-react';
+import { Heart, UserPlus, ShieldCheck, Sparkles, FileText, ArrowRight, TrendingUp } from 'lucide-react';
 
 const formatSalary = (salary) => {
   if (!salary || salary.type === 'NEGOTIABLE') return 'Thỏa thuận';
@@ -26,12 +27,6 @@ const formatJobLocation = (job) => {
   );
 };
 
-const getJobBadge = (job) => {
-  if (job.isUrgent) return 'GẤP';
-  if (job.premium?.isActive) return 'Nổi bật';
-  return 'Mới';
-};
-
 const Home = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -41,7 +36,7 @@ const Home = () => {
   const [featuredCompanies, setFeaturedCompanies] = useState([]);
 
   useEffect(() => {
-    getPublicJobs({ limit: 3, sortBy: 'publishedAt', sortOrder: 'desc' })
+    getPublicJobs({ limit: 3, sortBy: 'publishedAt', sortOrder: 'desc', isUrgent: 'true', isPremium: 'true' })
       .then((res) => setFeaturedJobs(res.data || []))
       .catch(() => setFeaturedJobs([]));
 
@@ -73,39 +68,43 @@ const Home = () => {
         <Hero />
         <section className="py-16 bg-[#f8fafc]">
           <div className="max-w-container-max mx-auto px-gutter">
-            <div className="flex items-center justify-between mb-8">
+            {/* Section Header */}
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Việc làm nổi bật</h2>
-                <p className="text-slate-600 mt-1">Các cơ hội tuyển dụng đang được ưu tiên hiển thị.</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-600 text-xs font-bold mb-3 uppercase tracking-wider">
+                  <TrendingUp className="w-4 h-4" /> Hot Jobs
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Việc làm nổi bật</h2>
+                <p className="text-slate-500 mt-2 text-base">Các cơ hội tuyển dụng đang được ưu tiên hiển thị tuần này.</p>
               </div>
               <button
                 onClick={() => navigate('/jobs')}
-                className="text-primary font-semibold hover:underline"
+                className="mt-4 md:mt-0 group flex items-center gap-2 text-primary font-bold hover:text-primary-dark transition-colors"
               >
-                Xem tất cả
+                Xem tất cả <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
             {featuredJobs.length === 0 ? (
-              <p className="text-slate-500">Chưa có việc làm nổi bật.</p>
+              <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
+                <p className="text-slate-500 text-lg">Chưa có việc làm nổi bật.</p>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {featuredJobs.map((job) => (
-                  <button
+                  <JobCard
                     key={job._id}
-                    onClick={() => navigate(`/jobs/${job._id}`)}
-                    className="text-left bg-white border border-slate-200 rounded-2xl p-5 hover-3d border-transparent"
-                  >
-                    <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                      {getJobBadge(job)}
-                    </span>
-                    <h3 className="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">{job.title}</h3>
-                    <p className="mt-1 text-slate-600">{job.companyId?.name || 'Công ty'}</p>
-                    <div className="mt-4 flex items-center justify-between text-sm">
-                      <span className="text-slate-500">{formatJobLocation(job)}</span>
-                      <span className="font-semibold text-primary">{formatSalary(job.salary)}</span>
-                    </div>
-                  </button>
+                    id={job._id}
+                    title={job.title}
+                    company={job.companyId?.name || 'Công ty'}
+                    companyAvatar={job.companyId?.avatarUrl || 'https://ui-avatars.com/api/?name=Company&background=EAF2FF&color=003F87&bold=true'}
+                    location={formatJobLocation(job)}
+                    salary={formatSalary(job.salary)}
+                    updatedTime={new Date(job.publishedAt || job.createdAt).toLocaleDateString('vi-VN')}
+                    tags={[job.isUrgent ? 'Tuyển gấp' : null, job.jobLevel, job.workType].filter(Boolean)}
+                    skills={job.skills?.map(s => s.name || s) || []}
+                    neededCount={job.neededCount}
+                  />
                 ))}
               </div>
             )}
@@ -114,57 +113,30 @@ const Home = () => {
 
         <JobGrid />
 
-        <section className="py-16 bg-white">
-          <div className="max-w-container-max mx-auto px-gutter">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="rounded-2xl p-8 bg-gradient-to-r from-[#003f87] to-[#115bb0] text-white">
-                <h3 className="text-2xl font-bold">Tạo CV ngay</h3>
-                <p className="mt-2 text-white/90">
-                  Dùng mẫu CV chuẩn theo từng vị trí, chỉnh sửa nhanh và tải xuống ngay.
-                </p>
-                <button
-                  onClick={() => goProtected('/manage-cv')}
-                  className="mt-6 px-5 py-3 bg-white text-primary font-bold rounded-lg hover:opacity-90"
-                >
-                  Bắt đầu tạo CV
-                </button>
-              </div>
-
-              <div className="rounded-2xl p-8 bg-gradient-to-r from-[#0f172a] to-[#1f2937] text-white">
-                <h3 className="text-2xl font-bold">Quảng bá AI Review CV</h3>
-                <p className="mt-2 text-white/90">
-                  Chấm điểm CV, so khớp JD và nhận gợi ý cải thiện để tăng tỷ lệ đậu phỏng vấn.
-                </p>
-                <button
-                  onClick={() => goProtected('/premium')}
-                  className="mt-6 px-5 py-3 bg-emerald-400 text-slate-900 font-bold rounded-lg hover:opacity-90"
-                >
-                  Phân tích CV với AI
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <section className="py-16 bg-[#f8fafc]">
           <div className="max-w-container-max mx-auto px-gutter">
-            <div className="flex items-center justify-between mb-8">
+            {/* Section Header */}
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Danh sách công ty</h2>
-                <p className="text-slate-600 mt-1">Khám phá nhà tuyển dụng nổi bật trên nền tảng.</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-bold mb-3 uppercase tracking-wider">
+                  <ShieldCheck className="w-4 h-4" /> Top Companies
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Danh sách công ty nổi bật</h2>
+                <p className="text-slate-500 mt-2 text-base">Khám phá văn hóa và cơ hội việc làm từ các nhà tuyển dụng hàng đầu.</p>
               </div>
               <button
                 onClick={() => navigate('/companies')}
-                className="text-primary font-semibold hover:underline"
+                className="mt-4 md:mt-0 group flex items-center gap-2 text-primary font-bold hover:text-primary-dark transition-colors"
               >
-                Xem tất cả công ty
+                Xem tất cả <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
             {featuredCompanies.length === 0 ? (
               <p className="text-slate-500">Chưa có công ty nào.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {featuredCompanies.map((company) => (
                   <CompanyCard
                     key={company._id}

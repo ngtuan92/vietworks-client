@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, DollarSign, Calendar, Eye, Send, Briefcase, Loader2 } from 'lucide-react';
+import { Bookmark, MapPin, DollarSign, Calendar, Eye, Send, Briefcase, Loader2 } from 'lucide-react';
 import { getSavedJobs, unsaveJob, getSimilarSavedJobs } from '../../../services/jobseekerService';
 import SimilarJobsSection from '../../../components/jobseeker/jobs/SimilarJobsSection';
 
@@ -60,7 +60,7 @@ const SavedJobs = () => {
       <main className="mx-auto max-w-5xl space-y-6">
         <section className="rounded-3xl bg-white border border-slate-200 p-6 flex items-center gap-4">
           <div className="h-14 w-14 rounded-2xl bg-blue-50 text-primary flex items-center justify-center shrink-0">
-            <Heart className="w-7 h-7 fill-primary" />
+            <Bookmark className="w-7 h-7 fill-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900">Việc làm đã lưu</h1>
@@ -107,7 +107,7 @@ const SavedJobs = () => {
                                 {job.workLocations[0].provinceName}
                               </span>
                             )}
-                            <span className="flex items-center gap-1 font-semibold text-emerald-600">
+                            <span className="flex items-center gap-1 font-semibold text-primary">
                               <DollarSign className="w-3.5 h-3.5" />
                               {formatSalary(job)}
                             </span>
@@ -120,15 +120,8 @@ const SavedJobs = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center md:flex-col justify-between md:justify-center gap-3 mt-4 md:mt-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
-                        <button
-                          onClick={() => handleUnsave(jobId, job.title)}
-                          className="p-2.5 rounded-xl border border-slate-200 text-red-500 hover:bg-red-50 transition cursor-pointer flex items-center justify-center"
-                          title="Bỏ lưu công việc này"
-                        >
-                          <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-                        </button>
-                        <div className="flex gap-2">
+                      <div className="flex items-center justify-end gap-3 mt-4 md:mt-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                        <div className="flex gap-2 mr-auto md:mr-0">
                           <Link to={`/jobs/${jobId}`} className="px-4 py-2 text-xs font-bold border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition flex items-center gap-1">
                             <Eye className="w-3.5 h-3.5" /> Chi tiết
                           </Link>
@@ -136,6 +129,13 @@ const SavedJobs = () => {
                             <Send className="w-3.5 h-3.5" /> Ứng tuyển
                           </Link>
                         </div>
+                        <button
+                          onClick={() => handleUnsave(jobId, job.title)}
+                          className="p-2.5 rounded-xl border border-slate-200 text-primary hover:bg-primary/5 transition cursor-pointer flex items-center justify-center"
+                          title="Bỏ lưu công việc này"
+                        >
+                          <Bookmark className="w-4 h-4 fill-primary text-primary" />
+                        </button>
                       </div>
                     </div>
                   </div>

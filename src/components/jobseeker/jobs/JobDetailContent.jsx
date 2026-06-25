@@ -4,9 +4,16 @@ const ContentBlock = ({ title, content }) => (
       {title}
     </h2>
 
-    <div className="text-on-surface-variant font-body-md text-body-md leading-relaxed whitespace-pre-line">
-      {content || 'Chưa cập nhật.'}
-    </div>
+    {content ? (
+      <div 
+        className="text-on-surface-variant font-body-md text-body-md leading-relaxed whitespace-pre-line prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+        dangerouslySetInnerHTML={{ __html: content }} 
+      />
+    ) : (
+      <div className="text-on-surface-variant font-body-md text-body-md leading-relaxed whitespace-pre-line">
+        Chưa cập nhật.
+      </div>
+    )}
   </div>
 );
 

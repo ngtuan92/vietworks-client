@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getOrCreateConversation } from '../../../services/chatService';
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const maskEmail = (email) => {
   if (!email) return '****';
@@ -12,6 +13,7 @@ const maskPhone = (phone) => { if (!phone) return '******'; return `${phone.slic
 
 const CVSearch = () => {
   const navigate = useNavigate();
+  const { error } = useNotification();
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [experience, setExperience] = useState('');
@@ -88,7 +90,7 @@ const CVSearch = () => {
       }
     } catch (err) {
       console.error('Cannot create chat', err);
-      alert('Lỗi tạo phòng chat. Vui lòng thử lại.');
+      error('Lỗi tạo phòng chat. Vui lòng thử lại.');
     } finally {
       setChatLoadingId(null);
     }
@@ -137,15 +139,32 @@ const CVSearch = () => {
           <div className="col-span-2 text-center py-12 text-slate-500">Không tìm thấy ứng viên nào.</div>
         ) : (
           candidates.map((candidate) => {
-            const { isUnlocked } = candidate;
+            const { isUnlocked, isBoosted } = candidate;
             return (
-              <div key={candidate._id} className="bg-white border border-slate-200 rounded-2xl p-5">
+              <div
+                key={candidate._id}
+                className={`bg-white border rounded-2xl p-5 transition-all ${
+                  isBoosted
+                    ? 'border-amber-300 ring-2 ring-amber-100 shadow-md shadow-amber-100/50'
+                    : 'border-slate-200'
+                }`}
+              >
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{candidate.fullName}</h3>
-                    <p className="text-slate-600">{candidate.title}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-bold text-slate-900">{candidate.fullName}</h3>
+                      {isBoosted && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm"
+                          title="Ứng viên này đang dùng gói Boost CV - ưu tiên hiển thị"
+                        >
+                          ⚡ Boosted
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-600 mt-0.5">{candidate.title}</p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 shrink-0">
                     {candidate.experienceYears || 'Nhân viên'}
                   </span>
                 </div>

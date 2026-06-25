@@ -3,6 +3,7 @@ import { MessageCircle, X, SendHorizontal, Paperclip, Loader2, Minimize2, Maximi
 import { useSocket } from '../../contexts/SocketContext';
 import { getConversations, getMessages, sendMessage, uploadChatFile, markAsRead, getUnreadMessageCount } from '../../services/chatService';
 import useAuth from '../../hooks/useAuth';
+import { useNotification } from '../../contexts/NotificationContext';
 import { format } from 'date-fns';
 
 
@@ -47,6 +48,7 @@ const CompanyAvatar = ({ companyInfo, className = '' }) => {
 const JobseekerChatBubble = () => {
   const { user } = useAuth();
   const socket = useSocket();
+  const { error } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -193,9 +195,9 @@ const JobseekerChatBubble = () => {
           return [...prev, res.data];
         });
       }
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.message || error.message || 'Không thể gửi tin nhắn');
+    } catch (err) {
+      console.error(err);
+      error(err.response?.data?.message || err.message || 'Không thể gửi tin nhắn');
     } finally {
       setSending(false);
     }
@@ -204,7 +206,7 @@ const JobseekerChatBubble = () => {
   if (!user || user.role !== 'JOBSEEKER') return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
+    <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end pointer-events-none">
       {/* Chat Window */}
       {isOpen && (
         <div className={`bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col transition-all duration-300 pointer-events-auto ${isMinimized ? 'w-72 h-14' : 'w-[360px] h-[520px] max-h-[80vh]'}`}>

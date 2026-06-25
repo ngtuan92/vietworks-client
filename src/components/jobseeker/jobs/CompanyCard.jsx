@@ -5,40 +5,45 @@ const CompanyCard = ({ company }) => {
         Về {company?.name || 'công ty'}
       </h2>
 
-      <p className="text-on-surface-variant font-body-md text-body-md mb-6 whitespace-pre-line">
-        {company?.description || 'Công ty chưa cập nhật mô tả.'}
-      </p>
+      {company?.description ? (
+        <div 
+          className="text-on-surface-variant font-body-md text-body-md mb-6 whitespace-pre-line prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+          dangerouslySetInnerHTML={{ __html: company.description }} 
+        />
+      ) : (
+        <p className="text-on-surface-variant font-body-md text-body-md mb-6 whitespace-pre-line">
+          Công ty chưa cập nhật mô tả.
+        </p>
+      )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div>
-          <p className="text-label-md text-outline uppercase tracking-wider mb-1">Quy mô</p>
-          <p className="font-bold text-on-surface">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+        <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
+          <p className="text-label-md text-blue-600/70 uppercase tracking-wider mb-1">Quy mô</p>
+          <p className="font-bold text-blue-900">
             {company?.sizeId?.name || company?.size?.name || '-'}
           </p>
         </div>
 
-        <div>
-          <p className="text-label-md text-outline uppercase tracking-wider mb-1">Ngành</p>
-          <p className="font-bold text-on-surface">
+        <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
+          <p className="text-label-md text-blue-600/70 uppercase tracking-wider mb-1">Ngành</p>
+          <p className="font-bold text-blue-900">
             {company?.industryId?.name || company?.industry?.name || '-'}
           </p>
         </div>
 
-        
-
-        <div>
-          <p className="text-label-md text-outline uppercase tracking-wider mb-1">Website</p>
+        <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
+          <p className="text-label-md text-blue-600/70 uppercase tracking-wider mb-1">Website</p>
           {company?.website ? (
             <a
               href={company.website}
               target="_blank"
               rel="noreferrer"
-              className="font-bold text-primary hover:underline break-all"
+              className="font-bold text-blue-600 hover:text-blue-800 hover:underline break-all"
             >
               Truy cập
             </a>
           ) : (
-            <p className="font-bold text-on-surface">-</p>
+            <p className="font-bold text-blue-900">-</p>
           )}
         </div>
       </div>

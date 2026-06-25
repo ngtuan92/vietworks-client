@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField } from '../shared/AdminPrimitives';
+import { ActionButton, ModalShell, PageHeader, SectionCard, TextAreaField, StatusBadge } from '../shared/AdminPrimitives';
 import jobAdminService from '../../../services/jobAdminService'; 
+import { useNotification } from '../../../contexts/NotificationContext';
 
 const checks = [
   'Công ty đã được xác minh',
@@ -17,6 +18,7 @@ const checks = [
 const JobReview = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const { success, error: notifyError } = useNotification();
 
   const [checked, setChecked] = useState(() => Object.fromEntries(checks.map((item) => [item, false])));
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -61,11 +63,11 @@ const JobReview = () => {
       setSubmitting(true);
       const response = await jobAdminService.approveJob(jobId, 'Đạt yêu cầu qua bảng danh sách kiểm duyệt hệ thống.');
       if (response.success) {
-        alert('Phê duyệt tin tuyển dụng thành công!');
+        success('Phê duyệt tin tuyển dụng thành công!');
         navigate('/admin/jobs');
       }
     } catch (err) {
-      alert('Lỗi phê duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
+      notifyError('Lỗi phê duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
@@ -77,12 +79,12 @@ const JobReview = () => {
       setSubmitting(true);
       const response = await jobAdminService.rejectJob(jobId, reason, reviewNote || reason);
       if (response.success) {
-        alert('Đã từ chối duyệt tin. Tin tuyển dụng chuyển về dạng bản nháp!');
+        success('Đã từ chối duyệt tin. Tin tuyển dụng chuyển về dạng bản nháp!');
         setRejectOpen(false);
         navigate('/admin/jobs');
       }
     } catch (err) {
-      alert('Lỗi từ chối duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
+      notifyError('Lỗi từ chối duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
@@ -94,12 +96,12 @@ const JobReview = () => {
       setSubmitting(true);
       const response = await jobAdminService.banJob(jobId, reason);
       if (response.success) {
-        alert('Đã khóa tin tuyển dụng thành công do vi phạm điều khoản!');
+        success('Đã khóa tin tuyển dụng thành công do vi phạm điều khoản!');
         setBanOpen(false);
         navigate('/admin/jobs');
       }
     } catch (err) {
-      alert('Lỗi khi khóa tin: ' + (err?.message || 'Hệ thống trục trặc.'));
+      notifyError('Lỗi khi khóa tin: ' + (err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +124,11 @@ const JobReview = () => {
     <div className="space-y-7 pb-10 animate-rise-in max-w-7xl mx-auto">
       <PageHeader 
         title="Duyệt Tin Tuyển Dụng" 
-        description={`Đang kiểm duyệt hồ sơ: ID ${job._id} • Trạng thái hiện tại: ${job.status}`} 
+        description={
+          <span className="flex items-center gap-2 mt-1">
+            Đang kiểm duyệt hồ sơ: ID {job._id} • Trạng thái hiện tại: <StatusBadge value={job.status} />
+          </span>
+        } 
       />
       
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
@@ -150,16 +156,18 @@ const JobReview = () => {
 
             <div>
               <h4 className="mb-2 font-semibold text-slate-900 text-sm">Mô tả công việc</h4>
-              <div className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
-                {job.description || 'Không có mô tả chi tiết'}
-              </div>
+              <div 
+                className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                dangerouslySetInnerHTML={{ __html: job.description || 'Không có mô tả chi tiết' }}
+              />
             </div>
 
             <div>
               <h4 className="mb-2 font-semibold text-slate-900 text-sm">Yêu cầu ứng viên</h4>
-              <div className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
-                {job.requirements || 'Không có yêu cầu cụ thể'}
-              </div>
+              <div 
+                className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                dangerouslySetInnerHTML={{ __html: job.requirements || 'Không có yêu cầu cụ thể' }}
+              />
             </div>
           </div>
         </SectionCard>

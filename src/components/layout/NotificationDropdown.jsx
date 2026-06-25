@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Trash2, CheckSquare, Square } from 'lucide-react';
 import notificationService from '../../services/notificationService';
 import useAuth from '../../hooks/useAuth';
 import { useSocket } from '../../contexts/SocketContext';
 import { navigateToNotificationTarget } from '../../utils/notificationNavigation';
+import NotificationDetailModal from './NotificationDetailModal';
 
 const TYPE_LABEL = {
   EMPLOYER_VIEWED_CV: 'CV',
@@ -13,10 +14,18 @@ const TYPE_LABEL = {
   APPLICATION_RESULT: 'Hồ sơ',
   JOB_APPROVED: 'Việc làm',
   JOB_REJECTED: 'Việc làm',
+  JOB_BANNED: 'Việc làm',
   COMPANY_VERIFIED: 'Công ty',
   COMPANY_REJECTED: 'Công ty',
   SYSTEM_UPDATE: 'Hệ thống',
-  NEW_MESSAGE: 'Tin nhắn'
+  NEW_MESSAGE: 'Tin nhắn',
+  WALLET_DEPOSIT_SUCCESS: 'Thanh toán',
+  PACKAGE_PURCHASE_SUCCESS: 'Thanh toán',
+  PAYMENT_SUCCESS: 'Thanh toán',
+  PAYMENT_FAILED: 'Thanh toán',
+  PAYMENT_CANCELLED: 'Thanh toán',
+  PACKAGE_EXPIRING_SOON: 'Gói dịch vụ',
+  PACKAGE_EXPIRED: 'Gói dịch vụ'
 };
 
 const formatDateTimeShort = (value) => {
@@ -37,6 +46,9 @@ const NotificationDropdown = () => {
   const [actionLoading, setActionLoading] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(10);
   const [filter, setFilter] = useState('ALL');
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [detailModalItem, setDetailModalItem] = useState(null);
 
   const loadNotifications = async () => {
     try {
@@ -101,6 +113,45 @@ const NotificationDropdown = () => {
     setVisibleLimit((prev) => prev + 10);
   };
 
+  const handleToggleDeleteMode = (e) => {
+    e.stopPropagation();
+    setIsDeleteMode(prev => !prev);
+    setSelectedIds([]);
+  };
+
+  const handleToggleSelectAll = (e) => {
+    e.stopPropagation();
+    if (selectedIds.length === visibleItems.length && visibleItems.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(visibleItems.map(item => item._id));
+    }
+  };
+
+  const handleSelectNotification = (e, id) => {
+    e.stopPropagation();
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async (e) => {
+    e.stopPropagation();
+    if (selectedIds.length === 0) return;
+    try {
+      setActionLoading('bulk-delete');
+      await notificationService.bulkDeleteNotifications(selectedIds);
+      setItems(prev => prev.filter(item => !selectedIds.includes(item._id)));
+      setUnreadCount(items.filter(i => i.status === 'UNREAD' && !selectedIds.includes(i._id)).length);
+      setIsDeleteMode(false);
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const groupedItems = useMemo(() => {
     const groups = {
       today: [],
@@ -159,9 +210,17 @@ const NotificationDropdown = () => {
   };
 
   const handleNotificationClick = async (item) => {
+    if (isDeleteMode) return;
     if (item.status === 'UNREAD') {
       await handleMarkAsRead(item._id);
     }
+    
+    if (item.typeCode === 'SYSTEM_UPDATE') {
+      setDetailModalItem(item);
+      setIsOpen(false);
+      return;
+    }
+    
     setIsOpen(false);
     navigateToNotificationTarget(navigate, item, user);
   };
@@ -175,12 +234,21 @@ const NotificationDropdown = () => {
           {groupItems.map(item => (
             <div 
               key={item._id}
-              onClick={() => handleNotificationClick(item)}
+              onClick={(e) => isDeleteMode ? handleSelectNotification(e, item._id) : handleNotificationClick(item)}
               className={`flex items-start gap-3 p-3 px-4 hover:bg-slate-100 transition-colors cursor-pointer ${
                 item.status === 'UNREAD' ? 'bg-blue-50/50 relative' : ''
               }`}
             >
-              {item.status === 'UNREAD' && (
+              {isDeleteMode && (
+                <div className="mt-2.5 shrink-0">
+                  {selectedIds.includes(item._id) ? (
+                    <CheckSquare className="w-5 h-5 text-primary" />
+                  ) : (
+                    <Square className="w-5 h-5 text-slate-300" />
+                  )}
+                </div>
+              )}
+              {item.status === 'UNREAD' && !isDeleteMode && (
                 <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
               )}
               <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
@@ -228,14 +296,23 @@ const NotificationDropdown = () => {
           <div className="px-4 py-3 border-b border-slate-100 flex flex-col gap-1 shrink-0">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-900">Thông báo</h3>
-              <button 
-                onClick={handleMarkAllAsRead}
-                disabled={!unreadCount || actionLoading === 'read-all'}
-                title="Đánh dấu tất cả đã đọc"
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition-colors disabled:opacity-50"
-              >
-                {actionLoading === 'read-all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-5 h-5" />}
-              </button>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={handleMarkAllAsRead}
+                  disabled={!unreadCount || actionLoading === 'read-all'}
+                  title="Đánh dấu tất cả đã đọc"
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition-colors disabled:opacity-50"
+                >
+                  {actionLoading === 'read-all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={handleToggleDeleteMode}
+                  title="Xóa thông báo"
+                  className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isDeleteMode ? 'bg-red-100 text-red-600' : 'hover:bg-slate-100 text-slate-600'}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <button 
@@ -257,6 +334,28 @@ const NotificationDropdown = () => {
                 Đã đọc
               </button>
             </div>
+            {isDeleteMode && items.length > 0 && (
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                <button 
+                  onClick={handleToggleSelectAll}
+                  className="text-sm font-semibold text-slate-700 hover:text-primary transition-colors flex items-center gap-1.5"
+                >
+                  {selectedIds.length === visibleItems.length && visibleItems.length > 0 ? (
+                    <><CheckSquare className="w-4 h-4 text-primary" /> Bỏ chọn tất cả</>
+                  ) : (
+                    <><Square className="w-4 h-4" /> Chọn tất cả</>
+                  )}
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={selectedIds.length === 0 || actionLoading === 'bulk-delete'}
+                  className="px-3 py-1.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                >
+                  {actionLoading === 'bulk-delete' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Xóa ({selectedIds.length})
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="overflow-y-auto flex-1 custom-scrollbar pb-2">
@@ -293,6 +392,12 @@ const NotificationDropdown = () => {
           </div>
         </div>
       )}
+
+      <NotificationDetailModal 
+        isOpen={!!detailModalItem} 
+        onClose={() => setDetailModalItem(null)} 
+        notification={detailModalItem} 
+      />
     </div>
   );
 };

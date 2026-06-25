@@ -5,6 +5,7 @@ import notificationService from '../../../services/notificationService';
 import { useSocket } from '../../../contexts/SocketContext';
 import { navigateToNotificationTarget } from '../../../utils/notificationNavigation';
 import useAuth from '../../../hooks/useAuth';
+import NotificationDetailModal from '../../../components/layout/NotificationDetailModal';
 
 const TYPE_LABEL = {
   EMPLOYER_VIEWED_CV: 'CV',
@@ -32,6 +33,7 @@ const Notifications = () => {
 
   const [filter, setFilter] = useState('ALL'); // ALL, UNREAD, READ
   const [visibleLimit, setVisibleLimit] = useState(10);
+  const [detailModalItem, setDetailModalItem] = useState(null);
 
   const loadNotifications = async () => {
     try {
@@ -172,6 +174,12 @@ const Notifications = () => {
     if (item.status === 'UNREAD') {
       await handleMarkAsRead(item._id);
     }
+    
+    if (item.typeCode === 'SYSTEM_UPDATE') {
+      setDetailModalItem(item);
+      return;
+    }
+
     navigateToNotificationTarget(navigate, item, user);
   };
 
@@ -301,6 +309,12 @@ const Notifications = () => {
           </div>
         )}
       </section>
+
+      <NotificationDetailModal 
+        isOpen={!!detailModalItem} 
+        onClose={() => setDetailModalItem(null)} 
+        notification={detailModalItem} 
+      />
     </div>
   );
 };

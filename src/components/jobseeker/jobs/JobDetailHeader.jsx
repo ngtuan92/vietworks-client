@@ -91,6 +91,8 @@ const JobDetailHeader = ({
   const companyAvatar = company?.avatarUrl || DEFAULT_LOGO;
   const companyName = company?.name || 'Công ty không xác định';
   const isVerified = company?.verificationStatus === 'VERIFIED';
+  const isHiringFull = Boolean(job?.isHiringFull || cannotApplyReason === 'Tin tuyển dụng đã tuyển đủ số lượng');
+  const neededCount = job?.neededCount || job?.applicationCount || 1;
 
   useEffect(() => {
     if (!isAuthenticated || !job?._id) return;
@@ -144,10 +146,10 @@ const JobDetailHeader = ({
     <>
       <section className="bg-surface-container-lowest rounded-xl p-8 mb-stack-lg shadow-[0px_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant">
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          <div className="w-24 h-24 bg-surface rounded-lg border border-outline-variant p-2 flex items-center justify-center shrink-0">
+          <div className="w-24 h-24 bg-surface rounded-lg border border-outline-variant flex items-center justify-center shrink-0 overflow-hidden bg-white">
             <img
               alt={companyName}
-              className="max-w-full max-h-full object-cover"
+              className="w-full h-full object-cover"
               src={companyAvatar}
             />
           </div>
@@ -196,9 +198,9 @@ const JobDetailHeader = ({
                 <span>{formatLocation(job?.workLocations)}</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 ${isHiringFull ? 'text-red-600' : ''}`}>
                 <Users className="w-5 h-5" />
-                <span>Cần tuyển: {job?.headcount || 1} người</span>
+                <span>{isHiringFull ? 'Đã tuyển đủ' : `Cần tuyển: ${neededCount} người`}</span>
               </div>
 
               <div className="flex items-center gap-2">

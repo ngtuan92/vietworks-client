@@ -40,6 +40,7 @@ const navItems = [
     label: 'Dịch vụ & Thanh toán',
     children: [
       { label: 'Mua gói dịch vụ', to: '/employer/packages' },
+      { label: 'Gói của tôi', to: '/employer/my-subscriptions' },
       { label: 'Gói đang sử dụng', to: '/employer/active-packages' },
       { label: 'Ví của tôi', to: '/employer/wallet' },
       { label: 'Nạp tiền', to: '/employer/wallet/topup' },
@@ -72,6 +73,8 @@ const EmployerSidebar = () => {
   const { logout } = useAuth();
   const { confirm } = useNotification();
   const [interactionBadge, setInteractionBadge] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const isActive = (to) => {
     if (!to) return false;
     if (to.includes('?')) {
@@ -116,7 +119,11 @@ const EmployerSidebar = () => {
         getUnreadMessageCount(),
         notificationService.getMyNotifications({ page: 1, limit: 1 })
       ]);
-      setInteractionBadge((messageRes?.unreadCount || 0) + (notificationRes?.unreadCount || 0));
+      const msgCount = messageRes?.unreadCount || 0;
+      const notiCount = notificationRes?.unreadCount || 0;
+      setUnreadMessageCount(msgCount);
+      setUnreadNotificationCount(notiCount);
+      setInteractionBadge(msgCount + notiCount);
     } catch (error) {
       console.error(error);
     }
@@ -189,7 +196,7 @@ const EmployerSidebar = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 {itemBadge ? (
-                  <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                     {itemBadge > 99 ? '99+' : itemBadge}
                   </span>
                 ) : null}
@@ -208,8 +215,15 @@ const EmployerSidebar = () => {
               }}
             >
               <div className="pl-9 space-y-1 py-1">
-                {item.children.map((child) => (
-                  child.label === 'Đăng xuất' ? (
+                {item.children.map((child) => {
+                  let subBadge = 0;
+                  if (child.label === 'Tin nhắn') {
+                    subBadge = unreadMessageCount;
+                  } else if (child.label === 'Thông báo') {
+                    subBadge = unreadNotificationCount;
+                  }
+
+                  return child.label === 'Đăng xuất' ? (
                     <button
                       key={child.label}
                       type="button"
@@ -225,7 +239,7 @@ const EmployerSidebar = () => {
                       to={child.to}
                       className={() => {
                         const active = isActive(child.to);
-                        return `flex items-center gap-2 py-2 text-sm transition-all hover:translate-x-0.5 ${
+                        return `flex items-center justify-between py-2 pr-2 text-sm transition-all hover:translate-x-0.5 ${
                           child.isDanger
                             ? 'text-red-600 font-bold hover:text-red-700'
                             : child.isPrimary
@@ -236,11 +250,18 @@ const EmployerSidebar = () => {
                         }`;
                       }}
                     >
-                      {child.icon ? child.icon : null}
-                      <span>{child.label}</span>
+                      <div className="flex items-center gap-2">
+                        {child.icon ? child.icon : null}
+                        <span>{child.label}</span>
+                      </div>
+                      {subBadge ? (
+                        <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                          {subBadge > 99 ? '99+' : subBadge}
+                        </span>
+                      ) : null}
                     </NavLink>
-                  )
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

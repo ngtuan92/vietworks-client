@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import adminService from '../../../services/adminService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { PageHeader, SectionCard, FilterGrid, InputField, SelectField, SimpleTable, ActionButton, StatusBadge } from '../shared/AdminPrimitives';
-import { Plus, Edit, Image as ImageIcon, SearchX, Inbox, LayoutGrid, List, Eye, Users, Calendar, X } from 'lucide-react';
+import { Plus, Edit, Image as ImageIcon, SearchX, Inbox, LayoutGrid, List, Eye, Users, Calendar, X, Trash2 } from 'lucide-react';
 
 const CVTemplateList = () => {
   const navigate = useNavigate();
-  const { error } = useNotification();
+  const { error, confirm } = useNotification();
   const [templates, setTemplates] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +85,21 @@ const CVTemplateList = () => {
 
   const handleEdit = (tpl) => {
     navigate(`/admin/cv-templates/edit/${tpl._id}`, { state: tpl });
+  };
+
+  const handleDelete = async (id) => {
+    confirm('Bạn có chắc chắn muốn xóa mẫu CV này? Hành động này không thể hoàn tác.', async () => {
+      try {
+        const res = await adminService.deleteTemplate(id);
+        if (res.success) {
+          fetchTemplates();
+        } else {
+          error(res.message || 'Xóa thất bại!');
+        }
+      } catch (err) {
+        error(err.response?.data?.message || 'Có lỗi xảy ra khi xóa!');
+      }
+    });
   };
 
   return (
@@ -166,14 +181,14 @@ const CVTemplateList = () => {
               {templates.map((tpl) => (
                 <div 
                   key={tpl._id} 
-                  className="group bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full hover:-translate-y-1"
+                  className="group bg-white border border-slate-200/60 rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full hover:-translate-y-1"
                 >
                   {/* Thumbnail Block */}
                   <div className="relative aspect-[210/297] w-full bg-slate-50 border-b border-slate-100 overflow-hidden select-none">
                     {tpl.thumbnailUrl ? (
                       <img
                         alt={tpl.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-contain object-top"
                         src={tpl.thumbnailUrl}
                       />
                     ) : (
@@ -184,7 +199,7 @@ const CVTemplateList = () => {
                     )}
 
                     {/* Hover Action Overlay */}
-                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+                    <div className="absolute inset-0 bg-slate-950/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
                       <button
                         onClick={() => setPreviewImage(tpl.thumbnailUrl)}
                         disabled={!tpl.thumbnailUrl}
@@ -199,6 +214,13 @@ const CVTemplateList = () => {
                         title="Chỉnh sửa mẫu CV"
                       >
                         <Edit className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(tpl._id)}
+                        className="p-3 bg-red-600 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-700 cursor-pointer"
+                        title="Xóa mẫu CV"
+                      >
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -268,6 +290,9 @@ const CVTemplateList = () => {
                       <ActionButton tone="soft" onClick={() => handleEdit(tpl)} className="!py-1 px-3">
                         <span className="flex items-center gap-1"><Edit className="w-3 h-3" /> Sửa</span>
                       </ActionButton>
+                      <ActionButton tone="danger" onClick={() => handleDelete(tpl._id)} className="!py-1 px-3 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none">
+                        <span className="flex items-center gap-1"><Trash2 className="w-3 h-3" /> Xóa</span>
+                      </ActionButton>
                     </div>
                   </div>
                 </div>
@@ -279,12 +304,12 @@ const CVTemplateList = () => {
                 <tr key={tpl._id} className="border-t border-slate-100 transition-colors">
                   <td className="px-6 py-4 flex items-center gap-4">
                     <div 
-                      className="w-16 rounded-xl border border-slate-200/60 bg-slate-50 flex items-center justify-center shadow-sm relative overflow-hidden group cursor-pointer aspect-[210/297] shrink-0"
+                      className="w-16 rounded-none border border-slate-200/60 bg-white flex items-center justify-center shadow-sm relative overflow-hidden group cursor-pointer aspect-[210/297] shrink-0"
                       onClick={() => setPreviewImage(tpl.thumbnailUrl)}
                     >
                       {tpl.thumbnailUrl ? (
                         <>
-                          <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                          <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-contain object-top" />
                           <div className="absolute inset-0 bg-slate-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                             <Eye className="w-4 h-4 text-white" />
                           </div>
@@ -332,9 +357,14 @@ const CVTemplateList = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <ActionButton tone="soft" onClick={() => handleEdit(tpl)}>
-                      <span className="flex items-center gap-1.5"><Edit className="w-4 h-4" /> Sửa</span>
-                    </ActionButton>
+                    <div className="flex gap-2">
+                      <ActionButton tone="soft" onClick={() => handleEdit(tpl)}>
+                        <span className="flex items-center gap-1.5"><Edit className="w-4 h-4" /> Sửa</span>
+                      </ActionButton>
+                      <ActionButton tone="danger" onClick={() => handleDelete(tpl._id)} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none">
+                        <span className="flex items-center gap-1.5"><Trash2 className="w-4 h-4" /> Xóa</span>
+                      </ActionButton>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -378,7 +408,7 @@ const CVTemplateList = () => {
           onClick={() => setPreviewImage(null)}
         >
           <div 
-            className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl p-2 animate-scale-in"
+            className="relative max-w-2xl w-full bg-white rounded-none overflow-hidden shadow-2xl p-2 animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
             <button 
@@ -387,7 +417,7 @@ const CVTemplateList = () => {
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="aspect-[210/297] w-full bg-slate-100 overflow-y-auto max-h-[85vh] rounded-xl custom-scrollbar">
+            <div className="aspect-[210/297] w-full bg-slate-100 overflow-y-auto max-h-[85vh] rounded-none custom-scrollbar">
               <img 
                 src={previewImage} 
                 alt="CV Template Preview Full" 

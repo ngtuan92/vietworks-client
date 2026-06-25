@@ -3,7 +3,10 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import adminService from '../../../services/adminService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
+import { renderSection as renderSharedCvSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
 import uploadService from '../../../services/uploadService';
+import { renderSectionTitle } from '../../../components/cv/CVPageFrame';
+import { CVTemplateRenderer } from '../../../components/cv/CVTemplateRenderer';
 import html2canvas from 'html2canvas-pro';
 
 const defaultLayouts = [
@@ -197,7 +200,7 @@ const getDefaultSectionItem = (code) => {
     case 'PROFILE':
       return [{ name: 'HỒ TẤN ĐẠT', title: 'SENIOR FULL-STACK DEVELOPER', summary: 'Hơn 5 năm kinh nghiệm thực chiến thiết kế và phát triển các hệ thống Web và phân tán hiệu năng cao. Có thế mạnh về tối ưu hóa cơ sở dữ liệu lớn, triển khai CI/CD và kiến trúc Microservices.' }];
     case 'CONTACT':
-      return [{ phone: '0934 888 999', email: 'dat.ho.developer@gmail.com', address: 'Quận 2, TP. Hồ Chí Minh' }];
+      return [{ phone: '0934 888 999', email: 'dat.ho.developer@gmail.com', address: 'Quận 2, TP. Hồ Chí Minh', link: 'linkedin.com/in/dat-ho' }];
     case 'OBJECTIVE':
       return [{ summary: 'Khát khao áp dụng năng lực thiết kế hệ thống và tư duy giải quyết vấn đề để xây dựng các giải pháp SaaS đột phá, tối ưu hóa quy trình nghiệp vụ và hướng tới vai trò Technical Architect.' }];
     case 'EDUCATION':
@@ -243,6 +246,7 @@ const CVTemplateForm = () => {
 
   const isEditMode = !!id;
   const editingTemplate = location.state;
+  const isTemplateInUse = isEditMode && Number(editingTemplate?.usersCount || 0) > 0;
 
   // Scaling state for fixed width A4 preview canvas (794px design)
   const containerRef = useRef(null);
@@ -267,11 +271,11 @@ const CVTemplateForm = () => {
     if (files && files[0]) {
       const file = files[0];
       if (!file.type.startsWith('image/')) {
-        alert('Vui lòng chọn tệp hình ảnh hợp lệ.');
+        warning('Vui lòng chọn tệp hình ảnh hợp lệ.');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhẹ hơn.');
+        warning('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhẹ hơn.');
         return;
       }
       const reader = new FileReader();
@@ -389,7 +393,7 @@ const CVTemplateForm = () => {
       sectionCode: 'CONTACT',
       column: 'left',
       order: 2,
-      items: [{ phone: '0934 888 999', email: 'dat.ho.developer@gmail.com', address: 'Quận 2, TP. Hồ Chí Minh' }]
+      items: [{ phone: '0934 888 999', email: 'dat.ho.developer@gmail.com', address: 'Quận 2, TP. Hồ Chí Minh', link: 'linkedin.com/in/dat-ho' }]
     },
     {
       sectionCode: 'OBJECTIVE',
@@ -433,12 +437,36 @@ const CVTemplateForm = () => {
     const el = containerRef.current?.querySelector('.cv-template-page-canvas');
     if (!el) return null;
 
+    const sandbox = document.createElement('div');
     const clone = el.cloneNode(true);
+
+    sandbox.style.position = 'fixed';
+    sandbox.style.top = '0';
+    sandbox.style.left = '-10000px';
+    sandbox.style.width = '794px';
+    sandbox.style.height = '1123px';
+    sandbox.style.overflow = 'hidden';
+    sandbox.style.background = '#ffffff';
+    sandbox.style.pointerEvents = 'none';
+
+    clone.style.width = '794px';
+    clone.style.height = '1123px';
+    clone.style.minWidth = '794px';
+    clone.style.minHeight = '1123px';
+    clone.style.maxWidth = '794px';
+    clone.style.maxHeight = '1123px';
+    clone.style.zoom = '1';
     clone.style.transform = 'none';
-    clone.style.position = 'fixed';
-    clone.style.top = '-9999px';
-    clone.style.left = '-9999px';
-    document.body.appendChild(clone);
+    clone.style.transformOrigin = 'top left';
+    clone.style.position = 'absolute';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.margin = '0';
+    clone.style.boxShadow = 'none';
+    clone.style.borderRadius = '0';
+
+    sandbox.appendChild(clone);
+    document.body.appendChild(sandbox);
 
     try {
       const canvas = await html2canvas(clone, {
@@ -447,7 +475,13 @@ const CVTemplateForm = () => {
         allowTaint: true,
         logging: false,
         width: 794,
-        height: 1123
+        height: 1123,
+        windowWidth: 794,
+        windowHeight: 1123,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0
       });
 
       return new Promise((resolve) => {
@@ -464,7 +498,7 @@ const CVTemplateForm = () => {
       console.error('Lỗi khi chụp ảnh mẫu CV:', err);
       return null;
     } finally {
-      document.body.removeChild(clone);
+      document.body.removeChild(sandbox);
     }
   };
 
@@ -852,7 +886,7 @@ const CVTemplateForm = () => {
           {/* Contact Details */}
           {isContact && items[0] && (
             <div className={`space-y-2 ${sizeText} ${textColor} w-full`}>
-              <div className="flex items-start gap-2 w-full">
+              <div className={`items-start gap-2 w-full ${items[0].phone ? 'flex' : 'hidden'}`}>
                 <span className="material-symbols-outlined shrink-0 opacity-75 mt-0.5 flex items-center justify-center" style={{ fontSize: `${iconSize}px`, width: `${iconSize}px`, height: `${iconSize}px`, lineHeight: `${iconSize}px` }}>phone</span>
                 <EditableTextMini
                   html={items[0].phone || ''}
@@ -861,7 +895,7 @@ const CVTemplateForm = () => {
                   placeholder="Điện thoại"
                 />
               </div>
-              <div className="flex items-start gap-2 w-full">
+              <div className={`items-start gap-2 w-full ${items[0].email ? 'flex' : 'hidden'}`}>
                 <span className="material-symbols-outlined shrink-0 opacity-75 mt-0.5 flex items-center justify-center" style={{ fontSize: `${iconSize}px`, width: `${iconSize}px`, height: `${iconSize}px`, lineHeight: `${iconSize}px` }}>mail</span>
                 <EditableTextMini
                   html={items[0].email || ''}
@@ -870,13 +904,22 @@ const CVTemplateForm = () => {
                   placeholder="Email"
                 />
               </div>
-              <div className="flex items-start gap-2 w-full">
+              <div className={`items-start gap-2 w-full ${items[0].address ? 'flex' : 'hidden'}`}>
                 <span className="material-symbols-outlined shrink-0 opacity-75 mt-0.5 flex items-center justify-center" style={{ fontSize: `${iconSize}px`, width: `${iconSize}px`, height: `${iconSize}px`, lineHeight: `${iconSize}px` }}>location_on</span>
                 <EditableTextMini
                   html={items[0].address || ''}
                   onChange={(val) => handleUpdateItem('CONTACT', 0, 'address', val)}
                   className="font-medium block font-sans break-words w-full"
                   placeholder="Địa chỉ"
+                />
+              </div>
+              <div className={`items-start gap-2 w-full ${items[0].link ? 'flex' : 'hidden'}`}>
+                <span className="material-symbols-outlined shrink-0 opacity-75 mt-0.5 flex items-center justify-center" style={{ fontSize: `${iconSize}px`, width: `${iconSize}px`, height: `${iconSize}px`, lineHeight: `${iconSize}px` }}>link</span>
+                <EditableTextMini
+                  html={items[0].link || ''}
+                  onChange={(val) => handleUpdateItem('CONTACT', 0, 'link', val)}
+                  className="font-medium block font-sans break-all w-full"
+                  placeholder="Link"
                 />
               </div>
             </div>
@@ -922,7 +965,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('EXPERIENCE', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -968,7 +1011,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('EDUCATION', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1015,7 +1058,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('PROJECTS', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1061,7 +1104,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem(sectionCode, idx)}
-                  className="absolute top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0.5 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1092,7 +1135,7 @@ const CVTemplateForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveItem('ACTIVITIES', idx)}
-                  className="absolute top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
+                  className="absolute z-10 cursor-pointer top-0 right-0 text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 text-[9px] font-bold"
                 >
                   ×
                 </button>
@@ -1150,16 +1193,17 @@ const CVTemplateForm = () => {
     try {
       setSaving(true);
       
-      // Auto-generate preview image
-      const finalPreviewFile = await generateTemplatePreview();
+      const shouldSaveLayout = !isTemplateInUse;
+      const finalPreviewFile = shouldSaveLayout ? await generateTemplatePreview() : null;
 
       const payload = {
         name,
         careerGroupId: industry,
         status: isActive ? 'ACTIVE' : 'INACTIVE',
         isPremium: isPremium,
-        templateCode: selectedLayout,
-        layoutConfig: {
+        ...(shouldSaveLayout ? {
+          templateCode: selectedLayout,
+          layoutConfig: {
           columns: selectedLayout === 'two-col-equal' ? 2 : 1,
           defaultFontId: defaultFont,
           defaultColorId: primaryColor,
@@ -1178,7 +1222,8 @@ const CVTemplateForm = () => {
               return [sectionIdToCode(k)];
             }),
           sections: sections
-        }
+          }
+        } : {})
       };
 
       let result;
@@ -1200,7 +1245,7 @@ const CVTemplateForm = () => {
       }
     } catch (err) {
       console.error(err);
-      error('Đã xảy ra lỗi khi lưu mẫu CV.');
+      error(err.response?.data?.message || 'Đã xảy ra lỗi khi lưu mẫu CV.');
     } finally {
       setSaving(false);
     }
@@ -1247,6 +1292,15 @@ const CVTemplateForm = () => {
           </button>
         </div>
       </div>
+
+      {isTemplateInUse && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm">
+          <div className="font-bold">Mẫu CV này đã có ứng viên sử dụng</div>
+          <div className="mt-1 leading-relaxed">
+            Bạn chỉ nên chỉnh thông tin hiển thị như tên, trạng thái hoặc ngành nghề. Bố cục, nội dung mẫu, style và ảnh preview sẽ không được cập nhật để tránh làm thay đổi CV mà jobseeker đã tạo.
+          </div>
+        </div>
+      )}
 
       {/* Main Form Layout: Left settings sidebar, Right A4 preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1309,7 +1363,17 @@ const CVTemplateForm = () => {
           </div>
 
           {/* Card 2: Cấu hình thiết kế */}
-          <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6">
+          <fieldset
+            disabled={isTemplateInUse}
+            className={`relative bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6 ${isTemplateInUse ? 'opacity-70' : ''}`}
+          >
+            {isTemplateInUse && (
+              <div className="absolute inset-0 z-20 rounded-xl bg-white/70 backdrop-blur-[1px] flex items-center justify-center p-6">
+                <div className="max-w-sm rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900 shadow-sm">
+                  Mẫu đã có ứng viên sử dụng nên không thể đổi layout, font, màu, khoảng cách, kiểu tiêu đề hoặc ảnh đại diện.
+                </div>
+              </div>
+            )}
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#0056b3] text-[22px]">palette</span>
               Cấu hình thiết kế
@@ -1474,7 +1538,7 @@ const CVTemplateForm = () => {
             </div>
 
 
-          </div>
+          </fieldset>
 
           {/* Card 3: Danh sách Section Mặc định */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-4">
@@ -1615,7 +1679,7 @@ const CVTemplateForm = () => {
                 const profileSection = sections.find(s => s.sectionCode === 'PROFILE');
 
                 // Dynamic height-based split pagination
-                const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 960) => {
+                const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1250) => {
                   const pages = [];
                   let currentPageSecs = [];
                   let currentHeight = initialHeight;
@@ -1775,14 +1839,14 @@ const CVTemplateForm = () => {
                   return false;
                 };
 
-                const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 960);
-                const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 960);
-                const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 960);
-                const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 960);
-                const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 960);
-                const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 960);
-                const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 960);
-                const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 960);
+                const leftPages = paginateSectionsWithItemRanges(leftSections, 90, 1250);
+                const rightPages = paginateSectionsWithItemRanges(rightSections, 110, 1250);
+                const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1250);
+                const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, 1250);
+                const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, 1250);
+                const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, 1250);
+                const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, 1250);
+                const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, 1250);
 
                 let totalPages = 1;
                 if (selectedLayout === 'left-col') {
@@ -1806,7 +1870,76 @@ const CVTemplateForm = () => {
 
                 return (
                   <>
-                    {Array.from({ length: totalPages }).map((_, pageIdx) => {
+                    <CVTemplateRenderer
+                      selectedLayout={selectedLayout}
+                      style={{
+                        themeColorId: primaryColor,
+                        fontSize,
+                        density,
+                        titleStyle,
+                        avatarShape
+                      }}
+                      totalPages={totalPages}
+                      pages={{
+                        left: leftPages,
+                        right: rightPages,
+                        headerLeft: headerLeftPages,
+                        equalLeft: equalLeftPages,
+                        equalRight: equalRightPages,
+                        fullWidth: fullWidthPages,
+                        harvardClassic: harvardClassicPages,
+                        harvardGsas: harvardGsasPages,
+                        isSectionContinuation
+                      }}
+                      profileSection={profileSection}
+                      contactSection={contactSection}
+                      pageClassName="cv-template-page-canvas shadow-md border border-gray-200 rounded-none mx-auto"
+                      pageStyle={{ zoom: scale }}
+                      renderLeftAvatar={() => (
+                        avatarShape !== 'hidden' && (
+                          <div className="px-5 pt-8 pb-4 text-center">
+                            <div
+                              onClick={handleAvatarClick}
+                              className={`w-20 h-20 bg-white/15 mx-auto flex items-center justify-center cursor-pointer hover:bg-white/25 border-2 border-transparent hover:border-blue-400 transition-all overflow-hidden ${avatarShape === 'circle' ? 'rounded-full' : 'rounded-lg'}`}
+                              title="Click để thay đổi ảnh đại diện mẫu"
+                            >
+                              {mockAvatarUrl ? (
+                                <img src={mockAvatarUrl} className="w-full h-full object-cover" alt="Avatar mẫu" />
+                              ) : (
+                                <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      )}
+                      renderSection={(sec, columnContext, isCont = false) => (
+                        renderSharedCvSection(
+                          { ...sec, column: columnContext === 'left' ? 'left' : sec.column },
+                          {
+                            fontId: defaultFont,
+                            themeColorId: primaryColor,
+                            fontSize,
+                            density,
+                            titleStyle,
+                            avatarShape,
+                            avatarZoom,
+                            avatarX,
+                            avatarY
+                          },
+                          (sectionCode, newItems) => {
+                            setSections(prev => prev.map(section => (
+                              section.sectionCode === sectionCode ? { ...section, items: newItems } : section
+                            )));
+                          },
+                          columnContext,
+                          selectedLayout,
+                          isCont,
+                          null,
+                          null
+                        )
+                      )}
+                    />
+                    {false && Array.from({ length: totalPages }).map((_, pageIdx) => {
                       const pLeft = leftPages[pageIdx] || [];
                       const pRight = rightPages[pageIdx] || [];
                       const pHeaderLeft = headerLeftPages[pageIdx] || [];
@@ -1837,7 +1970,7 @@ const CVTemplateForm = () => {
                               top: 0,
                               left: 0
                             }}
-                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left cv-template-page-canvas"
+                            className="bg-white flex flex-col justify-between select-none pointer-events-auto text-left cv-template-page-canvas pb-[20px]"
                           >
                             {/* Content Area */}
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -2092,6 +2225,15 @@ const CVTemplateForm = () => {
                                                 />
                                               </div>
                                             )}
+                                            {contactItem.email && <span className="text-gray-400">|</span>}
+                                            <div className="flex items-center gap-1">
+                                              <span className="material-symbols-outlined text-[11px] opacity-75">link</span>
+                                              <EditableTextMini
+                                                html={contactItem.link || ''}
+                                                onChange={(val) => handleUpdateItem('CONTACT', 0, 'link', val)}
+                                                placeholder="Link"
+                                              />
+                                            </div>
                                           </div>
                                         );
                                       })}
@@ -2157,6 +2299,14 @@ const CVTemplateForm = () => {
                                                   <span className="material-symbols-outlined text-[11px] opacity-75">location_on</span>
                                                 </div>
                                               )}
+                                              <div className="flex items-center gap-1 justify-end">
+                                                <EditableTextMini
+                                                  html={contactItem.link || ''}
+                                                  onChange={(val) => handleUpdateItem('CONTACT', 0, 'link', val)}
+                                                  placeholder="Link"
+                                                />
+                                                <span className="material-symbols-outlined text-[11px] opacity-75">link</span>
+                                              </div>
                                             </div>
                                           );
                                         })}
@@ -2191,7 +2341,7 @@ const CVTemplateForm = () => {
                             </div>
 
                             {/* Page Footer Watermark */}
-                            <div className="px-12 py-3 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none">
+                            <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-white px-12 border-t border-gray-100 flex justify-end items-center text-[10px] text-gray-400 font-medium select-none pointer-events-none z-20">
                               <span>© VietWorks</span>
                             </div>
                           </div>

@@ -10,7 +10,7 @@ const CVWelcome = () => {
         <h1 className="font-headline-lg text-headline-lg text-on-background mb-stack-sm">Quản Lý CV Của Bạn</h1>
         <p className="text-on-surface-variant font-body-md">Tạo và tối ưu nhiều CV cho các hướng nghề nghiệp khác nhau.</p>
       </div>
-      <button 
+      <button
         onClick={() => navigate('/cv-templates/gallery')}
         className="flex items-center gap-stack-sm bg-primary text-on-secondary px-6 py-3 rounded-lg font-bold shadow-md hover:bg-primary-container transition-all active:scale-95"
       >

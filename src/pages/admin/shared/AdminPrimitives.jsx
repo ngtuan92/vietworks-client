@@ -6,8 +6,7 @@ const fieldSelectClass = 'w-full h-[44px] appearance-none cursor-pointer rounded
 const fieldTextAreaClass = 'w-full min-h-[120px] rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-medium transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 outline-none resize-y';
 
 export const PageHeader = ({ title, description, actions }) => (
-  <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/60 bg-white p-6 shadow-sm md:p-8">
-    <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-64 w-64 rounded-full bg-blue-50/50 blur-3xl" />
+  <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-6 premium-shadow md:p-8">
     <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div>
         <div className="mb-3 inline-flex items-center rounded-full bg-slate-50 border border-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
@@ -22,9 +21,9 @@ export const PageHeader = ({ title, description, actions }) => (
 );
 
 export const SectionCard = ({ title, description, right, children, className = '' }) => (
-  <section className={`bg-white rounded-[2rem] border border-slate-200/60 shadow-sm transition-all duration-300 hover:shadow-md ${className}`}>
+  <section className={`bg-white rounded-2xl border border-slate-200/60 premium-shadow transition-all duration-300 ${className}`}>
     {(title || description || right) && (
-      <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/30 px-6 py-5 lg:flex-row lg:items-center lg:justify-between rounded-t-[2rem]">
+      <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/30 px-6 py-5 lg:flex-row lg:items-center lg:justify-between rounded-t-2xl">
         <div>
           {title ? <h2 className="text-base font-black tracking-tight text-slate-900">{title}</h2> : null}
           {description ? <p className="mt-1 text-xs font-medium text-slate-500">{description}</p> : null}
@@ -48,7 +47,7 @@ export const StatCard = ({ label, value, tone = 'blue', note, icon }) => {
   const toneClass = tones[tone] || tones.blue;
 
   return (
-    <div className="group bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl relative overflow-hidden">
+    <div className="group bg-white p-6 rounded-2xl border border-slate-200/60 premium-shadow transition-all duration-300 relative overflow-hidden">
       <div className="flex justify-between items-start mb-4">
         <div>
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">{label}</p>
@@ -72,7 +71,7 @@ export const InputField = ({ label, required, type = 'text', value, onChange, pl
     <label className={fieldLabelClass}>
       {label} {required ? <span className="text-red-500">*</span> : null}
     </label>
-    <input type={type} value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder} className={fieldInputClass} />
+    <input spellCheck="false" type={type} value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder} className={fieldInputClass} />
   </div>
 );
 
@@ -102,13 +101,14 @@ export const TextAreaField = ({ label, required, value, onChange, placeholder = 
     <label className={fieldLabelClass}>
       {label} {required ? <span className="text-red-500">*</span> : null}
     </label>
-    <textarea rows={rows} value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder} className={fieldTextAreaClass} />
+    <textarea spellCheck="false" rows={rows} value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder} className={fieldTextAreaClass} />
   </div>
 );
 
 export const StatusBadge = ({ value, map = {} }) => {
   const defaultMap = {
     'PENDING': 'bg-amber-50 text-amber-700 border-amber-200/60',
+    'PENDING_APPROVAL': 'bg-amber-50 text-amber-700 border-amber-200/60',
     'PUBLISHED': 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     'BANNED': 'bg-red-50 text-red-700 border-red-200/60',
     'CLOSED': 'bg-slate-50 text-slate-700 border-slate-200',
@@ -120,6 +120,7 @@ export const StatusBadge = ({ value, map = {} }) => {
 
   const labelMap = {
     'PENDING': 'ĐANG CHỜ',
+    'PENDING_APPROVAL': 'ĐANG CHỜ DUYỆT',
     'PUBLISHED': 'ĐÃ DUYỆT',
     'BANNED': 'BỊ KHÓA',
     'CLOSED': 'ĐÃ ĐÓNG',
@@ -151,7 +152,7 @@ export const ActionButton = ({ children, tone = 'default', className = '', ...pr
 };
 
 export const SimpleTable = ({ headers, children }) => (
-  <div className="overflow-hidden rounded-[2rem] border border-slate-200/60 bg-white shadow-sm">
+  <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white premium-shadow">
     <div className="overflow-x-auto custom-scrollbar">
       <table className="min-w-full text-sm">
         <thead className="border-b border-slate-100 bg-slate-50/50 text-left text-slate-400">
@@ -181,7 +182,7 @@ export const Tabs = ({ tabs, active, onChange }) => (
 
 export const ModalShell = ({ title, children, onClose, footer }) => (
   <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 px-4 py-10 backdrop-blur-sm">
-    <div className="w-full max-w-2xl overflow-hidden rounded-[2rem] border border-slate-200/60 bg-white shadow-xl animate-rise-in">
+    <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200/60 bg-white premium-shadow animate-rise-in">
       <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
         <h3 className="text-base font-black tracking-tight text-slate-900">{title}</h3>
         <button onClick={onClose} className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer">

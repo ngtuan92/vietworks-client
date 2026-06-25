@@ -41,6 +41,14 @@ getProvinces: async () => {
     });
 
     return response.data;
+  },
+  updateMyCompanyLocation: async (id, locationData) => {
+    const response = await api.put(`/employer/company/locations/${id}`, locationData);
+    return response.data;
+  },
+  deleteMyCompanyLocation: async (id) => {
+    const response = await api.delete(`/employer/company/locations/${id}`);
+    return response.data;
   }
 };
 

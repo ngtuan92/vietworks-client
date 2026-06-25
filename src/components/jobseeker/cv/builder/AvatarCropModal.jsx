@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNotification } from '../../../../contexts/NotificationContext';
 
 export const AvatarCropModal = ({ imageUrl, onClose, onConfirm, onDelete }) => {
+  const { warning, confirm } = useNotification();
   const [currentImage, setCurrentImage] = useState(imageUrl);
   const [crop, setCrop] = useState({ x: 20, y: 20, size: 60 });
   const [imageDimensions, setImageDimensions] = useState(null);
@@ -216,11 +218,11 @@ export const AvatarCropModal = ({ imageUrl, onClose, onConfirm, onDelete }) => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Vui lòng chọn tệp hình ảnh.');
+        warning('Vui lòng chọn tệp hình ảnh.');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Dung lượng ảnh vượt quá 5MB.');
+        warning('Dung lượng ảnh vượt quá 5MB.');
         return;
       }
       const reader = new FileReader();
@@ -373,10 +375,10 @@ export const AvatarCropModal = ({ imageUrl, onClose, onConfirm, onDelete }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm('Bạn có chắc chắn muốn xóa ảnh đại diện này?')) {
+                    confirm('Bạn có chắc chắn muốn xóa ảnh đại diện này?', () => {
                       onDelete();
                       onClose();
-                    }
+                    });
                   }}
                   className="w-full py-2 px-4 bg-[#fce8e6] hover:bg-[#fadad6] text-[#c5221f] border border-[#f5b4ad] rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                 >

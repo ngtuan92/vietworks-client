@@ -172,7 +172,7 @@ export const BuilderToolbar = ({
       {/* 2. Floating Option Drawer Panel */}
       <div 
         className={`bg-white border-y border-r border-slate-200/80 rounded-r-2xl shadow-sm flex flex-col h-[calc(100vh-120px)] transition-all duration-300 ${
-          isOpen ? 'w-72 opacity-100 p-5 border-l-0' : 'w-0 opacity-0 p-0 border-l-0 overflow-hidden'
+          isOpen ? `${activeTab === 'templates' ? 'w-[420px]' : 'w-72'} opacity-100 p-5 border-l-0` : 'w-0 opacity-0 p-0 border-l-0 overflow-hidden'
         }`}
       >
         {/* Header with Title & Close Icon */}
@@ -390,7 +390,7 @@ export const BuilderToolbar = ({
 
           {/* Tab 3: Template Changer */}
           {activeTab === 'templates' && (
-            <div className="grid grid-cols-2 gap-2 pb-2">
+            <div className="grid grid-cols-2 gap-3 pb-2">
               {loadingTemplates ? (
                 <div className="col-span-2 py-10 text-center text-slate-400 text-xs">Đang tải danh sách mẫu...</div>
               ) : templates.length > 0 ? (
@@ -398,18 +398,18 @@ export const BuilderToolbar = ({
                   <div 
                     key={tpl._id} 
                     onClick={() => onTemplateChange(tpl)}
-                    className={`group bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative ${
+                    className={`group bg-white border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative ${
                       currentTemplateId === tpl._id 
                         ? 'border-blue-600 ring-2 ring-blue-500/20' 
                         : 'border-slate-200/80 hover:border-slate-400'
                     }`}
                   >
-                    <div className="relative h-24 bg-slate-50 flex items-center justify-center p-1.5 overflow-hidden">
+                    <div className="relative aspect-[210/297] bg-white flex items-start justify-center overflow-hidden">
                       {tpl.previewImageUrl ? (
                         <img 
                           src={tpl.previewImageUrl} 
                           alt={tpl.name} 
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-contain object-top"
                         />
                       ) : (
                         <FileText className="text-slate-300 w-5 h-5"  />
@@ -421,8 +421,8 @@ export const BuilderToolbar = ({
                         </div>
                       )}
                     </div>
-                    <div className="p-1.5 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-700 truncate max-w-[80px]">{tpl.name}</span>
+                    <div className="p-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 truncate">{tpl.name}</span>
                     </div>
                   </div>
                 ))
