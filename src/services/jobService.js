@@ -96,7 +96,7 @@ export const getCareerPositions = async (careerId) => {
  * Lấy danh sách Cấp bậc công việc (Job Levels)
  */
 export const getJobLevels = async (params = {}) => {
-  const response = await api.get('/master-data/job-levels', { params });
+  const response = await api.get('/master-data/job-levels', {  params: { careerGroupId: params.careerGroupId } });
   return response.data;
 };
 

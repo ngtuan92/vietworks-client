@@ -14,41 +14,38 @@ const formatSalaryText = (salaryField) => {
   return salaryField;
 };
 
-const getLocationId = (location) => {
+// Key định danh cho snapshot (locationSnapshotSchema dùng _id: false)
+// companyLocation dùng _id, snapshot dùng provinceCode+detailAddress
+const getLocationKey = (location) => {
   if (!location) return '';
-
-  if (location.locationId && typeof location.locationId === 'object') {
-    return location.locationId._id || '';
-  }
-
-  return location.locationId || '';
+  if (location._id) return location._id.toString();
+  return `${location.provinceCode || ''}_${location.detailAddress || ''}`;
 };
 
 const buildFullAddress = (location) => {
   return [
-    location.addressLine,
-    location.ward,
-    location.district,
-    location.province
+    location.detailAddress || location.addressLine,
+    location.wardName || location.ward,
+    location.districtName || location.district,
+    location.provinceName || location.province
   ]
     .filter(Boolean)
     .join(', ');
 };
 
 const buildWorkLocationSnapshot = (location) => {
-  const fullAddress = buildFullAddress(location);
-
+  const detailAddress = buildFullAddress(location);
   return {
-    locationId: location._id,
-    provinceName: location.province,
-    districtName: location.district || '',
-    wardName: location.ward || '',
-    address: fullAddress,
-    fullAddress,
-    latitude: location.latitude ?? null,
-    longitude: location.longitude ?? null
+    provinceCode: location?.provinceCode || '',
+    provinceName: location?.provinceName || location?.province || '',
+    districtCode: location?.districtCode || '',
+    districtName: location?.districtName || location?.district || '',
+    wardCode: location?.wardCode || '',
+    wardName: location?.wardName || location?.ward || '',
+    detailAddress: location?.detailAddress || location?.addressLine || detailAddress || ''
   };
 };
+
 
 const JobDetailModal = ({ jobId, onClose, onSuccess }) => {
   const { confirm, success, error, warning } = useNotification();
@@ -91,7 +88,10 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // 1. Khởi tạo ban đầu: Load thông tin Job và các danh sách Master Data không phụ thuộc (Global)
   useEffect(() => {
     const initModalData = async () => {
+      
       try {
+        
+        console.log('🔍 STEP 1: Gọi Promise.all...');
         const [jobRes, groupRes, expRes,locationRes] = await Promise.all([
           jobService.getJobById(jobId),
           jobService.getCareerGroups(),
@@ -99,27 +99,32 @@ const [companyLocations, setCompanyLocations] = useState([]);
             companyLocationService.getMyCompanyLocations()
 
         ]);
-
-        let loadedJob = null;
-        if (jobRes.success) {
-          loadedJob = jobRes.data;
-          setJob(loadedJob);
-        } else {
-          throw new Error("Không thể lấy thông tin chi tiết công việc");
-        }
+        
+console.log('🔍 STEP 2: Parse jobRes. success=', jobRes?.success, 'data type=', typeof jobRes?.data);
+let loadedJob = null;
+if (jobRes.success) {
+  console.log('🔍 STEP 2b: JSON.parse bắt đầu...');
+  loadedJob = JSON.parse(JSON.stringify(jobRes.data));
+  console.log('🔍 STEP 2c: JSON.parse xong. salary=', loadedJob?.salary, ' workLocations length=', loadedJob?.workLocations?.length);
+  setJob(loadedJob);
+} else {
+  throw new Error("Không thể lấy thông tin chi tiết công việc");
+}
 
         setMasterData(prev => ({
           ...prev,
           careerGroups: groupRes.success ? groupRes.data : [],
           experienceLevels: expRes.success ? expRes.data : []
         }));
-        setCompanyLocations(locationRes.success ? locationRes.data : []);
-
+console.log('🔍 STEP 3: setCompanyLocations. locationRes type=', typeof locationRes, 'keys=', locationRes ? Object.keys(locationRes) : 'null');
+setCompanyLocations(Array.isArray(locationRes?.data) ? locationRes.data : []);
+console.log('🔍 STEP 3: xong');
         const getId = (field) => (field && typeof field === 'object' ? field._id : field || '');
 
         const initGroupId = getId(loadedJob.careerGroupId);
         const initCareerId = getId(loadedJob.careerId);
 
+        console.log('🔍 STEP 4: setFormData bắt đầu...');
         setFormData({
           title: loadedJob.title || '',
           careerGroupId: initGroupId,
@@ -135,11 +140,19 @@ const [companyLocations, setCompanyLocations] = useState([]);
             currency: loadedJob.salary?.currency || 'VND'
           },
           // Gán trực tiếp mảng Object từ backend, nếu không tồn tại hoặc lỗi thì đặt mảng rỗng
+// JobDetailModal.jsx, dòng 145-149 — SỬA LẠI THÀNH:
 workLocations: Array.isArray(loadedJob.workLocations)
-  ? loadedJob.workLocations.map((location) => ({
-      ...location,
-      locationId: getLocationId(location)
-    }))
+  ? loadedJob.workLocations
+      .filter(loc => loc != null && typeof loc === 'object')
+      .map((location) => ({
+        provinceCode: location.provinceCode || '',
+        provinceName: location.provinceName || '',
+        districtCode: location.districtCode || '',
+        districtName: location.districtName || '',
+        wardCode: location.wardCode || '',
+        wardName: location.wardName || '',
+        detailAddress: location.detailAddress || ''
+      }))
   : [],          saturdayPolicy: loadedJob.saturdayPolicy || 'OFF',
           description: loadedJob.description || '',
           requirements: loadedJob.requirements || '',
@@ -149,12 +162,14 @@ workLocations: Array.isArray(loadedJob.workLocations)
           deadline: loadedJob.deadline ? new Date(loadedJob.deadline).toISOString().substring(0, 10) : '',
           isUrgent: loadedJob.isUrgent || false
         });
+        console.log('🔍 STEP 4: setFormData xong');
 
         // 2. Load tiếp các danh sách phụ thuộc dựa vào ID hiện tại của Job
+        console.log('🔍 STEP 5: Load master data phụ thuộc. initGroupId=', initGroupId);
         if (initGroupId) {
           const [careerRes, levelRes, skillRes] = await Promise.all([
             jobService.getCareersByGroup(initGroupId),
-            jobService.getJobLevels(initGroupId),
+            jobService.getJobLevels(),
             jobService.getSkillsByCareerGroup(initGroupId)
           ]);
           
@@ -174,6 +189,9 @@ workLocations: Array.isArray(loadedJob.workLocations)
         }
 
       } catch (err) {
+        console.error('🔴 [DEBUG] LỖI ĐẦY ĐỦ:', err);
+        console.error('🔴 [DEBUG] Stack:', err.stack);
+        console.error('🔴 [DEBUG] Message:', err.message);
         error('Lỗi khởi tạo dữ liệu: ' + err.message);
         onClose();
       } finally {
@@ -203,7 +221,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
     try {
       const [careerRes, levelRes, skillRes] = await Promise.all([
         jobService.getCareersByGroup(groupId),
-        jobService.getJobLevels(groupId),
+        jobService.getJobLevels(),  // bỏ tham số
         jobService.getSkillsByCareerGroup(groupId)
       ]);
 
@@ -254,7 +272,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
   const uniqueWorkLocations = Array.from(
     new Map(
       formData.workLocations.map((location) => [
-        getLocationId(location) || location.address || location.fullAddress,
+        `${location.provinceCode || ''}_${location.detailAddress || ''}`,
         location
       ])
     ).values()
@@ -310,15 +328,17 @@ workLocations: Array.isArray(loadedJob.workLocations)
 
   // --- Xử lý Thêm/Xóa phần tử địa điểm (Object Snapshot) ---
  const handleToggleCompanyLocation = (location) => {
+  const compLocKey = `${location.provinceCode || ''}_${location.detailAddress || location.addressLine || ''}`;
   const exists = formData.workLocations.some(
-    (item) => getLocationId(item) === location._id
+    (item) => `${item.provinceCode || ''}_${item.detailAddress || ''}` === compLocKey
   );
 
   if (exists) {
+    const removeKey = `${location.provinceCode || ''}_${location.detailAddress || location.addressLine || ''}`;
     setFormData((prev) => ({
       ...prev,
       workLocations: prev.workLocations.filter(
-        (item) => getLocationId(item) !== location._id
+        (item) => `${item.provinceCode || ''}_${item.detailAddress || ''}` !== removeKey
       )
     }));
     return;
@@ -326,11 +346,12 @@ workLocations: Array.isArray(loadedJob.workLocations)
 
   const snapshot = buildWorkLocationSnapshot(location);
 
+  const addKey = `${location.provinceCode || ''}_${location.detailAddress || location.addressLine || ''}`;
   setFormData((prev) => ({
     ...prev,
     workLocations: [
       ...prev.workLocations.filter(
-        (item) => getLocationId(item) !== location._id
+        (item) => `${item.provinceCode || ''}_${item.detailAddress || ''}` !== addKey
       ),
       snapshot
     ]
@@ -480,7 +501,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Cấp bậc (Yêu cầu chọn Nhóm ngành trước)</label>
                 <select
-                  disabled={!isEditable || !formData.careerGroupId}
+                  disabled={!isEditable }
                   value={formData.jobLevelId}
                   onChange={(e) => handleInputChange('jobLevelId', e.target.value)}
                   className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
@@ -609,15 +630,18 @@ workLocations: Array.isArray(loadedJob.workLocations)
       ) : (
         <div className="grid grid-cols-1 gap-2">
          {companyLocations.map((location) => {
+  // So sánh: snapshot (không có _id) với companyLocation (có _id)
+  // Dùng provinceCode + detailAddress làm khóa so khớp
+  const compLocKey = `${location.provinceCode || ''}_${location.detailAddress || location.addressLine || ''}`;
   const selected = formData.workLocations.some(
-    (item) => getLocationId(item) === location._id
+    (item) => `${item.provinceCode || ''}_${item.detailAddress || ''}` === compLocKey
   );
 
   const fullAddress = [
-    location.addressLine,
-    location.ward,
-    location.district,
-    location.province
+    location.detailAddress || location.addressLine,
+    location.wardName || location.ward,
+    location.districtName || location.district,
+    location.provinceName || location.province
   ]
     .filter(Boolean)
     .join(', ');
@@ -674,11 +698,11 @@ workLocations: Array.isArray(loadedJob.workLocations)
       <div className="grid grid-cols-1 gap-2">
         {formData.workLocations.map((loc, index) => (
           <div
-key={getLocationId(loc) || loc.address || loc.fullAddress || index}            className="flex items-center justify-between bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm"
+key={`${loc.provinceCode || ''}_${loc.detailAddress || ''}_${index}`}            className="flex items-center justify-between bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm"
           >
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-slate-800">
-                {loc.address || loc.fullAddress}
+{loc.detailAddress || [loc.wardName, loc.districtName, loc.provinceName].filter(Boolean).join(', ')}
               </p>
               <p className="text-xs text-slate-400">
                 Tỉnh/Thành: {loc.provinceName || 'N/A'} | Quận/Huyện:{' '}
