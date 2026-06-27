@@ -89,6 +89,7 @@ import AdminRevenueReport from './pages/admin/analytics/AdminRevenueReport';
 import AdminUserGrowth from './pages/admin/analytics/AdminUserGrowth';
 import EmailLogs from './pages/admin/analytics/EmailLogs';
 import AdminInvoices from './pages/admin/invoices/AdminInvoices';
+import AdminWebhookLogs from './pages/admin/transactions/AdminWebhookLogs';
 
 // CV Template Pages from feat/cv-template
 import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
@@ -213,6 +214,7 @@ function App() {
 
               {/* Transaction management routes */}
               <Route path="transactions" element={<AdminTransactions />} />
+              <Route path="sepay-webhook-logs" element={<AdminWebhookLogs />} />
 
               {/* Invoice management routes */}
               <Route path="invoices" element={<AdminInvoices />} />

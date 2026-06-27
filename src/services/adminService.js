@@ -78,6 +78,16 @@ const adminService = {
   getHiringSuccess: async (params = {}) => {
     const response = await api.get('/admin/analytics/hiring-success', { params });
     return response.data?.data;
+  },
+
+  getSepayWebhookLogs: async (params = {}) => {
+    const response = await api.get('/admin/sepay-webhook-logs', { params });
+    return response.data;
+  },
+
+  replaySepayWebhookLog: async (id) => {
+    const response = await api.post(`/admin/sepay-webhook-logs/${id}/replay`);
+    return response.data;
   }
 };
 
