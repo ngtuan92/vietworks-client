@@ -108,13 +108,6 @@ export const getExperienceLevels = async () => {
   return response.data;
 };
 
-/**
- * Lấy danh sách Khoảng lương mặc định (master data)
- */
-export const getSalaryRanges = async () => {
-  const response = await api.get('/master-data/salary-ranges');
-  return response.data;
-};
 
 /**
  * Lấy danh sách Kỹ năng theo Nhóm ngành nghề
