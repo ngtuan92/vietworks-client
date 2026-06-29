@@ -38,7 +38,7 @@ const MySubscriptions = () => {
   }, [tab]);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-6 py-8">
       <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-6">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>

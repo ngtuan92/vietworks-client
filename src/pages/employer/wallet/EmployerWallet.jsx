@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/api';
+import useSepayPolling from '../../../hooks/useSepayPolling';
 import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
 
 // Tooltip mô tả chi tiết cho từng transaction (hiện khi hover badge status).
@@ -149,6 +150,16 @@ const EmployerWallet = () => {
     setDepositAmount('');
     setDepositData(null);
   };
+
+  useSepayPolling(depositData?.orderCode, {
+    enabled: !!depositData?.orderCode,
+    onPaid: () => {
+      showNotification({ type: 'success', message: 'Nạp tiền thành công! Số dư đã được cập nhật.' });
+      fetchWallet();
+      fetchTransactions();
+      handleCloseModal();
+    },
+  });
 
   return (
     <div className="space-y-6 pb-10">
@@ -428,22 +439,17 @@ const EmployerWallet = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#5e5e62] mb-4">
-                    Hệ thống sẽ tự động cộng tiền vào ví khi nhận được thanh toán
-                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Đang chờ xác nhận thanh toán tự động...
+                  </div>
 
                   <div className="flex gap-3">
                     <button
                       onClick={handleCloseModal}
-                      className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all"
+                      className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all"
                     >
-                      Đã thanh toán xong
-                    </button>
-                    <button
-                      onClick={handleCloseModal}
-                      className="px-6 py-3 rounded-xl font-bold border border-[#c2c6d4] hover:bg-[#f5f3f3] transition-all"
-                    >
-                      Hủy
+                      Đóng (tự động cập nhật khi nhận được CK)
                     </button>
                   </div>
                 </div>
