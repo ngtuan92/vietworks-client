@@ -7,6 +7,7 @@ import {
   createJobseekerDeposit,
   getJobseekerTransactions
 } from '../../../services/paymentService';
+import useSepayPolling from '../../../hooks/useSepayPolling';
 import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
 
 const typeConfig = {
@@ -124,8 +125,18 @@ const JobseekerWallet = () => {
     setDepositData(null);
   };
 
+  useSepayPolling(depositData?.orderCode, {
+    enabled: !!depositData?.orderCode,
+    onPaid: () => {
+      showNotification({ type: 'success', message: 'Nạp tiền thành công! Số dư đã được cập nhật.' });
+      fetchWallet();
+      fetchTransactions();
+      handleCloseModal();
+    },
+  });
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       {/* Toast notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in ${
@@ -400,15 +411,16 @@ const JobseekerWallet = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500 mb-4">
-                    Hệ thống tự cộng tiền khi nhận được CK
-                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Đang chờ xác nhận thanh toán tự động...
+                  </div>
 
                   <button
                     onClick={handleCloseModal}
-                    className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700"
+                    className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200"
                   >
-                    Đã thanh toán xong
+                    Đóng (tự động cập nhật khi nhận được CK)
                   </button>
                 </div>
               )}

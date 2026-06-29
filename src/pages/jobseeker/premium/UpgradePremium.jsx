@@ -178,7 +178,7 @@ const UpgradePremium = () => {
     <main className="min-h-screen bg-slate-50 pb-16">
       <section className="relative overflow-hidden bg-[#003f87] px-4 py-16 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_34%)]" />
-        <div className="relative mx-auto max-w-6xl text-center">
+        <div className="relative mx-auto max-w-7xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold backdrop-blur">
             <span className="material-symbols-outlined text-base">rocket_launch</span>
             Nâng cấp hồ sơ ứng viên
@@ -192,14 +192,14 @@ const UpgradePremium = () => {
         </div>
       </section>
 
-      <section className="mx-auto -mt-10 max-w-6xl px-4">
+      <section className="mx-auto -mt-10 max-w-7xl px-4">
         {loading ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-xl">
             <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             <p className="mt-4 font-semibold text-slate-600">Đang tải danh sách gói...</p>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             <PlanCard
               title="Miễn phí"
               price={0}
