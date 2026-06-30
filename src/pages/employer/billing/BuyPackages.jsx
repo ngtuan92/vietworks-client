@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
+import useSepayPolling from '../../../hooks/useSepayPolling';
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + ' đ';
 
@@ -11,10 +12,16 @@ const BuyPackages = () => {
   const [buyModal, setBuyModal] = useState(null);   // gói đang mua
   const [buying, setBuying] = useState(false);
   const [buyResult, setBuyResult] = useState(null); // dữ liệu sau khi mua thành công
+  const [paymentMethod, setPaymentMethod] = useState('SEPAY'); // 'SEPAY' | 'WALLET'
+  const [qrData, setQrData] = useState(null);
+
+  const [jobs, setJobs] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState('');
 
   useEffect(() => {
     fetchPackages();
     fetchWallet();
+    fetchJobs();
   }, []);
 
   const fetchPackages = async () => {
@@ -35,18 +42,57 @@ const BuyPackages = () => {
     } catch { /* ignore */ }
   };
 
-  const openBuy = (pkg) => { setBuyModal(pkg); setBuyResult(null); };
-  const closeBuy = () => { setBuyModal(null); setBuyResult(null); };
+  const fetchJobs = async () => {
+    try {
+      const res = await api.get('/employer/jobs', { params: { status: 'PUBLISHED' } });
+      if (res.data.success) {
+        setJobs(res.data.data);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const openBuy = (pkg) => { 
+    setBuyModal(pkg); 
+    setBuyResult(null); 
+    setQrData(null); 
+    setPaymentMethod('SEPAY'); 
+    setSelectedJobId(jobs[0]?._id || '');
+  };
+  const closeBuy = () => { setBuyModal(null); setBuyResult(null); setQrData(null); };
 
   const confirmBuy = async () => {
     if (!buyModal) return;
+    if (buyModal.packageType === 'PREMIUM_JOB' && !selectedJobId) {
+      return alert('Vui lòng chọn tin đăng để áp dụng gói');
+    }
+    
     setBuying(true);
     try {
-      const res = await api.post('/employer/cv-unlock/purchase', { packageId: buyModal._id });
+      let res;
+      if (buyModal.packageType === 'PREMIUM_JOB') {
+        res = await api.post('/employer/boost/purchase', { 
+          packageId: buyModal._id,
+          jobId: selectedJobId,
+          paymentMethod 
+        });
+      } else {
+        res = await api.post('/employer/cv-unlock/purchase', { 
+          packageId: buyModal._id,
+          paymentMethod 
+        });
+      }
+      
       if (res.data.success) {
-        setBuyResult(res.data.data);
-        setWalletBalance(res.data.data.newBalance);
-        window.dispatchEvent(new Event('vietworks:wallet-updated'));
+        if (paymentMethod === 'WALLET') {
+          setBuyResult({
+            ...res.data.data,
+            isPremiumJob: buyModal.packageType === 'PREMIUM_JOB'
+          });
+          setWalletBalance(res.data.data.newBalance);
+          window.dispatchEvent(new Event('vietworks:wallet-updated'));
+        } else {
+          setQrData(res.data.data);
+        }
       }
     } catch (e) {
       const err = e.response?.data;
@@ -55,6 +101,20 @@ const BuyPackages = () => {
       setBuying(false);
     }
   };
+
+  useSepayPolling(qrData?.orderCode, {
+    enabled: !!qrData?.orderCode,
+    onPaid: () => {
+      setBuyResult({
+        amount: qrData.amount,
+        newBalance: walletBalance,
+        creditsGranted: buyModal.benefits?.cvAccessLimit || 1,
+        method: 'SEPAY',
+        isPremiumJob: buyModal.packageType === 'PREMIUM_JOB'
+      });
+      setQrData(null);
+    }
+  });
 
   // CHỈ hiển thị gói dành cho nhà tuyển dụng (loại gói Boost CV của ứng viên).
   // Thứ tự: Mở khóa CV (lẻ) → Combo 50/100 → Tin nổi bật.
@@ -132,13 +192,18 @@ const BuyPackages = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mt-4">Đã kích hoạt!</h3>
                   <p className="text-slate-600 mt-2 text-sm">
-                    Bạn được cộng <b className="text-emerald-600">{buyResult.creditsGranted} lượt mở khóa CV</b>.
-                    Dùng ngay ở mục Tìm ứng viên.
+                    {buyResult.isPremiumJob ? (
+                      <>Gói <b>{buyModal.name}</b> đã được áp dụng thành công cho tin đăng.</>
+                    ) : (
+                      <>Bạn được cộng <b className="text-emerald-600">{buyResult.creditsGranted} lượt mở khóa CV</b>. Dùng ngay ở mục Tìm ứng viên.</>
+                    )}
                   </p>
                   <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm text-left">
                     <div className="flex justify-between"><span className="text-slate-500">Đã thanh toán:</span><span className="font-bold text-slate-900">{formatPrice(buyResult.amount)}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">Phương thức:</span><span className="font-bold text-slate-900">Ví VietWorks</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">Số dư còn lại:</span><span className="font-bold text-emerald-600">{formatPrice(buyResult.newBalance)}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Phương thức:</span><span className="font-bold text-slate-900">{buyResult.method === 'SEPAY' ? 'Mã QR (SePay)' : 'Ví VietWorks'}</span></div>
+                    {buyResult.method === 'WALLET' && (
+                      <div className="flex justify-between"><span className="text-slate-500">Số dư còn lại:</span><span className="font-bold text-emerald-600">{formatPrice(buyResult.newBalance)}</span></div>
+                    )}
                   </div>
                   <div className="mt-6 flex gap-3">
                     <button onClick={closeBuy} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50">Đóng</button>
@@ -149,6 +214,22 @@ const BuyPackages = () => {
                 <>
                   <p className="text-sm text-slate-500">Bạn đang mua</p>
                   <h3 className="text-lg font-bold text-slate-900">{buyModal.name}</h3>
+
+                  {buyModal.packageType === 'PREMIUM_JOB' && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Chọn tin đăng áp dụng</label>
+                      <select
+                        value={selectedJobId}
+                        onChange={(e) => setSelectedJobId(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      >
+                        {jobs.map(job => (
+                          <option key={job._id} value={job._id}>{job.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
                     <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
                     {buyModal.benefits?.cvAccessLimit > 0 && (
@@ -157,22 +238,84 @@ const BuyPackages = () => {
                     <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
                   </div>
 
-                  {walletBalance >= buyModal.price ? (
-                    <button
-                      onClick={confirmBuy}
-                      disabled={buying}
-                      className="mt-5 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50"
-                    >
-                      {buying ? 'Đang xử lý...' : `Thanh toán ${formatPrice(buyModal.price)} qua ví`}
-                    </button>
-                  ) : (
-                    <div className="mt-5">
-                      <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 mb-3">
-                        Số dư ví không đủ (thiếu {formatPrice(buyModal.price - walletBalance)}).
+                  {!qrData ? (
+                    <>
+                      <div className="mt-5 grid grid-cols-2 gap-3">
+                        <button
+                          onClick={() => setPaymentMethod('SEPAY')}
+                          className={`p-3 rounded-xl border-2 text-left transition-all ${
+                            paymentMethod === 'SEPAY'
+                              ? 'border-[#003f87] bg-blue-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="font-bold text-slate-900 mb-1">Mã QR</div>
+                          <div className="text-xs text-slate-500">Quét mã thanh toán</div>
+                        </button>
+                        <button
+                          onClick={() => setPaymentMethod('WALLET')}
+                          className={`p-3 rounded-xl border-2 text-left transition-all ${
+                            paymentMethod === 'WALLET'
+                              ? 'border-[#003f87] bg-blue-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="font-bold text-slate-900 mb-1">Ví nội bộ</div>
+                          <div className="text-xs text-slate-500">Trừ trực tiếp</div>
+                        </button>
                       </div>
-                      <Link to="/employer/wallet/topup" className="block w-full py-3 rounded-xl bg-[#003f87] text-white font-bold text-center hover:bg-[#0b4e9f]">
-                        Nạp thêm tiền
-                      </Link>
+
+                      {paymentMethod === 'WALLET' && walletBalance < buyModal.price ? (
+                        <div className="mt-5">
+                          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 mb-3">
+                            Số dư ví không đủ (thiếu {formatPrice(buyModal.price - walletBalance)}).
+                          </div>
+                          <Link to="/employer/wallet/topup" className="block w-full py-3 rounded-xl bg-[#003f87] text-white font-bold text-center hover:bg-[#0b4e9f]">
+                            Nạp thêm tiền
+                          </Link>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={confirmBuy}
+                          disabled={buying}
+                          className="mt-5 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50"
+                        >
+                          {buying ? 'Đang xử lý...' : `Thanh toán ${formatPrice(buyModal.price)}`}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="mt-5 text-center">
+                      <div className="p-4 bg-white rounded-xl border border-slate-200 inline-block">
+                        <img src={qrData.qrUrl} alt="QR Code" className="w-48 h-48 mx-auto" />
+                      </div>
+                      <p className="mt-4 text-sm text-slate-600">Sử dụng App ngân hàng quét mã QR để thanh toán</p>
+                      <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 text-left text-sm space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Ngân hàng:</span>
+                          <span className="font-semibold text-slate-900">{qrData.bankName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Số tài khoản:</span>
+                          <span className="font-semibold text-slate-900">{qrData.bankAccount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Chủ tài khoản:</span>
+                          <span className="font-semibold text-slate-900">{qrData.bankOwner}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Số tiền:</span>
+                          <span className="font-bold text-emerald-600">{formatPrice(qrData.amount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Nội dung chuyển khoản:</span>
+                          <span className="font-bold text-indigo-600">{qrData.transferContent}</span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
+                        <span className="material-symbols-outlined text-lg animate-spin">sync</span>
+                        Đang chờ thanh toán...
+                      </div>
                     </div>
                   )}
                 </>
@@ -240,12 +383,12 @@ const PackageCard = ({ pkg, price, isFeatured, onBuy }) => {
       </ul>
 
       {isFeatured ? (
-        <Link
-          to="/employer/packages/featured-job"
+        <button
+          onClick={() => onBuy(pkg)}
           className="mt-4 w-full py-2 rounded-xl text-sm font-bold text-center bg-[#003f87] text-white hover:bg-[#0b4e9f] transition-all"
         >
           Mua gói
-        </Link>
+        </button>
       ) : (
         <button
           onClick={() => onBuy(pkg)}
@@ -259,3 +402,4 @@ const PackageCard = ({ pkg, price, isFeatured, onBuy }) => {
 };
 
 export default BuyPackages;
+

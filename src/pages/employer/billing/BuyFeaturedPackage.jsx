@@ -375,6 +375,7 @@ const BuyFeaturedPackage = () => {
                 <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-black text-emerald-600">{formatVND(qrData.amount)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Ngân hàng:</span><span className="font-bold text-slate-900">{qrData.bankName}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Số TK:</span><span className="font-bold text-slate-900">{qrData.bankAccount}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Chủ tài khoản:</span><span className="font-bold text-slate-900 uppercase">{qrData.bankOwner}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Nội dung CK:</span><span className="font-black text-[#003f87]">{qrData.transferContent}</span></div>
               </div>
               {paid ? (
