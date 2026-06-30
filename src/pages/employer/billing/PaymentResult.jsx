@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getTransactionByOrderCode, checkSepayPayment } from '../../../services/paymentService';
 
+const Info = ({ label, value, mono = false, valueClassName = '' }) => (
+  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+    <div className="text-xs text-slate-500">{label}</div>
+    <div className={`font-semibold text-slate-900 mt-1 break-all ${mono ? 'font-mono text-xs' : ''} ${valueClassName}`}>
+      {value}
+    </div>
+  </div>
+);
+
 const PaymentResult = () => {
   const [params] = useSearchParams();
   const orderCode = params.get('orderCode');
@@ -196,13 +205,5 @@ const PaymentResult = () => {
   );
 };
 
-const Info = ({ label, value, mono = false, valueClassName = '' }) => (
-  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-    <div className="text-xs text-slate-500">{label}</div>
-    <div className={`font-semibold text-slate-900 mt-1 break-all ${mono ? 'font-mono text-xs' : ''} ${valueClassName}`}>
-      {value}
-    </div>
-  </div>
-);
 
 export default PaymentResult;

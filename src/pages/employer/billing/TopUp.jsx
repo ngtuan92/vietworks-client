@@ -180,12 +180,6 @@ const TopUp = () => {
                   <span className="material-symbols-outlined text-[40px] text-emerald-600">check_circle</span>
                   <p className="mt-1 font-black text-emerald-700">Nạp tiền thành công!</p>
                   <p className="mb-3 text-sm text-emerald-600">Đang chuyển sang trang xác nhận...</p>
-                  <button
-                    onClick={() => navigate(`/employer/wallet/payment-result?orderCode=${qrData.orderCode}`)}
-                    className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white transition-all hover:bg-emerald-700"
-                  >
-                    Xem chi tiết giao dịch
-                  </button>
                 </div>
               ) : (
                 <>

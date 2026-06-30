@@ -269,16 +269,17 @@ const JobseekerWallet = () => {
             <p className="text-sm mt-1">Bấm "Nạp tiền" để bắt đầu</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Loại</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Số tiền</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Mô tả</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Trạng thái</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Ngày</th>
-              </tr>
-            </thead>
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+            <table className="w-full relative">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Loại</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Số tiền</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Mô tả</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Trạng thái</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Ngày</th>
+                </tr>
+              </thead>
             <tbody>
               {transactions.slice(0, 10).map((tx) => {
                 const type = typeConfig[tx.type] || typeConfig.PACKAGE_PURCHASE;
@@ -309,6 +310,7 @@ const JobseekerWallet = () => {
               })}
             </tbody>
           </table>
+        </div>
         )}
       </div>
 

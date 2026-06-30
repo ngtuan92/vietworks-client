@@ -290,8 +290,9 @@ const EmployerWallet = () => {
         <div className="p-6 border-b border-[#c2c6d4] flex items-center justify-between">
           <h3 className="font-bold text-[#1b1c1c]">Lịch sử giao dịch</h3>
         </div>
-        <table className="w-full">
-          <thead>
+        <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+          <table className="w-full relative">
+            <thead className="sticky top-0 z-10">
             <tr className="bg-[#f5f3f3] border-b border-[#c2c6d4]">
               <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Loại</th>
               <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Số tiền</th>
@@ -333,7 +334,8 @@ const EmployerWallet = () => {
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       {/* Deposit Drawer - SePay Checkout */}

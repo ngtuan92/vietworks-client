@@ -116,9 +116,9 @@ const Transactions = () => {
       </div>
 
       <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+        <div className="max-h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar">
+          <table className="min-w-full text-sm relative">
+            <thead className="bg-slate-50 text-slate-600 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <tr>
                 {['Mã giao dịch', 'Loại', 'Số tiền', 'Trạng thái', 'Thời gian', 'Ghi chú', 'Hóa đơn'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>
