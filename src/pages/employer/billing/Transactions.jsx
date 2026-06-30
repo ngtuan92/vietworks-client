@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../../../services/api';
-import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
+import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPreviewModal';
 
 // Tab filter tổng quát — gộp các loại giao dịch mua gói/mở khóa/tin nổi bật
 // vào cùng 1 nhóm để UI gọn lại.
@@ -162,8 +162,8 @@ const Transactions = () => {
         </div>
       </section>
 
-      {/* Modal yêu cầu xuất hóa đơn — mở khi user click "Xuất HĐ" ở 1 dòng */}
-      <RequestInvoiceModal
+      {/* Modal tải phiếu thu — mở khi user click "Tải phiếu thu" ở 1 dòng */}
+      <ReceiptPreviewModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         transactions={rows}
@@ -183,10 +183,10 @@ const InvoiceActionButton = ({ tx, onRequest }) => {
       <button
         type="button"
         disabled
-        title="Đã gửi yêu cầu — đang chờ admin xử lý"
+        title="Chỉ có thể tải 1 lần"
         className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-400 font-medium cursor-not-allowed"
       >
-        Đã yêu cầu
+        Đã tải
       </button>
     );
   }
@@ -197,7 +197,7 @@ const InvoiceActionButton = ({ tx, onRequest }) => {
         onClick={() => onRequest?.(tx._id)}
         className="px-3 py-1.5 rounded-lg border border-primary/40 text-primary font-semibold hover:bg-primary/10"
       >
-        Xuất HĐ
+        Tải phiếu thu
       </button>
     );
   }
@@ -205,7 +205,7 @@ const InvoiceActionButton = ({ tx, onRequest }) => {
     <button
       type="button"
       disabled
-      title="Chỉ giao dịch mua gói dịch vụ thành công mới được xuất hóa đơn"
+      title="Chỉ giao dịch thành công mới có thể tải phiếu thu"
       className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-400 font-medium cursor-not-allowed"
     >
       —
@@ -228,7 +228,13 @@ const StatusPill = ({ status }) => {
     FAILED: 'bg-red-100 text-red-700',
     CANCELLED: 'bg-slate-100 text-slate-700',
   };
-  return <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${map[status] || map.PENDING}`}>{status}</span>;
+  const labelMap = {
+    PENDING: 'Đang chờ',
+    SUCCESS: 'Thành công',
+    FAILED: 'Thất bại',
+    CANCELLED: 'Đã hủy',
+  };
+  return <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${map[status] || map.PENDING}`}>{labelMap[status] || status}</span>;
 };
 
 export default Transactions;

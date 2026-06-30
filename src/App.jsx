@@ -216,8 +216,8 @@ function App() {
               <Route path="transactions" element={<AdminTransactions />} />
               <Route path="sepay-webhook-logs" element={<AdminWebhookLogs />} />
 
-              {/* Invoice management routes */}
-              <Route path="invoices" element={<AdminInvoices />} />
+              {/* Invoice management routes (Deprecated) */}
+              {/* <Route path="invoices" element={<AdminInvoices />} /> */}
 
               {/* Package management routes */}
               <Route path="packages" element={<AdminPackages />} />

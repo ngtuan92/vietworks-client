@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/api';
 import useSepayPolling from '../../../hooks/useSepayPolling';
-import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
+import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPreviewModal';
 
 // Tooltip mô tả chi tiết cho từng transaction (hiện khi hover badge status).
 // - SUCCESS  → đã cộng / đã thanh toán
@@ -276,8 +276,8 @@ const EmployerWallet = () => {
                   <span className="material-symbols-outlined text-amber-600">receipt_long</span>
                 </div>
                 <div>
-                  <p className="font-bold text-[#1b1c1c]">Yêu cầu xuất hóa đơn</p>
-                  <p className="text-xs text-[#5e5e62]">VAT, hóa đơn điện tử</p>
+                  <p className="font-bold text-[#1b1c1c]">Tải phiếu thu</p>
+                  <p className="text-xs text-[#5e5e62]">Biên lai thanh toán PDF</p>
                 </div>
               </button>
             </div>
@@ -465,8 +465,8 @@ const EmployerWallet = () => {
         </>
       )}
 
-      {/* Request Invoice Modal */}
-      <RequestInvoiceModal
+      {/* Modal tải phiếu thu */}
+      <ReceiptPreviewModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         transactions={transactions}

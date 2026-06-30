@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiTrendingDown, FiZap } from 'react-icons/fi';
+import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiTrendingDown, FiZap, FiFileText } from 'react-icons/fi';
 import {
   getJobseekerWallet,
   createJobseekerWallet,
@@ -8,7 +8,7 @@ import {
   getJobseekerTransactions
 } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
-import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
+import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPreviewModal';
 
 const typeConfig = {
   WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
@@ -210,44 +210,44 @@ const JobseekerWallet = () => {
           <div className="bg-white p-5 rounded-xl border border-slate-200/50 premium-shadow">
             <h3 className="font-bold text-slate-900 mb-4">Thao tác nhanh</h3>
             <div className="space-y-3">
-              <Link to="/premium" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+              <Link to="/premium" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:shadow-sm border border-transparent hover:border-indigo-100 transition-all text-left group">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
                   <FiZap />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Mua gói Boost CV</p>
+                  <p className="font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">Mua gói Boost CV</p>
                   <p className="text-xs text-slate-500">Ưu tiên hiển thị cho NTD</p>
                 </div>
               </Link>
-              <Link to="/my-subscriptions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
-                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
+              <Link to="/my-subscriptions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-violet-50 hover:shadow-sm border border-transparent hover:border-violet-100 transition-all text-left group">
+                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 transition-transform group-hover:scale-110">
                   <FiCreditCard />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Gói đang dùng</p>
+                  <p className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors">Gói đang dùng</p>
                   <p className="text-xs text-slate-500">Xem hạn sử dụng</p>
                 </div>
               </Link>
-              <Link to="/my-transactions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+              <Link to="/my-transactions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-emerald-50 hover:shadow-sm border border-transparent hover:border-emerald-100 transition-all text-left group">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 transition-transform group-hover:scale-110">
                   <FiTrendingUp />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Lịch sử chi tiết</p>
+                  <p className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">Lịch sử chi tiết</p>
                   <p className="text-xs text-slate-500">Tất cả giao dịch</p>
                 </div>
               </Link>
               <button
                 type="button"
                 onClick={() => setShowInvoiceModal(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 transition-all text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 hover:shadow-sm border border-transparent hover:border-amber-100 transition-all text-left group"
               >
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                  <FiCreditCard />
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-110">
+                  <FiFileText />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Yêu cầu xuất hóa đơn</p>
-                  <p className="text-xs text-slate-500">VAT cho gói Boost CV</p>
+                  <p className="font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Tải phiếu thu</p>
+                  <p className="text-xs text-slate-500">Biên lai giao dịch PDF</p>
                 </div>
               </button>
             </div>
@@ -435,8 +435,8 @@ const JobseekerWallet = () => {
         </>
       )}
 
-      {/* Request Invoice Modal — chọn giao dịch PACKAGE_PURCHASE SUCCESS để xuất HĐ */}
-      <RequestInvoiceModal
+      {/* Modal tải phiếu thu */}
+      <ReceiptPreviewModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         transactions={transactions}

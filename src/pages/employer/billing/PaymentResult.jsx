@@ -138,10 +138,10 @@ const PaymentResult = () => {
             label="Thời gian thanh toán"
             value={transaction.paidAt ? new Date(transaction.paidAt).toLocaleString('vi-VN') : '-'}
           />
-          <Info label="Phương thức" value={transaction.paymentMethod} />
+          <Info label="Phương thức" value={transaction.paymentMethod === 'SEPAY' ? 'Chuyển khoản QR (SePay)' : transaction.paymentMethod === 'WALLET' ? 'Ví VietWorks' : transaction.paymentMethod} />
           <Info
             label="Trạng thái"
-            value={transaction.status}
+            value={transaction.status === 'SUCCESS' ? 'Thành công' : transaction.status === 'PENDING' ? 'Đang chờ' : transaction.status === 'FAILED' ? 'Thất bại' : transaction.status}
             valueClassName={
               isSuccess ? 'text-emerald-700' : isPending ? 'text-amber-700' : 'text-red-700'
             }
@@ -157,7 +157,7 @@ const PaymentResult = () => {
             </h2>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <Info label="Tên gói" value={pkg.name} />
-              <Info label="Loại" value={pkg.packageType} />
+              <Info label="Loại" value={pkg.packageType === 'BOOST_CV' ? 'Đẩy top CV' : pkg.packageType === 'BOOST_JOB' ? 'Đẩy top tin tuyển dụng' : pkg.packageType} />
               {target && <Info label={target.type === 'CV' ? 'CV được boost' : 'Tin tuyển dụng'} value={target.title} />}
               <Info label="Thời hạn" value={`${pkg.durationDays || 0} ngày`} />
               {userServicePackage?.startedAt && (

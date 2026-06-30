@@ -42,11 +42,10 @@ const navItems = [
   },
   {
     icon: <CreditCard className={iconClass} />,
-    label: 'Giao dịch & Hóa đơn',
+    label: 'Giao dịch',
     children: [
       { label: 'Tất cả giao dịch', to: '/admin/transactions' },
       { label: 'Đối soát SePay', to: '/admin/sepay-webhook-logs' },
-      { label: 'Hóa đơn', to: '/admin/invoices' },
     ],
   },
   {
@@ -71,11 +70,12 @@ const navItems = [
       { label: 'Doanh thu', to: '/admin/revenue-report' },
     ],
   },
-  {
-    icon: <Receipt className={iconClass} />,
-    label: 'Yêu cầu hóa đơn',
-    to: '/admin/invoices',
-  },
+  // Menu "Yêu cầu hóa đơn" đã bị ẩn — người dùng tự tải phiếu thu trực tiếp.
+  // {
+  //   icon: <Receipt className={iconClass} />,
+  //   label: 'Yêu cầu hóa đơn',
+  //   to: '/admin/invoices',
+  // },
   {
     icon: <Settings className={iconClass} />,
     label: 'Tài khoản',
