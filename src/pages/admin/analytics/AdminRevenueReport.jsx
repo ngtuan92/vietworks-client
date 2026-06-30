@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { PageHeader, SectionCard, SelectField, ActionButton } from '../shared/AdminPrimitives';
+import { PageHeader, SectionCard, SelectField } from '../shared/AdminPrimitives';
 import { WalletCards } from 'lucide-react';
 
 const formatPrice = (price) => {
@@ -46,7 +46,6 @@ const AdminRevenueReport = () => {
                 options={[['7days', '7 ngày qua'], ['30days', '30 ngày qua'], ['90days', '90 ngày qua'], ['year', 'Năm nay']]}
               />
             </div>
-            <ActionButton tone="primary">Xuất báo cáo</ActionButton>
           </div>
         }
       />

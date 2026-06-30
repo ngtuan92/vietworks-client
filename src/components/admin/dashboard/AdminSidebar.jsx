@@ -45,7 +45,6 @@ const navItems = [
     label: 'Giao dịch',
     children: [
       { label: 'Tất cả giao dịch', to: '/admin/transactions' },
-      { label: 'Đối soát SePay', to: '/admin/sepay-webhook-logs' },
     ],
   },
   {

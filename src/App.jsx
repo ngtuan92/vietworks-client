@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -89,7 +89,6 @@ import AdminRevenueReport from './pages/admin/analytics/AdminRevenueReport';
 import AdminUserGrowth from './pages/admin/analytics/AdminUserGrowth';
 import EmailLogs from './pages/admin/analytics/EmailLogs';
 import AdminInvoices from './pages/admin/invoices/AdminInvoices';
-import AdminWebhookLogs from './pages/admin/transactions/AdminWebhookLogs';
 
 // CV Template Pages from feat/cv-template
 import CVTemplateList from './pages/admin/cv-templates/CVTemplateList';
@@ -214,7 +213,6 @@ function App() {
 
               {/* Transaction management routes */}
               <Route path="transactions" element={<AdminTransactions />} />
-              <Route path="sepay-webhook-logs" element={<AdminWebhookLogs />} />
 
               {/* Invoice management routes (Deprecated) */}
               {/* <Route path="invoices" element={<AdminInvoices />} /> */}
