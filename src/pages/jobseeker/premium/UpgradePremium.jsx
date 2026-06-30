@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
@@ -403,6 +403,7 @@ const UpgradePremium = () => {
                   <InfoRow label="Số tiền" value={formatPrice(qrData.amount)} highlight />
                   <InfoRow label="Ngân hàng" value={qrData.bankName} />
                   <InfoRow label="Số tài khoản" value={qrData.bankAccount} />
+                  <InfoRow label="Chủ tài khoản" value={qrData.bankOwner} />
                   <InfoRow label="Nội dung chuyển khoản" value={qrData.transferContent} primary />
                 </div>
 

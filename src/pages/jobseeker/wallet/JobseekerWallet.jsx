@@ -406,6 +406,10 @@ const JobseekerWallet = () => {
                       <span className="font-bold">{depositData.bankAccount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Chủ tài khoản:</span>
+                      <span className="font-bold uppercase">{depositData.bankOwner}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Nội dung CK:</span>
                       <span className="font-black text-indigo-600">{depositData.transferContent}</span>
                     </div>

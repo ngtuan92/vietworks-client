@@ -434,6 +434,10 @@ const EmployerWallet = () => {
                       <span className="font-bold text-[#1b1c1c]">{depositData.bankAccount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-[#5e5e62]">Chủ tài khoản:</span>
+                      <span className="font-bold text-[#1b1c1c] uppercase">{depositData.bankOwner}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-[#5e5e62]">Nội dung CK:</span>
                       <span className="font-black text-[#0056b3]">{depositData.transferContent}</span>
                     </div>
