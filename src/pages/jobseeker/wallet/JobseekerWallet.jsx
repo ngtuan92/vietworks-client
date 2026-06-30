@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiTrendingDown, FiZap, FiFileText } from 'react-icons/fi';
+import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiTrendingDown, FiZap } from 'react-icons/fi';
 import {
   getJobseekerWallet,
   createJobseekerWallet,
@@ -8,7 +8,6 @@ import {
   getJobseekerTransactions
 } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
-import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPreviewModal';
 
 const typeConfig = {
   WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
@@ -32,7 +31,6 @@ const JobseekerWallet = () => {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -237,19 +235,6 @@ const JobseekerWallet = () => {
                   <p className="text-xs text-slate-500">Tất cả giao dịch</p>
                 </div>
               </Link>
-              <button
-                type="button"
-                onClick={() => setShowInvoiceModal(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 hover:shadow-sm border border-transparent hover:border-amber-100 transition-all text-left group"
-              >
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-110">
-                  <FiFileText />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Tải phiếu thu</p>
-                  <p className="text-xs text-slate-500">Biên lai giao dịch PDF</p>
-                </div>
-              </button>
             </div>
           </div>
         </div>
@@ -434,13 +419,6 @@ const JobseekerWallet = () => {
           </div>
         </>
       )}
-
-      {/* Modal tải phiếu thu */}
-      <ReceiptPreviewModal
-        isOpen={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        transactions={transactions}
-      />
     </div>
   );
 };
