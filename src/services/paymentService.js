@@ -92,11 +92,11 @@ export const getTransactionByOrderCode = async (orderCode) => {
 };
 
 /**
- * Yêu cầu xuất hóa đơn VAT cho 1 giao dịch PACKAGE_PURCHASE thành công.
- * @param {string} transactionId
- * @param {{ taxId?: string, address?: string }} payload
+ * @deprecated Phiếu thu giờ được tạo trực tiếp trên trình duyệt (ReceiptPreviewModal).
+ * API backend đã trả về 410 Gone.
  */
 export const requestInvoice = async (transactionId, payload = {}) => {
+  console.warn('[DEPRECATED] requestInvoice: Phiếu thu giờ được tải trực tiếp trên client.');
   const res = await api.post(`/transactions/${transactionId}/invoice`, payload);
   return res.data;
 };

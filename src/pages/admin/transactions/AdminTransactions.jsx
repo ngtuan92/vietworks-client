@@ -44,8 +44,8 @@ const AdminTransactions = () => {
       (tx.userId?.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
       (tx.userId?.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (tx.description || '').toLowerCase().includes(search.toLowerCase());
-    const matchType = filterType === 'all' || tx.type === filterType;
-    const matchStatus = filterStatus === 'all' || tx.status === filterStatus;
+    const matchType = !filterType || tx.type === filterType;
+    const matchStatus = !filterStatus || tx.status === filterStatus;
     return matchSearch && matchType && matchStatus;
   });
 
@@ -91,7 +91,7 @@ const AdminTransactions = () => {
         <div className="mb-6">
           <FilterGrid>
             <InputField label="Tìm kiếm" value={search} onChange={setSearch} placeholder="Tên, email, mô tả..." />
-            <SelectField label="Loại giao dịch" value={filterType} onChange={setFilterType} options={[['DEPOSIT', 'Nạp tiền'], ['PAYMENT', 'Thanh toán'], ['REFUND', 'Hoàn tiền'], ['WITHDRAW', 'Rút tiền']]} placeholder="Tất cả loại" />
+            <SelectField label="Loại giao dịch" value={filterType} onChange={setFilterType} options={[['WALLET_DEPOSIT', 'Nạp tiền'], ['PACKAGE_PURCHASE', 'Mua gói'], ['CV_UNLOCK_SINGLE', 'Mở khóa CV'], ['CV_UNLOCK_BY_PACKAGE', 'Mở khóa CV (gói)'], ['REFUND', 'Hoàn tiền'], ['ADMIN_ADJUSTMENT', 'Điều chỉnh']]} placeholder="Tất cả loại" />
             <SelectField label="Trạng thái" value={filterStatus} onChange={setFilterStatus} options={[['SUCCESS', 'Thành công'], ['PENDING', 'Đang chờ'], ['FAILED', 'Thất bại'], ['CANCELLED', 'Đã hủy']]} placeholder="Tất cả trạng thái" />
           </FilterGrid>
         </div>

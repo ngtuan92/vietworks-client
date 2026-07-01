@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
@@ -137,8 +137,20 @@ const UpgradePremium = () => {
       if (errorData?.code === 'ALREADY_HAS_ACTIVE_PACKAGE') {
         setUpgradeInfo({
           currentPackage: errorData.data?.currentPackage,
+          upgradePrice: errorData.data?.upgradePrice,
+          downgrade: errorData.data?.downgrade,
           packageId,
           cvId,
+          newPackageName: buyPkg?.name,
+          newPackagePrice: buyPkg?.price
+        });
+      } else if (errorData?.code === 'DOWNGRADE_NOT_ALLOWED') {
+        setUpgradeInfo({
+          downgrade: true,
+          currentPackage: errorData.data?.currentPackage,
+          newPackage: errorData.data?.newPackage,
+          packageId,
+          cvId
         });
       } else if (errorData?.code === 'INSUFFICIENT_BALANCE') {
         alert(errorData.message || 'Số dư ví không đủ.');
@@ -169,7 +181,7 @@ const UpgradePremium = () => {
     enabled: !!qrData?.orderCode,
     onPaid: (orderCode) => {
       setTimeout(() => {
-        navigate(`/jobseeker/payment-success?orderCode=${orderCode}`);
+        navigate(`/payment-success?orderCode=${orderCode}`);
       }, 1500);
     },
   });
@@ -178,7 +190,7 @@ const UpgradePremium = () => {
     <main className="min-h-screen bg-slate-50 pb-16">
       <section className="relative overflow-hidden bg-[#003f87] px-4 py-16 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_34%)]" />
-        <div className="relative mx-auto max-w-6xl text-center">
+        <div className="relative mx-auto max-w-7xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold backdrop-blur">
             <span className="material-symbols-outlined text-base">rocket_launch</span>
             Nâng cấp hồ sơ ứng viên
@@ -192,14 +204,14 @@ const UpgradePremium = () => {
         </div>
       </section>
 
-      <section className="mx-auto -mt-10 max-w-6xl px-4">
+      <section className="mx-auto -mt-10 max-w-7xl px-4">
         {loading ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-xl">
             <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             <p className="mt-4 font-semibold text-slate-600">Đang tải danh sách gói...</p>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             <PlanCard
               title="Miễn phí"
               price={0}
@@ -210,19 +222,27 @@ const UpgradePremium = () => {
               disabled
             />
 
-            {packages.map((pkg) => (
-              <PlanCard
-                key={pkg._id}
-                title={pkg.name}
-                price={pkg.price}
-                duration={`${pkg.durationDays || 30} ngày`}
-                description={pkg.description || 'Tăng mức độ hiển thị CV trước nhà tuyển dụng.'}
-                features={boostFeatures(pkg)}
-                popular={pkg._id === popularId}
-                buttonText="Mua gói này"
-                onClick={() => openBuy(pkg)}
-              />
-            ))}
+            {packages.map((pkg) => {
+              const subs = pkg.activeSubscriptions || [];
+              const isOwned = pkg.isOwned || subs.length > 0;
+              const activeCount = pkg.activeCount ?? subs.length;
+              return (
+                <PlanCard
+                  key={pkg._id}
+                  title={pkg.name}
+                  price={pkg.price}
+                  duration={`${pkg.durationDays || 30} ngày`}
+                  description={pkg.description || 'Tăng mức độ hiển thị CV trước nhà tuyển dụng.'}
+                  features={boostFeatures(pkg)}
+                  popular={pkg._id === popularId}
+                  isOwned={isOwned}
+                  activeCount={activeCount}
+                  buttonText={isOwned ? 'Đang dùng' : 'Mua gói này'}
+                  disabled={false}
+                  onClick={() => openBuy(pkg)}
+                />
+              );
+            })}
           </div>
         )}
       </section>
@@ -383,6 +403,7 @@ const UpgradePremium = () => {
                   <InfoRow label="Số tiền" value={formatPrice(qrData.amount)} highlight />
                   <InfoRow label="Ngân hàng" value={qrData.bankName} />
                   <InfoRow label="Số tài khoản" value={qrData.bankAccount} />
+                  <InfoRow label="Chủ tài khoản" value={qrData.bankOwner} />
                   <InfoRow label="Nội dung chuyển khoản" value={qrData.transferContent} primary />
                 </div>
 
@@ -391,12 +412,6 @@ const UpgradePremium = () => {
                     <span className="material-symbols-outlined text-[42px] text-emerald-600">check_circle</span>
                     <p className="mt-1 font-black text-emerald-700">Thanh toán thành công!</p>
                     <p className="text-sm text-emerald-600">Đang chuyển sang trang xác nhận...</p>
-                    <button
-                      onClick={() => navigate(`/jobseeker/payment-success?orderCode=${qrData.orderCode}`)}
-                      className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 font-bold text-white transition hover:bg-emerald-700"
-                    >
-                      Xem chi tiết
-                    </button>
                   </div>
                 ) : (
                   <>
@@ -419,34 +434,75 @@ const UpgradePremium = () => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-                <span className="material-symbols-outlined text-3xl">upgrade</span>
+              <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${upgradeInfo.downgrade ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
+                <span className="material-symbols-outlined text-3xl">{upgradeInfo.downgrade ? 'block' : 'upgrade'}</span>
               </div>
-              <h2 className="mt-4 text-xl font-black text-slate-900">CV đang có gói hoạt động</h2>
+              <h2 className="mt-4 text-xl font-black text-slate-900">
+                {upgradeInfo.downgrade ? 'Không thể nâng cấp' : 'Xác nhận nâng cấp'}
+              </h2>
               <p className="mt-2 text-sm text-slate-600">
                 CV này đang dùng gói <b className="text-slate-900">{upgradeInfo.currentPackage?.name}</b>
                 {upgradeInfo.currentPackage?.daysRemaining != null && (
                   <> còn <b>{upgradeInfo.currentPackage.daysRemaining}</b> ngày.</>
                 )}
               </p>
-              <p className="mt-3 rounded-2xl bg-amber-50 p-3 text-xs font-semibold text-amber-700">
-                Nâng cấp sẽ hủy gói cũ và bắt đầu gói mới ngay lập tức. Phần thời gian còn lại của gói cũ sẽ không được hoàn lại.
-              </p>
             </div>
+
+            {/* Bảng breakdown giá nâng cấp */}
+            {!upgradeInfo.downgrade ? (
+              <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">Chi tiết nâng cấp</p>
+                <div className="mt-2 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Giá gói mới ({upgradeInfo.newPackageName})</span>
+                    <span className="font-bold text-slate-900">{formatPrice(upgradeInfo.newPackagePrice)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">− Giá trị còn lại của gói cũ</span>
+                    <span className="font-bold text-emerald-700">−{formatPrice(upgradeInfo.currentPackage?.remainingValue || 0)}</span>
+                  </div>
+                  <div className="my-2 border-t border-emerald-200"></div>
+                  <div className="flex justify-between text-base">
+                    <span className="font-bold text-slate-900">Phải trả thêm</span>
+                    <span className="font-black text-emerald-700">{formatPrice(upgradeInfo.upgradePrice)}</span>
+                  </div>
+                </div>
+                <p className="mt-3 rounded-xl bg-white/70 p-2 text-[11px] font-semibold text-slate-600">
+                  ⓘ Công thức: giá trị còn lại = giá gốc × (số ngày còn / tổng ngày). Phần thời gian chưa dùng hết được tính theo ngày.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+                <p className="font-bold">Lý do:</p>
+                <p className="mt-1">
+                  Gói hiện tại còn giá trị <b>{formatPrice(upgradeInfo.currentPackage?.remainingValue || 0)}</b>,
+                  cao hơn giá gói mới <b>{formatPrice(upgradeInfo.newPackage?.price || 0)}</b>.
+                  Bạn không thể nâng cấp lên gói rẻ hơn khi gói cũ còn hạn.
+                </p>
+                <p className="mt-2 text-xs">Vui lòng chọn gói có giá cao hơn hoặc đợi gói hiện tại hết hạn.</p>
+              </div>
+            )}
+
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setUpgradeInfo(null)}
                 className="flex-1 rounded-xl border border-slate-200 py-2.5 font-bold text-slate-700 hover:bg-slate-50"
               >
-                Hủy
+                {upgradeInfo.downgrade ? 'Đóng' : 'Hủy'}
               </button>
-              <button
-                onClick={handleConfirmUpgrade}
-                disabled={paying}
-                className="flex-1 rounded-xl bg-[#003f87] py-2.5 font-bold text-white hover:bg-[#0b4e9f] disabled:opacity-50"
-              >
-                {paying ? 'Đang xử lý...' : 'Nâng cấp ngay'}
-              </button>
+              {!upgradeInfo.downgrade && (
+                <button
+                  onClick={handleConfirmUpgrade}
+                  disabled={paying}
+                  className="flex-1 rounded-xl bg-[#003f87] py-2.5 font-bold text-white hover:bg-[#0b4e9f] disabled:opacity-50"
+                >
+                  {paying
+                    ? 'Đang xử lý...'
+                    : paymentMethod === 'WALLET'
+                      ? `Trả ${formatPrice(upgradeInfo.upgradePrice)} qua ví`
+                      : `Nâng cấp ${formatPrice(upgradeInfo.upgradePrice)}`}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -455,11 +511,17 @@ const UpgradePremium = () => {
   );
 };
 
-const PlanCard = ({ title, price, duration, description, features, popular, buttonText, disabled, onClick }) => (
-  <div className={`relative rounded-3xl border bg-white p-6 shadow-xl shadow-slate-200/70 transition hover:-translate-y-1 hover:shadow-2xl ${popular ? 'border-primary ring-4 ring-primary/10' : 'border-slate-200'}`}>
+const PlanCard = ({ title, price, duration, description, features, popular, buttonText, disabled, isOwned, activeCount, onClick }) => (
+  <div className={`relative rounded-3xl border bg-white p-6 shadow-xl shadow-slate-200/70 transition hover:-translate-y-1 hover:shadow-2xl ${popular ? 'border-primary ring-4 ring-primary/10' : isOwned ? 'border-emerald-300 ring-2 ring-emerald-200/60' : 'border-slate-200'}`}>
     {popular && (
       <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#003f87] px-4 py-1.5 text-xs font-black text-white shadow-lg">
         Phổ biến nhất
+      </div>
+    )}
+    {isOwned && (
+      <div className="absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-black uppercase text-white shadow-md">
+        <span className="material-symbols-outlined text-[12px]">verified</span>
+        Đang dùng{activeCount > 1 ? ` · ${activeCount} CV` : ''}
       </div>
     )}
     <div className="mb-6">
@@ -483,7 +545,13 @@ const PlanCard = ({ title, price, duration, description, features, popular, butt
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`mt-7 w-full rounded-2xl py-3 font-black transition ${disabled ? 'cursor-default bg-slate-100 text-slate-400' : 'bg-[#003f87] text-white shadow-lg shadow-blue-900/20 hover:bg-[#0b4e9f]'}`}
+      className={`mt-7 w-full rounded-2xl py-3 font-black transition ${
+        isOwned
+          ? 'border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+          : disabled
+            ? 'cursor-default bg-slate-100 text-slate-400'
+            : 'bg-[#003f87] text-white shadow-lg shadow-blue-900/20 hover:bg-[#0b4e9f]'
+      }`}
     >
       {buttonText}
     </button>

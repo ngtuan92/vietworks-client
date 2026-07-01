@@ -7,7 +7,7 @@ import {
   createJobseekerDeposit,
   getJobseekerTransactions
 } from '../../../services/paymentService';
-import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
+import useSepayPolling from '../../../hooks/useSepayPolling';
 
 const typeConfig = {
   WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
@@ -31,7 +31,6 @@ const JobseekerWallet = () => {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,8 +123,18 @@ const JobseekerWallet = () => {
     setDepositData(null);
   };
 
+  useSepayPolling(depositData?.orderCode, {
+    enabled: !!depositData?.orderCode,
+    onPaid: () => {
+      showNotification({ type: 'success', message: 'Nạp tiền thành công! Số dư đã được cập nhật.' });
+      fetchWallet();
+      fetchTransactions();
+      handleCloseModal();
+    },
+  });
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       {/* Toast notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in ${
@@ -199,46 +208,33 @@ const JobseekerWallet = () => {
           <div className="bg-white p-5 rounded-xl border border-slate-200/50 premium-shadow">
             <h3 className="font-bold text-slate-900 mb-4">Thao tác nhanh</h3>
             <div className="space-y-3">
-              <Link to="/premium" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+              <Link to="/premium" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:shadow-sm border border-transparent hover:border-indigo-100 transition-all text-left group">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
                   <FiZap />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Mua gói Boost CV</p>
+                  <p className="font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">Mua gói Boost CV</p>
                   <p className="text-xs text-slate-500">Ưu tiên hiển thị cho NTD</p>
                 </div>
               </Link>
-              <Link to="/my-subscriptions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
-                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
+              <Link to="/my-subscriptions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-violet-50 hover:shadow-sm border border-transparent hover:border-violet-100 transition-all text-left group">
+                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 transition-transform group-hover:scale-110">
                   <FiCreditCard />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Gói đang dùng</p>
+                  <p className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors">Gói đang dùng</p>
                   <p className="text-xs text-slate-500">Xem hạn sử dụng</p>
                 </div>
               </Link>
-              <Link to="/my-transactions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-all text-left">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+              <Link to="/my-transactions" className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-emerald-50 hover:shadow-sm border border-transparent hover:border-emerald-100 transition-all text-left group">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 transition-transform group-hover:scale-110">
                   <FiTrendingUp />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">Lịch sử chi tiết</p>
+                  <p className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">Lịch sử chi tiết</p>
                   <p className="text-xs text-slate-500">Tất cả giao dịch</p>
                 </div>
               </Link>
-              <button
-                type="button"
-                onClick={() => setShowInvoiceModal(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 transition-all text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                  <FiCreditCard />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-900">Yêu cầu xuất hóa đơn</p>
-                  <p className="text-xs text-slate-500">VAT cho gói Boost CV</p>
-                </div>
-              </button>
             </div>
           </div>
         </div>
@@ -258,16 +254,17 @@ const JobseekerWallet = () => {
             <p className="text-sm mt-1">Bấm "Nạp tiền" để bắt đầu</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Loại</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Số tiền</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Mô tả</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Trạng thái</th>
-                <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Ngày</th>
-              </tr>
-            </thead>
+          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+            <table className="w-full relative">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Loại</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Số tiền</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Mô tả</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Trạng thái</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase">Ngày</th>
+                </tr>
+              </thead>
             <tbody>
               {transactions.slice(0, 10).map((tx) => {
                 const type = typeConfig[tx.type] || typeConfig.PACKAGE_PURCHASE;
@@ -298,6 +295,7 @@ const JobseekerWallet = () => {
               })}
             </tbody>
           </table>
+        </div>
         )}
       </div>
 
@@ -395,20 +393,25 @@ const JobseekerWallet = () => {
                       <span className="font-bold">{depositData.bankAccount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Chủ tài khoản:</span>
+                      <span className="font-bold uppercase">{depositData.bankOwner}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Nội dung CK:</span>
                       <span className="font-black text-indigo-600">{depositData.transferContent}</span>
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500 mb-4">
-                    Hệ thống tự cộng tiền khi nhận được CK
-                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Đang chờ xác nhận thanh toán tự động...
+                  </div>
 
                   <button
                     onClick={handleCloseModal}
-                    className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700"
+                    className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200"
                   >
-                    Đã thanh toán xong
+                    Đóng (tự động cập nhật khi nhận được CK)
                   </button>
                 </div>
               )}
@@ -416,13 +419,6 @@ const JobseekerWallet = () => {
           </div>
         </>
       )}
-
-      {/* Request Invoice Modal — chọn giao dịch PACKAGE_PURCHASE SUCCESS để xuất HĐ */}
-      <RequestInvoiceModal
-        isOpen={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        transactions={transactions}
-      />
     </div>
   );
 };

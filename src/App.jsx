@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -214,8 +214,8 @@ function App() {
               {/* Transaction management routes */}
               <Route path="transactions" element={<AdminTransactions />} />
 
-              {/* Invoice management routes */}
-              <Route path="invoices" element={<AdminInvoices />} />
+              {/* Invoice management routes (Deprecated) */}
+              {/* <Route path="invoices" element={<AdminInvoices />} /> */}
 
               {/* Package management routes */}
               <Route path="packages" element={<AdminPackages />} />

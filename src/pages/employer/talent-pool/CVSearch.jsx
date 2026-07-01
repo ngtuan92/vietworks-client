@@ -64,16 +64,14 @@ const CVSearch = () => {
     try {
       await api.post('/employer/talent-pool/' + unlockTarget._id + '/unlock', {
         cvId: unlockTarget.cvId,
-        amount: 20000
       });
-      setCandidates(candidates.map(c =>
-        c._id === unlockTarget._id ? { ...c, isUnlocked: true, email: unlockTarget.email, phone: unlockTarget.phone } : c
-      ));
-      setWalletBalance(prev => prev - 20000);
+      // Refetch toàn bộ: email/phone chỉ có sau khi BE đã ghi UnlockedCandidate
+      await fetchCandidates();
+      api.get('/employer/wallet').then(r => { if (r.data.success) setWalletBalance(r.data.data.balance); });
       closeUnlock();
     } catch (error) {
       console.error('Unlock error:', error);
-      if (error.response?.data?.message === 'Insufficient balance') {
+      if (error.response?.data?.code === 'INSUFFICIENT_BALANCE') {
         navigate('/employer/wallet/topup');
       }
     } finally {

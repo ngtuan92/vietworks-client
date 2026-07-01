@@ -61,6 +61,3 @@ export const getCompanyOpenJobs = (companyId, params = {}) =>
 export const getSearchSuggestions = (keyword = '', limit = 10) =>
   api.get('/jobs/search-suggestions', { params: { keyword, limit } }).then(r => r.data);
 
-// ─── Salary Ranges ────────────────────────────────────────
-export const getSalaryRanges = () =>
-  api.get('/master-data/salary-ranges').then(r => r.data);
