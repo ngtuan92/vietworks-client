@@ -80,6 +80,15 @@ const adminService = {
     return response.data?.data;
   },
 
+  /**
+   * Báo cáo doanh thu
+   * @param {{ range?: '30days'|'90days'|'year'|'all' }} params
+   */
+  getRevenueReport: async (params = {}) => {
+    const response = await api.get('/admin/revenue-report', { params });
+    return response.data?.data;
+  },
+
   getSepayWebhookLogs: async (params = {}) => {
     const response = await api.get('/admin/sepay-webhook-logs', { params });
     return response.data;
