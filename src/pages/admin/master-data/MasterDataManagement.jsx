@@ -44,12 +44,9 @@ const MasterDataManagement = () => {
   const [targetType, setTargetType] = useState('');
   const [selectedId, setSelectedId] = useState(null);
 
-
-
-
-    const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({
     name: '', slug: '', code: '', description: '', order: 0,
-    careerId: '', levelOrder: 1, minYear: 0, maxYear: '', aliases: ''
+    careerGroupId: '', careerId: '', levelOrder: 1, minYear: 0, maxYear: '', aliases: ''
   });
 
   const loadGlobalData = useCallback(async () => {
@@ -140,22 +137,21 @@ const MasterDataManagement = () => {
   const filteredCareers = useMemo(() => careers.filter(filterItem), [careers, filterItem]);
   const filteredPositions = useMemo(() => positions.filter(filterItem), [positions, filterItem]);
   const filteredSkills = useMemo(() => skills.filter(filterItem), [skills, filterItem]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const filteredJobLevels = useMemo(() => jobLevels.filter(filterItem), [jobLevels, filterItem]);
+  const filteredJobLevels = useMemo(() => {
+    let filtered = jobLevels;
+    if (selectedCareerGroupId) {
+      const selectedGroup = careerGroups.find(g => g._id === selectedCareerGroupId);
+      if (selectedGroup && selectedGroup.slug !== 'cong-nghe-thong-tin') {
+        const itLevels = [
+          'Thực tập sinh (IT)', 'Fresher', 'Junior', 'Senior',
+          'Technical Leader', 'IT Manager / Project Manager',
+          'Giám đốc công nghệ (CTO) / Director'
+        ];
+        filtered = filtered.filter(lvl => !itLevels.includes(lvl.name));
+      }
+    }
+    return filtered.filter(filterItem);
+  }, [jobLevels, filterItem, selectedCareerGroupId, careerGroups]);
   const filteredExperienceLevels = useMemo(() => experienceLevels.filter(filterItem), [experienceLevels, filterItem]);
   const filteredIndustries = useMemo(() => companyIndustries.filter(filterItem), [companyIndustries, filterItem]);
   const filteredSizes = useMemo(() => companySizes.filter(filterItem), [companySizes, filterItem]);
@@ -178,13 +174,9 @@ const MasterDataManagement = () => {
 
   const openCreateModal = (type) => {
     setEditMode(false); setTargetType(type); setSelectedId(null);
-
-
-
-
-        setFormData({
+    setFormData({
       name: '', slug: '', code: '', description: '', order: 0,
-      careerId: selectedCareerId || '',
+      careerGroupId: selectedCareerGroupId || '', careerId: selectedCareerId || '',
       levelOrder: 1, minYear: 0, maxYear: '', aliases: ''
     });
     setIsModalOpen(true);
@@ -204,20 +196,11 @@ const MasterDataManagement = () => {
     e.preventDefault();
     try {
       let res;
-
-
-
-
-
-            const dataPayload = { ...formData };
+      const dataPayload = { ...formData };
       if (targetType === 'SKILL') {
-        dataPayload.careerGroupIds = [];
+        dataPayload.careerGroupIds = [formData.careerGroupId];
         dataPayload.aliases = formData.aliases ? formData.aliases.split(',').map(s => s.trim()) : [];
       }
-      if (targetType === 'LEVEL') {
-        delete dataPayload.careerGroupId;
-      }
-
 
       // UPDATE
       if (editMode) {
@@ -566,18 +549,7 @@ const MasterDataManagement = () => {
               </div>
             )}
 
-
-
-
-
-
-
-
-
-
-
-
-                        {['CAREER', 'POSITION', 'SKILL'].includes(targetType) && !editMode && (
+            {['CAREER', 'POSITION', 'LEVEL', 'SKILL'].includes(targetType) && !editMode && (
               <div className="mb-4">
                 <SelectField
                   label="Thuộc Nhóm ngành nghề cha (C1) *"
@@ -622,46 +594,12 @@ const MasterDataManagement = () => {
               </>
             )}
 
-
-
-
-
-
-
-                        {targetType === 'LEVEL' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <InputField
-                    type="number"
-                    label="Số thứ tự hiển thị *"
-                    required
-                    value={formData.levelOrder || 1}
-                    onChange={(val) => setFormData({ ...formData, levelOrder: Number(val) })}
-                  />
-                  <InputField
-                    label="Tên cấp bậc *"
-                    required
-                    value={formData.name || ''}
-                    onChange={(val) => setFormData({ ...formData, name: val })}
-                    placeholder="Ví dụ: Senior"
-                  />
-                </div>
-                <InputField
-                  label="Mã code *"
-                  required
-                  value={formData.code || ''}
-                  onChange={(val) => setFormData({ ...formData, code: val })}
-                  placeholder="Ví dụ: SENIOR"
-                />
+            {targetType === 'EXP' && (
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <InputField type="number" label="Số năm tối thiểu *" required value={formData.minYear || 0} onChange={val => setFormData({ ...formData, minYear: Number(val) })} />
+                <InputField type="number" label="Số năm tối đa (Để trống nếu Vô hạn)" value={formData.maxYear || ''} onChange={val => setFormData({ ...formData, maxYear: val ? Number(val) : null })} />
               </div>
             )}
-
-            {targetType === 'EXP' && (
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                  <InputField type="number" label="Số năm tối thiểu *" required value={formData.minYear || 0} onChange={val => setFormData({ ...formData, minYear: Number(val) })} />
-                  <InputField type="number" label="Số năm tối đa (Để trống nếu Vô hạn)" value={formData.maxYear || ''} onChange={val => setFormData({ ...formData, maxYear: val ? Number(val) : null })} />
-                </div>
-              )}
           </div>
         </ModalShell>
       )}
