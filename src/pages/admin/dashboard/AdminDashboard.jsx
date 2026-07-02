@@ -15,16 +15,13 @@ import {
   Users,
   AlertCircle,
   Activity,
-  Loader2
+  Loader2,
+  Wallet
 } from 'lucide-react';
 
-// Hardcoded quick links
-const quickLinks = [
-  { to: '/admin/jobs', icon: FileText, title: 'Kiểm duyệt tin', description: '45 tin đang chờ xử lý', bg: 'bg-amber-50/50', iconColor: 'text-amber-600', iconBg: 'bg-amber-100' },
-  { to: '/admin/companies', icon: Building2, title: 'Xác minh công ty', description: '12 hồ sơ cần đối chiếu', bg: 'bg-blue-50/50', iconColor: 'text-blue-600', iconBg: 'bg-blue-100' },
-  { to: '/admin/users', icon: Users, title: 'Quản lý tài khoản', description: 'Lọc theo vai trò và rủi ro', bg: 'bg-indigo-50/50', iconColor: 'text-indigo-600', iconBg: 'bg-indigo-100' },
-  { to: '/admin/analytics/charts', icon: BarChart2, title: 'Xem phân tích', description: 'Jobs · Applications · Hiring', bg: 'bg-emerald-50/50', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-100' },
-];
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+};
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -32,16 +29,18 @@ const AdminDashboard = () => {
   const [jobApproval, setJobApproval] = useState([]);
   const [stats, setStats] = useState([]);
   const [queueItems, setQueueItems] = useState([]);
+  const [revenueStats, setRevenueStats] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [userData, jobData, pendingCompaniesRes, pendingJobsRes] = await Promise.all([
+        const [userData, jobData, pendingCompaniesRes, pendingJobsRes, revenueRes] = await Promise.all([
           adminService.getUserGrowth({ range: 'year' }),
           adminService.getJobAnalytics(),
           adminCompanyVerificationService.getPendingCompanies(),
-          jobAdminService.getAllJobsPending({ page: 1, limit: 5 })
+          jobAdminService.getAllJobsPending({ page: 1, limit: 5 }),
+          adminService.getRevenueReport({ range: 'year' })
         ]);
 
         const growthArray = userData?.growthData?.map(g => g.total) || [0,0,0,0,0,0,0,0,0,0,0,0];
@@ -62,7 +61,10 @@ const AdminDashboard = () => {
           { label: 'Người dùng', value: userData?.summary?.totalUsers?.toLocaleString() || '0', note: 'Tổng số tài khoản hệ thống', icon: Users, badgeBg: 'bg-blue-50 border-blue-100', iconColor: 'text-blue-500' },
           { label: 'Job chờ duyệt', value: pendingJobsCount.toString(), note: 'Cần kiểm duyệt ngay', icon: FileText, badgeBg: 'bg-amber-50 border-amber-100', iconColor: 'text-amber-500' },
           { label: 'Công ty mới', value: pendingCompaniesCount.toString(), note: 'Cần xác minh pháp lý', icon: Building2, badgeBg: 'bg-indigo-50 border-indigo-100', iconColor: 'text-indigo-500' },
+          { label: 'Tổng doanh thu', value: formatPrice(revenueRes?.summary?.totalRevenue || 0), note: 'Doanh thu năm nay', icon: Wallet, badgeBg: 'bg-emerald-50 border-emerald-100', iconColor: 'text-emerald-500' },
         ]);
+
+        setRevenueStats(revenueRes?.monthlyData || []);
 
         const pendingJobs = pendingJobsRes?.data?.jobs || [];
         const pendingCompanies = pendingCompaniesRes?.data || [];
@@ -143,13 +145,13 @@ const AdminDashboard = () => {
       </section>
 
       {/* Stats Grid matching Employer Vibe */}
-      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((item) => (
           <MetricCard key={item.label} {...item} />
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.45fr_.9fr]">
+      <section className="grid gap-6 xl:grid-cols-2">
         <Panel
           title="Tăng trưởng người dùng"
           description="Biểu đồ người dùng đăng ký mới 12 tháng qua."
@@ -159,21 +161,26 @@ const AdminDashboard = () => {
         </Panel>
 
         <Panel
+          title="Biến động Doanh thu"
+          description="Tiền nạp và thanh toán trong 12 tháng qua."
+          action={
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-emerald-500"></div><span className="text-[10px] font-bold text-slate-500 uppercase">Nạp</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-indigo-500"></div><span className="text-[10px] font-bold text-slate-500 uppercase">Thanh toán</span></div>
+            </div>
+          }
+        >
+          <RevenueBarChart data={revenueStats} />
+        </Panel>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[.9fr_1.3fr]">
+        <Panel
           title="Tỷ lệ duyệt tin"
           description="Trạng thái kiểm duyệt Job."
           action={<Link to="/admin/jobs" className="text-xs font-bold text-primary bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors">Chi tiết</Link>}
         >
           <DonutChart data={jobApproval} />
-        </Panel>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[.9fr_1.3fr]">
-        <Panel title="Lối tắt xử lý" description="Khu vực quản trị trọng yếu.">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            {quickLinks.map((item) => (
-              <QuickLink key={item.to} {...item} />
-            ))}
-          </div>
         </Panel>
 
         <Panel
@@ -358,18 +365,41 @@ const DonutChart = ({ data }) => {
   );
 };
 
-const QuickLink = ({ to, icon: Icon, title, description, bg, iconColor, iconBg }) => (
-  <Link to={to} className={`group flex items-start gap-4 rounded-3xl border border-transparent ${bg} p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm hover:border-slate-200/50`}>
-    <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${iconBg} ${iconColor} transition-transform group-hover:scale-110 shadow-sm`}>
-      <Icon className="h-5 w-5" />
+const RevenueBarChart = ({ data }) => {
+  if (!data || data.length === 0) return <div className="p-8 text-center text-slate-500 font-medium">Không có dữ liệu thống kê</div>;
+  const maxRevenue = Math.max(...data.map(m => Math.max(m.deposits || 0, m.payments || 0)), 1);
+
+  return (
+    <div className="h-72 flex items-end justify-between gap-2 px-2 pt-8 overflow-x-auto">
+      {data.map((m) => {
+        const monthLabel = new Date(m.month + '-01').toLocaleDateString('vi-VN', { month: 'short' });
+        return (
+          <div key={m.month} className="flex-1 flex flex-col items-center gap-2 min-w-[40px]">
+            <div className="w-full flex items-end gap-1 justify-center h-48">
+              <div
+                className="w-full max-w-[16px] bg-emerald-500 rounded-t-sm transition-all hover:bg-emerald-600 relative group"
+                style={{ height: `${(m.deposits / maxRevenue) * 100}%` }}
+              >
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 pointer-events-none transition-opacity">
+                  {new Intl.NumberFormat('vi-VN').format(m.deposits)}đ
+                </div>
+              </div>
+              <div
+                className="w-full max-w-[16px] bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600 relative group"
+                style={{ height: `${(m.payments / maxRevenue) * 100}%` }}
+              >
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 pointer-events-none transition-opacity">
+                  {new Intl.NumberFormat('vi-VN').format(m.payments)}đ
+                </div>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{monthLabel}</span>
+          </div>
+        );
+      })}
     </div>
-    <div className="min-w-0 flex-1 pt-0.5">
-      <p className="font-bold text-slate-900 text-sm">{title}</p>
-      <p className="mt-0.5 text-[11px] font-medium text-slate-500 truncate">{description}</p>
-    </div>
-    <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-slate-900" />
-  </Link>
-);
+  );
+};
 
 const QueueRow = ({ item }) => (
   <div className="grid gap-3 px-6 py-4 transition hover:bg-slate-50/80 lg:grid-cols-[1.2fr_.8fr_.7fr_.7fr] lg:items-center group cursor-pointer">
