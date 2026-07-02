@@ -70,9 +70,9 @@ const BuyPackages = () => {
     try {
       let res;
       if (buyModal.packageType === 'PREMIUM_JOB') {
-        res = await api.post('/employer/boost/purchase', { 
+        res = await api.post(`/employer/jobs/${selectedJobId}/boost/payment`, { 
           packageId: buyModal._id,
-          jobId: selectedJobId,
+          action: 'new',
           paymentMethod 
         });
       } else {
@@ -174,7 +174,7 @@ const BuyPackages = () => {
       {/* Modal mua gói mở khóa CV bằng ví */}
       {buyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className={`bg-white rounded-2xl shadow-2xl w-full transition-all duration-300 ${qrData ? 'max-w-xl' : 'max-w-md'}`}>
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">
                 {buyResult ? 'Mua gói thành công' : 'Xác nhận mua gói'}
@@ -215,7 +215,7 @@ const BuyPackages = () => {
                   <p className="text-sm text-slate-500">Bạn đang mua</p>
                   <h3 className="text-lg font-bold text-slate-900">{buyModal.name}</h3>
 
-                  {buyModal.packageType === 'PREMIUM_JOB' && (
+                  {buyModal.packageType === 'PREMIUM_JOB' && !qrData && (
                     <div className="mt-4">
                       <label className="block text-sm font-semibold text-slate-700 mb-2">Chọn tin đăng áp dụng</label>
                       <select
@@ -230,13 +230,15 @@ const BuyPackages = () => {
                     </div>
                   )}
 
-                  <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
-                    {buyModal.benefits?.cvAccessLimit > 0 && (
-                      <div className="flex justify-between"><span className="text-slate-500">Số lượt mở khóa:</span><span className="font-bold text-slate-900">{buyModal.benefits.cvAccessLimit} CV</span></div>
-                    )}
-                    <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
-                  </div>
+                  {!qrData && (
+                    <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
+                      <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
+                      {buyModal.benefits?.cvAccessLimit > 0 && (
+                        <div className="flex justify-between"><span className="text-slate-500">Số lượt mở khóa:</span><span className="font-bold text-slate-900">{buyModal.benefits.cvAccessLimit} CV</span></div>
+                      )}
+                      <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
+                    </div>
+                  )}
 
                   {!qrData ? (
                     <>
@@ -285,36 +287,42 @@ const BuyPackages = () => {
                       )}
                     </>
                   ) : (
-                    <div className="mt-5 text-center">
-                      <div className="p-4 bg-white rounded-xl border border-slate-200 inline-block">
-                        <img src={qrData.qrUrl} alt="QR Code" className="w-48 h-48 mx-auto" />
+                    <div className="mt-5">
+                      <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                        <div className="flex-shrink-0 text-center sm:w-48">
+                          <div className="p-3 bg-white rounded-xl border border-slate-200 inline-block shadow-sm">
+                            <img src={qrData.qrUrl} alt="QR Code" className="w-40 h-40 mx-auto" />
+                          </div>
+                          <p className="mt-3 text-xs text-slate-500 font-medium">Sử dụng App ngân hàng quét mã</p>
+                        </div>
+                        
+                        <div className="flex-1 p-5 bg-slate-50 rounded-xl border border-slate-100 text-left text-sm space-y-3 w-full">
+                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                            <span className="text-slate-500 text-xs">Ngân hàng:</span>
+                            <span className="font-semibold text-slate-900">{qrData.bankName}</span>
+                          </div>
+                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                            <span className="text-slate-500 text-xs">Số tài khoản:</span>
+                            <span className="font-semibold text-slate-900">{qrData.bankAccount}</span>
+                          </div>
+                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                            <span className="text-slate-500 text-xs">Chủ tài khoản:</span>
+                            <span className="font-semibold text-slate-900 text-right uppercase">{qrData.bankOwner}</span>
+                          </div>
+                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                            <span className="text-slate-500 text-xs">Số tiền:</span>
+                            <span className="font-bold text-emerald-600 text-base">{formatPrice(qrData.amount)}</span>
+                          </div>
+                          <div className="flex flex-col pt-1">
+                            <span className="text-slate-500 text-xs mb-1.5">Nội dung chuyển khoản:</span>
+                            <span className="font-bold text-indigo-700 bg-indigo-50/70 border border-indigo-100 px-3 py-2 rounded-lg text-center break-all select-all text-base tracking-wider">{qrData.transferContent}</span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="mt-4 text-sm text-slate-600">Sử dụng App ngân hàng quét mã QR để thanh toán</p>
-                      <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 text-left text-sm space-y-1.5">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Ngân hàng:</span>
-                          <span className="font-semibold text-slate-900">{qrData.bankName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Số tài khoản:</span>
-                          <span className="font-semibold text-slate-900">{qrData.bankAccount}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Chủ tài khoản:</span>
-                          <span className="font-semibold text-slate-900">{qrData.bankOwner}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Số tiền:</span>
-                          <span className="font-bold text-emerald-600">{formatPrice(qrData.amount)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Nội dung chuyển khoản:</span>
-                          <span className="font-bold text-indigo-600">{qrData.transferContent}</span>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
+                      
+                      <div className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200/60 shadow-sm">
                         <span className="material-symbols-outlined text-lg animate-spin">sync</span>
-                        Đang chờ thanh toán...
+                        Hệ thống đang chờ thanh toán...
                       </div>
                     </div>
                   )}
