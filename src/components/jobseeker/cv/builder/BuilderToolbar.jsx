@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import cvService from '../../../../services/cvService';
-import { FileBox, ArrowLeft, Palette, LayoutDashboard, BookOpen, X, Pipette, ChevronDown, FileText, Check } from 'lucide-react';
+import { FileBox, ArrowLeft, Palette, LayoutDashboard, BookOpen, X, Pipette, ChevronDown, FileText } from 'lucide-react';
 
 const colors = [
   '#003f87', // VietWorks Blue (Primary)
@@ -52,7 +52,6 @@ export const BuilderToolbar = ({
   sections = [],
   setSections,
   saveCvConfig,
-  currentTemplateId,
   onTemplateChange
 }) => {
   const [activeTab, setActiveTab] = useState('design'); // 'design', 'sections', 'templates'
@@ -398,11 +397,7 @@ export const BuilderToolbar = ({
                   <div 
                     key={tpl._id} 
                     onClick={() => onTemplateChange(tpl)}
-                    className={`group bg-white border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative ${
-                      currentTemplateId === tpl._id 
-                        ? 'border-blue-600 ring-2 ring-blue-500/20' 
-                        : 'border-slate-200/80 hover:border-slate-400'
-                    }`}
+                    className="group bg-white border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative border-slate-200/80 hover:border-slate-400"
                   >
                     <div className="relative aspect-[210/297] bg-white flex items-start justify-center overflow-hidden">
                       {tpl.previewImageUrl ? (
@@ -413,12 +408,6 @@ export const BuilderToolbar = ({
                         />
                       ) : (
                         <FileText className="text-slate-300 w-5 h-5"  />
-                      )}
-                      
-                      {currentTemplateId === tpl._id && (
-                        <div className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md">
-                          <Check className="w-5 h-5 font-black"  />
-                        </div>
                       )}
                     </div>
                     <div className="p-2 border-t border-slate-100 flex items-center justify-between">

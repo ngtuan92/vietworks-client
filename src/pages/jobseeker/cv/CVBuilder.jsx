@@ -13,7 +13,7 @@ import { BuilderRightSidebar } from '../../../components/jobseeker/cv/builder/Bu
 import { renderSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
 import uploadService from '../../../services/uploadService';
-import { ArrowLeft, User, UploadCloud } from 'lucide-react';
+import { ArrowLeft, User, UploadCloud, X } from 'lucide-react';
 import { CVTemplateRenderer } from '../../../components/cv/CVTemplateRenderer';
 
 const base64ToFile = (base64String, filename = 'avatar.jpg') => {
@@ -117,6 +117,7 @@ const CVBuilder = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -217,20 +218,20 @@ const CVBuilder = () => {
     setOnCropComplete(() => callback);
   };
 
-  const handleTemplateChange = async (newTemplate) => {
+  const applyTemplateChange = async (newTemplate, keepCurrentContent = true) => {
     try {
       setSaving(true);
       const templateState = buildCvStateFromTemplate(newTemplate);
-      const mergedSections = templateState.sections.length > 0
+      const nextSections = keepCurrentContent && templateState.sections.length > 0
         ? mergeSectionsWithTemplate(templateState.sections, sections)
-        : sections;
+        : templateState.sections;
       const templateSnapshot = buildTemplateSnapshot(newTemplate);
       const payload = {
         templateId: newTemplate._id,
         templateSnapshot,
-        ...(templateState.sections.length > 0 ? { sections: mergedSections } : {}),
+        ...(templateState.sections.length > 0 ? { sections: nextSections } : {}),
         style: {
-          ...style,
+          ...(keepCurrentContent ? style : {}),
           ...templateState.style
         }
       };
@@ -242,16 +243,26 @@ const CVBuilder = () => {
           templateSnapshot
         }));
         if (templateState.sections.length > 0) {
-          setSections(mergedSections.sort((a, b) => a.order - b.order));
+          setSections(nextSections.sort((a, b) => a.order - b.order));
         }
-        setStyle(prev => ({ ...prev, ...templateState.style }));
+        setStyle(prev => ({
+          ...(keepCurrentContent ? prev : {}),
+          ...templateState.style
+        }));
       }
     } catch (err) {
       console.error(err);
       showError('Kh么ng th峄?膽峄昳 m岷玼 thi岷縯 k岷?CV');
     } finally {
       setSaving(false);
+      setPendingTemplate(null);
     }
+  };
+
+  const handleTemplateChange = (newTemplate) => {
+    const currentTemplateId = cvData?.templateId?._id || cvData?.templateId;
+    if (!newTemplate || newTemplate._id === currentTemplateId) return;
+    setPendingTemplate(newTemplate);
   };
 
   const handleSectionContentUpdate = (sectionCode, newContent) => {
@@ -840,9 +851,55 @@ const CVBuilder = () => {
         onSaveOfficial={handleSaveOfficial}
         isSaving={saving}
         navigateBack={handleExitBuilder}
-        currentTemplateId={cvData?.templateId?._id}
         onTemplateChange={handleTemplateChange}
       />
+
+      {pendingTemplate && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Đổi sang mẫu CV mới?</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Bạn đang đổi sang mẫu "{pendingTemplate.name}". Chọn cách xử lý nội dung hiện tại.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPendingTemplate(null)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Đóng"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3 p-5">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => applyTemplateChange(pendingTemplate, true)}
+                className="w-full rounded-xl border border-primary/30 bg-primary text-left text-white px-4 py-3 shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <div className="font-bold">Giữ thông tin đã điền</div>
+                <div className="mt-1 text-xs text-white/85">
+                  Chỉ đổi layout/style theo mẫu mới, nội dung CV hiện tại được chuyển sang các section tương ứng.
+                </div>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => applyTemplateChange(pendingTemplate, false)}
+                className="w-full rounded-xl border border-slate-200 bg-white text-left text-slate-800 px-4 py-3 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <div className="font-bold">Dùng dữ liệu mẫu mới</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Reset nội dung, section và style theo mẫu mới. Thông tin đang điền trong CV này sẽ bị thay thế.
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {croppingImage && (
         <AvatarCropModal

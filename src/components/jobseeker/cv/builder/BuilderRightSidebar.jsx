@@ -6,7 +6,7 @@ const colors = ['#0056b3', '#1e3a8a', '#1e293b', '#15803d', '#b45309', '#991b1b'
 const fonts = ['Inter', 'Roboto', 'Outfit', 'Montserrat', 'Poppins', 'Open Sans', 'Lora', 'Lato', 'Playfair Display', 'Fira Code'];
 
 export const BuilderRightSidebar = ({ 
-  style, onStyleChange, onExport, onSaveOfficial, isSaving, navigateBack, currentTemplateId, onTemplateChange
+  style, onStyleChange, onExport, onSaveOfficial, isSaving, navigateBack, onTemplateChange
 }) => {
   const [activeTab, setActiveTab] = useState('design');
   const [templates, setTemplates] = useState([]);
@@ -114,10 +114,9 @@ export const BuilderRightSidebar = ({
             {loadingTemplates ? (
               <div className="col-span-2 py-10 text-center text-slate-400 text-sm">Đang tải danh sách mẫu...</div>
             ) : templates.map((tpl) => (
-              <div key={tpl._id} onClick={() => onTemplateChange(tpl)} className={`group bg-white border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative ${currentTemplateId === tpl._id ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200 hover:border-slate-400'}`}>
+              <div key={tpl._id} onClick={() => onTemplateChange(tpl)} className="group bg-white border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col relative border-slate-200 hover:border-slate-400">
                 <div className="relative aspect-[210/297] bg-white flex items-start justify-center overflow-hidden">
                   {tpl.previewImageUrl ? <img src={tpl.previewImageUrl} alt={tpl.name} className="w-full h-full object-contain object-top" /> : <FileText className="w-8 h-8 text-slate-300" />}
-                  {currentTemplateId === tpl._id && <div className="absolute top-2 right-2 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md"><Check className="w-3 h-3 font-black" /></div>}
                 </div>
                 <div className="p-2 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 truncate">{tpl.name}</span>

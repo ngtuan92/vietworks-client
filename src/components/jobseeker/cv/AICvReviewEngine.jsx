@@ -184,10 +184,10 @@ const AICvReviewEngine = ({ onClose }) => {
   const analysisData = activeResult?.rawResult || {};
 
   return (
-    <div className="bg-white text-slate-800 rounded-3xl shadow-xl border border-slate-200 w-full h-[88vh] md:h-[800px] flex flex-col overflow-hidden animate-fade-in animate-duration-200 mx-auto">
+    <div className="bg-white text-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full h-[84vh] max-h-[760px] flex flex-col overflow-hidden animate-fade-in animate-duration-200 mx-auto">
       
       {/* Engine Header */}
-      <div className="bg-[#003f87] text-white px-8 py-5 flex items-center justify-between shrink-0">
+      <div className="bg-[#003f87] text-white px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-[28px] text-amber-400">psychology</span>
           <div>
@@ -242,7 +242,7 @@ const AICvReviewEngine = ({ onClose }) => {
                 <div className="w-full h-full flex flex-col bg-slate-50 overflow-hidden">
                   
                   {/* Back button and Target details header */}
-                  <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+                  <div className="bg-white border-b border-slate-200 px-5 py-3.5 flex items-center justify-between shrink-0">
                     <button 
                       onClick={() => setActiveResult(null)}
                       className="flex items-center gap-1.5 text-xs font-bold text-[#003f87] hover:underline cursor-pointer"
@@ -258,7 +258,7 @@ const AICvReviewEngine = ({ onClose }) => {
                   </div>
 
                   {/* Results Subtabs */}
-                  <div className="bg-white border-b border-slate-200 px-6 flex gap-6 shrink-0">
+                  <div className="bg-white border-b border-slate-200 px-5 flex gap-5 shrink-0">
                     {[
                       { id: 'overview', label: 'Kết quả chung', icon: 'dashboard' },
                       { id: 'skills', label: 'Kỹ năng & Thành tích', icon: 'military_tech' },
@@ -267,7 +267,7 @@ const AICvReviewEngine = ({ onClose }) => {
                       <button
                         key={tab.id}
                         onClick={() => setResultTab(tab.id)}
-                        className={`flex items-center gap-2 py-3.5 border-b-2 font-bold text-sm transition-all cursor-pointer ${
+                        className={`flex items-center gap-2 py-3 border-b-2 font-bold text-sm transition-all cursor-pointer ${
                           resultTab === tab.id 
                             ? 'border-[#003f87] text-[#003f87]' 
                             : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -280,33 +280,33 @@ const AICvReviewEngine = ({ onClose }) => {
                   </div>
 
                   {/* Scrollable Result Content */}
-                  <div className="flex-grow overflow-y-auto p-6 space-y-6">
+                  <div className="flex-grow overflow-y-auto p-6 space-y-5">
                     
                     {/* Tab 1: Overview */}
                     {resultTab === 'overview' && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         
                         {/* Score Circle Card */}
-                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Điểm Tương Thích</h4>
                           
-                          <div className="relative w-36 h-36 flex items-center justify-center">
-                            <svg className="w-full h-full transform -rotate-90">
+                          <div className="relative w-[8.5rem] h-[8.5rem] flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
                               <circle 
-                                cx="72" cy="72" r="62" 
+                                cx="64" cy="64" r="55" 
                                 stroke="#f1f5f9" strokeWidth="8" fill="transparent" 
                               />
                               <circle 
-                                cx="72" cy="72" r="62" 
+                                cx="64" cy="64" r="55" 
                                 stroke={scoreDetails.stroke} strokeWidth="10" fill="transparent" 
-                                strokeDasharray={2 * Math.PI * 62}
-                                strokeDashoffset={2 * Math.PI * 62 * (1 - activeResult.score / 100)}
+                                strokeDasharray={2 * Math.PI * 55}
+                                strokeDashoffset={2 * Math.PI * 55 * (1 - activeResult.score / 100)}
                                 strokeLinecap="round"
                                 className="transition-all duration-1000"
                               />
                             </svg>
                             <div className="absolute flex flex-col items-center">
-                              <span className={`text-4xl font-extrabold font-sans leading-none ${scoreDetails.text}`}>
+                              <span className={`text-3xl font-extrabold font-sans leading-none ${scoreDetails.text}`}>
                                 {activeResult.score}
                               </span>
                               <span className="text-[10px] text-slate-400 font-bold uppercase mt-1">trên 100</span>
@@ -319,7 +319,7 @@ const AICvReviewEngine = ({ onClose }) => {
                         </div>
 
                         {/* Level & Details Card */}
-                        <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div className="md:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                           <div>
                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3.5">Thông tin chi tiết ứng viên</h4>
                             
@@ -360,7 +360,7 @@ const AICvReviewEngine = ({ onClose }) => {
                         </div>
 
                         {/* Red Flags Card */}
-                        <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="md:col-span-3 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-rose-500 text-[18px]">warning</span>
                             Điểm đáng chú ý / Cảnh báo
@@ -567,10 +567,10 @@ const AICvReviewEngine = ({ onClose }) => {
                 <div className="w-full h-full flex flex-col md:flex-row">
                   
                   {/* Left Column: Form input */}
-                  <div className="flex-1 border-r border-slate-200 p-8 overflow-y-auto flex flex-col justify-between">
+                  <div className="flex-1 border-r border-slate-200 p-6 overflow-y-auto flex flex-col justify-between">
                     <div>
                       {/* Tabs inside body */}
-                      <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+                      <div className="flex bg-slate-100 p-1 rounded-xl mb-5">
                         <button
                           onClick={() => setActiveTab('new')}
                           className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
@@ -779,7 +779,7 @@ const AICvReviewEngine = ({ onClose }) => {
                   </div>
 
                   {/* Right Column: Tips & Core concepts */}
-                  <div className="w-full md:w-80 bg-slate-50 p-8 overflow-y-auto space-y-6 select-none shrink-0">
+                  <div className="w-full md:w-72 bg-slate-50 p-6 overflow-y-auto space-y-5 select-none shrink-0">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#003f87]">Trợ giúp & Hướng dẫn</h4>
                     
                     <div className="space-y-4">

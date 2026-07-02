@@ -83,7 +83,7 @@ const CvPreview = () => {
     'Fira Code': 'monospace'
   };
 
-  const selectedLayout = cvData.templateId?.templateCode || 'left-col';
+  const selectedLayout = cvData.templateSnapshot?.templateCode || cvData.templateCode || cvData.templateId?.templateCode || 'left-col';
   const profileSection = sections.find(s => s.sectionCode === 'PROFILE');
   const leftSections = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
   const rightSections = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
