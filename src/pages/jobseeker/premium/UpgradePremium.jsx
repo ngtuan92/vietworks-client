@@ -267,12 +267,6 @@ const UpgradePremium = () => {
               </div>
             )}
 
-            {message && (
-              <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                {message}
-              </div>
-            )}
-
             {!qrData ? (
               <div className="mt-5 space-y-5">
                 <div className="flex items-start justify-between gap-4">
@@ -512,7 +506,7 @@ const UpgradePremium = () => {
 };
 
 const PlanCard = ({ title, price, duration, description, features, popular, buttonText, disabled, isOwned, activeCount, onClick }) => (
-  <div className={`relative rounded-3xl border bg-white p-6 shadow-xl shadow-slate-200/70 transition hover:-translate-y-1 hover:shadow-2xl ${popular ? 'border-primary ring-4 ring-primary/10' : isOwned ? 'border-emerald-300 ring-2 ring-emerald-200/60' : 'border-slate-200'}`}>
+  <div className={`relative flex flex-col rounded-3xl border bg-white p-6 shadow-xl shadow-slate-200/70 transition hover:-translate-y-1 hover:shadow-2xl ${popular ? 'border-primary ring-4 ring-primary/10' : isOwned ? 'border-emerald-300 ring-2 ring-emerald-200/60' : 'border-slate-200'}`}>
     {popular && (
       <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#003f87] px-4 py-1.5 text-xs font-black text-white shadow-lg">
         Phổ biến nhất
@@ -533,7 +527,7 @@ const PlanCard = ({ title, price, duration, description, features, popular, butt
       </div>
     </div>
 
-    <div className="space-y-3 border-t border-slate-100 pt-5">
+    <div className="flex-1 space-y-3 border-t border-slate-100 pt-5">
       {features.map((feature) => (
         <div key={feature.text} className="flex gap-2 text-sm font-semibold text-slate-600">
           <Check ok={feature.ok} />
