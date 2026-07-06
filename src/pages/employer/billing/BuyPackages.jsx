@@ -4,10 +4,24 @@ import api from '../../../services/api';
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + ' đ';
 
+// Tính báo giá nâng cấp theo LƯỢT (khớp công thức backend, chỉ để hiển thị).
+const quoteUpgrade = (bag, pkg) => {
+  if (!bag || !pkg) return null;
+  const total = Math.max(1, bag.totalCredits || 1);
+  const remainingValue = Math.round((bag.pricePaid || 0) * (bag.remainingCredits / total));
+  return {
+    remainingValue,
+    upgradePrice: Math.max(0, pkg.price - remainingValue),
+    downgrade: pkg.price < remainingValue
+  };
+};
+
 const BuyPackages = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [activeBags, setActiveBags] = useState([]);   // túi lượt đang hiệu lực
+  const [selectedBagId, setSelectedBagId] = useState('');
   const [buyModal, setBuyModal] = useState(null);   // gói đang mua
   const [buying, setBuying] = useState(false);
   const [buyResult, setBuyResult] = useState(null); // dữ liệu sau khi mua thành công
@@ -15,6 +29,7 @@ const BuyPackages = () => {
   useEffect(() => {
     fetchPackages();
     fetchWallet();
+    fetchBags();
   }, []);
 
   const fetchPackages = async () => {
@@ -35,18 +50,36 @@ const BuyPackages = () => {
     } catch { /* ignore */ }
   };
 
-  const openBuy = (pkg) => { setBuyModal(pkg); setBuyResult(null); };
-  const closeBuy = () => { setBuyModal(null); setBuyResult(null); };
+  const fetchBags = async () => {
+    try {
+      const res = await api.get('/employer/cv-unlock/credits');
+      if (res.data.success) setActiveBags(res.data.data || []);
+    } catch { /* ignore */ }
+  };
 
-  const confirmBuy = async () => {
+  const openBuy = (pkg) => {
+    setBuyModal(pkg);
+    setBuyResult(null);
+    // Mặc định chọn túi sắp hết hạn nhất (BE trả sort theo expiredAt tăng dần)
+    setSelectedBagId(activeBags[0]?._id || '');
+  };
+  const closeBuy = () => { setBuyModal(null); setBuyResult(null); setSelectedBagId(''); };
+
+  const confirmBuy = async (mode = 'new') => {
     if (!buyModal) return;
     setBuying(true);
     try {
-      const res = await api.post('/employer/cv-unlock/purchase', { packageId: buyModal._id });
+      const body = { packageId: buyModal._id };
+      if (mode === 'upgrade') {
+        body.action = 'upgrade';
+        if (selectedBagId) body.fromCreditId = selectedBagId;
+      }
+      const res = await api.post('/employer/cv-unlock/purchase', body);
       if (res.data.success) {
         setBuyResult(res.data.data);
         setWalletBalance(res.data.data.newBalance);
         window.dispatchEvent(new Event('vietworks:wallet-updated'));
+        fetchBags();
       }
     } catch (e) {
       const err = e.response?.data;
@@ -146,36 +179,83 @@ const BuyPackages = () => {
                   </div>
                 </div>
               ) : (
-                <>
-                  <p className="text-sm text-slate-500">Bạn đang mua</p>
-                  <h3 className="text-lg font-bold text-slate-900">{buyModal.name}</h3>
-                  <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
-                    {buyModal.benefits?.cvAccessLimit > 0 && (
-                      <div className="flex justify-between"><span className="text-slate-500">Số lượt mở khóa:</span><span className="font-bold text-slate-900">{buyModal.benefits.cvAccessLimit} CV</span></div>
-                    )}
-                    <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
-                  </div>
-
-                  {walletBalance >= buyModal.price ? (
-                    <button
-                      onClick={confirmBuy}
-                      disabled={buying}
-                      className="mt-5 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50"
-                    >
-                      {buying ? 'Đang xử lý...' : `Thanh toán ${formatPrice(buyModal.price)} qua ví`}
-                    </button>
-                  ) : (
-                    <div className="mt-5">
-                      <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 mb-3">
-                        Số dư ví không đủ (thiếu {formatPrice(buyModal.price - walletBalance)}).
+                (() => {
+                  const selectedBag = activeBags.find((b) => b._id === selectedBagId) || activeBags[0] || null;
+                  const q = quoteUpgrade(selectedBag, buyModal);
+                  const canUpgrade = q && !q.downgrade && walletBalance >= q.upgradePrice;
+                  return (
+                    <>
+                      <p className="text-sm text-slate-500">Bạn đang mua</p>
+                      <h3 className="text-lg font-bold text-slate-900">{buyModal.name}</h3>
+                      <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
+                        {buyModal.benefits?.cvAccessLimit > 0 && (
+                          <div className="flex justify-between"><span className="text-slate-500">Số lượt mở khóa:</span><span className="font-bold text-slate-900">{buyModal.benefits.cvAccessLimit} CV</span></div>
+                        )}
+                        <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
                       </div>
-                      <Link to="/employer/wallet/topup" className="block w-full py-3 rounded-xl bg-[#003f87] text-white font-bold text-center hover:bg-[#0b4e9f]">
-                        Nạp thêm tiền
-                      </Link>
-                    </div>
-                  )}
-                </>
+
+                      {/* ─── Lựa chọn nâng cấp theo lượt (nếu đang có túi hiệu lực) ─── */}
+                      {activeBags.length > 0 && (
+                        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                          <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">Nâng cấp túi hiện tại</p>
+                          {activeBags.length > 1 && (
+                            <select
+                              value={selectedBagId}
+                              onChange={(e) => setSelectedBagId(e.target.value)}
+                              className="mt-2 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm"
+                            >
+                              {activeBags.map((b) => (
+                                <option key={b._id} value={b._id}>
+                                  {b.packageName} — còn {b.remainingCredits}/{b.totalCredits} lượt
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {selectedBag && q && (
+                            <div className="mt-2 space-y-1 text-sm">
+                              <div className="flex justify-between"><span className="text-slate-600">Túi cũ còn</span><span className="font-bold text-slate-900">{selectedBag.remainingCredits}/{selectedBag.totalCredits} lượt</span></div>
+                              <div className="flex justify-between"><span className="text-slate-600">− Giá trị còn lại</span><span className="font-bold text-emerald-700">−{formatPrice(q.remainingValue)}</span></div>
+                              <div className="my-1 border-t border-emerald-200"></div>
+                              <div className="flex justify-between text-base"><span className="font-bold text-slate-900">Phải bù</span><span className="font-black text-emerald-700">{formatPrice(q.upgradePrice)}</span></div>
+                              {q.downgrade && <p className="text-xs text-rose-600 mt-1">Gói mới rẻ hơn giá trị còn lại — không thể nâng cấp.</p>}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => confirmBuy('upgrade')}
+                            disabled={buying || !canUpgrade}
+                            className="mt-3 w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {buying ? 'Đang xử lý...' : q && !q.downgrade ? `Nâng cấp — bù ${formatPrice(q.upgradePrice)}` : 'Không thể nâng cấp'}
+                          </button>
+                          {q && !q.downgrade && walletBalance < q.upgradePrice && (
+                            <p className="text-xs text-amber-700 mt-1">Số dư không đủ để bù (thiếu {formatPrice(q.upgradePrice - walletBalance)}).</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ─── Mua túi mới (full price) ─── */}
+                      {walletBalance >= buyModal.price ? (
+                        <button
+                          onClick={() => confirmBuy('new')}
+                          disabled={buying}
+                          className="mt-3 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50"
+                        >
+                          {buying ? 'Đang xử lý...' : `${activeBags.length > 0 ? 'Mua túi mới ' : 'Thanh toán '}${formatPrice(buyModal.price)} qua ví`}
+                        </button>
+                      ) : (
+                        <div className="mt-3">
+                          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 mb-3">
+                            Số dư ví không đủ để mua mới (thiếu {formatPrice(buyModal.price - walletBalance)}).
+                          </div>
+                          <Link to="/employer/wallet/topup" className="block w-full py-3 rounded-xl bg-[#003f87] text-white font-bold text-center hover:bg-[#0b4e9f]">
+                            Nạp thêm tiền
+                          </Link>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()
               )}
             </div>
           </div>
