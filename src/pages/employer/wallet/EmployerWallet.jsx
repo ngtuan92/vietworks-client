@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../../services/api';
 import useSepayPolling from '../../../hooks/useSepayPolling';
-import RequestInvoiceModal from '../../../components/employer/billing/RequestInvoiceModal';
 
 // Tooltip mô tả chi tiết cho từng transaction (hiện khi hover badge status).
 // - SUCCESS  → đã cộng / đã thanh toán
@@ -33,13 +32,13 @@ const typeConfig = {
   PACKAGE_PURCHASE:     { label: 'Mua gói',         bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: 'payments' },
   CV_UNLOCK_SINGLE:     { label: 'Mở khóa CV',      bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
   CV_UNLOCK_BY_PACKAGE: { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100', text: 'text-violet-700',  icon: 'lock_open' },
-  REFUND:               { label: 'Hoàn tiền',       bg: 'bg-amber-100',   text: 'text-amber-700',   icon: 'replay' },
+  REFUND:               { label: 'Hoàn tiền',       bg: 'bg-violet-100',   text: 'text-amber-700',   icon: 'replay' },
   ADMIN_ADJUSTMENT:     { label: 'Điều chỉnh',      bg: 'bg-slate-100',   text: 'text-slate-700',   icon: 'tune' },
 };
 
 const statusConfig = {
   SUCCESS: { label: 'Thành công', bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  PENDING: { label: 'Đang chờ', bg: 'bg-amber-100', text: 'text-amber-700' },
+  PENDING: { label: 'Đang chờ', bg: 'bg-violet-100', text: 'text-amber-700' },
   FAILED: { label: 'Thất bại', bg: 'bg-[#ffdad6]', text: 'text-[#ba1a1a]' },
 };
 
@@ -52,7 +51,6 @@ const EmployerWallet = () => {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -269,15 +267,15 @@ const EmployerWallet = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setShowInvoiceModal(true)}
+                onClick={() => navigate('/employer/my-subscriptions')}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#f5f3f3] hover:bg-[#0056b3]/10 transition-all text-left"
               >
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-amber-600">receipt_long</span>
+                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-violet-600">workspace_premium</span>
                 </div>
                 <div>
-                  <p className="font-bold text-[#1b1c1c]">Yêu cầu xuất hóa đơn</p>
-                  <p className="text-xs text-[#5e5e62]">VAT, hóa đơn điện tử</p>
+                  <p className="font-bold text-[#1b1c1c]">Gói của tôi</p>
+                  <p className="text-xs text-[#5e5e62]">Xem các gói đang sử dụng</p>
                 </div>
               </button>
             </div>
@@ -290,8 +288,9 @@ const EmployerWallet = () => {
         <div className="p-6 border-b border-[#c2c6d4] flex items-center justify-between">
           <h3 className="font-bold text-[#1b1c1c]">Lịch sử giao dịch</h3>
         </div>
-        <table className="w-full">
-          <thead>
+        <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+          <table className="w-full relative">
+            <thead className="sticky top-0 z-10">
             <tr className="bg-[#f5f3f3] border-b border-[#c2c6d4]">
               <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Loại</th>
               <th className="text-left py-3 px-4 text-xs font-bold text-[#5e5e62] uppercase">Số tiền</th>
@@ -333,7 +332,8 @@ const EmployerWallet = () => {
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       {/* Deposit Drawer - SePay Checkout */}
@@ -434,6 +434,10 @@ const EmployerWallet = () => {
                       <span className="font-bold text-[#1b1c1c]">{depositData.bankAccount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
+                      <span className="text-[#5e5e62]">Chủ tài khoản:</span>
+                      <span className="font-bold text-[#1b1c1c] uppercase">{depositData.bankOwner}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-[#5e5e62]">Nội dung CK:</span>
                       <span className="font-black text-[#0056b3]">{depositData.transferContent}</span>
                     </div>
@@ -458,15 +462,9 @@ const EmployerWallet = () => {
           </div>
         </>
       )}
-
-      {/* Request Invoice Modal */}
-      <RequestInvoiceModal
-        isOpen={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        transactions={transactions}
-      />
     </div>
   );
 };
 
 export default EmployerWallet;
+

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
@@ -181,7 +181,7 @@ const UpgradePremium = () => {
     enabled: !!qrData?.orderCode,
     onPaid: (orderCode) => {
       setTimeout(() => {
-        navigate(`/jobseeker/payment-success?orderCode=${orderCode}`);
+        navigate(`/payment-success?orderCode=${orderCode}`);
       }, 1500);
     },
   });
@@ -397,6 +397,7 @@ const UpgradePremium = () => {
                   <InfoRow label="Số tiền" value={formatPrice(qrData.amount)} highlight />
                   <InfoRow label="Ngân hàng" value={qrData.bankName} />
                   <InfoRow label="Số tài khoản" value={qrData.bankAccount} />
+                  <InfoRow label="Chủ tài khoản" value={qrData.bankOwner} />
                   <InfoRow label="Nội dung chuyển khoản" value={qrData.transferContent} primary />
                 </div>
 
@@ -405,12 +406,6 @@ const UpgradePremium = () => {
                     <span className="material-symbols-outlined text-[42px] text-emerald-600">check_circle</span>
                     <p className="mt-1 font-black text-emerald-700">Thanh toán thành công!</p>
                     <p className="text-sm text-emerald-600">Đang chuyển sang trang xác nhận...</p>
-                    <button
-                      onClick={() => navigate(`/jobseeker/payment-success?orderCode=${qrData.orderCode}`)}
-                      className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 font-bold text-white transition hover:bg-emerald-700"
-                    >
-                      Xem chi tiết
-                    </button>
                   </div>
                 ) : (
                   <>
