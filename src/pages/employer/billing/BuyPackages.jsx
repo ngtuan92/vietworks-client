@@ -5,10 +5,24 @@ import useSepayPolling from '../../../hooks/useSepayPolling';
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + ' đ';
 
+// Tính báo giá nâng cấp theo LƯỢT (khớp công thức backend, chỉ để hiển thị).
+const quoteUpgrade = (bag, pkg) => {
+  if (!bag || !pkg) return null;
+  const total = Math.max(1, bag.totalCredits || 1);
+  const remainingValue = Math.round((bag.pricePaid || 0) * (bag.remainingCredits / total));
+  return {
+    remainingValue,
+    upgradePrice: Math.max(0, pkg.price - remainingValue),
+    downgrade: pkg.price < remainingValue
+  };
+};
+
 const BuyPackages = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [activeBags, setActiveBags] = useState([]);   // túi lượt đang hiệu lực
+  const [selectedBagId, setSelectedBagId] = useState('');
   const [buyModal, setBuyModal] = useState(null);   // gói đang mua
   const [buying, setBuying] = useState(false);
   const [buyResult, setBuyResult] = useState(null); // dữ liệu sau khi mua thành công
@@ -21,6 +35,7 @@ const BuyPackages = () => {
   useEffect(() => {
     fetchPackages();
     fetchWallet();
+    fetchBags();
     fetchJobs();
   }, []);
 
@@ -42,6 +57,13 @@ const BuyPackages = () => {
     } catch { /* ignore */ }
   };
 
+  const fetchBags = async () => {
+    try {
+      const res = await api.get('/employer/cv-unlock/credits');
+      if (res.data.success) setActiveBags(res.data.data || []);
+    } catch { /* ignore */ }
+  };
+
   const fetchJobs = async () => {
     try {
       const res = await api.get('/employer/jobs', { params: { status: 'PUBLISHED' } });
@@ -51,16 +73,18 @@ const BuyPackages = () => {
     } catch { /* ignore */ }
   };
 
-  const openBuy = (pkg) => { 
-    setBuyModal(pkg); 
-    setBuyResult(null); 
-    setQrData(null); 
-    setPaymentMethod('SEPAY'); 
+  const openBuy = (pkg) => {
+    setBuyModal(pkg);
+    setBuyResult(null);
+    setQrData(null);
+    setPaymentMethod('SEPAY');
     setSelectedJobId(jobs[0]?._id || '');
+    // Mặc định chọn túi sắp hết hạn nhất (BE trả sort theo expiredAt tăng dần)
+    setSelectedBagId(activeBags[0]?._id || '');
   };
-  const closeBuy = () => { setBuyModal(null); setBuyResult(null); setQrData(null); };
+  const closeBuy = () => { setBuyModal(null); setBuyResult(null); setQrData(null); setSelectedBagId(''); };
 
-  const confirmBuy = async () => {
+  const confirmBuy = async (mode = 'new') => {
     if (!buyModal) return;
     if (buyModal.packageType === 'PREMIUM_JOB' && !selectedJobId) {
       return alert('Vui lòng chọn tin đăng để áp dụng gói');
@@ -70,26 +94,33 @@ const BuyPackages = () => {
     try {
       let res;
       if (buyModal.packageType === 'PREMIUM_JOB') {
-        res = await api.post(`/employer/jobs/${selectedJobId}/boost/payment`, { 
+        res = await api.post(`/employer/jobs/${selectedJobId}/boost/payment`, {
           packageId: buyModal._id,
           action: 'new',
-          paymentMethod 
+          paymentMethod
         });
+      } else if (mode === 'upgrade') {
+        // Nâng cấp túi lượt theo usage-based — chỉ qua ví (instant)
+        const body = { packageId: buyModal._id, action: 'upgrade' };
+        if (selectedBagId) body.fromCreditId = selectedBagId;
+        res = await api.post('/employer/cv-unlock/purchase', body);
       } else {
-        res = await api.post('/employer/cv-unlock/purchase', { 
+        res = await api.post('/employer/cv-unlock/purchase', {
           packageId: buyModal._id,
-          paymentMethod 
+          paymentMethod
         });
       }
-      
+
       if (res.data.success) {
-        if (paymentMethod === 'WALLET') {
+        // Upgrade luôn instant qua ví; mua mới thì tuỳ paymentMethod
+        if (mode === 'upgrade' || paymentMethod === 'WALLET') {
           setBuyResult({
             ...res.data.data,
             isPremiumJob: buyModal.packageType === 'PREMIUM_JOB'
           });
           setWalletBalance(res.data.data.newBalance);
           window.dispatchEvent(new Event('vietworks:wallet-updated'));
+          fetchBags();
         } else {
           setQrData(res.data.data);
         }
@@ -211,122 +242,167 @@ const BuyPackages = () => {
                   </div>
                 </div>
               ) : (
-                <>
-                  <p className="text-sm text-slate-500">Bạn đang mua</p>
-                  <h3 className="text-lg font-bold text-slate-900">{buyModal.name}</h3>
-
-                  {buyModal.packageType === 'PREMIUM_JOB' && !qrData && (
-                    <div className="mt-4">
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Chọn tin đăng áp dụng</label>
-                      <select
-                        value={selectedJobId}
-                        onChange={(e) => setSelectedJobId(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      >
-                        {jobs.map(job => (
-                          <option key={job._id} value={job._id}>{job.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {!qrData && (
-                    <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
-                      {buyModal.benefits?.cvAccessLimit > 0 && (
-                        <div className="flex justify-between"><span className="text-slate-500">Số lượt mở khóa:</span><span className="font-bold text-slate-900">{buyModal.benefits.cvAccessLimit} CV</span></div>
-                      )}
-                      <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
-                    </div>
-                  )}
-
-                  {!qrData ? (
+                (() => {
+                  const isJob = buyModal.packageType === 'PREMIUM_JOB';
+                  const selectedBag = activeBags.find((b) => b._id === selectedBagId) || activeBags[0] || null;
+                  const q = !isJob ? quoteUpgrade(selectedBag, buyModal) : null;
+                  const canUpgrade = q && !q.downgrade && walletBalance >= q.upgradePrice;
+                  return (
                     <>
-                      <div className="mt-5 grid grid-cols-2 gap-3">
-                        <button
-                          onClick={() => setPaymentMethod('SEPAY')}
-                          className={`p-3 rounded-xl border-2 text-left transition-all ${
-                            paymentMethod === 'SEPAY'
-                              ? 'border-[#003f87] bg-blue-50/50'
-                              : 'border-slate-100 hover:border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="font-bold text-slate-900 mb-1">Mã QR</div>
-                          <div className="text-xs text-slate-500">Quét mã thanh toán</div>
-                        </button>
-                        <button
-                          onClick={() => setPaymentMethod('WALLET')}
-                          className={`p-3 rounded-xl border-2 text-left transition-all ${
-                            paymentMethod === 'WALLET'
-                              ? 'border-[#003f87] bg-blue-50/50'
-                              : 'border-slate-100 hover:border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="font-bold text-slate-900 mb-1">Ví nội bộ</div>
-                          <div className="text-xs text-slate-500">Trừ trực tiếp</div>
-                        </button>
-                      </div>
+                      <p className="text-sm text-slate-500">Bạn đang mua</p>
+                      <h3 className="text-lg font-bold text-slate-900">{buyModal.name}</h3>
 
-                      {paymentMethod === 'WALLET' && walletBalance < buyModal.price ? (
-                        <div className="mt-5">
-                          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 mb-3">
-                            Số dư ví không đủ (thiếu {formatPrice(buyModal.price - walletBalance)}).
-                          </div>
-                          <Link to="/employer/wallet/topup" className="block w-full py-3 rounded-xl bg-[#003f87] text-white font-bold text-center hover:bg-[#0b4e9f]">
-                            Nạp thêm tiền
-                          </Link>
+                      {/* Chọn tin đăng áp dụng (chỉ gói tin nổi bật) */}
+                      {isJob && !qrData && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">Chọn tin đăng áp dụng</label>
+                          <select
+                            value={selectedJobId}
+                            onChange={(e) => setSelectedJobId(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          >
+                            {jobs.map((job) => (
+                              <option key={job._id} value={job._id}>{job.title}</option>
+                            ))}
+                          </select>
                         </div>
+                      )}
+
+                      {!qrData && (
+                        <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-sm">
+                          <div className="flex justify-between"><span className="text-slate-500">Giá:</span><span className="font-black text-[#003f87]">{formatPrice(buyModal.price)}</span></div>
+                          {buyModal.benefits?.cvAccessLimit > 0 && (
+                            <div className="flex justify-between"><span className="text-slate-500">Số lượt mở khóa:</span><span className="font-bold text-slate-900">{buyModal.benefits.cvAccessLimit} CV</span></div>
+                          )}
+                          <div className="flex justify-between"><span className="text-slate-500">Số dư ví:</span><span className="font-bold text-slate-900">{formatPrice(walletBalance)}</span></div>
+                        </div>
+                      )}
+
+                      {/* ─── Nâng cấp túi lượt theo usage-based (chỉ gói mở khóa, đang có túi hiệu lực) ─── */}
+                      {!qrData && !isJob && activeBags.length > 0 && (
+                        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                          <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">Nâng cấp túi hiện tại</p>
+                          {activeBags.length > 1 && (
+                            <select
+                              value={selectedBagId}
+                              onChange={(e) => setSelectedBagId(e.target.value)}
+                              className="mt-2 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm"
+                            >
+                              {activeBags.map((b) => (
+                                <option key={b._id} value={b._id}>
+                                  {b.packageName} — còn {b.remainingCredits}/{b.totalCredits} lượt
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {selectedBag && q && (
+                            <div className="mt-2 space-y-1 text-sm">
+                              <div className="flex justify-between"><span className="text-slate-600">Túi cũ còn</span><span className="font-bold text-slate-900">{selectedBag.remainingCredits}/{selectedBag.totalCredits} lượt</span></div>
+                              <div className="flex justify-between"><span className="text-slate-600">− Giá trị còn lại</span><span className="font-bold text-emerald-700">−{formatPrice(q.remainingValue)}</span></div>
+                              <div className="my-1 border-t border-emerald-200"></div>
+                              <div className="flex justify-between text-base"><span className="font-bold text-slate-900">Phải bù</span><span className="font-black text-emerald-700">{formatPrice(q.upgradePrice)}</span></div>
+                              {q.downgrade && <p className="text-xs text-rose-600 mt-1">Gói mới rẻ hơn giá trị còn lại — không thể nâng cấp.</p>}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => confirmBuy('upgrade')}
+                            disabled={buying || !canUpgrade}
+                            className="mt-3 w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {buying ? 'Đang xử lý...' : q && !q.downgrade ? `Nâng cấp — bù ${formatPrice(q.upgradePrice)}` : 'Không thể nâng cấp'}
+                          </button>
+                          {q && !q.downgrade && walletBalance < q.upgradePrice && (
+                            <p className="text-xs text-amber-700 mt-1">Số dư không đủ để bù (thiếu {formatPrice(q.upgradePrice - walletBalance)}).</p>
+                          )}
+                        </div>
+                      )}
+
+                      {!qrData ? (
+                        <>
+                          {/* Chọn phương thức thanh toán cho MUA MỚI */}
+                          <div className="mt-5 grid grid-cols-2 gap-3">
+                            <button
+                              onClick={() => setPaymentMethod('SEPAY')}
+                              className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                paymentMethod === 'SEPAY' ? 'border-[#003f87] bg-blue-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'
+                              }`}
+                            >
+                              <div className="font-bold text-slate-900 mb-1">Mã QR</div>
+                              <div className="text-xs text-slate-500">Quét mã thanh toán</div>
+                            </button>
+                            <button
+                              onClick={() => setPaymentMethod('WALLET')}
+                              className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                paymentMethod === 'WALLET' ? 'border-[#003f87] bg-blue-50/50' : 'border-slate-100 hover:border-slate-200 bg-white'
+                              }`}
+                            >
+                              <div className="font-bold text-slate-900 mb-1">Ví nội bộ</div>
+                              <div className="text-xs text-slate-500">Trừ trực tiếp</div>
+                            </button>
+                          </div>
+
+                          {paymentMethod === 'WALLET' && walletBalance < buyModal.price ? (
+                            <div className="mt-5">
+                              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 mb-3">
+                                Số dư ví không đủ (thiếu {formatPrice(buyModal.price - walletBalance)}).
+                              </div>
+                              <Link to="/employer/wallet/topup" className="block w-full py-3 rounded-xl bg-[#003f87] text-white font-bold text-center hover:bg-[#0b4e9f]">
+                                Nạp thêm tiền
+                              </Link>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => confirmBuy('new')}
+                              disabled={buying}
+                              className="mt-5 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50"
+                            >
+                              {buying ? 'Đang xử lý...' : `${!isJob && activeBags.length > 0 ? 'Mua túi mới ' : 'Thanh toán '}${formatPrice(buyModal.price)}`}
+                            </button>
+                          )}
+                        </>
                       ) : (
-                        <button
-                          onClick={confirmBuy}
-                          disabled={buying}
-                          className="mt-5 w-full py-3 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] transition-all disabled:opacity-50"
-                        >
-                          {buying ? 'Đang xử lý...' : `Thanh toán ${formatPrice(buyModal.price)}`}
-                        </button>
+                        <div className="mt-5">
+                          <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                            <div className="flex-shrink-0 text-center sm:w-48">
+                              <div className="p-3 bg-white rounded-xl border border-slate-200 inline-block shadow-sm">
+                                <img src={qrData.qrUrl} alt="QR Code" className="w-40 h-40 mx-auto" />
+                              </div>
+                              <p className="mt-3 text-xs text-slate-500 font-medium">Sử dụng App ngân hàng quét mã</p>
+                            </div>
+
+                            <div className="flex-1 p-5 bg-slate-50 rounded-xl border border-slate-100 text-left text-sm space-y-3 w-full">
+                              <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                                <span className="text-slate-500 text-xs">Ngân hàng:</span>
+                                <span className="font-semibold text-slate-900">{qrData.bankName}</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                                <span className="text-slate-500 text-xs">Số tài khoản:</span>
+                                <span className="font-semibold text-slate-900">{qrData.bankAccount}</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                                <span className="text-slate-500 text-xs">Chủ tài khoản:</span>
+                                <span className="font-semibold text-slate-900 text-right uppercase">{qrData.bankOwner}</span>
+                              </div>
+                              <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
+                                <span className="text-slate-500 text-xs">Số tiền:</span>
+                                <span className="font-bold text-emerald-600 text-base">{formatPrice(qrData.amount)}</span>
+                              </div>
+                              <div className="flex flex-col pt-1">
+                                <span className="text-slate-500 text-xs mb-1.5">Nội dung chuyển khoản:</span>
+                                <span className="font-bold text-indigo-700 bg-indigo-50/70 border border-indigo-100 px-3 py-2 rounded-lg text-center break-all select-all text-base tracking-wider">{qrData.transferContent}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200/60 shadow-sm">
+                            <span className="material-symbols-outlined text-lg animate-spin">sync</span>
+                            Hệ thống đang chờ thanh toán...
+                          </div>
+                        </div>
                       )}
                     </>
-                  ) : (
-                    <div className="mt-5">
-                      <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-                        <div className="flex-shrink-0 text-center sm:w-48">
-                          <div className="p-3 bg-white rounded-xl border border-slate-200 inline-block shadow-sm">
-                            <img src={qrData.qrUrl} alt="QR Code" className="w-40 h-40 mx-auto" />
-                          </div>
-                          <p className="mt-3 text-xs text-slate-500 font-medium">Sử dụng App ngân hàng quét mã</p>
-                        </div>
-                        
-                        <div className="flex-1 p-5 bg-slate-50 rounded-xl border border-slate-100 text-left text-sm space-y-3 w-full">
-                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
-                            <span className="text-slate-500 text-xs">Ngân hàng:</span>
-                            <span className="font-semibold text-slate-900">{qrData.bankName}</span>
-                          </div>
-                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
-                            <span className="text-slate-500 text-xs">Số tài khoản:</span>
-                            <span className="font-semibold text-slate-900">{qrData.bankAccount}</span>
-                          </div>
-                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
-                            <span className="text-slate-500 text-xs">Chủ tài khoản:</span>
-                            <span className="font-semibold text-slate-900 text-right uppercase">{qrData.bankOwner}</span>
-                          </div>
-                          <div className="flex justify-between items-center border-b border-slate-200/50 pb-2">
-                            <span className="text-slate-500 text-xs">Số tiền:</span>
-                            <span className="font-bold text-emerald-600 text-base">{formatPrice(qrData.amount)}</span>
-                          </div>
-                          <div className="flex flex-col pt-1">
-                            <span className="text-slate-500 text-xs mb-1.5">Nội dung chuyển khoản:</span>
-                            <span className="font-bold text-indigo-700 bg-indigo-50/70 border border-indigo-100 px-3 py-2 rounded-lg text-center break-all select-all text-base tracking-wider">{qrData.transferContent}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200/60 shadow-sm">
-                        <span className="material-symbols-outlined text-lg animate-spin">sync</span>
-                        Hệ thống đang chờ thanh toán...
-                      </div>
-                    </div>
-                  )}
-                </>
+                  );
+                })()
               )}
             </div>
           </div>
