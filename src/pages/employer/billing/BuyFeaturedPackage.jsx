@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { createBoostJobPayment } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
+import Toast from '../../../components/shared/Toast';
 
 // Lấy danh sách gói tin nổi bật (PREMIUM_JOB) từ API — admin quản lý,
 // employer mua sẽ thấy đúng cùng danh sách. Mặc định hạn 1 tháng.
@@ -22,6 +23,7 @@ const BuyFeaturedPackage = () => {
   const [buying, setBuying] = useState(false);
   const [qrData, setQrData] = useState(null);
   const [walletResult, setWalletResult] = useState(null); // Kết quả thanh toán qua ví
+  const [toastMsg, setToastMsg] = useState('');
   const [upgradeInfo, setUpgradeInfo] = useState(null);
 
   useEffect(() => {
@@ -122,11 +124,11 @@ const BuyFeaturedPackage = () => {
           packageId: pkgIdParam
         });
       } else if (errData?.code === 'INSUFFICIENT_BALANCE') {
-        alert(errData.message || 'Số dư ví không đủ.');
+        setToastMsg(errData.message || 'Số dư ví không đủ.');
         // Auto-fallback về SEPAY để user không bị kẹt
         setPaymentMethod('SEPAY');
       } else {
-        alert(errData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+        setToastMsg(errData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
     } finally {
       setBuying(false);
@@ -166,6 +168,7 @@ const BuyFeaturedPackage = () => {
   if (packages.length === 0) {
     return (
       <div className="space-y-4">
+        <Toast message={toastMsg} onClose={() => setToastMsg('')} />
         <h1 className="text-2xl font-bold text-slate-900">Mua gói tin nổi bật</h1>
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
           <span className="material-symbols-outlined text-[48px] text-slate-300">inventory_2</span>
@@ -183,6 +186,7 @@ const BuyFeaturedPackage = () => {
 
   return (
     <div className="space-y-6">
+      <Toast message={toastMsg} onClose={() => setToastMsg('')} />
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Mua gói tin nổi bật</h1>
         <p className="text-slate-600 mt-1">Gắn gói premium cho một Job cụ thể. Tất cả gói đều có hạn 1 tháng.</p>

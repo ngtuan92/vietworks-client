@@ -30,11 +30,12 @@ const Hero = () => {
 
   return (
     <div className="bg-[#f8fafc] pb-16">
-      <section className="hero-gradient pt-16 pb-64 relative overflow-hidden">
+      <section className="hero-gradient pt-16 pb-64 relative">
         {/* Subtle background decoration */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 blur-3xl rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-1/3 h-full bg-white/5 blur-3xl rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
-        
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-white/5 blur-3xl rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-1/3 h-full bg-white/5 blur-3xl rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
+        </div>
         <div className="max-w-container-max mx-auto px-gutter relative z-10">
           <div className="text-center mb-10">
             <h1 className="text-white text-display-lg font-display-lg font-black tracking-tight mb-stack-md drop-shadow-lg leading-tight">
@@ -98,7 +99,7 @@ const Hero = () => {
           </div>
 
           {/* Center: Hero Image */}
-          <div className="lg:col-span-6 relative rounded-2xl overflow-hidden shadow-[0px_12px_32px_rgba(0,0,0,0.15)] h-[500px] group border border-slate-100/50 bg-white">
+          <div className="lg:col-span-6 relative rounded-2xl overflow-hidden shadow-[0px_12px_32px_rgba(0,0,0,0.15)] h-[560px] group border border-slate-100/50 bg-white">
             <img
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               src={heroImage}
@@ -118,16 +119,16 @@ const Hero = () => {
           </div>
 
           {/* Right: Premium CV Widget */}
-          <div className="lg:col-span-3 rounded-2xl shadow-[0px_12px_32px_rgba(0,0,0,0.15)] bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-slate-700/50 p-7 flex flex-col justify-between h-[500px] relative overflow-hidden">
+          <div className="lg:col-span-3 rounded-2xl shadow-[0px_12px_32px_rgba(0,0,0,0.15)] bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-slate-700/50 p-7 flex flex-col justify-center gap-6 h-[560px] relative overflow-hidden">
             {/* Decorative blob */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/30 rounded-full blur-3xl"></div>
             
-            <div className="relative z-10">
-              <div className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 text-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-inner mx-auto">
                 <Sparkles className="w-7 h-7" />
               </div>
-              <h3 className="text-white font-bold text-xl mb-3">Nâng tầm sự nghiệp</h3>
-              <p className="text-slate-300 text-sm mb-8 leading-relaxed">
+              <h3 className="text-white font-bold text-xl mb-2">Nâng tầm sự nghiệp</h3>
+              <p className="text-slate-300 text-sm leading-relaxed">
                 Tạo lợi thế cạnh tranh tuyệt đối bằng cách tải CV lên và sử dụng trí tuệ nhân tạo để phân tích độ phù hợp với JD.
               </p>
             </div>

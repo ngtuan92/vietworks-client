@@ -10,9 +10,10 @@ import companyLocationService from '../../../services/companyLocationService.js'
 import employerCompanyService from '../../../services/employerCompanyService.js';
 import uploadService from '../../../services/uploadService.js';
 import companyMasterDataService from '../../../services/companyMasterDataService.js';
-import { getProvinces, getDistrictsByProvinceCode, getWardsByDistrictCode } from 'sub-vn';
+import { getProvinces, getWardsByProvinceCode } from 'sub-vn';
 import { useNotification } from '../../../contexts/NotificationContext';
 import useAuth from '../../../hooks/useAuth';
+import { COMPANY_SIZES } from '../../../constants/masterDataConstants';
 
 const TABS = [
   { key: 'general', label: 'Thông tin chung' },
@@ -37,8 +38,8 @@ const [legalPreview, setLegalPreview] = useState('');
   taxCode: '',
   companyName: '',
   website: '',
-  industryId: '',
-  sizeId: '',
+  industryIds: [],
+  size: '',
   email: '',
   phone: '',
   logo: null,
@@ -113,8 +114,8 @@ console.log('businessLicenseFile:', company.businessLicenseFile);
       taxCode: company.taxCode || '',
       companyName: company.name || '',
       website: company.website || '',
-      industryId: company.industry?._id || '',
-      sizeId: company.size?._id || '',
+      industryIds: company.industries?.map(i => i._id || i) || [],
+      size: company.size || '',
       email: company.email || '',
       phone: company.phone || '',
       logo: null,
@@ -238,8 +239,8 @@ const handleLegalFileChange = (event) => {
       name: general.companyName,
       taxCode: general.taxCode,
       website: general.website || null,
-      industryId: general.industryId,
-      sizeId: general.sizeId,
+      industryIds: general.industryIds,
+      size: general.size,
       email: general.email,
       phone: general.phone,
       avatarUrl,
@@ -427,27 +428,24 @@ useEffect(() => {
             <Field label="Mã số thuế" id="taxCode" value={general.taxCode} onChange={handleGeneralChange} required placeholder="VD: 0312345678" />
             <Field label="Tên công ty" id="companyName" value={general.companyName} onChange={handleGeneralChange} required placeholder="VD: Công ty TNHH ABC" />
             <Field label="Website" id="website" value={general.website} onChange={handleGeneralChange} placeholder="https://company.com" type="url" />
-           <Select
+            <MultiSelect
   label="Lĩnh vực hoạt động"
-  id="industryId"
-  value={general.industryId}
-  onChange={handleGeneralChange}
+  id="industryIds"
+  value={general.industryIds}
+  onChange={(val) => setGeneral({ ...general, industryIds: val })}
   required
   options={industries.map((item) => ({
     value: item._id,
     label: item.name
   }))}
 />
-            <Select
+            <DatalistSelect
   label="Quy mô công ty"
-  id="sizeId"
-  value={general.sizeId}
-  onChange={handleGeneralChange}
+  id="size"
+  value={general.size || ''}
+  onChange={(e) => setGeneral({ ...general, size: e.target.value })}
   required
-  options={sizes.map((item) => ({
-    value: item._id,
-    label: item.name
-  }))}
+  options={COMPANY_SIZES}
 />
             <Field label="Email công ty" id="email" value={general.email} onChange={handleGeneralChange} required placeholder="hr@company.com" type="email" />
             <Field label="Số điện thoại công ty" id="phone" value={general.phone} onChange={handleGeneralChange} required placeholder="090xxxxxxx" type="tel" />
@@ -502,7 +500,6 @@ useEffect(() => {
     const fullAddress = [
       loc.addressLine,
       loc.ward,
-      loc.district,
       loc.province
     ]
       .filter(Boolean)
@@ -739,6 +736,74 @@ const Select = ({ label, id, value, onChange, options, required = false }) => (
   </div>
 );
 
+const DatalistSelect = ({ label, id, value, onChange, options, required = false, placeholder = '' }) => (
+  <div>
+    <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor={id}>
+      {label} {required ? <span className="text-red-600">*</span> : null}
+    </label>
+    <input
+      type="text"
+      id={id}
+      list={`${id}-list`}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder || 'Chọn hoặc nhập...'}
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
+      required={required}
+    />
+    <datalist id={`${id}-list`}>
+      {options.map((opt) => (
+        <option key={opt.value || opt} value={opt.value || opt} />
+      ))}
+    </datalist>
+  </div>
+);
+
+const MultiSelect = ({ label, value = [], onChange, options, required = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const toggleSelection = (optValue) => {
+    if (value.includes(optValue)) {
+      onChange(value.filter((v) => v !== optValue));
+    } else {
+      onChange([...value, optValue]);
+    }
+  };
+  return (
+    <div className="relative">
+      <label className="block text-sm font-semibold text-slate-700 mb-2">
+        {label} {required ? <span className="text-red-600">*</span> : null}
+      </label>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full rounded-xl border border-slate-200 px-4 py-3 bg-white flex justify-between items-center cursor-pointer min-h-[50px]"
+      >
+        <span className="text-slate-700">
+          {value.length > 0 ? `Đã chọn ${value.length}` : 'Chọn...'}
+        </span>
+        <span className="text-slate-500">▼</span>
+      </div>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg p-2">
+            {options.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={value.includes(opt.value)} 
+                  onChange={() => toggleSelection(opt.value)} 
+                  className="w-4 h-4 text-primary"
+                />
+                <span className="text-sm text-slate-700">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const FileField = ({ label, id, onChange, accept, hint }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -878,7 +943,6 @@ const normalizeVietMapPlace = (item, detail) => {
   return {
     addressLine: detail?.address || detail?.display || item?.address || item?.display || '',
     province: getBoundaryName(boundaries, 0) || detail?.city || item?.city || '',
-    district: getBoundaryName(boundaries, 1) || detail?.district || item?.district || '',
     ward: getBoundaryName(boundaries, 2) || detail?.ward || item?.ward || '',
     latitude: detail?.lat ?? item?.lat ?? null,
     longitude: detail?.lng ?? item?.lng ?? null,
@@ -891,17 +955,14 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
   
   // 1. Khởi tạo danh sách địa lý từ sub-vn
   const [provinces] = useState(() => getProvinces() || []);
-  const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
 
-  // 2. Cấu trúc State Form đầy đủ 3 cấp
+  // 2. Cấu trúc State Form đầy đủ
   const [data, setData] = useState({
     name: initial?.name || '',
     addressLine: initial?.addressLine || '',
     province: initial?.province || '',
     provinceCode: '', 
-    district: initial?.district || '',
-    districtCode: '',
     ward: initial?.ward || '',
     latitude: initial?.latitude || null,
     longitude: initial?.longitude || null,
@@ -915,21 +976,11 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
       const foundProv = provinces.find(p => String(p.name).trim() === String(initial.province).trim());
       if (foundProv) {
         const provCode = String(foundProv.code);
-        const listDistricts = getDistrictsByProvinceCode(provCode) || [];
-        setDistricts(listDistricts);
-
-        // Tìm Huyện cũ
-        const foundDist = listDistricts.find(d => String(d.name).trim() === String(initial.district).trim());
-        let distCode = '';
-        if (foundDist) {
-          distCode = String(foundDist.code);
-          setWards(getWardsByDistrictCode(distCode) || []);
-        }
+        setWards(getWardsByProvinceCode(provCode) || []);
 
         setData(prev => ({
           ...prev,
-          provinceCode: provCode,
-          districtCode: distCode
+          provinceCode: provCode
         }));
       }
     }
@@ -940,35 +991,15 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
     const code = e.target.value;
     const matched = provinces.find((p) => String(p.code) === String(code));
 
-    // Lấy ngay danh sách Huyện, đồng thời reset danh sách Xã
-    const nextDistricts = code ? getDistrictsByProvinceCode(code) : [];
-    setDistricts(nextDistricts);  
-    setWards([]);
+    // Lấy ngay danh sách Phường/Xã của Tỉnh
+    const nextWards = code ? getWardsByProvinceCode(code) : [];
+    setWards(nextWards);
 
     setData((prev) => ({
       ...prev,
       provinceCode: code ? String(code) : '',
       province: matched ? matched.name : '',
-      district: '',
-      districtCode: '',
       ward: '', 
-    }));
-  };
-
-  // 5. Xử lý khi thay đổi Quận/Huyện
-  const handleDistrictChange = (e) => {
-    const code = e.target.value;
-    const matched = districts.find((d) => String(d.code) === String(code));
-
-    // Lấy ngay danh sách Phường/Xã dựa theo mã Huyện vừa chọn
-    const nextWards = code ? getWardsByDistrictCode(code) : [];
-    setWards(nextWards);
-
-    setData((prev) => ({
-      ...prev,
-      districtCode: code ? String(code) : '',
-      district: matched ? matched.name : '',
-      ward: '', // Reset xã khi đổi huyện
     }));
   };
 
@@ -983,7 +1014,7 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
 
   // 7. Xử lý lưu Form lên Database
   const handleSubmit = async () => {
-    if (!data.name || !data.province || !data.district || !data.ward || !data.addressLine) {
+    if (!data.name || !data.province || !data.ward || !data.addressLine) {
       warning('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
       return;
     }
@@ -992,7 +1023,6 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
       name: data.name,
       addressLine: data.addressLine,
       province: data.province,
-      district: data.district, 
       ward: data.ward,     
       latitude: data.latitude === '' || data.latitude === null ? null : Number(data.latitude),
       longitude: data.longitude === '' || data.longitude === null ? null : Number(data.longitude),
@@ -1043,27 +1073,15 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
               options={provinces.map((p) => ({ value: String(p.code), label: p.name }))}
             />
 
-            {/* CẤP 2: QUẬN / HUYỆN */}
-            <Select
-              label="Quận/Huyện"
-              id="districtCode"
-              value={data.districtCode}
-              onChange={handleDistrictChange}
-              required
-              options={districts.map((d) => ({ value: String(d.code), label: d.name }))}
-              disabled={!data.provinceCode} 
-            />
-
-            {/* CẤP 3: PHƯỜNG / XÃ */}
+            {/* CẤP 2: PHƯỜNG / XÃ */}
             <Select
               label="Phường/Xã"
               id="ward"
               value={data.ward}
               onChange={handleChange}
               required
-              // Value lưu thẳng tên ward để đồng bộ với state lưu trữ dữ liệu chuỗi của bạn
               options={wards.map((w) => ({ value: w.name, label: w.name }))}
-              disabled={!data.districtCode} 
+              disabled={!data.provinceCode} 
             />
 
             <Field 

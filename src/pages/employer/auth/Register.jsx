@@ -131,8 +131,8 @@ const EmployerRegister = () => {
         company: {
           name: formData.companyName.trim(),
           taxCode: `TEMP${Date.now()}`,
-          industryId: import.meta.env.VITE_DEFAULT_COMPANY_INDUSTRY_ID || '000000000000000000000001',
-          sizeId: import.meta.env.VITE_DEFAULT_COMPANY_SIZE_ID || '000000000000000000000001',
+          industryIds: [import.meta.env.VITE_DEFAULT_COMPANY_INDUSTRY_ID || '000000000000000000000001'],
+          size: import.meta.env.VITE_DEFAULT_COMPANY_SIZE || '1 - 10 nhân viên',
           email: formData.email.trim().toLowerCase(),
           phone: formData.phone.trim(),
           description: `${formData.companyName.trim()} - ${formData.city || ''} ${districtName} ${formData.ward || ''} ${formData.address || ''}`.trim(),

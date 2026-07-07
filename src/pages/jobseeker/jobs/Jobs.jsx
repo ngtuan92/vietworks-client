@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import JobCard from '../../../components/jobseeker/jobs/JobCard';
 import { Search, MapPin } from 'lucide-react';
+import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import {
   getCareerGroups,
   getCareersByGroup,
@@ -78,12 +79,10 @@ const getTags = (job) => {
   const tags = [];
 
   if (job.isUrgent) tags.push('Tuyển gấp');
-  if (job.premium?.isActive) tags.push('Nổi bật');
-  if (job.saturdayPolicy === 'OFF_SATURDAY') tags.push('Nghỉ Thứ 7');
+  if (job.experience) tags.push(job.experience);
   if (job.jobLevelId?.name) tags.push(job.jobLevelId.name);
-  if (job.experienceLevelId?.name) tags.push(job.experienceLevelId.name);
 
-  return tags.slice(0, 4);
+  return tags.slice(0, 3);
 };
 
 const mapJobToCard = (job) => ({
@@ -111,7 +110,7 @@ const Jobs = () => {
   const [careerGroupId, setCareerGroupId] = useState('');
   const [careerId, setCareerId] = useState('');
   const [careerPositionId, setCareerPositionId] = useState('');
-  const [experienceLevelId, setExperienceLevelId] = useState('');
+  const [experience, setExperience] = useState('');
   const [jobLevelId, setJobLevelId] = useState('');
   const [salaryRangeCode, setSalaryRangeCode] = useState('');
   const [salaryMin, setSalaryMin] = useState('');
@@ -145,7 +144,7 @@ const Jobs = () => {
     setCareerGroupId(getParam(searchParams, 'careerGroupId'));
     setCareerId(getParam(searchParams, 'careerId'));
     setCareerPositionId(getParam(searchParams, 'careerPositionId'));
-    setExperienceLevelId(getParam(searchParams, 'experienceLevelId'));
+    setExperience(getParam(searchParams, 'experience'));
     setJobLevelId(getParam(searchParams, 'jobLevelId'));
     setSalaryRangeCode(getParam(searchParams, 'salaryRangeCode'));
     setSalaryMin(getParam(searchParams, 'salaryMin'));
@@ -246,7 +245,7 @@ const Jobs = () => {
       careerGroupId: getParam(searchParams, 'careerGroupId'),
       careerId: getParam(searchParams, 'careerId'),
       careerPositionId: getParam(searchParams, 'careerPositionId'),
-      experienceLevelId: getParam(searchParams, 'experienceLevelId'),
+      experience: getParam(searchParams, 'experience'),
       jobLevelId: getParam(searchParams, 'jobLevelId'),
       salaryMin: getParam(searchParams, 'salaryMin'),
       salaryMax: getParam(searchParams, 'salaryMax'),
@@ -313,7 +312,7 @@ const Jobs = () => {
       careerGroupId,
       careerId,
       careerPositionId,
-      experienceLevelId,
+      experience,
       jobLevelId,
       salaryMin,
       salaryMax,
@@ -326,7 +325,7 @@ const Jobs = () => {
     setCareerGroupId('');
     setCareerId('');
     setCareerPositionId('');
-    setExperienceLevelId('');
+    setExperience('');
     setJobLevelId('');
     setSalaryRangeCode('');
     setSalaryMin('');
@@ -337,7 +336,7 @@ const Jobs = () => {
       careerGroupId: '',
       careerId: '',
       careerPositionId: '',
-      experienceLevelId: '',
+      experience: '',
       jobLevelId: '',
       salaryRangeCode: '',
       salaryMin: '',
@@ -474,9 +473,9 @@ const Jobs = () => {
 
               <SelectFilter
                 label="Kinh nghiệm"
-                value={experienceLevelId}
-                onChange={setExperienceLevelId}
-                options={experienceLevels.map((item) => ({ value: item._id, label: item.name }))}
+                value={experience}
+                onChange={setExperience}
+                options={EXPERIENCE_LEVELS.map((item) => ({ value: item, label: item }))}
               />
 
               <div>

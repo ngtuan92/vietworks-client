@@ -38,10 +38,9 @@ const formatUpdatedTime = (dateValue) => {
 const getTags = (job) => {
   const tags = [];
   if (job.isUrgent) tags.push('Tuyển gấp');
-  if (job.premium?.isActive) tags.push('Nổi bật');
-  if (job.saturdayPolicy === 'OFF_SATURDAY') tags.push('Nghỉ Thứ 7');
-  if (job.experienceLevelId?.name) tags.push(job.experienceLevelId.name);
-  return tags.slice(0, 4);
+  if (job.experience) tags.push(job.experience);
+  if (job.jobLevelId?.name) tags.push(job.jobLevelId.name);
+  return tags.slice(0, 3);
 };
 
 const mapJobToCard = (job) => ({
@@ -53,7 +52,7 @@ const mapJobToCard = (job) => ({
   salary: formatSalary(job.salary),
   updatedTime: formatUpdatedTime(job.publishedAt || job.createdAt),
   tags: getTags(job),
-  neededCount: job.neededCount || job.applicationCount,
+  neededCount: job.neededCount || job.headcount || 1,
   isHiringFull: Boolean(job.isHiringFull),
 });
 

@@ -4,6 +4,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
 import { createBoostCvPayment, getBoostCvPackages, getJobseekerWallet } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
+import Toast from '../../../components/shared/Toast';
 
 const formatPrice = (price) => `${new Intl.NumberFormat('vi-VN').format(price || 0)}đ`;
 
@@ -12,8 +13,7 @@ const boostFeatures = (pkg) => {
   return [
     { ok: !!benefits.priorityDisplay, text: 'Đẩy CV lên TOP khi nhà tuyển dụng tìm kiếm' },
     { ok: !!benefits.priorityDisplay, text: `Ưu tiên hiển thị hồ sơ trong ${pkg.durationDays || 30} ngày` },
-    { ok: !!benefits.aiPremiumAccess, text: 'AI phân tích và gợi ý tối ưu CV' },
-    { ok: !!benefits.aiPremiumAccess, text: 'Mẫu CV cao cấp và huy hiệu nổi bật' },
+    { ok: !!benefits.aiPremiumAccess, text: `Sử dụng AI phân tích và gợi ý tối ưu CV không giới hạn trong ${pkg.durationDays || 30} ngày` },
   ];
 };
 
@@ -48,6 +48,7 @@ const UpgradePremium = () => {
   const [paying, setPaying] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState(null);
   const [message, setMessage] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -112,7 +113,6 @@ const UpgradePremium = () => {
     setSelectedCv('');
     setUpgradeInfo(null);
     setMessage('');
-    setBuyPkg(null); setQrData(null); setSelectedCv(''); setUpgradeInfo(null);
     setWalletResult(null);
   };
 
@@ -153,7 +153,7 @@ const UpgradePremium = () => {
           cvId
         });
       } else if (errorData?.code === 'INSUFFICIENT_BALANCE') {
-        alert(errorData.message || 'Số dư ví không đủ.');
+        setToastMsg(errorData.message || 'Số dư ví không đủ.');
         setPaymentMethod('SEPAY');
       } else {
         const text = errorData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
@@ -188,6 +188,7 @@ const UpgradePremium = () => {
 
   return (
     <main className="min-h-screen bg-slate-50 pb-16">
+      <Toast message={toastMsg} onClose={() => setToastMsg('')} />
       <section className="relative overflow-hidden bg-[#003f87] px-4 py-16 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_34%)]" />
         <div className="relative mx-auto max-w-7xl text-center">
