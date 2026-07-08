@@ -48,7 +48,7 @@ const [legalPreview, setLegalPreview] = useState('');
   coverUrl: '',
 });
 const [industries, setIndustries] = useState([]);
-const [sizes, setSizes] = useState([]);
+
 const [savingCompany, setSavingCompany] = useState(false);
 const [submittingVerification, setSubmittingVerification] = useState(false);
 const [logoPreview, setLogoPreview] = useState('');
@@ -97,10 +97,9 @@ const [locationsLoading, setLocationsLoading] = useState(false);
 
   const fetchCompanyProfile = async () => {
   try {
-    const [companyRes, industriesRes, sizesRes] = await Promise.all([
+    const [companyRes, industriesRes] = await Promise.all([
       employerCompanyService.getMyCompanyProfile(),
       companyMasterDataService.getCompanyIndustries(),
-      companyMasterDataService.getCompanySizes(),
     ]);
     
 
@@ -108,7 +107,6 @@ const [locationsLoading, setLocationsLoading] = useState(false);
 console.log('company profile:', company);
 console.log('businessLicenseFile:', company.businessLicenseFile);
     setIndustries(industriesRes.data || []);
-    setSizes(sizesRes.data || []);
 
     setGeneral({
       taxCode: company.taxCode || '',

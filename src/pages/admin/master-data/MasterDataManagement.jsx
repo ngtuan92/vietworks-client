@@ -27,10 +27,8 @@ const MasterDataManagement = () => {
   const [positions, setPositions] = useState([]);
   const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
-  const [experienceLevels, setExperienceLevels] = useState([]);
-  const [skills, setSkills] = useState([]);
   const [companyIndustries, setCompanyIndustries] = useState([]);
-  const [companySizes, setCompanySizes] = useState([]);
+  const [skills, setSkills] = useState([]);
 
   // --- 3. Filters States ---
   const [selectedCareerGroupId, setSelectedCareerGroupId] = useState('');
@@ -52,21 +50,17 @@ const MasterDataManagement = () => {
   const loadGlobalData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resGroups, resLevels, resExp, resInd, resSizes] = await Promise.all([
+      const [resGroups, resLevels, resInd] = await Promise.all([
         jobApi.getCareerGroups(),
         jobApi.getJobLevels(),
-        jobApi.getExperienceLevels(),
-        companyMasterDataService.getCompanyIndustries(),
-        companyMasterDataService.getCompanySizes()
+        companyMasterDataService.getCompanyIndustries()
       ]);
       if (resGroups?.success) setCareerGroups(resGroups.data);
       if (resLevels?.success) {
         setJobLevels(resLevels.data);
         setGlobalJobLevels(resLevels.data);
       }
-      if (resExp?.success) setExperienceLevels(resExp.data);
       if (resInd?.success) setCompanyIndustries(resInd.data);
-      if (resSizes?.success) setCompanySizes(resSizes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -152,9 +146,7 @@ const MasterDataManagement = () => {
     }
     return filtered.filter(filterItem);
   }, [jobLevels, filterItem, selectedCareerGroupId, careerGroups]);
-  const filteredExperienceLevels = useMemo(() => experienceLevels.filter(filterItem), [experienceLevels, filterItem]);
   const filteredIndustries = useMemo(() => companyIndustries.filter(filterItem), [companyIndustries, filterItem]);
-  const filteredSizes = useMemo(() => companySizes.filter(filterItem), [companySizes, filterItem]);
 
   const generateSlug = (str) => {
     return str.toString().toLowerCase()
@@ -209,9 +201,7 @@ const MasterDataManagement = () => {
         if (targetType === 'POSITION') res = await jobApi.updateCareerPosition(selectedId, dataPayload);
         if (targetType === 'LEVEL') res = await jobApi.updateJobLevel(selectedId, dataPayload);
         if (targetType === 'SKILL') res = await jobApi.updateSkill(selectedId, dataPayload);
-        if (targetType === 'EXP') res = await jobApi.updateExperienceLevel(selectedId, dataPayload);
         if (targetType === 'INDUSTRY') res = await companyMasterDataService.updateCompanyIndustry(selectedId, dataPayload);
-        if (targetType === 'SIZE') res = await companyMasterDataService.updateCompanySize(selectedId, dataPayload);
       } 
       // CREATE
       else {
@@ -220,9 +210,7 @@ const MasterDataManagement = () => {
         if (targetType === 'POSITION') res = await jobApi.createCareerPosition(dataPayload);
         if (targetType === 'LEVEL') res = await jobApi.createJobLevel(dataPayload);
         if (targetType === 'SKILL') res = await jobApi.createSkill(dataPayload);
-        if (targetType === 'EXP') res = await jobApi.createExperienceLevel(dataPayload);
         if (targetType === 'INDUSTRY') res = await companyMasterDataService.createCompanyIndustry(dataPayload);
-        if (targetType === 'SIZE') res = await companyMasterDataService.createCompanySize(dataPayload);
       }
 
       if (res?.success) {
@@ -244,9 +232,7 @@ const MasterDataManagement = () => {
       if (type === 'POSITION') res = await jobApi.deleteCareerPosition(id);
       if (type === 'LEVEL') res = await jobApi.deleteJobLevel(id);
       if (type === 'SKILL') res = await jobApi.deleteSkill(id);
-      if (type === 'EXP') res = await jobApi.deleteExperienceLevel(id);
       if (type === 'INDUSTRY') res = await companyMasterDataService.deleteCompanyIndustry(id);
-      if (type === 'SIZE') res = await companyMasterDataService.deleteCompanySize(id);
       if (res?.success) { loadGlobalData(); loadDependentData(); }
     } catch (err) {
       alert('Lỗi hệ thống');
@@ -258,7 +244,7 @@ const MasterDataManagement = () => {
   };
 
   const getHeaders = () => {
-    if (tab === 'Cấp bậc' || tab === 'Kinh nghiệm') {
+    if (tab === 'Cấp bậc') {
       return ['Mã ID', 'Tên hạng mục', 'Trạng thái', 'Thao tác'];
     }
     if (tab === 'Kỹ năng / Tags') {
@@ -266,9 +252,6 @@ const MasterDataManagement = () => {
     }
     if (tab === 'Lĩnh vực công ty') {
       return ['Mã ID', 'Tên Lĩnh vực', 'Trạng thái', 'Thao tác'];
-    }
-    if (tab === 'Quy mô công ty') {
-      return ['Mã Code', 'Quy mô nhân sự', 'Trạng thái', 'Thao tác'];
     }
     return ['Mã ID', 'Tên hạng mục', 'Phân cấp', 'Trạng thái', 'Thao tác'];
   };
@@ -389,21 +372,6 @@ const MasterDataManagement = () => {
           </tr>
         ));
 
-      case 'Kinh nghiệm':
-        if (filteredExperienceLevels.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu kinh nghiệm thỏa mãn bộ lọc</td></tr>;
-        return filteredExperienceLevels.map(e => (
-          <tr key={e._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-            <td className="px-6 py-4 text-sm font-semibold text-slate-900">{e.code}</td>
-            <td className="px-6 py-4 text-sm font-medium text-slate-800">{e.name}</td>
-            <td className="px-6 py-4">{renderStatusBadge(e.status)}</td>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-2">
-                <ActionButton tone="soft" onClick={() => openEditModal('EXP', e)}>Sửa</ActionButton>
-                <ActionButton tone="danger" onClick={() => handleToggleHide('EXP', e._id, e.name)}>Ẩn</ActionButton>
-              </div>
-            </td>
-          </tr>
-        ));
 
       case 'Lĩnh vực công ty':
         if (filteredIndustries.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu thỏa mãn bộ lọc</td></tr>;
@@ -421,21 +389,7 @@ const MasterDataManagement = () => {
           </tr>
         ));
 
-      case 'Quy mô công ty':
-        if (filteredSizes.length === 0) return <tr><td colSpan="4" className="px-6 py-8 text-center text-sm italic text-slate-400">Không có dữ liệu thỏa mãn bộ lọc</td></tr>;
-        return filteredSizes.map(s => (
-          <tr key={s._id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-            <td className="px-6 py-4 text-sm font-semibold text-slate-900">{s.code}</td>
-            <td className="px-6 py-4 text-sm font-medium text-slate-800">{s.name}</td>
-            <td className="px-6 py-4">{renderStatusBadge(s.status)}</td>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-2">
-                <ActionButton tone="soft" onClick={() => openEditModal('SIZE', s)}>Sửa</ActionButton>
-                <ActionButton tone="danger" onClick={() => handleToggleHide('SIZE', s._id, s.name)}>Ẩn</ActionButton>
-              </div>
-            </td>
-          </tr>
-        ));
+
 
       default:
         return <tr><td colSpan="5" className="px-6 py-12 text-center text-sm font-bold text-slate-400">Hệ thống miền dữ liệu này đang chờ staging...</td></tr>;
@@ -535,13 +489,13 @@ const MasterDataManagement = () => {
               </div>
             )}
 
-            {['INDUSTRY', 'SKILL', 'CAREER', 'GROUP', 'POSITION', 'LEVEL', 'EXP'].includes(targetType) && (
+            {['INDUSTRY', 'SKILL', 'CAREER', 'GROUP', 'POSITION', 'LEVEL'].includes(targetType) && (
               <div className="mb-4">
                 <InputField label="Tên gọi" value={formData.name || ''} onChange={(v) => setFormData({ ...formData, name: v, slug: generateSlug(v) })} placeholder="Ví dụ: Công nghệ thông tin..." required />
               </div>
             )}
 
-            {['GROUP', 'LEVEL', 'EXP'].includes(targetType) && !editMode && (
+            {['GROUP', 'LEVEL'].includes(targetType) && !editMode && (
               <div className="mb-4">
                 <InputField label="Mã Code hệ thống (Bất biến) *" required value={formData.code || ''} onChange={val => setFormData({ ...formData, code: val })} />
               </div>
@@ -579,25 +533,7 @@ const MasterDataManagement = () => {
               </div>
             )}
 
-            {targetType === 'SIZE' && (
-              <>
-                <div className="mb-4 grid grid-cols-2 gap-4">
-                  <InputField label="Mã quy mô (VD: SIZE_1_10)" value={formData.code || ''} onChange={(v) => setFormData({ ...formData, code: v })} required />
-                  <InputField label="Tên hiển thị (VD: 1 - 10 NV)" value={formData.name || ''} onChange={(v) => setFormData({ ...formData, name: v })} required />
-                </div>
-                <div className="mb-4 grid grid-cols-2 gap-4">
-                  <InputField label="Số lượng tối thiểu" type="number" value={formData.minEmployees || 0} onChange={(v) => setFormData({ ...formData, minEmployees: Number(v) })} required />
-                  <InputField label="Số lượng tối đa (Bỏ trống = Vô hạn)" type="number" value={formData.maxEmployees || ''} onChange={(v) => setFormData({ ...formData, maxEmployees: v ? Number(v) : null })} />
-                </div>
-              </>
-            )}
 
-            {targetType === 'EXP' && (
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <InputField type="number" label="Số năm tối thiểu *" required value={formData.minYear || 0} onChange={val => setFormData({ ...formData, minYear: Number(val) })} />
-                <InputField type="number" label="Số năm tối đa (Để trống nếu Vô hạn)" value={formData.maxYear || ''} onChange={val => setFormData({ ...formData, maxYear: val ? Number(val) : null })} />
-              </div>
-            )}
           </div>
         </ModalShell>
       )}

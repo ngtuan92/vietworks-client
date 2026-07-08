@@ -7,7 +7,6 @@ import {
   getCareerGroups,
   getCareersByGroup,
   getCareerPositions,
-  getExperienceLevels,
   getJobLevels,
   getPublicJobs,
 } from '../../../services/jobService';
@@ -127,7 +126,7 @@ const Jobs = () => {
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [careerPositions, setCareerPositions] = useState([]);
-  const [experienceLevels, setExperienceLevels] = useState([]);
+
   const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
   const [provinces, setProvinces] = useState([]);
@@ -157,15 +156,13 @@ const Jobs = () => {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const [groupsRes, expRes, levelsRes, provincesRes] = await Promise.all([
+        const [groupsRes, levelsRes, provincesRes] = await Promise.all([
           getCareerGroups(),
-          getExperienceLevels(),
           getJobLevels(),
           companyLocationService.getProvinces(),
         ]);
 
         setCareerGroups(groupsRes.data || []);
-        setExperienceLevels(expRes.data || []);
         setGlobalJobLevels(levelsRes.data || []);
         setJobLevels(levelsRes.data || []);
         setProvinces(provincesRes || []);

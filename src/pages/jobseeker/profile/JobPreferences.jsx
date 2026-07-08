@@ -11,7 +11,6 @@ import {
   getCareerGroups,
   getCareersByGroup,
   getCareerPositions,
-  getExperienceLevels,
   getJobLevels
 } from '../../../services/jobService';
 import HierarchicalLocationPicker from '../../../components/HierarchicalLocationPicker';
@@ -45,7 +44,7 @@ const JobPreferences = () => {
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
-  const [experienceLevels, setExperienceLevels] = useState([]);
+
   const [loadingMaster, setLoadingMaster] = useState(true);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
@@ -54,14 +53,12 @@ const JobPreferences = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [cgRes, expRes, jlRes, prefsRes] = await Promise.all([
+        const [cgRes, jlRes, prefsRes] = await Promise.all([
           getCareerGroups(),
-          getExperienceLevels(),
           getJobLevels(),
           getJobPreferences()
         ]);
         setCareerGroups(cgRes.data || []);
-        setExperienceLevels(expRes.data || []);
         setJobLevels(jlRes.data || []);
 
         const data = prefsRes.data;
