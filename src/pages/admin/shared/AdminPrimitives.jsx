@@ -116,28 +116,44 @@ export const StatusBadge = ({ value, map = {} }) => {
     'EXPIRED': 'bg-rose-50 text-rose-700 border-rose-200/60',
     'ACTIVE': 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     'INACTIVE': 'bg-slate-50 text-slate-700 border-slate-200',
+    'VERIFIED': 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+    'REJECTED': 'bg-red-50 text-red-700 border-red-200/60',
+    'UNVERIFIED': 'bg-slate-50 text-slate-600 border-slate-200',
   };
 
   const labelMap = {
-    'PENDING': 'ĐANG CHỜ',
-    'PENDING_APPROVAL': 'ĐANG CHỜ DUYỆT',
-    'PUBLISHED': 'ĐÃ DUYỆT',
-    'BANNED': 'BỊ KHÓA',
-    'CLOSED': 'ĐÃ ĐÓNG',
-    'DRAFT': 'BẢN NHÁP',
-    'EXPIRED': 'HẾT HẠN',
-    'ACTIVE': 'HOẠT ĐỘNG',
-    'INACTIVE': 'ĐÃ TẮT',
-    'VERIFIED': 'ĐÃ XÁC MINH',
-    'REJECTED': 'ĐÃ TỪ CHỐI',
-    'SUCCESS': 'THÀNH CÔNG',
-    'FAILED': 'THẤT BẠI'
+    'PENDING': 'Đang chờ',
+    'PENDING_APPROVAL': 'Đang chờ duyệt',
+    'PUBLISHED': 'Đã duyệt',
+    'BANNED': 'Bị khóa',
+    'CLOSED': 'Đã đóng',
+    'DRAFT': 'Bản nháp',
+    'EXPIRED': 'Hết hạn',
+    'ACTIVE': 'Hoạt động',
+    'INACTIVE': 'Đã tắt',
+    'VERIFIED': 'Đã xác minh',
+    'REJECTED': 'Đã từ chối',
+    'UNVERIFIED': 'Chưa xác minh',
+    'SUCCESS': 'Thành công',
+    'FAILED': 'Thất bại'
   };
 
   const tone = map[value] || defaultMap[value] || 'bg-blue-50 text-blue-700 border-blue-200/60';
   const displayLabel = labelMap[value] || value;
   
-  return <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}>{displayLabel}</span>;
+  // Create a nice dot color based on the text color
+  let dotColor = 'bg-blue-500';
+  if (tone.includes('emerald')) dotColor = 'bg-emerald-500';
+  else if (tone.includes('amber')) dotColor = 'bg-amber-500';
+  else if (tone.includes('red') || tone.includes('rose')) dotColor = 'bg-red-500';
+  else if (tone.includes('slate')) dotColor = 'bg-slate-500';
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${tone}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`}></span>
+      {displayLabel}
+    </span>
+  );
 };
 
 export const ActionButton = ({ children, tone = 'default', className = '', ...props }) => {
@@ -155,7 +171,7 @@ export const SimpleTable = ({ headers, children }) => (
   <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white premium-shadow">
     <div className="overflow-x-auto custom-scrollbar">
       <table className="min-w-full text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50/50 text-left text-slate-400">
+        <thead className="border-b border-slate-100 bg-slate-50/50 text-left text-primary">
           <tr>{headers.map((header) => <th key={header} className="whitespace-nowrap px-6 py-4 text-[11px] font-bold uppercase tracking-wider">{header}</th>)}</tr>
         </thead>
         <tbody className="divide-y divide-slate-50 [&_tr]:transition-colors [&_tr:hover]:bg-slate-50/80">{children}</tbody>
