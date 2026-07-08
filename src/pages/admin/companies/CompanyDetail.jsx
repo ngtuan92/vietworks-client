@@ -9,9 +9,6 @@ const tabs = [
   'Thông tin công ty',
   'Địa điểm',
   'Giấy tờ pháp lý',
-  'Tin tuyển dụng',
-  'Giao dịch',
-  'Lịch sử kiểm duyệt',
 ];
 
 const CompanyDetail = () => {
@@ -132,7 +129,7 @@ const CompanyDetail = () => {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Info label="Tên công ty" value={company.name} />
             <Info label="Mã số thuế" value={company.taxCode} />
-            <Info label="Lĩnh vực" value={company.industry?.name} />
+            <Info label="Lĩnh vực" value={company.industries?.map(i => i.name).join(', ')} />
             <Info label="Quy mô" value={company.size?.name} />
             <Info label="Email" value={company.email} />
             <Info label="Số điện thoại" value={company.phone} />
@@ -149,13 +146,12 @@ const CompanyDetail = () => {
       ) : null}
 
       {active === 'Địa điểm' && (
-        <SimpleTable headers={['Tên địa điểm', 'Địa chỉ', 'Tỉnh/TP', 'Quận/Huyện', 'Phường/Xã', 'Trụ sở chính']}>
+        <SimpleTable headers={['Tên địa điểm', 'Địa chỉ', 'Tỉnh/TP', 'Phường/Xã', 'Trụ sở chính']}>
           {(company?.locations || []).map((loc) => (
             <tr key={loc._id} className="border-t border-slate-100">
               <td className="px-4 py-3">{loc.name}</td>
               <td className="px-4 py-3">{loc.addressLine}</td>
               <td className="px-4 py-3">{loc.province}</td>
-              <td className="px-4 py-3">{loc.district || '-'}</td>
               <td className="px-4 py-3">{loc.ward || '-'}</td>
               <td className="px-4 py-3">{loc.isPrimary ? 'Có' : 'Không'}</td>
             </tr>
@@ -226,23 +222,18 @@ const CompanyDetail = () => {
           )}
         </SectionCard>
       )}
-
-      {active !== 'Thông tin công ty' && active !== 'Địa điểm' && active !== 'Giấy tờ pháp lý' ? (
-        <SectionCard title={active}>
-          <div className="text-slate-600">
-            Chưa tích hợp backend cho mục <b>{active}</b>.
-          </div>
-        </SectionCard>
-      ) : null}
     </div>
   );
 };
 
-const Info = ({ label, value }) => (
-  <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm hover:shadow-md transition-shadow">
-    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
-    <div className="mt-1.5 text-sm font-black text-slate-900">{value || '-'}</div>
-  </div>
-);
+const Info = ({ label, value }) => {
+  if (!value || value === '-') return null;
+  return (
+    <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="mt-1.5 text-sm font-black text-slate-900">{value}</div>
+    </div>
+  );
+};
 
 export default CompanyDetail;

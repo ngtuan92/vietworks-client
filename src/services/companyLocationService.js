@@ -14,11 +14,7 @@ getProvinces: async () => {
     const response = await api.get(`/provinces/${provinceCode}/communes`);
     return response.data || [];
   },
-  // --- Các hàm quản lý địa điểm công ty cũ ---
-  getMyCompanyLocations: async () => {
-    const response = await api.get('/employer/company/locations');
-    return response.data;
-  },
+
   createMyCompanyLocation: async ({
     name,
     addressLine,

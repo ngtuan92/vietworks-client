@@ -9,7 +9,7 @@ const CompanyCard = memo(({
   onFollowClick,
   disabled = false
 }) => {
-  const industry = company.industryId?.name;
+  const industry = company.industryIds?.[0]?.name || company.industries?.[0]?.name;
   const showFollowButton = !!onFollowClick;
   const [logoError, setLogoError] = useState(false);
   const showLogo = company.avatarUrl && !logoError;

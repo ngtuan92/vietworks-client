@@ -45,15 +45,7 @@ const AdminHeader = () => {
       </div>
 
       <div className="flex items-center gap-6">
-        {/* Search Bar */}
-        <div className="hidden lg:flex h-10 w-72 items-center rounded-full border border-slate-200/80 bg-slate-50/50 px-4 transition-all hover:bg-white focus-within:bg-white focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
-          <Search className="h-4 w-4 text-slate-400 mr-2.5" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm ID, tên công ty..."
-            className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400 placeholder:font-medium"
-          />
-        </div>
+        {/* Search Bar Removed */}
 
         {/* Admin Wallet */}
         <div className="hidden lg:flex items-center gap-3 rounded-full border border-slate-200/60 bg-white px-1.5 py-1.5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all group cursor-pointer pr-4">

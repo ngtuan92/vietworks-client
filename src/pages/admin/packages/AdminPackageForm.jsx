@@ -7,11 +7,9 @@ const targetRoleOptions = [
   { value: 'JOBSEEKER', label: 'Ứng viên' },
 ];
 
-// Khớp với enum ServicePackageType ở BE
 const employerPackageTypes = [
-  { value: 'CV_UNLOCK', label: 'Mở khóa CV (lẻ)' },
-  { value: 'CV_UNLOCK_BUNDLE', label: 'Gói mở khóa CV (combo)' },
   { value: 'PREMIUM_JOB', label: 'Tin nổi bật + Gấp' },
+  { value: 'CV_UNLOCK', label: 'Mở khóa CV' },
 ];
 
 const jobseekerPackageTypes = [
@@ -31,7 +29,7 @@ const defaultEmployerForm = {
   currency: 'VND',
   durationDays: 30,
   targetRole: 'EMPLOYER',
-  packageType: 'CV_UNLOCK',
+  packageType: 'PREMIUM_JOB',
   unit: 'CV',
   jobPostsAllowed: 1,
   featuredDays: 0,
@@ -100,7 +98,7 @@ const AdminPackageForm = () => {
           currency: pkg.currency || 'VND',
           durationDays: pkg.durationDays ?? 30,
           targetRole: pkg.targetRole || 'EMPLOYER',
-          packageType: pkg.packageType || 'CV_UNLOCK',
+          packageType: pkg.packageType || 'PREMIUM_JOB',
           unit: pkg.unit || 'CV',
           jobPostsAllowed: pkg.jobPostsAllowed ?? (pkg.benefits?.jobPostsAllowed ?? 1),
           featuredDays: pkg.featuredDays ?? (pkg.benefits?.featuredDays ?? 0),
@@ -133,8 +131,36 @@ const AdminPackageForm = () => {
     }
   };
 
+  const removeVietnameseTones = (str) => {
+    let result = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a");
+    result = result.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e");
+    result = result.replace(/ì|í|ị|ỉ|ĩ/g,"i");
+    result = result.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o");
+    result = result.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u");
+    result = result.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y");
+    result = result.replace(/đ/g,"d");
+    result = result.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    result = result.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    result = result.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    result = result.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    result = result.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    result = result.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    result = result.replace(/Đ/g, "D");
+    return result;
+  };
+
+  const generateCode = (name) => {
+    return removeVietnameseTones(name).toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  };
+
   const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'name' && !isEdit) {
+        next.code = generateCode(value);
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -191,7 +217,7 @@ const AdminPackageForm = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin w-8 h-8 border-4 border-[#0056b3] border-t-transparent rounded-full"></div>
+        <div className="animate-spin w-8 h-8 border-4 border-[#003f87] border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -202,16 +228,16 @@ const AdminPackageForm = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/admin/packages')}
-          className="p-2 rounded-lg hover:bg-[#f5f3f3] transition-all"
+          className="p-2 rounded-lg hover:bg-slate-50 transition-all"
         >
-          <span className="material-symbols-outlined text-[#5e5e62]">arrow_back</span>
+          <span className="material-symbols-outlined text-slate-500">arrow_back</span>
         </button>
         <div>
-          <h2 className="text-xl font-bold text-[#0056b3] flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-[#0056b3] rounded-full"></span>
+          <h2 className="text-xl font-bold text-[#003f87] flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#003f87] rounded-full"></span>
             {isEdit ? 'Sửa gói dịch vụ' : 'Thêm gói dịch vụ mới'}
           </h2>
-          <p className="text-sm text-[#5e5e62] mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {isEdit ? 'Cập nhật thông tin gói dịch vụ' : 'Tạo gói dịch vụ mới cho người dùng'}
           </p>
         </div>
@@ -225,11 +251,11 @@ const AdminPackageForm = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-[#c2c6d4]/50 p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200/50 p-6 space-y-6">
         {/* Target Audience Selection */}
         {!isEdit && (
           <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-3">Đối tượng sử dụng</label>
+            <label className="block text-sm font-bold text-slate-500 mb-3">Đối tượng sử dụng</label>
             <div className="flex gap-4">
               {targetRoleOptions.map((opt) => (
                 <button
@@ -241,19 +267,19 @@ const AdminPackageForm = () => {
                       ? opt.value === 'EMPLOYER'
                         ? 'border-indigo-600 bg-indigo-50'
                         : 'border-emerald-600 bg-emerald-50'
-                      : 'border-[#c2c6d4]/50 hover:border-[#c2c6d4]'
+                      : 'border-slate-200/50 hover:border-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={`material-symbols-outlined text-2xl ${
                       targetRole === opt.value
                         ? opt.value === 'EMPLOYER' ? 'text-indigo-600' : 'text-emerald-600'
-                        : 'text-[#5e5e62]'
+                        : 'text-slate-500'
                     }`}>
                       {opt.value === 'EMPLOYER' ? 'apartment' : 'person'}
                     </span>
                     <span className={`font-bold ${
-                      targetRole === opt.value ? 'text-[#1b1c1c]' : 'text-[#5e5e62]'
+                      targetRole === opt.value ? 'text-slate-900' : 'text-slate-500'
                     }`}>
                       {opt.label}
                     </span>
@@ -266,11 +292,11 @@ const AdminPackageForm = () => {
 
         {/* Package Type */}
         <div>
-          <label className="block text-sm font-bold text-[#5e5e62] mb-2">Loại gói</label>
+          <label className="block text-sm font-bold text-slate-500 mb-2">Loại gói *</label>
           <select
             value={form.packageType}
             onChange={(e) => handleChange('packageType', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none bg-white"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none bg-white"
           >
             {packageTypes.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -278,64 +304,37 @@ const AdminPackageForm = () => {
           </select>
         </div>
 
-        {/* Code */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Mã gói *</label>
-            <input
-              type="text"
-              value={form.code}
-              onChange={(e) => handleChange('code', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
-              required
-              placeholder="VD: BASIC_MONTHLY"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Đơn vị *</label>
-            <select
-              value={form.unit}
-              onChange={(e) => handleChange('unit', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none bg-white"
-            >
-              {unitOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
         {/* Name & Description */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Tên gói *</label>
+            <label className="block text-sm font-bold text-slate-500 mb-2">Tên gói *</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
               required
               placeholder="VD: Gói Cơ Bản"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Thứ tự hiển thị</label>
+            <label className="block text-sm font-bold text-slate-500 mb-2">Thứ tự hiển thị</label>
             <input
               type="number"
               value={form.sortOrder}
               onChange={(e) => handleChange('sortOrder', Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
               min="0"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-[#5e5e62] mb-2">Mô tả</label>
+          <label className="block text-sm font-bold text-slate-500 mb-2">Mô tả</label>
           <textarea
             value={form.description}
             onChange={(e) => handleChange('description', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none resize-none"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none resize-none"
             rows={2}
             placeholder="Mô tả ngắn về gói dịch vụ..."
           />
@@ -344,29 +343,29 @@ const AdminPackageForm = () => {
         {/* Price & Duration */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Giá (VND) *</label>
+            <label className="block text-sm font-bold text-slate-500 mb-2">Giá (VND) *</label>
             <input
               type="number"
               value={form.price}
               onChange={(e) => handleChange('price', Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
               required
               min="0"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Thời hạn (ngày) *</label>
+            <label className="block text-sm font-bold text-slate-500 mb-2">Thời hạn (ngày) *</label>
             <input
               type="number"
               value={form.durationDays}
               onChange={(e) => handleChange('durationDays', Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
               required
               min="1"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-[#5e5e62] mb-2">Trạng thái</label>
+            <label className="block text-sm font-bold text-slate-500 mb-2">Trạng thái</label>
             <div className="flex items-center gap-3 h-full px-4">
               <button
                 type="button"
@@ -379,7 +378,7 @@ const AdminPackageForm = () => {
                   {form.isActive ? 'toggle_on' : 'toggle_off'}
                 </span>
               </button>
-              <span className="font-medium text-[#1b1c1c]">
+              <span className="font-medium text-slate-900">
                 {form.isActive ? 'Đang hoạt động' : 'Tạm ngưng'}
               </span>
             </div>
@@ -390,32 +389,32 @@ const AdminPackageForm = () => {
         {targetRole === 'EMPLOYER' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-bold text-[#5e5e62] mb-2">Số tin được đăng</label>
+              <label className="block text-sm font-bold text-slate-500 mb-2">Số tin được đăng</label>
               <input
                 type="number"
                 value={form.jobPostsAllowed}
                 onChange={(e) => handleChange('jobPostsAllowed', Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
                 min="0"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#5e5e62] mb-2">Ngày nổi bật</label>
+              <label className="block text-sm font-bold text-slate-500 mb-2">Ngày nổi bật</label>
               <input
                 type="number"
                 value={form.featuredDays}
                 onChange={(e) => handleChange('featuredDays', Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
                 min="0"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#5e5e62] mb-2">Số CV được xem</label>
+              <label className="block text-sm font-bold text-slate-500 mb-2">Số CV được xem</label>
               <input
                 type="number"
                 value={form.cvAccessLimit}
                 onChange={(e) => handleChange('cvAccessLimit', Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl border border-[#c2c6d4] focus:border-[#0056b3] outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
                 min="0"
               />
             </div>
@@ -425,7 +424,7 @@ const AdminPackageForm = () => {
         {/* Jobseeker-specific fields */}
         {targetRole === 'JOBSEEKER' && form.packageType === 'CV_BOOST' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#c2c6d4]">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200">
               <input
                 id="aiPremiumAccess"
                 type="checkbox"
@@ -433,11 +432,11 @@ const AdminPackageForm = () => {
                 onChange={(e) => setForm((prev) => ({ ...prev, benefits: { ...prev.benefits, aiPremiumAccess: e.target.checked } }))}
                 className="w-4 h-4"
               />
-              <label htmlFor="aiPremiumAccess" className="text-sm font-bold text-[#5e5e62] cursor-pointer">
+              <label htmlFor="aiPremiumAccess" className="text-sm font-bold text-slate-500 cursor-pointer">
                 Kèm AI Premium (review CV bằng AI)
               </label>
             </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#c2c6d4]">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200">
               <input
                 id="priorityDisplay"
                 type="checkbox"
@@ -445,7 +444,7 @@ const AdminPackageForm = () => {
                 onChange={(e) => setForm((prev) => ({ ...prev, benefits: { ...prev.benefits, priorityDisplay: e.target.checked } }))}
                 className="w-4 h-4"
               />
-              <label htmlFor="priorityDisplay" className="text-sm font-bold text-[#5e5e62] cursor-pointer">
+              <label htmlFor="priorityDisplay" className="text-sm font-bold text-slate-500 cursor-pointer">
                 Ưu tiên hiển thị (priority display)
               </label>
             </div>
@@ -453,11 +452,11 @@ const AdminPackageForm = () => {
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-4 border-t border-[#c2c6d4]">
+        <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
           <button
             type="submit"
             disabled={saving}
-            className="bg-[#0056b3] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#0056b3]/90 transition-all flex items-center gap-2 disabled:opacity-50"
+            className="bg-[#003f87] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#003f87]/90 transition-all flex items-center gap-2 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -474,7 +473,7 @@ const AdminPackageForm = () => {
           <button
             type="button"
             onClick={() => navigate('/admin/packages')}
-            className="px-6 py-3 rounded-xl font-bold border border-[#c2c6d4] hover:bg-[#f5f3f3] transition-all"
+            className="px-6 py-3 rounded-xl font-bold border border-[slate-200] hover:bg-[slate-50] transition-all"
           >
             Hủy
           </button>

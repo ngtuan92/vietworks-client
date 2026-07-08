@@ -47,14 +47,14 @@ const CompanyVerification = () => {
         company.email?.toLowerCase().includes(keyword);
 
       const matchStatus = !filters.status || company.verificationStatus === filters.status;
-      const matchField = !filters.field || company.industry?.name === filters.field;
+      const matchField = !filters.field || company.industries?.some(i => i.name === filters.field);
       const matchSize = !filters.size || company.size?.name === filters.size;
 
       return matchKeyword && matchStatus && matchField && matchSize;
     });
   }, [companies, filters]);
 
-  const fieldOptions = [...new Set(companies.map((c) => c.industry?.name).filter(Boolean))];
+  const fieldOptions = [...new Set(companies.flatMap(c => c.industries?.map(i => i.name)).filter(Boolean))];
   const sizeOptions = [...new Set(companies.map((c) => c.size?.name).filter(Boolean))];
 
   return (
@@ -108,7 +108,7 @@ const CompanyVerification = () => {
             <td className="px-4 py-3 font-semibold text-slate-900">{company.name}</td>
             <td className="px-4 py-3">{company.taxCode}</td>
             <td className="px-4 py-3">{company.email}</td>
-            <td className="px-4 py-3">{company.industry?.name || '-'}</td>
+            <td className="px-4 py-3">{company.industries?.map(i => i.name).join(', ') || '-'}</td>
             <td className="px-4 py-3">{company.size?.name || '-'}</td>
             <td className="px-4 py-3"><StatusBadge value={company.verificationStatus} map={statusMap} /></td>
             <td className="px-4 py-3">{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString('vi-VN') : '-'}</td>

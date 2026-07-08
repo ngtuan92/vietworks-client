@@ -13,157 +13,156 @@ const targetRoleLabels = {
 
 // Khớp với enum ServicePackageType ở BE (vietworks-api/src/enums/paymentEnums.js)
 const packageTypeLabels = {
-  CV_UNLOCK: 'Mở khóa CV (lẻ)',
-  CV_UNLOCK_BUNDLE: 'Gói mở khóa CV',
   CV_BOOST: 'Boost CV',
   PREMIUM_JOB: 'Tin nổi bật + Gấp',
+  CV_UNLOCK: 'Mở khóa CV',
 };
 
-// PackageCard cho Employer - hiển thị fields của Employer (compact cho 4 cột)
+// PackageCard cho Employer - hiển thị fields của Employer
 const EmployerPackageCard = ({ pkg, onEdit, onToggleStatus }) => {
   return (
-    <div className={`bg-white rounded-xl shadow-sm border transition-all hover:shadow-md flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-[#ba1a1a]/30 bg-[#ffdad6]/10'}`}>
-      <div className="p-4 flex flex-col flex-1">
+    <div className={`bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md hover:-translate-y-1 flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-rose-600/30 bg-[#ffdad6]/10'}`}>
+      <div className="p-5 flex flex-col flex-1">
         {/* Header */}
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 shrink-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-[#003f87] shrink-0">
                 {packageTypeLabels[pkg.packageType] || pkg.packageType}
               </span>
               {pkg.status === 'INACTIVE' && (
-                <span className="bg-[#ba1a1a]/10 text-[#ba1a1a] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                <span className="bg-rose-600/10 text-rose-600 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
                   Tạm ngưng
                 </span>
               )}
             </div>
-            <h3 className="text-sm font-bold text-[#1b1c1c] line-clamp-2 min-h-[36px]">{pkg.name}</h3>
+            <h3 className="text-base font-bold text-slate-900 line-clamp-2 min-h-[48px]">{pkg.name}</h3>
           </div>
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => onEdit(pkg)}
-              className="p-1 rounded-lg hover:bg-[#f5f3f3] text-[#5e5e62] transition-all"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-all"
               title="Sửa"
             >
-              <span className="material-symbols-outlined text-[16px]">edit</span>
+              <span className="material-symbols-outlined text-[18px]">edit</span>
             </button>
             <button
               onClick={() => onToggleStatus(pkg)}
-              className={`p-1 rounded-lg transition-all ${pkg.status === 'ACTIVE' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-[#ffdad6] text-[#ba1a1a]'}`}
+              className={`p-1.5 rounded-lg transition-all ${pkg.status === 'ACTIVE' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-[#ffdad6] text-rose-600'}`}
               title={pkg.status === 'ACTIVE' ? 'Tạm ngưng' : 'Kích hoạt'}
             >
-              <span className="material-symbols-outlined text-[16px]">{pkg.status === 'ACTIVE' ? 'toggle_on' : 'toggle_off'}</span>
+              <span className="material-symbols-outlined text-[18px]">{pkg.status === 'ACTIVE' ? 'toggle_on' : 'toggle_off'}</span>
             </button>
           </div>
         </div>
 
         {/* Price */}
-        <div className="mb-2">
-          <div className="flex items-baseline gap-1">
-            <span className="text-lg font-black text-[#0056b3]">{formatPrice(pkg.price)}</span>
-            {pkg.price > 0 && <span className="text-[11px] text-[#5e5e62]">/ {pkg.durationDays || pkg.duration || 30} ngày</span>}
+        <div className="mb-4">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-[#003f87]">{formatPrice(pkg.price)}</span>
+            {pkg.price > 0 && <span className="text-sm text-slate-500 font-medium">/ {pkg.durationDays || pkg.duration || 30} ngày</span>}
           </div>
         </div>
 
-        {/* Stats - compact */}
-        <div className="flex gap-1.5 mb-2">
-          <div className="flex-1 bg-[#f5f3f3] rounded-md p-1.5 text-center min-w-0">
-            <p className="text-sm font-black text-[#1b1c1c] truncate">{pkg.jobPostsAllowed ?? pkg.benefits?.jobPostsAllowed ?? 0}</p>
-            <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Tin</p>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-slate-50 rounded-xl p-2.5 text-center">
+            <p className="text-lg font-black text-slate-900">{pkg.jobPostsAllowed ?? pkg.benefits?.jobPostsAllowed ?? 0}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Tin đăng</p>
           </div>
-          <div className="flex-1 bg-[#f5f3f3] rounded-md p-1.5 text-center min-w-0">
-            <p className="text-sm font-black text-[#1b1c1c] truncate">{pkg.featuredDays ?? pkg.benefits?.featuredDays ?? 0}</p>
-            <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Nổi bật</p>
+          <div className="bg-slate-50 rounded-xl p-2.5 text-center">
+            <p className="text-lg font-black text-slate-900">{pkg.featuredDays ?? pkg.benefits?.featuredDays ?? 0}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Nổi bật</p>
           </div>
-          <div className="flex-1 bg-[#f5f3f3] rounded-md p-1.5 text-center min-w-0">
-            <p className="text-sm font-black text-[#1b1c1c] truncate">{pkg.cvAccessLimit ?? pkg.benefits?.cvAccessLimit ?? 0}</p>
-            <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">CV</p>
+          <div className="bg-slate-50 rounded-xl p-2.5 text-center">
+            <p className="text-lg font-black text-slate-900">{pkg.cvAccessLimit ?? pkg.benefits?.cvAccessLimit ?? 0}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Lượt CV</p>
           </div>
         </div>
 
         {/* Description */}
-        <p className="text-[11px] text-[#5e5e62] line-clamp-2 leading-snug mb-2 min-h-[28px]">{pkg.description}</p>
+        <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed mb-4 min-h-[60px]">{pkg.description}</p>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#c2c6d4]/30 mt-auto">
-          <span className="text-[9px] text-[#727784]">
-            {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('vi-VN') : '—'}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-200/50 mt-auto">
+          <span className="text-xs text-slate-400 font-medium">
+            Tạo lúc: {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('vi-VN') : '—'}
           </span>
-          <span className="text-[9px] font-bold text-[#5e5e62]">#{pkg.sortOrder ?? 0}</span>
+          <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">Ưu tiên #{pkg.sortOrder ?? 0}</span>
         </div>
       </div>
     </div>
   );
 };
 
-// PackageCard cho Jobseeker - compact
+// PackageCard cho Jobseeker
 const JobseekerPackageCard = ({ pkg, onEdit, onToggleStatus }) => {
   return (
-    <div className={`bg-white rounded-xl shadow-sm border transition-all hover:shadow-md flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-[#ba1a1a]/30 bg-[#ffdad6]/10'}`}>
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-2">
+    <div className={`bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md hover:-translate-y-1 flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-rose-600/30 bg-[#ffdad6]/10'}`}>
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
                 pkg.benefits?.aiPremiumAccess ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
               }`}>
                 {packageTypeLabels[pkg.packageType] || pkg.packageType}
               </span>
               {pkg.status === 'INACTIVE' && (
-                <span className="bg-[#ba1a1a]/10 text-[#ba1a1a] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                <span className="bg-rose-600/10 text-rose-600 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
                   Tạm ngưng
                 </span>
               )}
             </div>
-            <h3 className="text-sm font-bold text-[#1b1c1c] line-clamp-2 min-h-[36px]">{pkg.name}</h3>
+            <h3 className="text-base font-bold text-slate-900 line-clamp-2 min-h-[48px]">{pkg.name}</h3>
           </div>
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => onEdit(pkg)}
-              className="p-1 rounded-lg hover:bg-[#f5f3f3] text-[#5e5e62]"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-all"
               title="Sửa"
             >
-              <span className="material-symbols-outlined text-[16px]">edit</span>
+              <span className="material-symbols-outlined text-[18px]">edit</span>
             </button>
             <button
               onClick={() => onToggleStatus(pkg)}
-              className={`p-1 rounded-lg transition-all ${pkg.status === 'ACTIVE' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-[#ffdad6] text-[#ba1a1a]'}`}
+              className={`p-1.5 rounded-lg transition-all ${pkg.status === 'ACTIVE' ? 'hover:bg-emerald-100 text-emerald-600' : 'hover:bg-[#ffdad6] text-rose-600'}`}
               title={pkg.status === 'ACTIVE' ? 'Tạm ngưng' : 'Kích hoạt'}
             >
-              <span className="material-symbols-outlined text-[16px]">{pkg.status === 'ACTIVE' ? 'toggle_on' : 'toggle_off'}</span>
+              <span className="material-symbols-outlined text-[18px]">{pkg.status === 'ACTIVE' ? 'toggle_on' : 'toggle_off'}</span>
             </button>
           </div>
         </div>
 
-        <div className="mb-2">
-          <div className="flex items-baseline gap-1">
-            <span className="text-lg font-black text-[#0056b3]">{formatPrice(pkg.price)}</span>
-            {pkg.price > 0 && <span className="text-[11px] text-[#5e5e62]">/ {pkg.durationDays || 30} ngày</span>}
+        <div className="mb-4">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-[#003f87]">{formatPrice(pkg.price)}</span>
+            {pkg.price > 0 && <span className="text-sm text-slate-500 font-medium">/ {pkg.durationDays || 30} ngày</span>}
           </div>
         </div>
 
         {pkg.packageType === 'CV_BOOST' && (
-          <div className="flex gap-1.5 mb-2">
-            <div className="flex-1 bg-[#f5f3f3] rounded-md p-1.5 text-center min-w-0">
-              <p className="text-sm font-black text-[#1b1c1c] truncate">{pkg.durationDays || 0}</p>
-              <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">Ngày boost</p>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="bg-slate-50 rounded-xl p-2.5 text-center">
+              <p className="text-lg font-black text-slate-900">{pkg.durationDays || 0}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Ngày boost</p>
             </div>
-            <div className="flex-1 bg-[#f5f3f3] rounded-md p-1.5 text-center min-w-0">
-              <p className="text-sm font-black text-[#1b1c1c] truncate">
+            <div className="bg-slate-50 rounded-xl p-2.5 text-center">
+              <p className="text-lg font-black text-slate-900">
                 {pkg.benefits?.aiPremiumAccess ? 'Có' : 'Không'}
               </p>
-              <p className="text-[9px] font-bold text-[#5e5e62] uppercase truncate">AI Premium</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">AI Premium</p>
             </div>
           </div>
         )}
 
-        <p className="text-[11px] text-[#5e5e62] line-clamp-2 leading-snug mb-2 min-h-[28px]">{pkg.description}</p>
+        <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed mb-4 min-h-[60px]">{pkg.description}</p>
 
-        <div className="flex items-center justify-between pt-2 border-t border-[#c2c6d4]/30 mt-auto">
-          <span className="text-[9px] text-[#727784]">
-            {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('vi-VN') : '—'}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-200/50 mt-auto">
+          <span className="text-xs text-slate-400 font-medium">
+            Tạo lúc: {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString('vi-VN') : '—'}
           </span>
-          <span className="text-[9px] font-bold text-[#5e5e62]">#{pkg.sortOrder ?? 0}</span>
+          <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">Ưu tiên #{pkg.sortOrder ?? 0}</span>
         </div>
       </div>
     </div>
@@ -265,30 +264,30 @@ const AdminPackages = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#0056b3] flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-[#0056b3] rounded-full"></span>
+          <h2 className="text-xl font-bold text-[#003f87] flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#003f87] rounded-full"></span>
             Quản lý Gói dịch vụ
           </h2>
-          <p className="text-sm text-[#5e5e62] mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Tạo và quản lý các gói dịch vụ cho nhà tuyển dụng và ứng viên
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-[#c2c6d4]/50 p-1 inline-flex">
+      <div className="bg-white rounded-xl border border-slate-200/50 p-1 inline-flex">
         <button
           onClick={() => setActiveTab('EMPLOYER')}
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
             activeTab === 'EMPLOYER'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-[#5e5e62] hover:bg-[#f5f3f3]'
+              ? 'bg-[#003f87] text-white shadow-sm'
+              : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">apartment</span>
           Gói Nhà tuyển dụng
           <span className={`px-2 py-0.5 rounded-full text-xs ${
-            activeTab === 'EMPLOYER' ? 'bg-white/20 text-white' : 'bg-[#f5f3f3] text-[#5e5e62]'
+            activeTab === 'EMPLOYER' ? 'bg-white/20 text-white' : 'bg-slate-50 text-slate-500'
           }`}>
             {tabCounts.EMPLOYER}
           </span>
@@ -298,13 +297,13 @@ const AdminPackages = () => {
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
             activeTab === 'JOBSEEKER'
               ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-[#5e5e62] hover:bg-[#f5f3f3]'
+              : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">person</span>
           Gói Ứng viên
           <span className={`px-2 py-0.5 rounded-full text-xs ${
-            activeTab === 'JOBSEEKER' ? 'bg-white/20 text-white' : 'bg-[#f5f3f3] text-[#5e5e62]'
+            activeTab === 'JOBSEEKER' ? 'bg-white/20 text-white' : 'bg-slate-50 text-slate-500'
           }`}>
             {tabCounts.JOBSEEKER}
           </span>
@@ -313,37 +312,37 @@ const AdminPackages = () => {
 
       {/* Stats Summary - theo tab hiện tại */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-[#0056b3] to-blue-800 p-5 rounded-xl text-white">
+        <div className="bg-gradient-to-br from-[#003f87] to-[#0b4e9f] p-5 rounded-xl text-white">
           <div className="flex items-center gap-2 mb-2">
             <span className="material-symbols-outlined text-blue-200">inventory_2</span>
             <span className="text-sm font-bold text-blue-200 uppercase">Tổng gói</span>
           </div>
           <p className="text-3xl font-black">{currentTabPackages.length}</p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/50">
           <div className="flex items-center gap-2 mb-2">
             <span className="material-symbols-outlined text-emerald-600">check_circle</span>
             <span className="text-sm font-bold text-emerald-600 uppercase">Đang hoạt động</span>
           </div>
-          <p className="text-3xl font-black text-[#1b1c1c]">
+          <p className="text-3xl font-black text-slate-900">
             {currentTabPackages.filter((p) => p.status === 'ACTIVE').length}
           </p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/50">
           <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[#ba1a1a]">toggle_off</span>
-            <span className="text-sm font-bold text-[#ba1a1a] uppercase">Tạm ngưng</span>
+            <span className="material-symbols-outlined text-rose-600">toggle_off</span>
+            <span className="text-sm font-bold text-rose-600 uppercase">Tạm ngưng</span>
           </div>
-          <p className="text-3xl font-black text-[#1b1c1c]">
+          <p className="text-3xl font-black text-slate-900">
             {currentTabPackages.filter((p) => p.status !== 'ACTIVE').length}
           </p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-[#c2c6d4]/50">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/50">
           <div className="flex items-center gap-2 mb-2">
             <span className="material-symbols-outlined text-amber-600">payments</span>
             <span className="text-sm font-bold text-amber-600 uppercase">Giá TB</span>
           </div>
-          <p className="text-3xl font-black text-[#1b1c1c]">
+          <p className="text-3xl font-black text-slate-900">
             {formatPrice(
               Math.round(
                 currentTabPackages.filter((p) => p.price > 0).reduce((sum, p) => sum + p.price, 0) /
@@ -360,7 +359,7 @@ const AdminPackages = () => {
           <select
             value={filterActive}
             onChange={(e) => setFilterActive(e.target.value)}
-            className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+            className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium"
           >
             <option value="all">Tất cả</option>
             <option value="active">Đang hoạt động</option>
@@ -369,7 +368,7 @@ const AdminPackages = () => {
           <select
             value={sortPrice}
             onChange={(e) => setSortPrice(e.target.value)}
-            className="px-4 py-2.5 rounded-lg border border-[#c2c6d4] text-sm font-medium"
+            className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium"
           >
             <option value="default">Mặc định</option>
             <option value="asc">Giá: Thấp → Cao</option>
@@ -378,7 +377,7 @@ const AdminPackages = () => {
         </div>
         <button
           onClick={handleAddNew}
-          className="bg-[#0056b3] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-[#0056b3]/90 transition-all flex items-center gap-2"
+          className="bg-[#003f87] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-[#0b4e9f] transition-all flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           Thêm gói mới
@@ -387,21 +386,18 @@ const AdminPackages = () => {
 
       {/* Package Grid */}
       {activeTab === 'EMPLOYER' ? (
-        // 4 gói nhà tuyển dụng — flex-1 ÉP cùng 1 hàng, có thể cuộn ngang nếu chật
-        <div className="flex flex-nowrap gap-4 items-stretch overflow-x-auto pb-2 -mx-1 px-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPackages.map((pkg) => (
-            <div key={pkg._id} className="flex-1 min-w-[220px] max-w-[320px]">
-              <EmployerPackageCard
-                pkg={pkg}
-                onEdit={handleEdit}
-                onToggleStatus={handleToggleStatus}
-              />
-            </div>
+            <EmployerPackageCard
+              key={pkg._id}
+              pkg={pkg}
+              onEdit={handleEdit}
+              onToggleStatus={handleToggleStatus}
+            />
           ))}
         </div>
       ) : (
-        // 2 gói ứng viên → 2 cột, đặt cạnh nhau cho cân đối
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPackages.map((pkg) => (
             <JobseekerPackageCard
               key={pkg._id}
@@ -415,15 +411,15 @@ const AdminPackages = () => {
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-[#0056b3] border-t-transparent rounded-full"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-[#003f87] border-t-transparent rounded-full"></div>
         </div>
       ) : filteredPackages.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-[#c2c6d4]/50">
-          <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">inventory_2</span>
-          <p className="text-[#5e5e62] mt-3 font-bold">Chưa có gói dịch vụ nào</p>
+        <div className="text-center py-12 bg-white rounded-xl border border-slate-200/50">
+          <span className="material-symbols-outlined text-[60px] text-slate-200">inventory_2</span>
+          <p className="text-slate-500 mt-3 font-bold">Chưa có gói dịch vụ nào</p>
           <button
             onClick={handleAddNew}
-            className="mt-4 text-[#0056b3] font-bold hover:underline"
+            className="mt-4 text-[#003f87] font-bold hover:underline"
           >
             Tạo gói đầu tiên
           </button>

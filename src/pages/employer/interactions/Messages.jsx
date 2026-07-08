@@ -33,7 +33,7 @@ const getAttachmentMeta = (attachment) => {
 };
 
 const getCompanyInfo = (conversation) => {
-  const company = conversation?.jobId?.companyId;
+  const company = conversation?.jobId?.companyId || conversation?.companyId;
   return {
     name: company?.name || company?.companyName || 'Công ty bạn',
     avatar: company?.avatarUrl || company?.logo || '',

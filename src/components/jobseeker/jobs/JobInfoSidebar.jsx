@@ -32,7 +32,7 @@ const JobInfoSidebar = ({ job }) => {
         <InfoItem
           icon={<Award className="w-5 h-5" />}
           label="Kinh nghiệm"
-          value={job?.experienceLevelId?.name}
+          value={job?.experience}
         />
 
         <InfoItem

@@ -4,6 +4,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
 import { createBoostCvPayment, getBoostCvPackages, getJobseekerWallet } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
+import Toast from '../../../components/shared/Toast';
 
 const formatPrice = (price) => `${new Intl.NumberFormat('vi-VN').format(price || 0)}đ`;
 
@@ -12,8 +13,7 @@ const boostFeatures = (pkg) => {
   return [
     { ok: !!benefits.priorityDisplay, text: 'Đẩy CV lên TOP khi nhà tuyển dụng tìm kiếm' },
     { ok: !!benefits.priorityDisplay, text: `Ưu tiên hiển thị hồ sơ trong ${pkg.durationDays || 30} ngày` },
-    { ok: !!benefits.aiPremiumAccess, text: 'AI phân tích và gợi ý tối ưu CV' },
-    { ok: !!benefits.aiPremiumAccess, text: 'Mẫu CV cao cấp và huy hiệu nổi bật' },
+    { ok: !!benefits.aiPremiumAccess, text: `Sử dụng AI phân tích và gợi ý tối ưu CV không giới hạn trong ${pkg.durationDays || 30} ngày` },
   ];
 };
 
@@ -48,6 +48,7 @@ const UpgradePremium = () => {
   const [paying, setPaying] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState(null);
   const [message, setMessage] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -89,11 +90,15 @@ const UpgradePremium = () => {
     setWalletResult(null);
 
     try {
-      const [cvsRes, wallet] = await Promise.all([
-        api.get('/jobseeker/cvs'),
+      const [uploadedCvsRes, templateCvsRes, wallet] = await Promise.all([
+        api.get('/jobseeker/cvs').catch(() => ({ data: { data: [] } })),
+        api.get('/cvs').catch(() => ({ data: { data: [] } })),
         getJobseekerWallet().catch(() => null),
       ]);
-      setCvs(cvsRes.data?.data || []);
+      const uploadedCvs = uploadedCvsRes.data?.data || [];
+      const templateCvs = templateCvsRes.data?.data || [];
+      const allCvs = [...templateCvs, ...uploadedCvs];
+      setCvs(allCvs.filter(cv => cv.isPublic));
       if (wallet) setWalletBalance(wallet.balance || 0);
     } catch (error) {
       console.error('Không thể tải danh sách CV:', error);
@@ -112,7 +117,6 @@ const UpgradePremium = () => {
     setSelectedCv('');
     setUpgradeInfo(null);
     setMessage('');
-    setBuyPkg(null); setQrData(null); setSelectedCv(''); setUpgradeInfo(null);
     setWalletResult(null);
   };
 
@@ -153,7 +157,7 @@ const UpgradePremium = () => {
           cvId
         });
       } else if (errorData?.code === 'INSUFFICIENT_BALANCE') {
-        alert(errorData.message || 'Số dư ví không đủ.');
+        setToastMsg(errorData.message || 'Số dư ví không đủ.');
         setPaymentMethod('SEPAY');
       } else {
         const text = errorData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
@@ -188,6 +192,7 @@ const UpgradePremium = () => {
 
   return (
     <main className="min-h-screen bg-slate-50 pb-16">
+      <Toast message={toastMsg} onClose={() => setToastMsg('')} />
       <section className="relative overflow-hidden bg-[#003f87] px-4 py-16 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_34%)]" />
         <div className="relative mx-auto max-w-7xl text-center">
@@ -285,19 +290,24 @@ const UpgradePremium = () => {
                       {!cvsLoaded ? (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Đang tải danh sách CV...</div>
                       ) : cvs.length ? (
-                        <select
-                          value={selectedCv}
-                          onChange={(event) => setSelectedCv(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                        >
-                          <option value="">-- Chọn CV --</option>
-                          {cvs.map((cv) => (
-                            <option key={cv._id} value={cv._id}>{getCvName(cv)}</option>
-                          ))}
-                        </select>
+                        <>
+                          <select
+                            value={selectedCv}
+                            onChange={(event) => setSelectedCv(event.target.value)}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          >
+                            <option value="">-- Chọn CV --</option>
+                            {cvs.map((cv) => (
+                              <option key={cv._id} value={cv._id}>{getCvName(cv)}</option>
+                            ))}
+                          </select>
+                          <p className="mt-2 text-xs text-slate-500">
+                            * Chỉ hiển thị các CV đang được bật tính năng <strong>Cho phép nhà tuyển dụng tìm kiếm (Công khai)</strong>.
+                          </p>
+                        </>
                       ) : (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                          Bạn chưa có CV. Vui lòng tạo hoặc tải CV lên trước khi mua Boost CV.
+                          Bạn chưa có CV nào được bật Công khai. Vui lòng tạo CV và bật tính năng "Cho phép nhà tuyển dụng tìm kiếm" trước khi mua gói Boost.
                         </div>
                       )}
 

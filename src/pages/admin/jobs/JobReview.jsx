@@ -148,7 +148,7 @@ const JobReview = () => {
 
             <div className="text-sm text-slate-600 space-y-1">
               <div><b>Công ty:</b> {job.companyId?.name || 'N/A'}</div>
-              <div><b>Cấp bậc:</b> {job.jobLevelId?.name || 'N/A'} • <b>Kinh nghiệm:</b> {job.experienceLevelId?.name || 'Không yêu cầu'}</div>
+              <div><b>Cấp bậc:</b> {job.jobLevelId?.name || 'N/A'} • <b>Kinh nghiệm:</b> {job.experience || 'Không yêu cầu'}</div>
               <div><b>Hạn nộp:</b> {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A'}</div>
             </div>
 

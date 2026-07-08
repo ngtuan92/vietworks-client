@@ -35,8 +35,8 @@ const JobseekerLayout = () => {
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Handshake className="text-white w-4 h-4" />
               </div>
-              <p className="text-white text-sm">
-                Hãy chia sẻ nhu cầu công việc để nhận gợi ý việc làm tốt nhất
+              <p className="text-sm font-semibold text-white/90">
+                Hãy chia sẻ nhu cầu công việc để nhận gợi ý việc làm tốt nhất và giúp Nhà tuyển dụng dễ dàng tìm thấy hồ sơ của bạn.
               </p>
             </div>
             <button
@@ -57,8 +57,9 @@ const JobseekerLayout = () => {
 
       {/* Footer dùng chung */}
       <Footer />
-      <JobseekerChatBubble />
+      
       <AiChatbotBubble />
+      <JobseekerChatBubble />
     </div>
   );
 };

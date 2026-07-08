@@ -168,7 +168,6 @@ const ProfileNav = ({ activeTab, setActiveTab }) => {
     { key: 'overview', icon: <User className="w-5 h-5" />, label: 'Thông tin cá nhân' },
     { key: 'security', icon: <Lock className="w-5 h-5" />, label: 'Bảo mật & mật khẩu' },
     { key: 'notifications', icon: <Bell className="w-5 h-5" />, label: 'Cài đặt thông báo' },
-    { key: 'privacy', icon: <Shield className="w-5 h-5" />, label: 'Quyền riêng tư' },
     { key: 'quickLinks', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Lối tắt hồ sơ' },
   ];
 

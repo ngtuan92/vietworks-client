@@ -75,7 +75,7 @@ const AiChatbotBubble = () => {
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start pointer-events-none">
+    <div className="fixed bottom-4 left-4 z-[60] flex flex-col items-start pointer-events-none">
       {isOpen && (
         <div className="mb-4 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[82vh] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto">
           <div className="px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-primary text-white flex items-center justify-between">
@@ -185,7 +185,7 @@ const AiChatbotBubble = () => {
         aria-label="Mo chatbot AI"
       >
         {!isOpen && (
-          <span className="absolute left-[82px] top-3 w-max max-w-[180px] rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xl border border-slate-200 opacity-0 translate-y-1 transition-all group-hover:opacity-100 group-hover:translate-y-0">
+          <span className="absolute bottom-full left-0 mb-2 w-max max-w-[180px] rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xl border border-slate-200 opacity-0 translate-y-1 transition-all group-hover:opacity-100 group-hover:translate-y-0">
             Cần hỗ trợ tìm việc?
           </span>
         )}
