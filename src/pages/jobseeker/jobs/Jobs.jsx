@@ -384,7 +384,7 @@ const Jobs = () => {
                   <Search className="w-5 h-5 text-slate-400" />
                   <input
                     className="w-full py-2 bg-transparent border-none focus:ring-0 text-gray-700 outline-none"
-                    placeholder="Chức danh, từ khóa..."
+                    placeholder="Chức danh, mô tả, yêu cầu..."
                     type="text"
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}

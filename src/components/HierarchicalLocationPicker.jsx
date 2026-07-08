@@ -22,7 +22,7 @@ export default function HierarchicalLocationPicker({ onLocationSelect }) {
   const handleProvinceChange = (e) => {
     const code = e.target.value;
     setSelectedProvinceCode(code);
-    
+
     // Reset cấp dưới
     setSelectedDistrictCode('');
     setSelectedWardCode('');
@@ -34,7 +34,7 @@ export default function HierarchicalLocationPicker({ onLocationSelect }) {
   const handleDistrictChange = (e) => {
     const code = e.target.value;
     setSelectedDistrictCode(code);
-    
+
     setSelectedWardCode('');
     setWards(code ? getWardsByDistrictCode(code) : []);
   };
@@ -71,7 +71,7 @@ export default function HierarchicalLocationPicker({ onLocationSelect }) {
   return (
     <div className="space-y-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
+
         {/* Cấp 1: Tỉnh / Thành phố */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 mb-1">Tỉnh / Thành phố</label>

@@ -17,8 +17,11 @@ import {
   ChevronDown,
   Sparkles,
   Info,
+  ExternalLink,
 } from 'lucide-react';
 import { getSalaryLookupOptions, getSalaryLookup } from '../../../services/salaryService';
+import { getPublicJobs } from '../../../services/jobService';
+import { Link } from 'react-router-dom';
 
 const formatMillion = (n) => {
   if (n == null) return '—';
@@ -116,11 +119,13 @@ const SalaryInsight = () => {
   const [careerPositionId, setCareerPositionId] = useState('');
   const [experienceLevelId, setExperienceLevelId] = useState('');
   const [location, setLocation] = useState('');
-  const [keyword, setKeyword] = useState('');
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [suggestedJobs, setSuggestedJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -168,6 +173,8 @@ const SalaryInsight = () => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setSuggestedJobs([]);
+    setHasSearched(true);
     try {
       const params = {};
       if (careerGroupId) params.careerGroupId = careerGroupId;
@@ -175,13 +182,28 @@ const SalaryInsight = () => {
       if (careerPositionId) params.careerPositionId = careerPositionId;
       if (experienceLevelId) params.experienceLevelId = experienceLevelId;
       if (location.trim()) params.location = location.trim();
-      if (keyword.trim()) params.keyword = keyword.trim();
 
       const res = await getSalaryLookup(params);
       if (res?.success) {
         setResult(res);
       } else {
         setError(res?.message || 'Tra cứu thất bại.');
+      }
+
+      // Fetch gợi ý việc làm cùng filter
+      setLoadingJobs(true);
+      try {
+        const jobParams = { limit: 6 };
+        if (careerGroupId) jobParams.careerGroupId = careerGroupId;
+        if (careerId) jobParams.careerId = careerId;
+        if (experienceLevelId) jobParams.experienceLevelId = experienceLevelId;
+        if (location.trim()) jobParams.location = location.trim();
+        const jobRes = await getPublicJobs(jobParams);
+        setSuggestedJobs(jobRes?.data || []);
+      } catch {
+        setSuggestedJobs([]);
+      } finally {
+        setLoadingJobs(false);
       }
     } catch (err) {
       setError(
@@ -199,12 +221,13 @@ const SalaryInsight = () => {
     setCareerPositionId('');
     setExperienceLevelId('');
     setLocation('');
-    setKeyword('');
     setResult(null);
     setError(null);
+    setSuggestedJobs([]);
+    setHasSearched(false);
   };
 
-  const hasFilters = careerGroupId || careerId || careerPositionId || experienceLevelId || location || keyword;
+  const hasFilters = careerGroupId || careerId || careerPositionId || experienceLevelId || location;
 
   // ── Loading ──
   if (loadingOptions) {
@@ -332,31 +355,15 @@ const SalaryInsight = () => {
                 </h2>
                 {hasFilters && (
                   <span className="text-[11px] font-semibold text-[#0056B3] bg-blue-50 px-3 py-1 rounded-full">
-                    Đã chọn {[careerGroupId, careerId, careerPositionId, experienceLevelId, location, keyword].filter(Boolean).length} điều kiện
+                    Đã chọn {[careerGroupId, careerId, careerPositionId, experienceLevelId, location].filter(Boolean).length} điều kiện
                   </span>
                 )}
               </div>
 
               <form onSubmit={handleLookup} className="p-6 space-y-5">
-                {/* Keyword row */}
-                <div className="relative">
-                  <Field label="Từ khóa vị trí" icon={Search} htmlFor="salary-keyword">
-                    <div className="relative">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        id="salary-keyword"
-                        type="text"
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                        placeholder="Ví dụ: Lập trình viên Java, Nhân viên kinh doanh..."
-                        className={`${selectClass} pl-10`}
-                      />
-                    </div>
-                  </Field>
-                </div>
 
-                {/* Career selects */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Row 1: Nhóm nghề + Nghề */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field label="Nhóm nghề" icon={Briefcase}>
                     <div className="relative">
                       <select
@@ -395,7 +402,10 @@ const SalaryInsight = () => {
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                   </Field>
+                </div>
 
+                {/* Row 2: Vị trí chuyên môn + Mức kinh nghiệm */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field label="Vị trí chuyên môn">
                     <div className="relative">
                       <select
@@ -418,10 +428,7 @@ const SalaryInsight = () => {
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                   </Field>
-                </div>
 
-                {/* Experience + Location */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field label="Mức kinh nghiệm" icon={Award}>
                     <div className="relative">
                       <select
@@ -437,7 +444,10 @@ const SalaryInsight = () => {
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                   </Field>
+                </div>
 
+                {/* Row 3: Địa điểm */}
+                <div>
                   <Field label="Địa điểm (tỉnh/thành)" icon={MapPin}>
                     <div className="relative">
                       <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -724,7 +734,7 @@ const SalaryInsight = () => {
                     <span className="text-[11px] text-slate-400 font-medium">{result.data.byExperience.length} mức</span>
                   )}
                 </div>
-                <p className="text-xs text-slate-400 mb-5 ml-9">Mức lương trung bình theo từng cấp kinh nghiệm.</p>
+                <p className="text-xs text-slate-400 mb-5 ml-9">Lương trung bình và khoảng lương phổ biến theo từng cấp kinh nghiệm.</p>
                 {result.data.byExperience?.length > 0 ? (
                   <div className="space-y-2">
                     {result.data.byExperience.map((e, idx) => (
@@ -747,10 +757,11 @@ const SalaryInsight = () => {
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-base font-bold text-[#0056B3] tabular-nums">
-                              {formatMillion(e.averageMillion)} <span className="text-xs font-medium text-slate-400">tr</span>
+                              {formatMillion(e.averageMillion)} <span className="text-xs font-medium text-slate-400">triệu</span>
                             </div>
-                            <div className="text-[11px] text-slate-400 tabular-nums">
-                              {formatMillion(e.averageMinMillion)} – {formatMillion(e.averageMaxMillion)}
+                            <div className="text-[11px] text-slate-400 tabular-nums flex items-center gap-1 justify-end">
+                              <span className="text-[10px] text-slate-300 font-medium">Khoảng:</span>
+                              {formatMillion(e.averageMinMillion)} – {formatMillion(e.averageMaxMillion)} tr
                             </div>
                           </div>
                         </div>
@@ -761,6 +772,182 @@ const SalaryInsight = () => {
                   <div className="py-10 text-center">
                     <BarChart3 className="w-10 h-10 text-slate-200 mx-auto" />
                     <p className="text-sm text-slate-400 mt-3">Chưa có dữ liệu theo kinh nghiệm.</p>
+                  </div>
+                )}
+              </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ════════════════════════════════════════════ */}
+        {/* CÔNG TY TRẢ LƯƠNG CAO NHẤT */}
+        {/* ════════════════════════════════════════════ */}
+        <AnimatePresence>
+          {!loading && result?.enoughData && result.data.topCompanies?.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mt-6"
+            >
+              <section className="rounded-2xl bg-white border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 premium-shadow">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                      <Star className="w-4 h-4 text-amber-500" />
+                    </div>
+                    Công ty trả lương cao nhất
+                  </h2>
+                  <span className="text-[11px] text-slate-400 font-medium">{result.data.topCompanies.length} công ty</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-5 ml-9">Top công ty có mức lương trung bình cao nhất trong ngành này.</p>
+
+                <div className="space-y-2">
+                  {result.data.topCompanies.map((c, idx) => (
+                    <motion.div
+                      key={c.companyId}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.06, duration: 0.3 }}
+                    >
+                      <Link
+                        to={`/companies/${c.slug || c.companyId}`}
+                        className="group flex items-center gap-4 p-3 rounded-xl border border-slate-100 bg-white hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-sm transition-all"
+                      >
+                        {/* Rank badge */}
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
+                          idx === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm' :
+                          idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white' :
+                          idx === 2 ? 'bg-gradient-to-br from-amber-700 to-amber-800 text-white' :
+                          'bg-slate-100 text-slate-400'
+                        }`}>
+                          {idx + 1}
+                        </div>
+
+                        {/* Company info */}
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 overflow-hidden">
+                          {c.avatarUrl
+                            ? <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            : (c.name || '?').charAt(0)
+                          }
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-slate-800 group-hover:text-amber-700 transition-colors truncate">
+                            {c.name}
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Briefcase className="w-3 h-3" />
+                            {c.sampleSize} tin tuyển dụng
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="text-base font-bold text-amber-600 tabular-nums">
+                            {formatMillion(c.averageMillion)} <span className="text-xs font-medium text-slate-400">triệu</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 tabular-nums">
+                            {formatMillion(c.averageMinMillion)} – {formatMillion(c.averageMaxMillion)} tr
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ════════════════════════════════════════════ */}
+        {/* GỢI Ý VIỆC LÀM */}
+        {/* ════════════════════════════════════════════ */}
+        <AnimatePresence>
+          {!loading && hasSearched && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <section className="rounded-2xl bg-white border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 premium-shadow mt-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                        <Briefcase className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      Việc làm gợi ý cho bạn
+                    </h2>
+                    <p className="text-xs text-slate-400 ml-9 mt-0.5">
+                      Các tin tuyển dụng phù hợp với ngành nghề bạn đã chọn.
+                    </p>
+                  </div>
+                  <Link
+                    to="/jobs"
+                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Xem tất cả <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
+
+                {loadingJobs ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : suggestedJobs.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {suggestedJobs.slice(0, 6).map((job) => {
+                      const company = job.companyId || job.company || {};
+                      const salary = job.salary || {};
+                      const salaryText =
+                        salary.type === 'NEGOTIABLE' || (!salary.minMillion && !salary.maxMillion)
+                          ? 'Thỏa thuận'
+                          : salary.minMillion && salary.maxMillion
+                            ? `${salary.minMillion} - ${salary.maxMillion} tr`
+                            : salary.minMillion
+                              ? `Từ ${salary.minMillion} tr`
+                              : `Đến ${salary.maxMillion} tr`;
+
+                      return (
+                        <Link
+                          key={job._id}
+                          to={`/jobs/${job._id}`}
+                          className="group block p-4 rounded-xl border border-slate-100 bg-white hover:border-primary/30 hover:shadow-md transition-all"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 overflow-hidden">
+                              {company.avatarUrl
+                                ? <img src={company.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                : (company.name || job.title || '?').charAt(0)
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-bold text-slate-800 group-hover:text-primary transition-colors truncate">
+                                {job.title}
+                              </h3>
+                              <p className="text-xs text-slate-500 truncate mt-0.5">{company.name || '—'}</p>
+                              <div className="flex items-center gap-3 mt-2 text-xs">
+                                {job.workLocations?.[0]?.provinceName && (
+                                  <span className="flex items-center gap-1 text-slate-400">
+                                    <MapPin className="w-3 h-3" />
+                                    {job.workLocations[0].provinceName}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1 font-semibold text-emerald-600 ml-auto">
+                                  <DollarSign className="w-3 h-3" />
+                                  {salaryText}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                    <CheckCircle2 className="w-10 h-10 text-slate-200 mb-2" />
+                    <p className="text-sm font-medium">Chưa có việc làm gợi ý phù hợp.</p>
                   </div>
                 )}
               </section>
