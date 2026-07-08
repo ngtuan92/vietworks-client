@@ -19,7 +19,7 @@ const CompanyCard = memo(({
     || company.province
     || null;
 
-  const sizeName = company.sizeId?.name || company.size?.name || null;
+  const sizeName = company.sizeId?.name || company.size?.name || company.size || null;
 
   return (
     <div className="group relative rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-blue-200/60 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
@@ -55,7 +55,7 @@ const CompanyCard = memo(({
           {/* Info */}
           <div className="min-w-0 flex-1">
             <Link to={`/companies/${company._id}`} className="block">
-              <h3 className="text-base font-bold text-slate-800 line-clamp-1 group-hover:text-[#0056B3] transition-colors duration-200">
+              <h3 className="text-base font-bold text-slate-800 line-clamp-2 group-hover:text-[#0056B3] transition-colors duration-200" title={company.name}>
                 {company.name}
               </h3>
             </Link>
