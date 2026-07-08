@@ -47,14 +47,14 @@ const CompanyVerification = () => {
         company.email?.toLowerCase().includes(keyword);
 
       const matchStatus = !filters.status || company.verificationStatus === filters.status;
-      const matchField = !filters.field || company.industry?.name === filters.field;
+      const matchField = !filters.field || company.industries?.some(i => i.name === filters.field);
       const matchSize = !filters.size || company.size?.name === filters.size;
 
       return matchKeyword && matchStatus && matchField && matchSize;
     });
   }, [companies, filters]);
 
-  const fieldOptions = [...new Set(companies.map((c) => c.industry?.name).filter(Boolean))];
+  const fieldOptions = [...new Set(companies.flatMap(c => c.industries?.map(i => i.name)).filter(Boolean))];
   const sizeOptions = [...new Set(companies.map((c) => c.size?.name).filter(Boolean))];
 
   return (
@@ -108,10 +108,10 @@ const CompanyVerification = () => {
             <td className="px-4 py-3 font-semibold text-slate-900">{company.name}</td>
             <td className="px-4 py-3">{company.taxCode}</td>
             <td className="px-4 py-3">{company.email}</td>
-            <td className="px-4 py-3">{company.industry?.name || '-'}</td>
-            <td className="px-4 py-3">{company.size?.name || '-'}</td>
+            <td className="px-4 py-3">{company.industries?.map(i => i.name).join(', ') || '-'}</td>
+            <td className="px-4 py-3">{company.size || '-'}</td>
             <td className="px-4 py-3"><StatusBadge value={company.verificationStatus} map={statusMap} /></td>
-            <td className="px-4 py-3">{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString('vi-VN') : '-'}</td>
+            <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString('vi-VN') : '-'}</td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
                 <Link to={`/admin/companies/${company.id}`} className="rounded-xl border border-slate-200 bg-white shadow-sm px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition active:scale-95">

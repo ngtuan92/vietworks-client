@@ -100,13 +100,7 @@ export const getJobLevels = async () => {
   return response.data;
 };
 
-/**
- * Lấy danh sách Mức kinh nghiệm
- */
-export const getExperienceLevels = async () => {
-  const response = await api.get('/master-data/experience-levels');
-  return response.data;
-};
+
 
 
 /**
@@ -257,21 +251,7 @@ export const deleteSkill = async (id) => {
   return response.data;
 };
 
-// --- 6. Quản lý Mức kinh nghiệm (Experience Levels) ---
-export const createExperienceLevel = async (expData) => {
-  const response = await api.post('/admin/master-data/experience-levels', expData);
-  return response.data;
-};
 
-export const updateExperienceLevel = async (id, expData) => {
-  const response = await api.put(`/admin/master-data/experience-levels/${id}`, expData);
-  return response.data;
-};
-
-export const deleteExperienceLevel = async (id) => {
-  const response = await api.delete(`/admin/master-data/experience-levels/${id}`);
-  return response.data;
-};
 
 export default {
   createJob,
@@ -283,7 +263,6 @@ export default {
   getCareersByGroup,
   getCareerPositions,
   getJobLevels,
-  getExperienceLevels,
   getSkillsByCareerGroup,
   getAllSkills,
   getJobById,
@@ -322,9 +301,4 @@ export default {
   createSkill,
   updateSkill,
   deleteSkill,
-
-  // Admin Experience Levels
-  createExperienceLevel,
-  updateExperienceLevel,
-  deleteExperienceLevel,
 };

@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { formatDistanceToNow, format } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import jobService from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -60,7 +63,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
     careers: [],
     positions: [],
     jobLevels: [],
-    experienceLevels: [],
+
     availableSkills: []
   });
 
@@ -71,9 +74,9 @@ const [companyLocations, setCompanyLocations] = useState([]);
     careerId: '',
     careerPositionId: '',
     jobLevelId: '',
-    experienceLevelId: '',
+    experience: '',
     skills: [],
-    salary: { type: 'range', minMillion: '', maxMillion: '', currency: 'VND' },
+    salary: { type: 'RANGE', minMillion: '', maxMillion: '', currency: 'VND' },
     workLocations: [], // Chuyển thành mảng Array lưu trữ các Object Snapshot địa điểm
     saturdayPolicy: 'OFF',
     description: '',
@@ -92,12 +95,10 @@ const [companyLocations, setCompanyLocations] = useState([]);
       try {
         
         console.log('🔍 STEP 1: Gọi Promise.all...');
-        const [jobRes, groupRes, expRes,locationRes] = await Promise.all([
+        const [jobRes, groupRes, locationRes] = await Promise.all([
           jobService.getJobById(jobId),
           jobService.getCareerGroups(),
-          jobService.getExperienceLevels(),
-            companyLocationService.getMyCompanyLocations()
-
+          companyLocationService.getMyCompanyLocations()
         ]);
         
 console.log('🔍 STEP 2: Parse jobRes. success=', jobRes?.success, 'data type=', typeof jobRes?.data);
@@ -113,8 +114,7 @@ if (jobRes.success) {
 
         setMasterData(prev => ({
           ...prev,
-          careerGroups: groupRes.success ? groupRes.data : [],
-          experienceLevels: expRes.success ? expRes.data : []
+          careerGroups: groupRes.success ? groupRes.data : []
         }));
 console.log('🔍 STEP 3: setCompanyLocations. locationRes type=', typeof locationRes, 'keys=', locationRes ? Object.keys(locationRes) : 'null');
 setCompanyLocations(Array.isArray(locationRes?.data) ? locationRes.data : []);
@@ -131,10 +131,10 @@ console.log('🔍 STEP 3: xong');
           careerId: initCareerId,
           careerPositionId: getId(loadedJob.careerPositionId),
           jobLevelId: getId(loadedJob.jobLevelId),
-          experienceLevelId: getId(loadedJob.experienceLevelId),
+          experience: loadedJob.experience || '',
           skills: Array.isArray(loadedJob.skills) ? loadedJob.skills.map(s => typeof s === 'object' ? s._id : s) : [],
           salary: {
-            type: loadedJob.salary?.type || 'range',
+            type: loadedJob.salary?.type || 'RANGE',
             minMillion: loadedJob.salary?.minMillion ?? '',
             maxMillion: loadedJob.salary?.maxMillion ?? '',
             currency: loadedJob.salary?.currency || 'VND'
@@ -167,24 +167,19 @@ workLocations: Array.isArray(loadedJob.workLocations)
         // 2. Load tiếp các danh sách phụ thuộc dựa vào ID hiện tại của Job
         console.log('🔍 STEP 5: Load master data phụ thuộc. initGroupId=', initGroupId);
         if (initGroupId) {
-          const [careerRes, levelRes, skillRes] = await Promise.all([
+          const [careerRes, levelRes, skillRes, posRes] = await Promise.all([
             jobService.getCareersByGroup(initGroupId),
             jobService.getJobLevels(),
-            jobService.getSkillsByCareerGroup(initGroupId)
+            jobService.getSkillsByCareerGroup(initGroupId),
+            initCareerId ? jobService.getCareerPositions(initCareerId) : Promise.resolve({ success: true, data: [] })
           ]);
           
-          let posData = [];
-          if (initCareerId) {
-            const posRes = await jobService.getCareerPositions(initCareerId);
-            if (posRes.success) posData = posRes.data;
-          }
-
           setMasterData(prev => ({
             ...prev,
             careers: careerRes.success ? careerRes.data : [],
             jobLevels: levelRes.success ? levelRes.data : [],
             availableSkills: skillRes.success ? skillRes.data : [],
-            positions: posData
+            positions: posRes.success ? posRes.data : []
           }));
         }
 
@@ -285,7 +280,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
       careerId: formData.careerId || null,
       careerPositionId: formData.careerPositionId || null,
       jobLevelId: formData.jobLevelId || null,
-      experienceLevelId: formData.experienceLevelId || null,
+      experience: formData.experience || null,
       skills: formData.skills,
       salary: formData.salary,
       workLocations: uniqueWorkLocations,
@@ -389,8 +384,8 @@ workLocations: Array.isArray(loadedJob.workLocations)
   );
 
   // --- THAY ĐỔI LOGIC Ở ĐÂY ---
-  // Cho phép chỉnh sửa ở cả hai trạng thái DRAFT và PUBLISHED
-  const isEditable = job?.status === 'DRAFT' || job?.status === 'PUBLISHED';
+  // Cho phép chỉnh sửa ở trạng thái DRAFT và PENDING_APPROVAL
+  const isEditable = job?.status === 'DRAFT' || job?.status === 'PENDING_APPROVAL';
   const isDraft = job?.status === 'DRAFT';
 
   return (
@@ -431,18 +426,6 @@ workLocations: Array.isArray(loadedJob.workLocations)
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
               />
-            </div>
-            <div className="flex items-center h-12 pb-1">
-              <label className="relative flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  disabled={!isEditable}
-                  checked={formData.isUrgent}
-                  onChange={(e) => handleInputChange('isUrgent', e.target.checked)}
-                  className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 disabled:opacity-60"
-                />
-                Đánh dấu Tuyển gấp
-              </label>
             </div>
           </div>
 
@@ -515,17 +498,20 @@ workLocations: Array.isArray(loadedJob.workLocations)
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Yêu cầu Kinh nghiệm</label>
-                <select
+                <input
+                  type="text"
+                  list="experience-list"
                   disabled={!isEditable}
-                  value={formData.experienceLevelId}
-                  onChange={(e) => handleInputChange('experienceLevelId', e.target.value)}
+                  value={formData.experience}
+                  onChange={(e) => handleInputChange('experience', e.target.value)}
+                  placeholder="-- Chọn hoặc nhập mức kinh nghiệm --"
                   className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white focus:border-primary disabled:bg-slate-100"
-                >
-                  <option value="">-- Chọn mức kinh nghiệm --</option>
-                  {masterData.experienceLevels.map(e => (
-                    <option key={e._id} value={e._id}>{e.name}</option>
+                />
+                <datalist id="experience-list">
+                  {EXPERIENCE_LEVELS.map(e => (
+                    <option key={e} value={e} />
                   ))}
-                </select>
+                </datalist>
               </div>
             </div>
 

@@ -1,16 +1,20 @@
 import React from 'react';
 import { User, UploadCloud, Trash2, Plus } from 'lucide-react';
 
+export const BuilderContext = React.createContext({ isReadOnly: false });
+
 const EditableText = ({ tag: Tag = 'div', html, className, style, onChange, placeholder }) => {
+  const { isReadOnly } = React.useContext(BuilderContext);
   const displayClass = className && (className.includes('block') || className.includes('inline') || className.includes('flex')) ? '' : 'inline-block';
   return (
     <Tag
-      className={`outline-none border border-transparent hover:border-dashed hover:border-gray-300 rounded px-1 transition-all min-h-[1.5em] min-w-[30px] ${displayClass} focus:border-solid focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 empty:before:content-[attr(placeholder)] empty:before:text-gray-400/70 ${className || ''}`}
+      className={`outline-none border border-transparent ${!isReadOnly ? 'hover:border-dashed hover:border-gray-300 focus:border-solid focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20' : ''} rounded px-1 transition-all min-h-[1.5em] min-w-[30px] ${displayClass} empty:before:content-[attr(placeholder)] empty:before:text-gray-400/70 ${className || ''}`}
       style={style}
-      contentEditable
+      contentEditable={!isReadOnly}
       suppressContentEditableWarning
-      onBlur={(e) => onChange(e.currentTarget.innerHTML)}
+      onBlur={(e) => !isReadOnly && onChange(e.currentTarget.innerHTML)}
       onPaste={(e) => {
+        if (isReadOnly) return;
         e.preventDefault();
         const text = e.clipboardData.getData('text/plain');
         document.execCommand('insertText', false, text);
@@ -44,6 +48,7 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
   const itemGapClass = dens === 'compact' ? 'space-y-1' : dens === 'comfortable' ? 'space-y-3.5' : 'space-y-2';
 
   const updateItem = (index, field, value) => {
+    if (!onUpdate) return;
     const newItems = [...items];
     if (!newItems[index]) newItems[index] = {};
     newItems[index][field] = value;
@@ -51,10 +56,12 @@ export const renderSection = (section, style, onUpdate, columnContext, layoutCod
   };
 
   const addItem = (defaultObj = {}) => {
+    if (!onUpdate) return;
     onUpdate(code, [...items, defaultObj]);
   };
 
   const removeItem = (index) => {
+    if (!onUpdate) return;
     const newItems = items.filter((_, i) => i !== index);
     onUpdate(code, newItems);
   };

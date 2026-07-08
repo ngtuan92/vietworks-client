@@ -136,7 +136,7 @@ const JobDetailAdmin = () => {
                   'Chưa cập nhật'
                 )}
               </div>
-              <div><b>Kinh nghiệm:</b> {job.experienceLevelId?.name || 'Không yêu cầu'}</div>
+              <div><b>Kinh nghiệm:</b> {job.experience || 'Không yêu cầu'}</div>
               <div><b>Cấp bậc:</b> {job.jobLevelId?.name || 'N/A'}</div>
               <div><b>Hạn nộp hồ sơ:</b> {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A'}</div>
               <div><b>Ngày tạo tin:</b> {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : 'N/A'}</div>

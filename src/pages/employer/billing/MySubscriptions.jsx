@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getMySubscriptions } from '../../../services/paymentService';
 
@@ -39,32 +39,28 @@ const MySubscriptions = () => {
     return () => { cancelled = true; };
   }, [tab]);
 
+  const combinedItems = useMemo(() => {
+    let list = [...items];
+    if (tab === 'ACTIVE' || tab === '') {
+      const cvItems = unlockCredits.map(c => ({
+        _id: c._id,
+        packageId: { name: c.packageName },
+        status: c.status || 'ACTIVE',
+        pricePaid: c.pricePaid || 0,
+        startedAt: c.startedAt,
+        expiredAt: c.expiredAt,
+        isCvCredit: true,
+        remainingCredits: c.remainingCredits,
+        totalCredits: c.totalCredits,
+        daysRemaining: c.expiredAt ? Math.max(0, Math.ceil((new Date(c.expiredAt).getTime() - Date.now()) / 86400000)) : null
+      }));
+      list = [...list, ...cvItems];
+    }
+    return list;
+  }, [items, unlockCredits, tab]);
+
   return (
     <div className="space-y-6">
-      {unlockCredits.length > 0 && (
-        <div className="bg-gradient-to-r from-indigo-50 to-white border border-indigo-200 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-indigo-600">lock_open</span>
-            <h2 className="font-bold text-slate-900">Lượt mở khóa CV còn lại</h2>
-            <span className="ml-auto text-2xl font-black text-indigo-600">
-              {unlockCredits.reduce((s, c) => s + c.remainingCredits, 0)} lượt
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {unlockCredits.map((c) => (
-              <div key={c._id} className="flex items-center justify-between text-sm">
-                <span className="text-slate-600">{c.packageName}</span>
-                <span className="text-slate-500">
-                  còn <b className="text-indigo-700">{c.remainingCredits}/{c.totalCredits}</b> · HSD {new Date(c.expiredAt).toLocaleDateString('vi-VN')}
-                </span>
-              </div>
-            ))}
-          </div>
-          <Link to="/employer/talent-pool" className="mt-3 inline-block text-sm text-indigo-700 font-semibold hover:underline">
-            Dùng ngay ở Tìm ứng viên →
-          </Link>
-        </div>
-      )}
 
       <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-6">
         <div className="flex items-start justify-between flex-wrap gap-3">
@@ -109,11 +105,11 @@ const MySubscriptions = () => {
             </div>
           ) : error ? (
             <div className="text-center py-12 text-red-600">{error}</div>
-          ) : items.length === 0 ? (
+          ) : combinedItems.length === 0 ? (
             <EmptyState tab={tab} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {items.map((it) => (
+              {combinedItems.map((it) => (
                 <SubscriptionCard key={it._id} item={it} />
               ))}
             </div>
@@ -146,12 +142,16 @@ const SubscriptionCard = ({ item }) => {
             <h3 className="font-bold text-slate-900 truncate">{pkg?.name || item.packageCode}</h3>
             <StatusBadge status={item.status} />
           </div>
-          {item.targetTitle && (
+          {item.isCvCredit ? (
+            <p className="text-sm text-slate-600 mt-1">
+              Còn <span className="font-bold text-indigo-600">{item.remainingCredits}/{item.totalCredits}</span> lượt mở khóa
+            </p>
+          ) : item.targetTitle ? (
             <p className="text-sm text-slate-600 mt-1">
               <span className="text-slate-400">{item.targetType === 'CV' ? 'CV: ' : 'Tin tuyển dụng: '}</span>
               <span className="font-medium">{item.targetTitle}</span>
             </p>
-          )}
+          ) : null}
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-primary">
@@ -177,11 +177,18 @@ const SubscriptionCard = ({ item }) => {
       </div>
 
       {isActive && item.daysRemaining !== null && (
-        <div className="mt-3 text-sm">
-          <span className="text-slate-500">Còn lại: </span>
-          <span className={`font-bold ${item.daysRemaining <= 3 ? 'text-amber-600' : 'text-emerald-600'}`}>
-            {item.daysRemaining} ngày
-          </span>
+        <div className="mt-3 text-sm flex justify-between items-center">
+          <div>
+            <span className="text-slate-500">Còn lại: </span>
+            <span className={`font-bold ${item.daysRemaining <= 3 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              {item.daysRemaining} ngày
+            </span>
+          </div>
+          {item.isCvCredit && (
+            <Link to="/employer/talent-pool" className="text-indigo-600 font-bold hover:underline">
+              Dùng ngay →
+            </Link>
+          )}
         </div>
       )}
 

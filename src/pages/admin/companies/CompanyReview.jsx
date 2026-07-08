@@ -94,8 +94,8 @@ const CompanyReview = () => {
           <Info label="Website" value={company.website} />
           <Info label="Email công ty" value={company.email} />
           <Info label="Điện thoại" value={company.phone} />
-          <Info label="Lĩnh vực" value={company.industry?.name} />
-          <Info label="Quy mô" value={company.size?.name} />
+          <Info label="Lĩnh vực" value={company.industries?.map(i => i.name).join(', ')} />
+          <Info label="Quy mô" value={company.size} />
         </SectionCard>
 
         <SectionCard title="Tài liệu pháp lý" right={company.businessLicenseFile?.fileUrl ? <a href={company.businessLicenseFile.fileUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-semibold">Tải về</a> : null}>

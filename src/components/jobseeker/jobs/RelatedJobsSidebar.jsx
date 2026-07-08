@@ -91,7 +91,7 @@ const RelatedJobsSidebar = ({ currentJob }) => {
               </p>
               <div className="flex justify-between items-center text-on-surface-variant font-body-sm text-body-sm">
                 <span className="font-semibold text-blue-700">{formatSalary(job.salary)}</span>
-                <span className="text-outline flex items-center gap-1 text-xs truncate max-w-[100px]">
+                <span className="text-black flex items-center gap-1 text-xs truncate max-w-[100px]">
                   <MapPin className="w-3 h-3 shrink-0" />
                   <span className="truncate">{formatLocation(job)}</span>
                 </span>

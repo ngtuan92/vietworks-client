@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
+import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 console.log('companyLocationService:', companyLocationService);
 const STEPS = [
   'Thông tin cơ bản',
@@ -69,7 +70,7 @@ const INITIAL_FORM = {
   careerId: '',
   careerPositionId: '',
   jobLevelId: '',
-  experienceLevelId: '',
+  experience: '',
   skills: [],
   salaryType: 'RANGE', // 'NEGOTIABLE', 'RANGE', 'FROM', 'TO'
   salaryFrom: '',
@@ -100,7 +101,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
   const [positions, setPositions] = useState([]);
   const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
-  const [experienceLevels, setExperienceLevels] = useState([]);
+
   const [skills, setSkills] = useState([]);
 
   // --- State Form chuẩn hóa theo DB Schema ---
@@ -133,13 +134,11 @@ const [companyLocations, setCompanyLocations] = useState([]);
   useEffect(() => {
     const fetchInitialMasterData = async () => {
       try {
-        const [resGroups, resExp, resLevels] = await Promise.all([
+        const [resGroups, resLevels] = await Promise.all([
           jobApi.getCareerGroups(),
-          jobApi.getExperienceLevels(),
           jobApi.getJobLevels()
         ]);
         if (resGroups.success) setCareerGroups(resGroups.data);
-        if (resExp.success) setExperienceLevels(resExp.data);
         if (resLevels.success) setGlobalJobLevels(resLevels.data);
       } catch {
         showToast('error', 'Không thể tải dữ liệu danh mục hệ thống.');
@@ -266,7 +265,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // --- Điều kiện validate qua từng bước (Frontend Guard) ---
   const canNext = useMemo(() => {
     if (step === 1) {
-      return Boolean(form.title && form.careerGroupId && form.careerId && form.careerPositionId && form.jobLevelId && form.experienceLevelId);
+      return Boolean(form.title && form.careerGroupId && form.careerId && form.careerPositionId && form.jobLevelId && form.experience);
     }
     if (step === 2) {
       if (form.salaryType === 'NEGOTIABLE') return true;
@@ -459,7 +458,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
             careers={careers}
             positions={positions}
             jobLevels={jobLevels}
-            experienceLevels={experienceLevels}
+            experienceLevels={EXPERIENCE_LEVELS}
           />
         )}
         {step === 2 && <StepSalary form={form} setField={setField} />}
@@ -558,12 +557,13 @@ const StepBasicInfo = ({ form, setField, careerGroups, careers, positions, jobLe
         options={jobLevels.map(l => ({ value: l._id, label: l.name }))} 
       />
       
-      <Select 
-        label="Yêu cầu kinh nghiệm" 
+      <DatalistSelect
+        label="Yêu cầu kinh nghiệm"
+        id="experience"
+        value={form.experience} 
+        onChange={(v) => setField('experience', v.target.value)} 
+        options={EXPERIENCE_LEVELS}
         required 
-        value={form.experienceLevelId} 
-        onChange={(v) => setField('experienceLevelId', v)} 
-        options={experienceLevels.map(e => ({ value: e._id, label: e.name }))} 
       />
     </div>
   </div>
@@ -862,15 +862,6 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           <RichTextEditor value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} placeholder="Nhập quy chuẩn & cách thức nhận CV..." />
         </div>
       </div>
-      <label className="flex items-center gap-2 font-semibold text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-100 max-w-max cursor-pointer">
-        <input
-          type="checkbox"
-          checked={form.isUrgent}
-          onChange={(e) => setField('isUrgent', e.target.checked)}
-          className="rounded"
-        />
-        Đánh dấu đây là tin tuyển dụng GẤP (Hiển thị Badge Urgent nổi bật)
-      </label>
     </div>
   );
 };
@@ -910,6 +901,29 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
         <option key={opt.value} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
       ))}
     </select>
+  </div>
+);
+
+const DatalistSelect = ({ label, id, value, onChange, options, required = false, placeholder = '' }) => (
+  <div>
+    <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor={id}>
+      {label} {required ? <span className="text-red-600">*</span> : null}
+    </label>
+    <input
+      type="text"
+      id={id}
+      list={`${id}-list`}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder || 'Chọn hoặc nhập...'}
+      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
+      required={required}
+    />
+    <datalist id={`${id}-list`}>
+      {options.map((opt) => (
+        <option key={opt.value || opt} value={opt.value || opt} />
+      ))}
+    </datalist>
   </div>
 );
 

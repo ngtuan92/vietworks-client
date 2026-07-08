@@ -19,6 +19,7 @@ import {
   Info,
   ExternalLink,
 } from 'lucide-react';
+import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import { getSalaryLookupOptions, getSalaryLookup } from '../../../services/salaryService';
 import { getPublicJobs } from '../../../services/jobService';
 import { Link } from 'react-router-dom';
@@ -117,7 +118,7 @@ const SalaryInsight = () => {
   const [careerGroupId, setCareerGroupId] = useState('');
   const [careerId, setCareerId] = useState('');
   const [careerPositionId, setCareerPositionId] = useState('');
-  const [experienceLevelId, setExperienceLevelId] = useState('');
+  const [experience, setExperience] = useState('');
   const [location, setLocation] = useState('');
 
   const [result, setResult] = useState(null);
@@ -180,7 +181,7 @@ const SalaryInsight = () => {
       if (careerGroupId) params.careerGroupId = careerGroupId;
       if (careerId) params.careerId = careerId;
       if (careerPositionId) params.careerPositionId = careerPositionId;
-      if (experienceLevelId) params.experienceLevelId = experienceLevelId;
+      if (experience) params.experience = experience;
       if (location.trim()) params.location = location.trim();
 
       const res = await getSalaryLookup(params);
@@ -219,7 +220,7 @@ const SalaryInsight = () => {
     setCareerGroupId('');
     setCareerId('');
     setCareerPositionId('');
-    setExperienceLevelId('');
+    setExperience('');
     setLocation('');
     setResult(null);
     setError(null);
@@ -227,7 +228,7 @@ const SalaryInsight = () => {
     setHasSearched(false);
   };
 
-  const hasFilters = careerGroupId || careerId || careerPositionId || experienceLevelId || location;
+  const hasFilters = careerGroupId || careerId || careerPositionId || experience || location;
 
   // ── Loading ──
   if (loadingOptions) {
@@ -355,7 +356,7 @@ const SalaryInsight = () => {
                 </h2>
                 {hasFilters && (
                   <span className="text-[11px] font-semibold text-[#0056B3] bg-blue-50 px-3 py-1 rounded-full">
-                    Đã chọn {[careerGroupId, careerId, careerPositionId, experienceLevelId, location].filter(Boolean).length} điều kiện
+                    Đã chọn {[careerGroupId, careerId, careerPositionId, experience, location].filter(Boolean).length} điều kiện
                   </span>
                 )}
               </div>
@@ -431,17 +432,19 @@ const SalaryInsight = () => {
 
                   <Field label="Mức kinh nghiệm" icon={Award}>
                     <div className="relative">
-                      <select
-                        value={experienceLevelId}
-                        onChange={(e) => setExperienceLevelId(e.target.value)}
-                        className={`${selectClass} appearance-none`}
-                      >
-                        <option value="">Tất cả mức kinh nghiệm</option>
-                        {experienceLevels.map((l) => (
-                          <option key={l._id} value={l._id}>{l.name}</option>
+                      <input
+                        type="text"
+                        list="experience-list"
+                        value={experience}
+                        onChange={(e) => setExperience(e.target.value)}
+                        placeholder="Tất cả mức kinh nghiệm"
+                        className={`${selectClass}`}
+                      />
+                      <datalist id="experience-list">
+                        {EXPERIENCE_LEVELS.map((l) => (
+                          <option key={l} value={l} />
                         ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      </datalist>
                     </div>
                   </Field>
                 </div>
@@ -739,7 +742,7 @@ const SalaryInsight = () => {
                   <div className="space-y-2">
                     {result.data.byExperience.map((e, idx) => (
                       <motion.div
-                        key={e.experienceLevelId}
+                        key={e.experience}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.08, duration: 0.3 }}

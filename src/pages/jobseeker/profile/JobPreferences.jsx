@@ -11,9 +11,10 @@ import {
   getCareerGroups,
   getCareersByGroup,
   getCareerPositions,
-  getExperienceLevels
+  getJobLevels
 } from '../../../services/jobService';
 import HierarchicalLocationPicker from '../../../components/HierarchicalLocationPicker';
+import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import { useNotification } from '../../../contexts/NotificationContext';
 
 const STEPS = [
@@ -32,7 +33,8 @@ const JobPreferences = () => {
     careerGroupId: '',
     careerId: '',
     careerPositionId: '',
-    experienceLevelId: '',
+    jobLevelId: '',
+    experience: '',
     salaryMin: '',
     salaryMax: '',
     workLocations: []
@@ -41,7 +43,8 @@ const JobPreferences = () => {
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
-  const [experienceLevels, setExperienceLevels] = useState([]);
+  const [jobLevels, setJobLevels] = useState([]);
+
   const [loadingMaster, setLoadingMaster] = useState(true);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
@@ -50,13 +53,13 @@ const JobPreferences = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [cgRes, expRes, prefsRes] = await Promise.all([
+        const [cgRes, jlRes, prefsRes] = await Promise.all([
           getCareerGroups(),
-          getExperienceLevels(),
+          getJobLevels(),
           getJobPreferences()
         ]);
         setCareerGroups(cgRes.data || []);
-        setExperienceLevels(expRes.data || []);
+        setJobLevels(jlRes.data || []);
 
         const data = prefsRes.data;
         if (data) {
@@ -65,7 +68,8 @@ const JobPreferences = () => {
             careerGroupId: dj.careerGroupId?._id || dj.careerGroupId || '',
             careerId: dj.careerId?._id || dj.careerId || '',
             careerPositionId: dj.careerPositionId?._id || dj.careerPositionId || '',
-            experienceLevelId: dj.experienceLevelId?._id || dj.experienceLevelId || '',
+            jobLevelId: dj.jobLevelId?._id || dj.jobLevelId || '',
+            experience: dj.experience || '',
             salaryMin: dj.salaryExpectationMillion?.min ?? '',
             salaryMax: dj.salaryExpectationMillion?.max ?? '',
             workLocations: Array.isArray(dj.workLocations) ? dj.workLocations : []
@@ -158,7 +162,8 @@ const JobPreferences = () => {
         careerGroupId: formData.careerGroupId || undefined,
         careerId: formData.careerId || undefined,
         careerPositionId: formData.careerPositionId || undefined,
-        experienceLevelId: formData.experienceLevelId || undefined,
+        jobLevelId: formData.jobLevelId || undefined,
+        experience: formData.experience || undefined,
         salaryMin: formData.salaryMin !== '' ? Number(formData.salaryMin) : undefined,
         salaryMax: formData.salaryMax !== '' ? Number(formData.salaryMax) : undefined,
         workLocations: formData.workLocations.length > 0 ? formData.workLocations : undefined
@@ -181,6 +186,7 @@ const JobPreferences = () => {
   const selectedCareerGroup = careerGroups.find((g) => g._id === formData.careerGroupId);
   const selectedCareer = careers.find((c) => c._id === formData.careerId);
   const selectedPosition = positions.find((p) => p._id === formData.careerPositionId);
+  const selectedJobLevel = jobLevels.find((l) => l._id === formData.jobLevelId);
 
   if (loadingMaster) {
     return (
@@ -233,7 +239,6 @@ const JobPreferences = () => {
               {STEPS.map((s) => {
                 const active = step === s.num;
                 const completed = step > s.num;
-                const pending = step < s.num;
                 const Icon = s.icon;
                 return (
                   <div
@@ -248,15 +253,12 @@ const JobPreferences = () => {
                     }`}
                   >
                     <span className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
-                      active ? 'bg-white/20' : completed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100'
+                      active ? 'bg-white/20 text-white' : completed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
                     }`}>
-                      {completed ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                      {completed ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4 h-4" />}
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold opacity-80">Bước {s.num}</p>
-                      <p className="text-sm font-bold truncate">{s.label}</p>
-                    </div>
-                    {active && <ChevronRight className="w-4 h-4 shrink-0" />}
+                    <span className="text-sm font-bold">{s.label}</span>
+                    {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                   </div>
                 );
               })}
@@ -285,6 +287,12 @@ const JobPreferences = () => {
                       <span className="font-semibold text-slate-700 line-clamp-2">{selectedPosition.name}</span>
                     </div>
                   )}
+                  {selectedJobLevel && (
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-slate-400 shrink-0">Cấp bậc:</span>
+                      <span className="font-semibold text-slate-700 line-clamp-2">{selectedJobLevel.name}</span>
+                    </div>
+                  )}
                   {formData.workLocations.length > 0 && (
                     <div className="flex items-start gap-1.5">
                       <span className="text-slate-400 shrink-0">Địa điểm:</span>
@@ -294,6 +302,10 @@ const JobPreferences = () => {
                 </div>
               </div>
             )}
+            
+            <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 text-center">
+              Vui lòng hoàn thành lần lượt các bước.
+            </div>
           </aside>
 
           {/* Main content area */}
@@ -338,26 +350,36 @@ const JobPreferences = () => {
                       disabled={!formData.careerGroupId}
                     />
                   </div>
-                  <SelectField
-                    label="Vị trí chuyên môn"
-                    required
-                    value={formData.careerPositionId}
-                    onChange={(v) => setFormData((p) => ({ ...p, careerPositionId: v }))}
-                    placeholder="-- Chọn vị trí --"
-                    options={positions}
-                    disabled={!formData.careerId}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <SelectField
+                      label="Vị trí chuyên môn"
+                      required
+                      value={formData.careerPositionId}
+                      onChange={(v) => setFormData((p) => ({ ...p, careerPositionId: v }))}
+                      placeholder="-- Chọn vị trí --"
+                      options={positions}
+                      disabled={!formData.careerId}
+                    />
+                    <SelectField
+                      label="Cấp bậc"
+                      required
+                      value={formData.jobLevelId}
+                      onChange={(v) => setFormData((p) => ({ ...p, jobLevelId: v }))}
+                      placeholder="-- Chọn cấp bậc --"
+                      options={jobLevels}
+                    />
+                  </div>
                 </div>
               )}
 
               {step === 2 && (
                 <div className="space-y-5">
-                  <SelectField
+                  <DatalistSelectField
                     label="Mức kinh nghiệm mong muốn"
-                    value={formData.experienceLevelId}
-                    onChange={(v) => setFormData((p) => ({ ...p, experienceLevelId: v }))}
+                    value={formData.experience}
+                    onChange={(v) => setFormData((p) => ({ ...p, experience: v }))}
                     placeholder="-- Chọn mức kinh nghiệm --"
-                    options={experienceLevels}
+                    options={EXPERIENCE_LEVELS}
                     hint="Hệ thống sẽ ưu tiên hiển thị các job có yêu cầu kinh nghiệm phù hợp."
                   />
 
@@ -528,6 +550,29 @@ const SelectField = ({ label, value, onChange, placeholder, options, disabled = 
     </select>
     {hint && <p className="text-xs text-slate-500 mt-2">{hint}</p>}
   </label>
+);
+
+const DatalistSelectField = ({ label, id = 'datalist', value, onChange, placeholder, options, disabled = false, required = false, hint }) => (
+  <div>
+    <label className="block text-sm font-semibold text-slate-700 mb-2">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      type="text"
+      list={`${id}-list`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      placeholder={placeholder}
+      className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none disabled:bg-slate-50 transition-colors"
+    />
+    <datalist id={`${id}-list`}>
+      {options.map((opt) => (
+        <option key={opt} value={opt} />
+      ))}
+    </datalist>
+    {hint && <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{hint}</p>}
+  </div>
 );
 
 export default JobPreferences;

@@ -37,9 +37,9 @@ const CategorySidebar = () => {
   };
 
   return (
-    <div className="md:col-span-3 bg-white rounded-xl shadow-[0px_4px_12px_rgba(0,0,0,0.05)] p-5 border border-outline-variant flex flex-col h-full">
-      <h3 className="font-bold text-slate-800 mb-4 text-lg">Nhóm nghề nổi bật</h3>
-      <div className="space-y-1 flex-1">
+    <div className="md:col-span-3 bg-white rounded-xl shadow-[0px_4px_12px_rgba(0,0,0,0.05)] p-5 border border-outline-variant flex flex-col h-full justify-center">
+      <h3 className="font-bold text-slate-800 mb-4 text-lg text-center">Nhóm nghề nổi bật</h3>
+      <div className="space-y-1">
         {categories.map((cat) => (
           <Link
             key={cat._id}
