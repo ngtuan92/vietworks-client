@@ -52,7 +52,7 @@ const Hero = () => {
               <Search className="text-slate-400 mr-3 w-5 h-5 shrink-0" />
               <input
                 className="w-full bg-transparent border-none focus:ring-0 text-slate-900 text-base outline-none placeholder:text-slate-500 font-medium"
-                placeholder="Chức danh, từ khóa hoặc công ty..."
+                placeholder="Chức danh, mô tả, yêu cầu công việc..."
                 type="text"
                 value={globalKeyword}
                 onChange={(event) => setGlobalKeyword(event.target.value)}
