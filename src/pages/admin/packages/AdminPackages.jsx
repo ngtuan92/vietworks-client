@@ -15,6 +15,7 @@ const targetRoleLabels = {
 const packageTypeLabels = {
   CV_BOOST: 'Boost CV',
   PREMIUM_JOB: 'Tin nổi bật + Gấp',
+  CV_UNLOCK: 'Mở khóa CV',
 };
 
 // PackageCard cho Employer - hiển thị fields của Employer

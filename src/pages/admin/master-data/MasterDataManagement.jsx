@@ -18,7 +18,7 @@ const MasterDataManagement = () => {
   const { confirm } = useNotification();
   // --- 1. Quản lý Tabs hệ thống ---
   const [tab, setTab] = useState('Danh mục');
-  const tabs = ['Danh mục', 'Cấp bậc', 'Kinh nghiệm', 'Kỹ năng / Tags', 'Lĩnh vực công ty', 'Quy mô công ty'];
+  const tabs = ['Danh mục', 'Cấp bậc', 'Kỹ năng / Tags', 'Lĩnh vực công ty'];
   const [loading, setLoading] = useState(false);
 
   // --- 2. Master Data States từ API ---
@@ -451,10 +451,8 @@ const MasterDataManagement = () => {
           <div className="flex flex-wrap items-center gap-2">
             {tab === 'Danh mục' && <ActionButton tone="primary" onClick={() => openCreateModal('GROUP')}>+ Thêm Nhóm Ngành</ActionButton>}
             {tab === 'Cấp bậc' && <ActionButton tone="primary" onClick={() => openCreateModal('LEVEL')}>+ Thêm Cấp Bậc</ActionButton>}
-            {tab === 'Kinh nghiệm' && <ActionButton tone="primary" onClick={() => openCreateModal('EXP')}>+ Thêm Kinh Nghiệm</ActionButton>}
             {tab === 'Kỹ năng / Tags' && <ActionButton tone="primary" onClick={() => openCreateModal('SKILL')}>+ Thêm Kỹ Năng</ActionButton>}
             {tab === 'Lĩnh vực công ty' && <ActionButton tone="primary" onClick={() => openCreateModal('INDUSTRY')}>+ Thêm Lĩnh Vực</ActionButton>}
-            {tab === 'Quy mô công ty' && <ActionButton tone="primary" onClick={() => openCreateModal('SIZE')}>+ Thêm Quy Mô</ActionButton>}
           </div>
         }
       />

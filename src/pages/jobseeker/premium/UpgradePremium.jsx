@@ -90,11 +90,14 @@ const UpgradePremium = () => {
     setWalletResult(null);
 
     try {
-      const [cvsRes, wallet] = await Promise.all([
-        api.get('/jobseeker/cvs'),
+      const [uploadedCvsRes, templateCvsRes, wallet] = await Promise.all([
+        api.get('/jobseeker/cvs').catch(() => ({ data: { data: [] } })),
+        api.get('/cvs').catch(() => ({ data: { data: [] } })),
         getJobseekerWallet().catch(() => null),
       ]);
-      const allCvs = cvsRes.data?.data || [];
+      const uploadedCvs = uploadedCvsRes.data?.data || [];
+      const templateCvs = templateCvsRes.data?.data || [];
+      const allCvs = [...templateCvs, ...uploadedCvs];
       setCvs(allCvs.filter(cv => cv.isPublic));
       if (wallet) setWalletBalance(wallet.balance || 0);
     } catch (error) {
