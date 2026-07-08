@@ -862,15 +862,6 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           <RichTextEditor value={form.applyInstruction} onChange={(v) => setField('applyInstruction', v)} placeholder="Nhập quy chuẩn & cách thức nhận CV..." />
         </div>
       </div>
-      <label className="flex items-center gap-2 font-semibold text-sm text-red-700 bg-red-50 p-3 rounded-xl border border-red-100 max-w-max cursor-pointer">
-        <input
-          type="checkbox"
-          checked={form.isUrgent}
-          onChange={(e) => setField('isUrgent', e.target.checked)}
-          className="rounded"
-        />
-        Đánh dấu đây là tin tuyển dụng GẤP (Hiển thị Badge Urgent nổi bật)
-      </label>
     </div>
   );
 };

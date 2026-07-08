@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getOrCreateConversation } from '../../../services/chatService';
+import { Eye, MessageCircle, Download, CalendarPlus, FileText } from 'lucide-react';
+import { TalentPoolInterviewModal } from './CVSearch';
 
 const CVPreviewModal = ({ candidate, onClose }) => {
   const [previewUrl, setPreviewUrl] = useState('');
@@ -13,7 +15,7 @@ const CVPreviewModal = ({ candidate, onClose }) => {
     const loadPreview = async () => {
       try {
         if (!candidate?.fileUrl) {
-          setError(true);
+          setPreviewUrl(`/employer/talent-pool/cv-preview/${candidate.cvId}`);
           setLoading(false);
           return;
         }
@@ -45,38 +47,52 @@ const CVPreviewModal = ({ candidate, onClose }) => {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl h-[90vh] bg-white border border-slate-200/60 premium-shadow rounded-2xl flex flex-col overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
-          <h3 className="font-bold text-slate-900">Chi tiết CV: {candidate.fullName}</h3>
-          <div className="flex items-center gap-3">
+          <h3 className="font-bold text-slate-900">Chi tiết CV: {candidate.fullName}</h3>          <div className="flex items-center gap-3">
             {previewUrl && (
-              <a 
-                href={previewUrl} 
-                className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary/90"
-                download={candidate.fileName || 'CV.pdf'}
-              >
-                Tải xuống
-              </a>
+              candidate?.fileUrl ? (
+                <a 
+                  href={previewUrl} 
+                  className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary/90"
+                  download={candidate.fileName || 'CV.pdf'}
+                >
+                  Tải CV xuống
+                </a>
+              ) : (
+                <button
+                  onClick={() => {
+                    const iframe = document.getElementById('cv-preview-iframe');
+                    if (iframe) iframe.contentWindow.postMessage('DOWNLOAD_TEMPLATE_CV', '*');
+                  }}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary/90"
+                >
+                  Tải CV xuống
+                </button>
+              )
             )}
-            <button onClick={onClose} className="text-slate-500 hover:text-slate-700 font-bold px-3">✕</button>
+            <button onClick={onClose} className="text-slate-500 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200">✕</button>
           </div>
         </div>
-        <div className="flex-1 bg-slate-100 relative">
-          {loading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 z-10 text-slate-500 gap-3">
-              <div className="w-8 h-8 border-4 border-slate-300 border-t-primary rounded-full animate-spin"></div>
-              <p>Đang tải tài liệu...</p>
+        <div className="flex-1 p-5 bg-slate-100 overflow-hidden relative">
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
-          )}
-          {error ? (
-            <div className="absolute inset-0 flex items-center justify-center text-slate-500 bg-slate-100">
+          ) : error || !previewUrl ? (
+            <div className="w-full h-full flex items-center justify-center text-slate-500">
               Không thể tải file CV để xem trước. Bạn có thể tải xuống để xem.
             </div>
-          ) : previewUrl ? (
+          ) : !candidate?.fileUrl ? (
             <iframe
+              id="cv-preview-iframe"
               src={previewUrl}
-              className="w-full h-full border-none"
+              className="w-full h-full border-none rounded-xl bg-white"
               title="CV Preview"
             />
-          ) : null}
+          ) : (
+            <object data={previewUrl} type="application/pdf" className="w-full h-full rounded-xl border border-slate-200 shadow-sm bg-white">
+              <embed src={previewUrl} type="application/pdf" className="w-full h-full bg-white" />
+            </object>
+          )}
         </div>
       </div>
     </div>
@@ -89,6 +105,7 @@ const UnlockedCandidates = () => {
   const [loading, setLoading] = useState(true);
   const [chatLoadingId, setChatLoadingId] = useState(null);
   const [previewTarget, setPreviewTarget] = useState(null);
+  const [inviteTarget, setInviteTarget] = useState(null);
 
   useEffect(() => {
     api.get('/employer/unlocked-candidates')
@@ -141,9 +158,12 @@ const UnlockedCandidates = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                {['Ứng viên', 'Vị trí', 'Email/SĐT', 'Ngày mở khóa', 'Chi phí', 'Hành động'].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold whitespace-nowrap">{h}</th>
-                ))}
+                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Ứng viên</th>
+                <th className="text-center px-4 py-3 font-semibold whitespace-nowrap">Mời phỏng vấn</th>
+                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Ngày mở khóa</th>
+                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Gói dịch vụ</th>
+                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap border-l border-slate-200">Tên Hồ Sơ (CV)</th>
+                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Thao tác CV</th>
               </tr>
             </thead>
             <tbody>
@@ -156,52 +176,109 @@ const UnlockedCandidates = () => {
                   <td colSpan={6} className="px-4 py-10 text-center text-slate-500">Chưa có ứng viên nào được mở khóa.</td>
                 </tr>
               ) : (
-                rows.map((r) => {
+                rows.flatMap((r) => {
                   const candidate = r.candidateId || {};
-                  const cv = r.cvId || {};
-                  return (
-                    <tr key={r._id} className="border-t border-slate-100">
-                      <td className="px-4 py-4 font-semibold text-slate-900">{candidate.fullName || '—'}</td>
-                      <td className="px-4 py-4">{cv.title || '—'}</td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm">{candidate.email || '—'}</div>
-                        <div className="text-xs text-slate-500">{candidate.phone || '—'}</div>
+                  const cvs = (r.allCvs && r.allCvs.length > 0) ? r.allCvs : [{}];
+                  return cvs.map((cv, index) => (
+                    <tr key={`${r._id}-${cv._id || index}`} className="border-t border-slate-200 hover:bg-slate-50 transition-colors">
+                      {index === 0 && (
+                        <>
+                          <td rowSpan={cvs.length} className="px-4 py-4 font-semibold text-slate-900 align-top bg-white">
+                            {candidate.fullName || '—'}
+                            <div className="text-sm font-medium text-slate-600 mt-1">{candidate.email || '—'}</div>
+                            <div className="text-xs font-normal text-slate-500">{candidate.phone || '—'}</div>
+                          </td>
+                          <td rowSpan={cvs.length} className="px-4 py-4 align-top bg-white border-l border-slate-50">
+                            <div className="flex flex-col gap-2 items-center w-40">
+                              <button 
+                                onClick={() => setInviteTarget({ ...candidate, applications: r.applications, cvId: cvs[0]?._id })}
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors text-xs shadow-sm shadow-emerald-600/20 w-full justify-center"
+                                title="Mời phỏng vấn"
+                              >
+                                <CalendarPlus className="w-3.5 h-3.5" />
+                                Mời phỏng vấn
+                              </button>
+                              
+                              {r.applications && r.applications.length > 0 && (
+                                <div className="mt-2 flex flex-col gap-1 w-full border-t border-slate-100 pt-2">
+                                  <span className="text-[10px] text-slate-500 font-medium text-center uppercase mb-1">Các vị trí đã mời</span>
+                                  {r.applications.map(app => (
+                                    <Link 
+                                      key={app._id}
+                                      to={`/employer/applications/${app._id}`}
+                                      className="inline-flex items-center justify-between gap-1.5 px-2 py-1.5 rounded bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] hover:bg-emerald-100 transition-colors w-full"
+                                      title={`Xem hồ sơ: ${app.jobTitle}`}
+                                    >
+                                      <span className="truncate flex-1 text-left">{app.jobTitle || 'Công việc'}</span>
+                                      <FileText className="w-3 h-3 shrink-0" />
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top bg-white">
+                            {r.unlockedAt ? new Date(r.unlockedAt).toLocaleDateString('vi-VN') : '—'}
+                          </td>
+                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top bg-white">
+                            {r.packageName ? r.packageName : (r.amountCharged ? 'Mở khóa lẻ' : 'Gói mở khóa (Trừ lượt)')}
+                          </td>
+                        </>
+                      )}
+                      
+                      <td className={`px-4 py-4 font-medium text-[#003f87] border-l border-slate-100 ${index > 0 ? 'bg-slate-50/50' : ''}`}>
+                        {cv.title || '—'}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        {r.unlockedAt ? new Date(r.unlockedAt).toLocaleDateString('vi-VN') : '—'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        {r.amountCharged ? `${Number(r.amountCharged).toLocaleString('vi-VN')} VNĐ` : 'Miễn phí / Trừ lượt'}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          {cv.fileUrl && (
-                            <button 
-                              onClick={() => setPreviewTarget({ ...candidate, fileUrl: cv.fileUrl, fileName: cv.fileName })}
-                              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
-                            >
-                              Xem CV
-                            </button>
-                          )}
+                      <td className={`px-4 py-4 ${index > 0 ? 'bg-slate-50/50' : ''}`}>
+                        <div className="flex flex-wrap items-center gap-2">
                           <button 
                             onClick={() => handleChat(candidate._id)}
                             disabled={chatLoadingId === candidate._id}
-                            className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#003f87] text-[#003f87] font-medium hover:bg-blue-50 disabled:opacity-70 transition-colors text-xs"
+                            title="Nhắn tin với ứng viên"
                           >
+                            <MessageCircle className="w-3.5 h-3.5" />
                             {chatLoadingId === candidate._id ? 'Đang...' : 'Chat'}
                           </button>
-                          {cv.fileUrl && (
+                          {true && (
+                            <button 
+                              onClick={() => {
+                                if (cv.fileUrl) {
+                                  setPreviewTarget({ ...candidate, fileUrl: cv.fileUrl, fileName: cv.fileName });
+                                } else {
+                                  setPreviewTarget({ ...candidate, cvId: cv._id });
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-[#003f87] font-medium hover:bg-blue-100 transition-colors text-xs"
+                              title="Xem CV"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Xem CV
+                            </button>
+                          )}
+                          {cv.fileUrl ? (
                             <button 
                               onClick={() => handleDownloadCV(cv)}
-                              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition-colors text-xs"
+                              title="Tải CV"
                             >
+                              <Download className="w-3.5 h-3.5" />
+                              Tải CV
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => window.open(`/employer/talent-pool/cv-preview/${cv._id}?download=true`, '_blank')}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition-colors text-xs"
+                              title="Tải CV"
+                            >
+                              <Download className="w-3.5 h-3.5" />
                               Tải CV
                             </button>
                           )}
                         </div>
                       </td>
                     </tr>
-                  );
+                  ));
                 })
               )}
             </tbody>
@@ -213,6 +290,26 @@ const UnlockedCandidates = () => {
         <CVPreviewModal 
           candidate={previewTarget} 
           onClose={() => setPreviewTarget(null)} 
+        />
+      )}
+      {inviteTarget && (
+        <TalentPoolInterviewModal 
+          candidate={inviteTarget} 
+          onClose={() => setInviteTarget(null)}
+          onSuccess={(newApp) => {
+            setInviteTarget(null);
+            if (newApp) {
+              setRows(prev => prev.map(r => {
+                if (r.candidateId?._id === inviteTarget._id) {
+                  return {
+                    ...r,
+                    applications: [newApp, ...(r.applications || [])]
+                  };
+                }
+                return r;
+              }));
+            }
+          }}
         />
       )}
     </div>

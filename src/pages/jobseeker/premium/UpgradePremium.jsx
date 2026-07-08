@@ -94,7 +94,8 @@ const UpgradePremium = () => {
         api.get('/jobseeker/cvs'),
         getJobseekerWallet().catch(() => null),
       ]);
-      setCvs(cvsRes.data?.data || []);
+      const allCvs = cvsRes.data?.data || [];
+      setCvs(allCvs.filter(cv => cv.isPublic));
       if (wallet) setWalletBalance(wallet.balance || 0);
     } catch (error) {
       console.error('Không thể tải danh sách CV:', error);
@@ -286,19 +287,24 @@ const UpgradePremium = () => {
                       {!cvsLoaded ? (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Đang tải danh sách CV...</div>
                       ) : cvs.length ? (
-                        <select
-                          value={selectedCv}
-                          onChange={(event) => setSelectedCv(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                        >
-                          <option value="">-- Chọn CV --</option>
-                          {cvs.map((cv) => (
-                            <option key={cv._id} value={cv._id}>{getCvName(cv)}</option>
-                          ))}
-                        </select>
+                        <>
+                          <select
+                            value={selectedCv}
+                            onChange={(event) => setSelectedCv(event.target.value)}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          >
+                            <option value="">-- Chọn CV --</option>
+                            {cvs.map((cv) => (
+                              <option key={cv._id} value={cv._id}>{getCvName(cv)}</option>
+                            ))}
+                          </select>
+                          <p className="mt-2 text-xs text-slate-500">
+                            * Chỉ hiển thị các CV đang được bật tính năng <strong>Cho phép nhà tuyển dụng tìm kiếm (Công khai)</strong>.
+                          </p>
+                        </>
                       ) : (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                          Bạn chưa có CV. Vui lòng tạo hoặc tải CV lên trước khi mua Boost CV.
+                          Bạn chưa có CV nào được bật Công khai. Vui lòng tạo CV và bật tính năng "Cho phép nhà tuyển dụng tìm kiếm" trước khi mua gói Boost.
                         </div>
                       )}
 

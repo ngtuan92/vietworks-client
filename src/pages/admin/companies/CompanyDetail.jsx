@@ -222,23 +222,18 @@ const CompanyDetail = () => {
           )}
         </SectionCard>
       )}
-
-      {active !== 'Thông tin công ty' && active !== 'Địa điểm' && active !== 'Giấy tờ pháp lý' ? (
-        <SectionCard title={active}>
-          <div className="text-slate-600">
-            Chưa tích hợp backend cho mục <b>{active}</b>.
-          </div>
-        </SectionCard>
-      ) : null}
     </div>
   );
 };
 
-const Info = ({ label, value }) => (
-  <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm hover:shadow-md transition-shadow">
-    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
-    <div className="mt-1.5 text-sm font-black text-slate-900">{value || '-'}</div>
-  </div>
-);
+const Info = ({ label, value }) => {
+  if (!value || value === '-') return null;
+  return (
+    <div className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="mt-1.5 text-sm font-black text-slate-900">{value}</div>
+    </div>
+  );
+};
 
 export default CompanyDetail;

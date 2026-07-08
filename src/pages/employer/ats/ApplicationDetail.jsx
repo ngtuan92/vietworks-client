@@ -16,6 +16,7 @@ const STATUS_LABEL = {
   APPLIED: 'Đã nộp',
   VIEWED: 'Đã xem',
   APPROVED: 'Đã duyệt',
+  INTERVIEW_INVITED: 'Đã mời phỏng vấn',
   REJECTED: 'Từ chối',
   HIRED: 'Đã tuyển'
 };
@@ -25,16 +26,17 @@ const STATUS_COLOR = {
   APPLIED: 'bg-blue-50 text-primary border border-blue-100',
   VIEWED: 'bg-slate-100 text-slate-700 border border-slate-200',
   APPROVED: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  INTERVIEW_INVITED: 'bg-purple-50 text-purple-700 border border-purple-100',
   REJECTED: 'bg-red-50 text-red-700 border border-red-100',
-  HIRED: 'bg-blue-100 text-primary border border-blue-200'
+  HIRED: 'bg-emerald-50 text-emerald-700 border border-emerald-100'
 };
 
 const QUILL_MODULES = {
   toolbar: [
-    [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px'] }], 
+    [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px'] }],
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'color': [] }, { 'background': [] }],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['clean']
   ]
 };
@@ -61,8 +63,8 @@ const ApplicationDetail = () => {
 
   const handlePhoneChange = (e) => {
     const val = e.target.value.replace(/[^0-9+ \-]/g, '');
-    setInterviewData({...interviewData, contactPhone: val});
-    
+    setInterviewData({ ...interviewData, contactPhone: val });
+
     if (val && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(val.replace(/[\s\-]/g, ''))) {
       setPhoneError('SĐT không hợp lệ');
     } else {
@@ -71,13 +73,13 @@ const ApplicationDetail = () => {
   };
 
   const handleApprove = async () => {
-    confirm('Bạn muốn chuyển hồ sơ này sang trạng thái Đã duyệt?', async () => {
+    confirm('Bạn muốn chuyển hồ sơ này sang trạng thái Đã duyệt? Hành động này sẽ giảm số lượng cần tuyển đi 1.', async () => {
       try {
         setActionLoading(true);
         setError(''); setSuccessMessage('');
-        const res = await atsService.approveApplication(id, 'Hồ sơ của bạn đã được duyệt và đang chờ sắp xếp lịch phỏng vấn.');
+        const res = await atsService.approveApplication(id, 'Chúc mừng! Hồ sơ của bạn đã được duyệt thành công.');
         setApplication(prev => ({ ...prev, status: res.data.status, approvedMessage: res.data.approvedMessage, statusHistory: res.data.statusHistory }));
-        setSuccessMessage('Đã duyệt hồ sơ thành công.');
+        setSuccessMessage('Hồ sơ đã được duyệt thành công. Số lượng cần tuyển của vị trí này đã được giảm đi 1.');
       } catch (err) {
         setError(err.response?.data?.message || 'Lỗi khi duyệt hồ sơ');
       } finally {
@@ -109,7 +111,7 @@ const ApplicationDetail = () => {
   const handleInterview = async (e) => {
     e.preventDefault();
     if (!interviewData.interviewTime || !interviewData.location) return setError('Vui lòng nhập đủ thời gian và địa điểm');
-    
+
     if (new Date(interviewData.interviewTime) < new Date()) {
       return setError('Thời gian phỏng vấn không thể là trong quá khứ.');
     }
@@ -264,9 +266,8 @@ const ApplicationDetail = () => {
           <div className="flex gap-2 ml-4">
             {['UNREAD', 'APPLIED', 'VIEWED'].includes(application.status) && (
               <>
-                <button disabled={actionLoading} onClick={handleApprove} className="px-4 py-1.5 text-sm font-bold bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50">Duyệt</button>
                 <button disabled={actionLoading} onClick={() => setInterviewModalOpen(true)} className="px-4 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50">Mời phỏng vấn</button>
-                <button 
+                <button
                   onClick={() => setRejectModalOpen(true)}
                   className="px-6 py-2 bg-white text-red-600 border border-red-200 font-bold rounded-xl hover:bg-red-50 transition-colors"
                 >
@@ -274,8 +275,16 @@ const ApplicationDetail = () => {
                 </button>
               </>
             )}
-            {application.status === 'APPROVED' && !application.interviewInvitation && (
-              <button disabled={actionLoading} onClick={() => setInterviewModalOpen(true)} className="px-4 py-1.5 text-sm font-bold bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50">Tạo thư mời phỏng vấn</button>
+            {application.status === 'INTERVIEW_INVITED' && (
+              <>
+                <button disabled={actionLoading} onClick={handleApprove} className="px-4 py-1.5 text-sm font-bold bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50">Duyệt</button>
+                <button
+                  onClick={() => setRejectModalOpen(true)}
+                  className="px-6 py-2 bg-white text-red-600 border border-red-200 font-bold rounded-xl hover:bg-red-50 transition-colors"
+                >
+                  Từ chối
+                </button>
+              </>
             )}
             <button
               onClick={handleChat}
@@ -395,9 +404,9 @@ const ApplicationDetail = () => {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Lý do từ chối <span className="text-red-500">*</span></label>
                 <div className="bg-white rounded-xl border border-slate-200">
-                  <ReactQuill 
-                    theme="snow" 
-                    value={rejectReason} 
+                  <ReactQuill
+                    theme="snow"
+                    value={rejectReason}
                     onChange={setRejectReason}
                     modules={QUILL_MODULES}
                     placeholder="VD: Kinh nghiệm chưa phù hợp..."
@@ -425,39 +434,39 @@ const ApplicationDetail = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Hình thức</label>
-                  <select value={interviewData.interviewType} onChange={e => setInterviewData({...interviewData, interviewType: e.target.value})} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500">
+                  <select value={interviewData.interviewType} onChange={e => setInterviewData({ ...interviewData, interviewType: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500">
                     <option value="ONLINE">Online (Trực tuyến)</option>
                     <option value="OFFLINE">Offline (Trực tiếp)</option>
                   </select>
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Thời gian <span className="text-red-500">*</span></label>
-                  <input 
-                    type="datetime-local" 
-                    required 
+                  <input
+                    type="datetime-local"
+                    required
                     min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
-                    value={interviewData.interviewTime} 
-                    onChange={e => setInterviewData({...interviewData, interviewTime: e.target.value})} 
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" 
+                    value={interviewData.interviewTime}
+                    onChange={e => setInterviewData({ ...interviewData, interviewTime: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Địa chỉ / Link Zoom <span className="text-red-500">*</span></label>
-                <input required value={interviewData.location} onChange={e => setInterviewData({...interviewData, location: e.target.value})} placeholder="VD: Tầng 5 tòa VTC Online..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                <input required value={interviewData.location} onChange={e => setInterviewData({ ...interviewData, location: e.target.value })} placeholder="VD: Tầng 5 tòa VTC Online..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Người liên hệ</label>
-                  <input value={interviewData.contactPerson} onChange={e => setInterviewData({...interviewData, contactPerson: e.target.value})} placeholder="Tên người liên hệ..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                  <input value={interviewData.contactPerson} onChange={e => setInterviewData({ ...interviewData, contactPerson: e.target.value })} placeholder="Tên người liên hệ..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Số điện thoại</label>
-                  <input 
-                    value={interviewData.contactPhone} 
-                    onChange={handlePhoneChange} 
-                    placeholder="SĐT liên hệ..." 
-                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${phoneError ? 'border-red-500 focus:border-red-500 bg-red-50 text-red-900' : 'border-slate-200 focus:border-blue-500'}`} 
+                  <input
+                    value={interviewData.contactPhone}
+                    onChange={handlePhoneChange}
+                    placeholder="SĐT liên hệ..."
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition-colors ${phoneError ? 'border-red-500 focus:border-red-500 bg-red-50 text-red-900' : 'border-slate-200 focus:border-blue-500'}`}
                   />
                   {phoneError && <p className="text-xs text-red-500 mt-1 font-medium">{phoneError}</p>}
                 </div>
@@ -465,10 +474,10 @@ const ApplicationDetail = () => {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Ghi chú thêm</label>
                 <div className="bg-white rounded-xl border border-slate-200">
-                  <ReactQuill 
-                    theme="snow" 
-                    value={interviewData.note} 
-                    onChange={v => setInterviewData({...interviewData, note: v})}
+                  <ReactQuill
+                    theme="snow"
+                    value={interviewData.note}
+                    onChange={v => setInterviewData({ ...interviewData, note: v })}
                     modules={QUILL_MODULES}
                     placeholder="Mang theo laptop, mặc lịch sự..."
                     className="[&_.ql-editor]:min-h-[150px] [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-container]:border-0 [&_.ql-toolbar]:border-0 [&_.ql-toolbar]:border-b [&_.ql-toolbar]:bg-slate-50"

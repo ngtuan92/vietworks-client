@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit, Trash2, CheckCircle, Download, Plus } from 'lucide-react';
 
-export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, onRename, onSetMain }) => {
+export const CVCard = ({ id, title, date, isMain, image, isPublic, onDelete, onDownload, onRename, onSetMain, onTogglePublic }) => {
   const navigate = useNavigate();
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
@@ -110,12 +110,35 @@ export const CVCard = ({ id, title, date, isMain, image, onDelete, onDownload, o
             </button>
           )}
 
+          {/* Toggle hiển thị trong Talent Pool */}
+          <div className="flex items-center justify-between mt-2 mb-stack-sm p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+            <span className="text-xs text-slate-600 font-medium">Cho phép NTD tìm kiếm</span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onTogglePublic?.(id, isPublic); }}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                isPublic ? 'bg-emerald-500' : 'bg-slate-300'
+              }`}
+              title={isPublic ? 'Đang hiển thị với NTD' : 'Ẩn khỏi NTD tìm kiếm'}
+            >
+              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isPublic ? 'translate-x-4' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+
           <div className="flex gap-stack-sm">
             <button
-              onClick={() => navigate(`/cv-builder/${id}`)}
+              onClick={() => navigate(`/cv-builder/${id}?preview=true`)}
               className="flex-1 border border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary-fixed transition-colors text-body-sm cursor-pointer"
             >
               Xem trước
+            </button>
+            <button
+              onClick={() => navigate(`/cv-builder/${id}`)}
+              className="flex-1 border border-slate-200 text-slate-700 font-bold py-2 rounded-lg hover:bg-slate-50 transition-colors text-body-sm cursor-pointer"
+            >
+              Chỉnh sửa
             </button>
             <button
               onClick={() => onDownload && onDownload(id)}

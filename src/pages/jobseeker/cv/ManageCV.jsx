@@ -195,6 +195,26 @@ const ManageCV = () => {
     }
   };
 
+  const handleToggleTemplateCvPublic = async (id, currentPublicState) => {
+    try {
+      const newState = !currentPublicState;
+      const res = await cvService.updateCv(id, { isPublic: newState });
+      if (res.success) {
+        setCvs(prev => prev.map(cv => cv._id === id ? { ...cv, isPublic: newState } : cv));
+        if (newState) {
+          setShowPublicSuccessModal(true);
+        } else {
+          success('Đã tắt công khai, CV sẽ bị ẩn khỏi NTD!');
+        }
+      } else {
+        error(res.message || 'Cập nhật trạng thái thất bại!');
+      }
+    } catch (err) {
+      console.error('Toggle template CV public failed:', err);
+      error('Đã xảy ra lỗi khi cập nhật trạng thái CV!');
+    }
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -263,11 +283,13 @@ const ManageCV = () => {
                         title={cv.title}
                         date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
                         isMain={cv.isMain}
+                        isPublic={cv.isPublic}
                         image={cv.previewImageUrl || cv.templateId?.previewImageUrl || cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
                         onDelete={handleDeleteCv}
                         onDownload={handleDownloadPdf}
                         onRename={handleRenameCv}
                         onSetMain={handleSetMain}
+                        onTogglePublic={handleToggleTemplateCvPublic}
                       />
                     ))}
                     {filter !== 'active' && cvs.length < 5 && <CVPlaceholderCard />}

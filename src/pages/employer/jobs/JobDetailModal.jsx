@@ -427,18 +427,6 @@ workLocations: Array.isArray(loadedJob.workLocations)
                 className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
               />
             </div>
-            <div className="flex items-center h-12 pb-1">
-              <label className="relative flex items-center gap-2 cursor-pointer select-none text-sm font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  disabled={!isEditable}
-                  checked={formData.isUrgent}
-                  onChange={(e) => handleInputChange('isUrgent', e.target.checked)}
-                  className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 disabled:opacity-60"
-                />
-                Đánh dấu Tuyển gấp
-              </label>
-            </div>
           </div>
 
           {/* Cấu trúc Danh mục liên kết động */}

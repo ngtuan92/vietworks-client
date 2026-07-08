@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import html2canvas from 'html2canvas-pro';
@@ -10,7 +10,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { SortableItem } from '../../../components/jobseeker/cv/builder/SortableItem';
 import { BuilderLeftSidebar } from '../../../components/jobseeker/cv/builder/BuilderLeftSidebar';
 import { BuilderRightSidebar } from '../../../components/jobseeker/cv/builder/BuilderRightSidebar';
-import { renderSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
+import { renderSection, BuilderContext } from '../../../components/jobseeker/cv/builder/SectionRenderer';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
 import uploadService from '../../../services/uploadService';
 import { ArrowLeft, User, UploadCloud } from 'lucide-react';
@@ -98,6 +98,8 @@ const buildTemplateSnapshot = (template) => ({
 const CVBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPreviewMode = searchParams.get('preview') === 'true';
   const cvRef = useRef(null);
   const cvDisplayRef = useRef(null);
   const { error: showError, success: showSuccess } = useNotification();
@@ -750,6 +752,69 @@ const CVBuilder = () => {
       </div>
     )
   );
+  if (isPreviewMode) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col items-center py-8 px-4 font-body-md">
+        <div className="w-full max-w-3xl">
+          <div className="flex items-center justify-between mb-5">
+            <button
+              type="button"
+              onClick={() => navigate('/manage-cv')}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm hover:border-primary/40 hover:text-primary transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Quay lại
+            </button>
+            <span className="text-slate-500 text-sm font-medium">Xem trước: {cvData?.title}</span>
+            <button
+              onClick={handleExportPDF}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-white px-4 py-2 text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
+            >
+              <UploadCloud className="h-4 w-4" />
+              {saving ? 'Đang xuất...' : 'Tải PDF'}
+            </button>
+          </div>
+          <div
+            ref={cvRef}
+            className="flex flex-col gap-6 cv-preview-mode"
+            style={{ fontFamily: fontMapping[style.fontId] || 'sans-serif', color: '#374151' }}
+          >
+            <style>{`
+              .cv-preview-mode [data-html2canvas-ignore="true"] {
+                display: none !important;
+              }
+            `}</style>
+            <BuilderContext.Provider value={{ isReadOnly: isPreviewMode }}>
+              <CVTemplateRenderer
+                selectedLayout={selectedLayout}
+                style={style}
+                totalPages={totalPages}
+                pages={{
+                  left: leftPages,
+                  right: rightPages,
+                  headerLeft: headerLeftPages,
+                  equalLeft: equalLeftPages,
+                  equalRight: equalRightPages,
+                  fullWidth: fullWidthPages,
+                  harvardClassic: harvardClassicPages,
+                  harvardGsas: harvardGsasPages,
+                  isSectionContinuation
+                }}
+                profileSection={profileSection}
+                contactSection={contactSection}
+                renderLeftAvatar={renderLeftAvatar}
+                renderSection={(sec, columnContext, isContinuation = false) => (
+                  renderSection(sec, style, null, columnContext, selectedLayout, isContinuation, null, null)
+                )}
+              />
+            </BuilderContext.Provider>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-body-md flex p-5 pt-16 gap-5 max-w-[1720px] mx-auto w-full relative justify-center">
       {/* Auto-downloading PDF Overlay */}
@@ -795,39 +860,41 @@ const CVBuilder = () => {
                 color: '#374151'
               }}
             >
-              <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                <SortableContext items={rightSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                  <SortableContext items={headerLeftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                    <CVTemplateRenderer
-                      selectedLayout={selectedLayout}
-                      style={style}
-                      totalPages={totalPages}
-                      pages={{
-                        left: leftPages,
-                        right: rightPages,
-                        headerLeft: headerLeftPages,
-                        equalLeft: equalLeftPages,
-                        equalRight: equalRightPages,
-                        fullWidth: fullWidthPages,
-                        harvardClassic: harvardClassicPages,
-                        harvardGsas: harvardGsasPages,
-                        isSectionContinuation
-                      }}
-                      profileSection={profileSection}
-                      contactSection={contactSection}
-                      renderLeftAvatar={renderLeftAvatar}
-                      renderSection={(sec, columnContext, isContinuation = false) => (
-                        renderSection(sec, style, handleSectionContentUpdate, columnContext, selectedLayout, isContinuation, handleMultipleStyleChange, handleOpenCropModal)
-                      )}
-                      wrapSection={(sec, node) => (
-                        <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                          {node}
-                        </SortableItem>
-                      )}
-                    />
+              <BuilderContext.Provider value={{ isReadOnly: false }}>
+                <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={rightSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={headerLeftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                      <CVTemplateRenderer
+                        selectedLayout={selectedLayout}
+                        style={style}
+                        totalPages={totalPages}
+                        pages={{
+                          left: leftPages,
+                          right: rightPages,
+                          headerLeft: headerLeftPages,
+                          equalLeft: equalLeftPages,
+                          equalRight: equalRightPages,
+                          fullWidth: fullWidthPages,
+                          harvardClassic: harvardClassicPages,
+                          harvardGsas: harvardGsasPages,
+                          isSectionContinuation
+                        }}
+                        profileSection={profileSection}
+                        contactSection={contactSection}
+                        renderLeftAvatar={renderLeftAvatar}
+                        renderSection={(sec, columnContext, isContinuation = false) => (
+                          renderSection(sec, style, handleSectionContentUpdate, columnContext, selectedLayout, isContinuation, handleMultipleStyleChange, handleOpenCropModal)
+                        )}
+                        wrapSection={(sec, node) => (
+                          <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
+                            {node}
+                          </SortableItem>
+                        )}
+                      />
+                    </SortableContext>
                   </SortableContext>
                 </SortableContext>
-              </SortableContext>
+              </BuilderContext.Provider>
             </div>
           </div>
                 </DndContext>
