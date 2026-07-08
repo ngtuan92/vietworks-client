@@ -35,7 +35,7 @@ const MasterDataManagement = () => {
 
   // --- 3. Filters States ---
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(''); // '' = tất cả, 'ACTIVE', 'INACTIVE'
   const [selectedCareerGroupId, setSelectedCareerGroupId] = useState('');
   const [selectedCareerId, setSelectedCareerId] = useState('');
   
@@ -67,9 +67,11 @@ const MasterDataManagement = () => {
   // --- 5. Load Data ---
   const loadCareerGroups = useCallback(async () => {
     try {
+      // Lấy tất cả (cả ACTIVE và INACTIVE) để hiển thị trong dropdown
       const response = await careerGroupService.getCareerGroups({ 
         page: 1, 
-        limit: 100 
+        limit: 100,
+        status: '' // Bỏ filter status để lấy tất cả
       });
       if (response?.success) {
         setCareerGroups(response.data || []);
@@ -85,8 +87,13 @@ const MasterDataManagement = () => {
         page: 1,
         limit: 100,
         ...(selectedCareerGroupId && { careerGroupId: selectedCareerGroupId }),
-        status: 'ACTIVE'
       };
+      
+      // Nếu statusFilter có giá trị thì truyền lên, không thì bỏ qua để lấy tất cả
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
+      
       const response = await careerService.getCareers(params);
       if (response?.success) {
         setCareers(response.data || []);
@@ -94,7 +101,7 @@ const MasterDataManagement = () => {
     } catch (err) {
       console.error('Error loading careers:', err);
     }
-  }, [selectedCareerGroupId]);
+  }, [selectedCareerGroupId, statusFilter]);
 
   const loadJobLevels = useCallback(async () => {
     setLoading(true);
@@ -102,9 +109,13 @@ const MasterDataManagement = () => {
       const params = {
         page,
         limit: 10,
-        ...(statusFilter && { status: statusFilter }),
         ...(searchKeyword && { search: searchKeyword })
       };
+      
+      // Nếu statusFilter có giá trị thì truyền lên
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
       
       const response = await jobLevelService.getJobLevels(params);
       
@@ -129,9 +140,13 @@ const MasterDataManagement = () => {
         limit: 10,
         ...(selectedCareerGroupId && { careerGroupId: selectedCareerGroupId }),
         ...(selectedCareerId && { careerId: selectedCareerId }),
-        ...(statusFilter && { status: statusFilter }),
         ...(searchKeyword && { search: searchKeyword })
       };
+      
+      // Nếu statusFilter có giá trị thì truyền lên
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
       
       const response = await careerPositionService.getCareerPositions(params);
       
@@ -155,9 +170,13 @@ const MasterDataManagement = () => {
         page,
         limit: 10,
         ...(selectedCareerGroupId && { careerGroupId: selectedCareerGroupId }),
-        ...(statusFilter && { status: statusFilter }),
         ...(searchKeyword && { search: searchKeyword })
       };
+      
+      // Nếu statusFilter có giá trị thì truyền lên
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
       
       const response = await skillService.getSkills(params);
       
@@ -182,7 +201,7 @@ const MasterDataManagement = () => {
     if (tab === 'Nghề nghiệp' || tab === 'Vị trí') {
       loadCareers();
     }
-  }, [tab, selectedCareerGroupId, loadCareers]);
+  }, [tab, selectedCareerGroupId, statusFilter, loadCareers]);
 
   useEffect(() => {
     if (tab === 'Vị trí') {
@@ -202,10 +221,9 @@ const MasterDataManagement = () => {
     }
   }, [tab, loadSkills]);
 
-  // --- 6. Filter Logic ---
+  // --- 6. Filter Logic (Client-side filtering) ---
   const filterItem = useCallback((item) => {
-    if (statusFilter && (item.status || 'ACTIVE') !== statusFilter) return false;
-    
+    // Client-side filter chỉ áp dụng cho searchKeyword
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase().trim();
       const matchName = item.name?.toLowerCase().includes(keyword);
@@ -214,7 +232,7 @@ const MasterDataManagement = () => {
       if (!matchName && !matchCode && !matchAlias) return false;
     }
     return true;
-  }, [searchKeyword, statusFilter]);
+  }, [searchKeyword]);
 
   const filteredCareerGroups = useMemo(() => careerGroups.filter(filterItem), [careerGroups, filterItem]);
   const filteredCareers = useMemo(() => careers.filter(filterItem), [careers, filterItem]);
@@ -284,7 +302,6 @@ const MasterDataManagement = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate
     if (!formData.name.trim()) {
       alert('Vui lòng nhập tên');
       return;
@@ -297,7 +314,6 @@ const MasterDataManagement = () => {
         slug: formData.slug || generateSlug(formData.name)
       };
 
-      // Xử lý đặc biệt cho Skill
       if (targetType === 'SKILL') {
         payload.aliases = formData.aliases 
           ? formData.aliases.split(',').map(s => s.trim()).filter(Boolean)
@@ -311,7 +327,6 @@ const MasterDataManagement = () => {
         delete payload.description;
       }
 
-      // Xóa các field không cần thiết
       delete payload._id;
       delete payload.createdAt;
       delete payload.updatedAt;
@@ -361,7 +376,6 @@ const MasterDataManagement = () => {
 
       if (response?.success) {
         setIsModalOpen(false);
-        // Reload data based on type
         if (targetType === 'SKILL') {
           await loadSkills();
         } else if (targetType === 'POSITION') {
@@ -807,7 +821,9 @@ const MasterDataManagement = () => {
                 label="Nhóm nghề liên quan"
                 value={formData.careerGroupIds || []}
                 onChange={(v) => setFormData({ ...formData, careerGroupIds: v })}
-                options={careerGroups.map(g => [g._id, `${g.code} - ${g.name}`])}
+                options={careerGroups
+                  .filter(g => g.status === 'ACTIVE') // Chỉ hiển thị nhóm đang hoạt động
+                  .map(g => [g._id, `${g.code} - ${g.name}`])}
                 placeholder="-- Chọn nhóm nghề --"
                 multiple
               />
@@ -841,7 +857,9 @@ const MasterDataManagement = () => {
                   };
                   if (v) loadCareersByGroup();
                 }}
-                options={careerGroups.map(g => [g._id, `${g.code} - ${g.name}`])}
+                options={careerGroups
+                  .filter(g => g.status === 'ACTIVE')
+                  .map(g => [g._id, `${g.code} - ${g.name}`])}
                 placeholder="-- Chọn nhóm nghề --"
                 required
                 disabled={editMode}
@@ -853,7 +871,9 @@ const MasterDataManagement = () => {
                 label="Nghề *"
                 value={formData.careerId || ''}
                 onChange={(v) => setFormData({ ...formData, careerId: v })}
-                options={careers.map(c => [c._id, `${c.code} - ${c.name}`])}
+                options={careers
+                  .filter(c => c.status === 'ACTIVE')
+                  .map(c => [c._id, `${c.code} - ${c.name}`])}
                 placeholder="-- Chọn nghề --"
                 required
                 disabled={editMode}
@@ -868,7 +888,9 @@ const MasterDataManagement = () => {
               label="Nhóm nghề *"
               value={formData.careerGroupId || ''}
               onChange={(v) => setFormData({ ...formData, careerGroupId: v })}
-              options={careerGroups.map(g => [g._id, `${g.code} - ${g.name}`])}
+              options={careerGroups
+                .filter(g => g.status === 'ACTIVE')
+                .map(g => [g._id, `${g.code} - ${g.name}`])}
               placeholder="-- Chọn nhóm nghề --"
               required
               disabled={editMode}
@@ -982,7 +1004,7 @@ const MasterDataManagement = () => {
             onClick={() => { 
               setTab(t); 
               setSearchKeyword(''); 
-              setStatusFilter('');
+              setStatusFilter(''); // Reset status filter khi đổi tab
               setSelectedCareerGroupId('');
               setSelectedCareerId('');
               setPage(1);
@@ -1022,7 +1044,9 @@ const MasterDataManagement = () => {
                 }}
                 options={[
                   ['', 'Tất cả nhóm nghề'],
-                  ...careerGroups.map(g => [g._id, g.name])
+                  ...careerGroups
+                    .filter(g => g.status === 'ACTIVE')
+                    .map(g => [g._id, g.name])
                 ]}
               />
 
@@ -1035,7 +1059,9 @@ const MasterDataManagement = () => {
                 }}
                 options={[
                   ['', 'Tất cả nghề'],
-                  ...careers.map(c => [c._id, c.name])
+                  ...careers
+                    .filter(c => c.status === 'ACTIVE')
+                    .map(c => [c._id, c.name])
                 ]}
                 disabled={!selectedCareerGroupId}
               />
@@ -1052,7 +1078,9 @@ const MasterDataManagement = () => {
               }}
               options={[
                 ['', 'Tất cả nhóm nghề'],
-                ...careerGroups.map(g => [g._id, g.name])
+                ...careerGroups
+                  .filter(g => g.status === 'ACTIVE')
+                  .map(g => [g._id, g.name])
               ]}
             />
           )}
@@ -1067,7 +1095,9 @@ const MasterDataManagement = () => {
               }}
               options={[
                 ['', 'Tất cả nhóm nghề'],
-                ...careerGroups.map(g => [g._id, g.name])
+                ...careerGroups
+                  .filter(g => g.status === 'ACTIVE')
+                  .map(g => [g._id, g.name])
               ]}
             />
           )}
