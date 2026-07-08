@@ -130,7 +130,7 @@ const CompanyDetail = () => {
             <Info label="Tên công ty" value={company.name} />
             <Info label="Mã số thuế" value={company.taxCode} />
             <Info label="Lĩnh vực" value={company.industries?.map(i => i.name).join(', ')} />
-            <Info label="Quy mô" value={company.size?.name} />
+            <Info label="Quy mô" value={company.size} />
             <Info label="Email" value={company.email} />
             <Info label="Số điện thoại" value={company.phone} />
             <Info label="Website" value={company.website} />
