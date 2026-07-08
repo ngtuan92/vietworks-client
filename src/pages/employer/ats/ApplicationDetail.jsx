@@ -206,7 +206,7 @@ const ApplicationDetail = () => {
         setCvBlobUrl(objectUrl);
       } catch (err) {
         if (!active) return;
-        setError(err.response?.data?.message || 'Kh?ng th? t?i CV ?? preview');
+        setError(err.response?.data?.message || 'Không thể tải CV để preview');
       } finally {
         if (active) setCvPreviewLoading(false);
       }
@@ -358,7 +358,7 @@ const ApplicationDetail = () => {
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
               {cvPreviewLoading ? (
                 <div className="h-[78vh] rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500">
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" /> ?ang t?i CV...
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" /> Đang tải CV...
                 </div>
               ) : cvBlobUrl ? (
                 <object
