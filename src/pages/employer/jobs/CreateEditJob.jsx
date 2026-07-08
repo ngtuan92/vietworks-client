@@ -3,7 +3,9 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
 import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
+
 console.log('companyLocationService:', companyLocationService);
+
 const STEPS = [
   'Thông tin cơ bản',
   'Mức lương',
@@ -24,8 +26,6 @@ const WORKING_DAYS = [
   { code: 'SUN', label: 'Chủ nhật' },
 ];
 const WORKING_DAY_ORDER = WORKING_DAYS.map((d) => d.code);
-
-
 
 // Gộp các ngày liên tiếp thành dạng "Thứ 2 - Thứ 6" cho gọn, thay vì liệt kê từng ngày
 const compressWorkingDays = (days) => {
@@ -70,7 +70,7 @@ const INITIAL_FORM = {
   careerId: '',
   careerPositionId: '',
   jobLevelId: '',
-  experience: '',
+  experience: 'Không yêu cầu', // Mặc định là không yêu cầu
   skills: [],
   salaryType: 'RANGE', // 'NEGOTIABLE', 'RANGE', 'FROM', 'TO'
   salaryFrom: '',
@@ -94,41 +94,42 @@ const CreateEditJob = () => {
   const [isCompanyVerified] = useState(true); // Giả định đã xác thực để test tính năng
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-const [companyLocations, setCompanyLocations] = useState([]);
+  const [companyLocations, setCompanyLocations] = useState([]);
+  
   // --- States lưu trữ Danh mục Động từ Backend ---
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
   const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
-
   const [skills, setSkills] = useState([]);
 
   // --- State Form chuẩn hóa theo DB Schema ---
   const [form, setForm] = useState(INITIAL_FORM);
+
   useEffect(() => {
-  const fetchCompanyLocations = async () => {
-    try {
-      const res = await companyLocationService.getMyCompanyLocations();
-      console.log('Company locations response:', res);
-      setCompanyLocations(res.data || []);
-    } catch (err) {
-      console.error('Load company locations error:', {
-        status: err.response?.status,
-        data: err.response?.data,
-        fullUrl: `${err.config?.baseURL || ''}${err.config?.url || ''}`,
-        headers: err.config?.headers,
-      });
+    const fetchCompanyLocations = async () => {
+      try {
+        const res = await companyLocationService.getMyCompanyLocations();
+        console.log('Company locations response:', res);
+        setCompanyLocations(res.data || []);
+      } catch (err) {
+        console.error('Load company locations error:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          fullUrl: `${err.config?.baseURL || ''}${err.config?.url || ''}`,
+          headers: err.config?.headers,
+        });
 
-      showToast(
-        'error',
-        err.response?.data?.message || 'Không thể tải danh sách địa điểm công ty.'
-      );
-    }
-  };
+        showToast(
+          'error',
+          err.response?.data?.message || 'Không thể tải danh sách địa điểm công ty.'
+        );
+      }
+    };
 
-  fetchCompanyLocations();
-}, []);
+    fetchCompanyLocations();
+  }, []);
 
   // --- Lấy dữ liệu danh mục ban đầu (Global Master Data) ---
   useEffect(() => {
@@ -150,11 +151,9 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // --- Xử lý Load danh mục phụ thuộc (Dependent Dropdowns) ---
   useEffect(() => {
     if (!form.careerGroupId) {
-      /* eslint-disable react-hooks/set-state-in-effect */
       setCareers([]);
       setJobLevels([]);
       setSkills([]);
-      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     
@@ -188,9 +187,7 @@ const [companyLocations, setCompanyLocations] = useState([]);
 
   useEffect(() => {
     if (!form.careerId) {
-      /* eslint-disable react-hooks/set-state-in-effect */
       setPositions([]);
-      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     const fetchPositions = async () => {
@@ -222,8 +219,6 @@ const [companyLocations, setCompanyLocations] = useState([]);
     });
   };
 
-  // --- Nhận dữ liệu snapshot từ HierarchicalLocationPicker ---
- 
   const toggleMulti = (key, value) => {
     setForm((prev) => {
       const current = new Set(prev[key]);
@@ -246,10 +241,8 @@ const [companyLocations, setCompanyLocations] = useState([]);
 
       let saturdayPolicy = prev.saturdayPolicy;
       if (hasSaturday) {
-        // Đã chọn làm Thứ 7 trong lịch tuần -> chính sách phải phản ánh đúng là CÓ làm Thứ 7
         saturdayPolicy = 'WORKING_SATURDAY';
       } else if (!hasSunday && saturdayPolicy === 'WORKING_SATURDAY') {
-        // Lịch tuần chỉ chọn Thứ 2 - Thứ 6 (không có Thứ 7/CN) -> không thể giữ chính sách "có làm Thứ 7"
         saturdayPolicy = 'OFF_SATURDAY';
       }
 
@@ -265,7 +258,14 @@ const [companyLocations, setCompanyLocations] = useState([]);
   // --- Điều kiện validate qua từng bước (Frontend Guard) ---
   const canNext = useMemo(() => {
     if (step === 1) {
-      return Boolean(form.title && form.careerGroupId && form.careerId && form.careerPositionId && form.jobLevelId && form.experience);
+      return Boolean(
+        form.title && 
+        form.careerGroupId && 
+        form.careerId && 
+        form.careerPositionId && 
+        form.jobLevelId && 
+        form.experience // Đã có giá trị mặc định
+      );
     }
     if (step === 2) {
       if (form.salaryType === 'NEGOTIABLE') return true;
@@ -303,40 +303,46 @@ const [companyLocations, setCompanyLocations] = useState([]);
 
   // --- Chuẩn hóa Payload chuẩn cấu trúc Model trước khi API Call ---
   const preparePayload = () => {
-  const payload = { ...form };
-  if (form.salaryType === 'NEGOTIABLE') {
-    payload.salary = {
-      type: 'NEGOTIABLE',
-      minMillion: null,
-      maxMillion: null,
-      currency: 'VND',
-    };
-  } else {
-    payload.salary = {
-      type: form.salaryType,
-      minMillion: form.salaryFrom ? Number(form.salaryFrom) : null,
-      maxMillion: form.salaryTo ? Number(form.salaryTo) : null,
-      currency: 'VND',
-    };
-  }
+    const payload = { ...form };
+    
+    // Xử lý salary
+    if (form.salaryType === 'NEGOTIABLE') {
+      payload.salary = {
+        type: 'NEGOTIABLE',
+        minMillion: null,
+        maxMillion: null,
+        currency: 'VND',
+      };
+    } else {
+      payload.salary = {
+        type: form.salaryType,
+        minMillion: form.salaryFrom ? Number(form.salaryFrom) : null,
+        maxMillion: form.salaryTo ? Number(form.salaryTo) : null,
+        currency: 'VND',
+      };
+    }
 
-  delete payload.salaryType;
-  delete payload.salaryFrom;
-  delete payload.salaryTo;
+    delete payload.salaryType;
+    delete payload.salaryFrom;
+    delete payload.salaryTo;
 
-  // Backend hiện chỉ lưu "workingTime" dưới dạng chuỗi text, nên ta build chuỗi đó
-  // từ dữ liệu có cấu trúc (ngày + giờ) ngay tại frontend -> không cần sửa backend.
-  payload.workingTime = formatWorkingSchedule(
-    form.workingDays,
-    form.workingTimeFrom,
-    form.workingTimeTo
-  );
-  delete payload.workingDays;
-  delete payload.workingTimeFrom;
-  delete payload.workingTimeTo;
+    // Xử lý workingTime
+    payload.workingTime = formatWorkingSchedule(
+      form.workingDays,
+      form.workingTimeFrom,
+      form.workingTimeTo
+    );
+    delete payload.workingDays;
+    delete payload.workingTimeFrom;
+    delete payload.workingTimeTo;
 
-  return payload;
-};
+    // Đảm bảo experience luôn có giá trị
+    if (!payload.experience) {
+      payload.experience = 'Không yêu cầu';
+    }
+
+    return payload;
+  };
 
   // --- Chức năng 1: Lưu Nháp (DRAFT) ---
   const handleSaveDraft = async () => {
@@ -425,87 +431,87 @@ const [companyLocations, setCompanyLocations] = useState([]);
         {/* Form Container */}
         <div className="space-y-6">
 
-      {/* Khối hiển thị các bước dạng Tab trực quan trên cùng */}
-      <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-4 shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
-          {STEPS.map((label, idx) => {
-            const current = idx + 1;
-            const active = current === step;
-            const done = current < step;
-            return (
-              <div 
-                key={label} 
-                className={`rounded-xl px-3 py-2.5 text-xs font-bold text-center border transition-all ${
-                  active ? 'bg-primary text-white border-primary shadow-sm' : 
-                  done ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                  'bg-slate-50 text-slate-500 border-slate-100'
-                }`}
-              >
-                B{current}. {label}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Render các Form phân mảnh theo từng Step */}
-      <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 shadow-sm min-h-[400px]">
-        {step === 1 && (
-          <StepBasicInfo 
-            form={form} 
-            setField={setField} 
-            careerGroups={careerGroups}
-            careers={careers}
-            positions={positions}
-            jobLevels={jobLevels}
-            experienceLevels={EXPERIENCE_LEVELS}
-          />
-        )}
-        {step === 2 && <StepSalary form={form} setField={setField} />}
-        {step === 3 && <StepDescription form={form} setField={setField} toggleWorkingDay={toggleWorkingDay} />}
-        {step === 4 && <StepRequirements form={form} setField={setField} skills={skills} toggleMulti={toggleMulti}  />}
-        {step === 5 && <StepBenefits form={form} setField={setField} />}
-        {step === 6 && (
-          <StepLocationDeadline 
-            form={form} 
-            setField={setField} 
-  companyLocations={companyLocations}
-          />
-        )}        
-        {/* Footer Buttons xử lý chuyển bước nội bộ */}
-        <div className="pt-6 mt-8 border-t border-slate-200 flex items-center justify-between">
-          <button 
-            onClick={prev} 
-            className={`px-5 py-2 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 ${step === 1 ? 'invisible' : ''}`}
-          >
-            Quay lại
-          </button>
-          
-          <div className="flex items-center gap-2">
-            {step < 6 ? (
-              <button
-                onClick={next}
-                disabled={!canNext}
-                className={`px-6 py-2 rounded-xl font-semibold transition-all ${
-                  canNext ? 'bg-primary text-white hover:bg-primary/95 hover:shadow-lg hover:-translate-y-0.5' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                Tiếp tục
-              </button>
-            ) : (
-              <button
-                onClick={handlePublishJob}
-                disabled={isLoading || !canNext}
-                className={`px-6 py-2 rounded-xl font-bold transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${
-                  canNext ? 'bg-primary text-white hover:bg-primary/95 hover:shadow-primary/20' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                Gửi duyệt
-              </button>
-            )}
+          {/* Khối hiển thị các bước dạng Tab trực quan trên cùng */}
+          <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-4 shadow-sm">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+              {STEPS.map((label, idx) => {
+                const current = idx + 1;
+                const active = current === step;
+                const done = current < step;
+                return (
+                  <div 
+                    key={label} 
+                    className={`rounded-xl px-3 py-2.5 text-xs font-bold text-center border transition-all ${
+                      active ? 'bg-primary text-white border-primary shadow-sm' : 
+                      done ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                      'bg-slate-50 text-slate-500 border-slate-100'
+                    }`}
+                  >
+                    B{current}. {label}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+
+          {/* Render các Form phân mảnh theo từng Step */}
+          <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-6 shadow-sm min-h-[400px]">
+            {step === 1 && (
+              <StepBasicInfo 
+                form={form} 
+                setField={setField} 
+                careerGroups={careerGroups}
+                careers={careers}
+                positions={positions}
+                jobLevels={jobLevels}
+              />
+            )}
+            {step === 2 && <StepSalary form={form} setField={setField} />}
+            {step === 3 && <StepDescription form={form} setField={setField} toggleWorkingDay={toggleWorkingDay} />}
+            {step === 4 && <StepRequirements form={form} setField={setField} skills={skills} toggleMulti={toggleMulti} />}
+            {step === 5 && <StepBenefits form={form} setField={setField} />}
+            {step === 6 && (
+              <StepLocationDeadline 
+                form={form} 
+                setField={setField} 
+                companyLocations={companyLocations}
+              />
+            )}
+            
+            {/* Footer Buttons xử lý chuyển bước nội bộ */}
+            <div className="pt-6 mt-8 border-t border-slate-200 flex items-center justify-between">
+              <button 
+                onClick={prev} 
+                className={`px-5 py-2 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 ${step === 1 ? 'invisible' : ''}`}
+              >
+                Quay lại
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {step < 6 ? (
+                  <button
+                    onClick={next}
+                    disabled={!canNext}
+                    className={`px-6 py-2 rounded-xl font-semibold transition-all ${
+                      canNext ? 'bg-primary text-white hover:bg-primary/95 hover:shadow-lg hover:-translate-y-0.5' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Tiếp tục
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePublishJob}
+                    disabled={isLoading || !canNext}
+                    className={`px-6 py-2 rounded-xl font-bold transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${
+                      canNext ? 'bg-primary text-white hover:bg-primary/95 hover:shadow-primary/20' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Gửi duyệt
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -514,63 +520,71 @@ const [companyLocations, setCompanyLocations] = useState([]);
 
 // ==================== SUB-COMPONENTS CHO TỪNG BƯỚC FORM ====================
 
-const StepBasicInfo = ({ form, setField, careerGroups, careers, positions, jobLevels, experienceLevels }) => (
-  <div className="space-y-4">
-    <h2 className="text-lg font-bold text-slate-900">Bước 1: Thông tin cơ bản</h2>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Field label="Tiêu đề công việc" required value={form.title} onChange={(v) => setField('title', v)} placeholder="VD: Senior Backend Developer (NodeJS)" />
-      
-      <Field label="Số lượng cần tuyển" type="number" required value={form.headcount} onChange={(v) => setField('headcount', Number(v))} placeholder="1" />
-      
-      <Select 
-        label="Nhóm ngành nghề" 
-        required 
-        value={form.careerGroupId} 
-        onChange={(v) => setField('careerGroupId', v)} 
-        options={careerGroups.map(g => ({ value: g._id, label: g.name }))} 
-      />
-      
-      <Select 
-        label="Ngành nghề chi tiết" 
-        required 
-        value={form.careerId} 
-        disabled={!form.careerGroupId}
-        onChange={(v) => setField('careerId', v)} 
-        options={careers.map(c => ({ value: c._id, label: c.name }))} 
-      />
-      
-      <Select 
-        label="Vị trí chuyên môn" 
-        required 
-        value={form.careerPositionId} 
-        disabled={!form.careerId}
-        onChange={(v) => setField('careerPositionId', v)} 
-        options={positions.map(p => ({ value: p._id, label: p.name }))} 
-      />
-      
-      <Select 
-        label="Cấp bậc vị trí" 
-        required 
-        value={form.jobLevelId} 
-        disabled={!form.careerGroupId}
-        onChange={(v) => setField('jobLevelId', v)} 
-        options={jobLevels.map(l => ({ value: l._id, label: l.name }))} 
-      />
-      
-      <DatalistSelect
-        label="Yêu cầu kinh nghiệm"
-        id="experience"
-        value={form.experience} 
-        onChange={(v) => setField('experience', v.target.value)} 
-        options={EXPERIENCE_LEVELS}
-        required 
-      />
+const StepBasicInfo = ({ form, setField, careerGroups, careers, positions, jobLevels }) => {
+  // Tạo danh sách kinh nghiệm với option "Không yêu cầu"
+  const experienceOptions = [
+    { value: 'Không yêu cầu', label: 'Không yêu cầu kinh nghiệm' },
+    ...EXPERIENCE_LEVELS.map(level => ({ value: level, label: level }))
+  ];
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-bold text-slate-900">Bước 1: Thông tin cơ bản</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Field label="Tiêu đề công việc" required value={form.title} onChange={(v) => setField('title', v)} placeholder="VD: Senior Backend Developer (NodeJS)" />
+        
+        <Field label="Số lượng cần tuyển" type="number" required value={form.headcount} onChange={(v) => setField('headcount', Number(v))} placeholder="1" />
+        
+        <Select 
+          label="Nhóm ngành nghề" 
+          required 
+          value={form.careerGroupId} 
+          onChange={(v) => setField('careerGroupId', v)} 
+          options={careerGroups.map(g => ({ value: g._id, label: g.name }))} 
+        />
+        
+        <Select 
+          label="Ngành nghề chi tiết" 
+          required 
+          value={form.careerId} 
+          disabled={!form.careerGroupId}
+          onChange={(v) => setField('careerId', v)} 
+          options={careers.map(c => ({ value: c._id, label: c.name }))} 
+        />
+        
+        <Select 
+          label="Vị trí chuyên môn" 
+          required 
+          value={form.careerPositionId} 
+          disabled={!form.careerId}
+          onChange={(v) => setField('careerPositionId', v)} 
+          options={positions.map(p => ({ value: p._id, label: p.name }))} 
+        />
+        
+        <Select 
+          label="Cấp bậc vị trí" 
+          required 
+          value={form.jobLevelId} 
+          disabled={!form.careerGroupId}
+          onChange={(v) => setField('jobLevelId', v)} 
+          options={jobLevels.map(l => ({ value: l._id, label: l.name }))} 
+        />
+        
+        <Select 
+          label="Yêu cầu kinh nghiệm" 
+          required 
+          value={form.experience} 
+          onChange={(v) => setField('experience', v)} 
+          options={experienceOptions}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const StepSalary = ({ form, setField }) => {
   const isInvalidRange = form.salaryType === 'RANGE' && form.salaryFrom && form.salaryTo && Number(form.salaryFrom) > Number(form.salaryTo);
+  
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold text-slate-900">Bước 2: Chế độ đãi ngộ & Mức lương</h2>
@@ -856,6 +870,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
           ⚠️ Lỗi: Ngày hết hạn không hợp lệ (không thể chọn ngày trong quá khứ).
         </p>
       ) : null}
+      
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2">Hướng dẫn nộp hồ sơ chi tiết cho ứng viên <span className="text-red-500">*</span></label>
         <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
@@ -865,8 +880,6 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
     </div>
   );
 };
-
-
 
 // ==================== REUSABLE ATOM COMPONENT UI ELEMENTS ====================
 
@@ -903,33 +916,6 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
     </select>
   </div>
 );
-
-const DatalistSelect = ({ label, id, value, onChange, options, required = false, placeholder = '' }) => (
-  <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor={id}>
-      {label} {required ? <span className="text-red-600">*</span> : null}
-    </label>
-    <input
-      type="text"
-      id={id}
-      list={`${id}-list`}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder || 'Chọn hoặc nhập...'}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
-      required={required}
-    />
-    <datalist id={`${id}-list`}>
-      {options.map((opt) => (
-        <option key={opt.value || opt} value={opt.value || opt} />
-      ))}
-    </datalist>
-  </div>
-);
-
-
-
-
 
 const RichTextEditor = ({ value, onChange, placeholder }) => {
   const editorRef = useRef(null);
