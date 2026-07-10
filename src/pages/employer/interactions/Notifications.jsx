@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Eye, Loader2, Trash2, ChevronRight, Clock } from 'lucide-react';
+import { Bell, CheckCheck, Eye, Loader2, Trash2, ChevronRight, Clock, CheckSquare, Square } from 'lucide-react';
 import notificationService from '../../../services/notificationService';
 import { useSocket } from '../../../contexts/SocketContext';
 import { navigateToNotificationTarget } from '../../../utils/notificationNavigation';
@@ -34,6 +34,8 @@ const Notifications = () => {
   const [filter, setFilter] = useState('ALL'); // ALL, UNREAD, READ
   const [visibleLimit, setVisibleLimit] = useState(10);
   const [detailModalItem, setDetailModalItem] = useState(null);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const loadNotifications = async () => {
     try {
@@ -170,6 +172,45 @@ const Notifications = () => {
     }
   };
 
+  const handleToggleDeleteMode = () => {
+    setIsDeleteMode(prev => !prev);
+    setSelectedIds([]);
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === visibleItems.length && visibleItems.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(visibleItems.map(item => item._id));
+    }
+  };
+
+  const handleSelectNotification = (id, e) => {
+    if (e) e.stopPropagation();
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      setActionLoading('bulk-delete');
+      setError('');
+      setSuccess('');
+      await notificationService.bulkDeleteNotifications(selectedIds);
+      setItems(prev => prev.filter(item => !selectedIds.includes(item._id)));
+      setUnreadCount(items.filter(i => i.status === 'UNREAD' && !selectedIds.includes(i._id)).length);
+      setIsDeleteMode(false);
+      setSelectedIds([]);
+      setSuccess('Đã xóa các thông báo được chọn.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể xóa thông báo');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const handleNotificationClick = async (item) => {
     if (item.status === 'UNREAD') {
       await handleMarkAsRead(item._id);
@@ -194,13 +235,22 @@ const Notifications = () => {
           {groupItems.map(item => (
             <div 
               key={item._id}
-              onClick={() => handleNotificationClick(item)}
+              onClick={(e) => isDeleteMode ? handleSelectNotification(item._id, e) : handleNotificationClick(item)}
               className={`group flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
                 item.status === 'UNREAD' 
                 ? 'bg-blue-50/50 border-blue-100 hover:bg-blue-50 hover:shadow-md hover:border-blue-200' 
                 : 'bg-white border-slate-200/60 hover:bg-slate-50 hover:shadow-sm hover:border-slate-300'
-              }`}
+              } ${isDeleteMode && selectedIds.includes(item._id) ? 'ring-2 ring-red-400 border-red-400 bg-red-50/20' : ''}`}
             >
+              {isDeleteMode && (
+                <div className="mt-3 shrink-0">
+                  {selectedIds.includes(item._id) ? (
+                    <CheckSquare className="w-6 h-6 text-red-500" />
+                  ) : (
+                    <Square className="w-6 h-6 text-slate-300" />
+                  )}
+                </div>
+              )}
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                 item.status === 'UNREAD' ? 'bg-white text-primary premium-shadow' : 'bg-slate-100 text-slate-500'
               }`}>
@@ -262,15 +312,47 @@ const Notifications = () => {
           <h1 className="text-2xl font-bold text-slate-900">Thông báo</h1>
           <p className="text-slate-600 mt-1">Theo dõi thông báo ATS, CV, phỏng vấn và hệ thống.</p>
         </div>
-        <button
-          onClick={handleMarkAllAsRead}
-          disabled={!unreadCount || actionLoading === 'read-all'}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {actionLoading === 'read-all' ? <Loader2 className="w-5 h-5 animate-spin text-slate-500" /> : <CheckCheck className="w-5 h-5 text-slate-500" />}
-          Đánh dấu đã đọc tất cả
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={!unreadCount || actionLoading === 'read-all'}
+            title="Đánh dấu tất cả đã đọc"
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition-colors disabled:opacity-50 text-slate-600"
+          >
+            {actionLoading === 'read-all' ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCheck className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={handleToggleDeleteMode}
+            title="Xóa thông báo"
+            className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors border ${isDeleteMode ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'}`}
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
       </div>
+
+      {isDeleteMode && items.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-red-50/50 rounded-2xl border border-red-100 mb-6 -mt-2">
+          <button 
+            onClick={handleToggleSelectAll}
+            className="text-sm font-bold text-slate-700 hover:text-primary transition-colors flex items-center gap-2"
+          >
+            {selectedIds.length === visibleItems.length && visibleItems.length > 0 ? (
+              <><CheckSquare className="w-5 h-5 text-primary" /> Bỏ chọn tất cả</>
+            ) : (
+              <><Square className="w-5 h-5 text-slate-400" /> Chọn tất cả ({visibleItems.length})</>
+            )}
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedIds.length === 0 || actionLoading === 'bulk-delete'}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm"
+          >
+            {actionLoading === 'bulk-delete' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Xóa ({selectedIds.length})
+          </button>
+        </div>
+      )}
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard label="Tổng thông báo" value={totalCount} icon={<Bell className="w-5 h-5" />} active={filter === 'ALL'} onClick={() => { setFilter('ALL'); setVisibleLimit(10); }} />
@@ -322,15 +404,22 @@ const Notifications = () => {
 const StatCard = ({ label, value, icon, highlight = false, active = false, onClick }) => (
   <div 
     onClick={onClick}
-    className={`rounded-2xl border p-5 transition-all cursor-pointer ${
-      active ? 'ring-2 ring-primary ring-offset-2' : 'hover:shadow-md hover:-translate-y-0.5 premium-shadow'
+    className={`rounded-xl border px-5 py-3.5 flex items-center justify-between transition-all cursor-pointer ${
+      active ? 'ring-2 ring-primary ring-offset-1 border-transparent' : 'hover:shadow-sm hover:-translate-y-0.5 premium-shadow'
     } ${highlight ? 'bg-blue-50 border-blue-100' : 'bg-white border-slate-200/60'}`}
   >
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors ${highlight && active ? 'bg-primary text-white shadow-md' : highlight ? 'bg-white text-primary' : active ? 'bg-slate-800 text-white shadow-md' : 'bg-slate-50 text-slate-500'}`}>
-      {icon}
+    <div className="flex items-center gap-3.5">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+        highlight && active ? 'bg-primary text-white shadow-sm' : 
+        highlight ? 'bg-white text-primary' : 
+        active ? 'bg-slate-800 text-white shadow-sm' : 
+        'bg-slate-50 text-slate-500'
+      }`}>
+        {icon}
+      </div>
+      <p className="text-[15px] text-slate-600 font-bold">{label}</p>
     </div>
-    <p className="text-sm text-slate-500 font-semibold">{label}</p>
-    <p className="text-2xl font-black text-slate-900 mt-1">{value}</p>
+    <p className="text-2xl font-black text-slate-900">{value}</p>
   </div>
 );
 
