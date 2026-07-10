@@ -570,7 +570,6 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm text-slate-600">
             {c.careerGroupId?.name || '--'}
           </td>
-          <td className="px-6 py-4 text-sm text-slate-600">{c.description || '--'}</td>
           <td className="px-6 py-4">{renderStatusBadge(c.status)}</td>
           <td className="px-6 py-4">
             <div className="flex items-center gap-2 flex-wrap">
@@ -610,7 +609,6 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm text-slate-600">
             {p.careerId?.name || '--'}
           </td>
-          <td className="px-6 py-4 text-sm text-slate-600">{p.description || '--'}</td>
           <td className="px-6 py-4">{renderStatusBadge(p.status)}</td>
           <td className="px-6 py-4">
             <div className="flex items-center gap-2 flex-wrap">
@@ -946,10 +944,10 @@ const MasterDataManagement = () => {
       return ['Mã ID', 'Tên nhóm nghề', 'Mô tả', 'Trạng thái', 'Thao tác'];
     }
     if (tab === 'Nghề nghiệp') {
-      return ['Mã ID', 'Tên nghề', 'Nhóm nghề', 'Mô tả', 'Trạng thái', 'Thao tác'];
+      return ['Mã ID', 'Tên nghề', 'Nhóm nghề', 'Trạng thái', 'Thao tác'];
     }
     if (tab === 'Vị trí') {
-      return ['Mã ID', 'Tên vị trí', 'Nhóm nghề', 'Nghề', 'Mô tả', 'Trạng thái', 'Thao tác'];
+      return ['Mã ID', 'Tên vị trí', 'Nhóm nghề', 'Nghề', 'Trạng thái', 'Thao tác'];
     }
     if (tab === 'Cấp bậc') {
       return ['Mã ID', 'Tên cấp bậc', 'Thứ tự', 'Trạng thái', 'Thao tác'];
