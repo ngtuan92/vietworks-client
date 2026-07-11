@@ -30,9 +30,11 @@ const AdminTransactions = () => {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selectedTx, setSelectedTx] = useState(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
-    api.get('/admin/transactions')
+    api.get('/admin/transactions', { params: { limit: 1000 } })
       .then(r => { if (r.data.success) setTransactions(r.data.data); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -44,10 +46,17 @@ const AdminTransactions = () => {
       (tx.userId?.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
       (tx.userId?.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (tx.description || '').toLowerCase().includes(search.toLowerCase());
-    const matchType = filterType === 'all' || tx.type === filterType;
-    const matchStatus = filterStatus === 'all' || tx.status === filterStatus;
+    const matchType = !filterType || tx.type === filterType;
+    const matchStatus = !filterStatus || tx.status === filterStatus;
     return matchSearch && matchType && matchStatus;
   });
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterType, filterStatus]);
+
+  const totalPages = Math.ceil(filteredTx.length / limit);
+  const paginatedTx = filteredTx.slice((page - 1) * limit, page * limit);
 
   const activeFilterCount = [search, filterType, filterStatus].filter(Boolean).length;
 
@@ -69,9 +78,6 @@ const AdminTransactions = () => {
       <PageHeader
         title="Quản lý Giao dịch"
         description="Theo dõi tất cả giao dịch trong hệ thống"
-        actions={
-          <ActionButton tone="primary">Xuất báo cáo</ActionButton>
-        }
       />
 
       <div className="grid grid-cols-4 gap-4">
@@ -91,7 +97,7 @@ const AdminTransactions = () => {
         <div className="mb-6">
           <FilterGrid>
             <InputField label="Tìm kiếm" value={search} onChange={setSearch} placeholder="Tên, email, mô tả..." />
-            <SelectField label="Loại giao dịch" value={filterType} onChange={setFilterType} options={[['DEPOSIT', 'Nạp tiền'], ['PAYMENT', 'Thanh toán'], ['REFUND', 'Hoàn tiền'], ['WITHDRAW', 'Rút tiền']]} placeholder="Tất cả loại" />
+            <SelectField label="Loại giao dịch" value={filterType} onChange={setFilterType} options={[['WALLET_DEPOSIT', 'Nạp tiền'], ['PACKAGE_PURCHASE', 'Mua gói'], ['CV_UNLOCK_SINGLE', 'Mở khóa CV'], ['CV_UNLOCK_BY_PACKAGE', 'Mở khóa CV (gói)'], ['REFUND', 'Hoàn tiền'], ['ADMIN_ADJUSTMENT', 'Điều chỉnh']]} placeholder="Tất cả loại" />
             <SelectField label="Trạng thái" value={filterStatus} onChange={setFilterStatus} options={[['SUCCESS', 'Thành công'], ['PENDING', 'Đang chờ'], ['FAILED', 'Thất bại'], ['CANCELLED', 'Đã hủy']]} placeholder="Tất cả trạng thái" />
           </FilterGrid>
         </div>
@@ -111,7 +117,7 @@ const AdminTransactions = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTx.map((tx) => {
+            {paginatedTx.map((tx) => {
               const type = typeConfig[tx.type] || typeConfig.PACKAGE_PURCHASE;
               const status = statusConfig[tx.status] || statusConfig.PENDING;
               return (
@@ -125,8 +131,8 @@ const AdminTransactions = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${type.bg} ${type.text} ${type.border}`}>
-                      {type.icon}
-                      {type.label}
+                      <span className="material-symbols-outlined text-[14px]">{type.icon}</span>
+                      {tx.type === 'PACKAGE_PURCHASE' && tx.packageId?.name ? tx.packageId.name : type.label}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -160,6 +166,29 @@ const AdminTransactions = () => {
           <div className="text-center py-12">
             <span className="material-symbols-outlined text-[60px] text-[#c2c6d4]">search_off</span>
             <p className="text-[#5e5e62] mt-3 font-bold">Không tìm thấy giao dịch nào</p>
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 bg-slate-50/50">
+            <span className="text-sm text-slate-500 font-medium">
+              Hiển thị {(page - 1) * limit + 1} - {Math.min(page * limit, filteredTx.length)} trong số {filteredTx.length}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(p => p - 1)}
+                className="px-3 py-1.5 text-sm font-medium border border-slate-200 bg-white rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                Trước
+              </button>
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className="px-3 py-1.5 text-sm font-medium border border-slate-200 bg-white rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                Sau
+              </button>
+            </div>
           </div>
         )}
       </div>

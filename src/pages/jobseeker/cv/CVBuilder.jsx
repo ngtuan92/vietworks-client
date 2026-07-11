@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import html2canvas from 'html2canvas-pro';
@@ -10,7 +10,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { SortableItem } from '../../../components/jobseeker/cv/builder/SortableItem';
 import { BuilderLeftSidebar } from '../../../components/jobseeker/cv/builder/BuilderLeftSidebar';
 import { BuilderRightSidebar } from '../../../components/jobseeker/cv/builder/BuilderRightSidebar';
-import { renderSection } from '../../../components/jobseeker/cv/builder/SectionRenderer';
+import { renderSection, BuilderContext } from '../../../components/jobseeker/cv/builder/SectionRenderer';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
 import uploadService from '../../../services/uploadService';
 import { ArrowLeft, User, UploadCloud, X } from 'lucide-react';
@@ -98,6 +98,8 @@ const buildTemplateSnapshot = (template) => ({
 const CVBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPreviewMode = searchParams.get('preview') === 'true';
   const cvRef = useRef(null);
   const cvDisplayRef = useRef(null);
   const { error: showError, success: showSuccess } = useNotification();
@@ -148,7 +150,7 @@ const CVBuilder = () => {
         }
       } catch (err) {
         console.error(err);
-        showError('Kh么ng th峄?t岷 d峄?li峄噓 CV');
+        showError('Không thể tải dữ liệu CV');
         navigate('/manage-cv');
       } finally {
         setLoading(false);
@@ -252,7 +254,7 @@ const CVBuilder = () => {
       }
     } catch (err) {
       console.error(err);
-      showError('Kh么ng th峄?膽峄昳 m岷玼 thi岷縯 k岷?CV');
+      showError('Không thể đổi mẫu thiết kế CV');
     } finally {
       setSaving(false);
       setPendingTemplate(null);
@@ -281,7 +283,7 @@ const CVBuilder = () => {
         style: currentStyle
       });
     } catch (error) {
-      console.error('L峄梚 t峄?膽峄檔g l瓢u', error);
+      console.error('Lỗi tự động lưu', error);
     } finally {
       setSaving(false);
     }
@@ -334,13 +336,13 @@ const CVBuilder = () => {
               resolve(null);
             }
           } catch (uploadErr) {
-            console.error('L峄梚 upload 岷h preview:', uploadErr);
+            console.error('Lỗi upload ảnh preview:', uploadErr);
             resolve(null);
           }
         }, 'image/jpeg', 0.8);
       });
     } catch (err) {
-      console.error('L峄梚 t岷 岷h preview:', err);
+      console.error('Lỗi tạo ảnh preview:', err);
       return null;
     } finally {
       restoreCvDisplay();
@@ -359,7 +361,7 @@ const CVBuilder = () => {
         isMain: false
       });
     } catch (err) {
-      console.error('L峄梚 khi l瓢u v脿 tho谩t:', err);
+      console.error('Lỗi khi lưu và thoát:', err);
     } finally {
       setSaving(false);
       navigate('/manage-cv');
@@ -377,11 +379,11 @@ const CVBuilder = () => {
         isMain: true,
         status: 'ACTIVE'
       });
-      showSuccess('膼茫 l瓢u th脿nh CV ch铆nh th峄ヽ!');
+      showSuccess('Đã lưu thành CV chính thức!');
       navigate('/manage-cv');
     } catch (err) {
-      console.error('L峄梚 khi l瓢u ch铆nh th峄ヽ:', err);
-      showError('Kh么ng th峄?l瓢u CV');
+      console.error('Lỗi khi lưu chính thức:', err);
+      showError('Không thể lưu CV');
     } finally {
       setSaving(false);
     }
@@ -465,12 +467,12 @@ const CVBuilder = () => {
           sections,
           style,
           previewImageUrl: previewUrl
-        }).catch(err => console.error('L峄梚 l瓢u previewUrl:', err));
+        }).catch(err => console.error('Lỗi lưu previewUrl:', err));
       }
 
       pdf.save(`${cvData?.title || 'CV'}.pdf`);
     } catch (err) {
-      showError('C贸 l峄梚 khi xu岷 PDF');
+      showError('Có lỗi khi xuất PDF');
       console.error(err);
     } finally {
       restoreCvDisplay();
@@ -478,7 +480,7 @@ const CVBuilder = () => {
     }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-body-md bg-surface">膼ang t岷 Canvas CV...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center font-body-md bg-surface">Đang tải Canvas CV...</div>;
 
   const selectedLayout = cvData?.templateSnapshot?.templateCode || cvData?.templateCode || cvData?.templateId?.templateCode || 'left-col';
   const PAGE_CONTENT_MAX_HEIGHT = 1040;
@@ -579,7 +581,7 @@ const CVBuilder = () => {
         continue;
       }
 
-      // X峄?l媒 khi section danh s谩ch r峄梟g (items.length === 0)
+      // Xử lý khi section danh sách rỗng (items.length === 0)
       if (items.length === 0) {
         const addButtonH = (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 16) * fontScale;
         const emptySecHeight = secHeaderHeight + addButtonH;
@@ -714,7 +716,7 @@ const CVBuilder = () => {
       <div className="px-5 pt-4 pb-2 text-center shrink-0">
         <div
           className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shadow-inner cursor-pointer ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'}`}
-          title="Click 膽峄?t岷 岷h 膽岷 di峄噉 l锚n"
+          title="Click để tải ảnh đại diện lên"
         >
           {profileSection?.items[0]?.avatar ? (
             <img
@@ -728,7 +730,7 @@ const CVBuilder = () => {
           <label
             data-html2canvas-ignore="true"
             className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity"
-            title="Click 膽峄?t岷 岷h 膽岷 di峄噉 l锚n"
+            title="Click để tải ảnh đại diện lên"
           >
             <UploadCloud className="text-white w-5 h-5" />
             <input
@@ -761,14 +763,77 @@ const CVBuilder = () => {
       </div>
     )
   );
+  if (isPreviewMode) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col items-center py-8 px-4 font-body-md">
+        <div className="w-full max-w-3xl">
+          <div className="flex items-center justify-between mb-5">
+            <button
+              type="button"
+              onClick={() => navigate('/manage-cv')}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm hover:border-primary/40 hover:text-primary transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Quay lại
+            </button>
+            <span className="text-slate-500 text-sm font-medium">Xem trước: {cvData?.title}</span>
+            <button
+              onClick={handleExportPDF}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-white px-4 py-2 text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
+            >
+              <UploadCloud className="h-4 w-4" />
+              {saving ? 'Đang xuất...' : 'Tải PDF'}
+            </button>
+          </div>
+          <div
+            ref={cvRef}
+            className="flex flex-col gap-6 cv-preview-mode"
+            style={{ fontFamily: fontMapping[style.fontId] || 'sans-serif', color: '#374151' }}
+          >
+            <style>{`
+              .cv-preview-mode [data-html2canvas-ignore="true"] {
+                display: none !important;
+              }
+            `}</style>
+            <BuilderContext.Provider value={{ isReadOnly: isPreviewMode }}>
+              <CVTemplateRenderer
+                selectedLayout={selectedLayout}
+                style={style}
+                totalPages={totalPages}
+                pages={{
+                  left: leftPages,
+                  right: rightPages,
+                  headerLeft: headerLeftPages,
+                  equalLeft: equalLeftPages,
+                  equalRight: equalRightPages,
+                  fullWidth: fullWidthPages,
+                  harvardClassic: harvardClassicPages,
+                  harvardGsas: harvardGsasPages,
+                  isSectionContinuation
+                }}
+                profileSection={profileSection}
+                contactSection={contactSection}
+                renderLeftAvatar={renderLeftAvatar}
+                renderSection={(sec, columnContext, isContinuation = false) => (
+                  renderSection(sec, style, null, columnContext, selectedLayout, isContinuation, null, null)
+                )}
+              />
+            </BuilderContext.Provider>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-body-md flex p-5 pt-16 gap-5 max-w-[1720px] mx-auto w-full relative justify-center">
       {/* Auto-downloading PDF Overlay */}
       {isAutoDownloading && (
         <div className="fixed inset-0 bg-[#f9fafb] z-[9999] flex flex-col items-center justify-center gap-4">
           <div className="w-16 h-16 border-4 border-t-primary border-gray-200 rounded-full animate-spin"></div>
-          <h2 className="text-xl font-bold text-gray-900 mt-2">膼ang xu岷 b岷 file PDF c峄 b岷...</h2>
-          <p className="text-sm text-gray-500">Qu谩 tr矛nh n脿y c贸 th峄?m岷 v脿i gi芒y 膽峄?膽岷 b岷 膽峄?s岷痗 n茅t cao nh岷.</p>
+          <h2 className="text-xl font-bold text-gray-900 mt-2">Đang xuất bản file PDF của bạn...</h2>
+          <p className="text-sm text-gray-500">Quá trình này có thể mất vài giây để đảm bảo độ sắc nét cao nhất.</p>
         </div>
       )}
 
@@ -806,39 +871,41 @@ const CVBuilder = () => {
                 color: '#374151'
               }}
             >
-              <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                <SortableContext items={rightSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                  <SortableContext items={headerLeftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
-                    <CVTemplateRenderer
-                      selectedLayout={selectedLayout}
-                      style={style}
-                      totalPages={totalPages}
-                      pages={{
-                        left: leftPages,
-                        right: rightPages,
-                        headerLeft: headerLeftPages,
-                        equalLeft: equalLeftPages,
-                        equalRight: equalRightPages,
-                        fullWidth: fullWidthPages,
-                        harvardClassic: harvardClassicPages,
-                        harvardGsas: harvardGsasPages,
-                        isSectionContinuation
-                      }}
-                      profileSection={profileSection}
-                      contactSection={contactSection}
-                      renderLeftAvatar={renderLeftAvatar}
-                      renderSection={(sec, columnContext, isContinuation = false) => (
-                        renderSection(sec, style, handleSectionContentUpdate, columnContext, selectedLayout, isContinuation, handleMultipleStyleChange, handleOpenCropModal)
-                      )}
-                      wrapSection={(sec, node) => (
-                        <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
-                          {node}
-                        </SortableItem>
-                      )}
-                    />
+              <BuilderContext.Provider value={{ isReadOnly: false }}>
+                <SortableContext items={leftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={rightSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={headerLeftSections.map(s => s.sectionCode)} strategy={verticalListSortingStrategy}>
+                      <CVTemplateRenderer
+                        selectedLayout={selectedLayout}
+                        style={style}
+                        totalPages={totalPages}
+                        pages={{
+                          left: leftPages,
+                          right: rightPages,
+                          headerLeft: headerLeftPages,
+                          equalLeft: equalLeftPages,
+                          equalRight: equalRightPages,
+                          fullWidth: fullWidthPages,
+                          harvardClassic: harvardClassicPages,
+                          harvardGsas: harvardGsasPages,
+                          isSectionContinuation
+                        }}
+                        profileSection={profileSection}
+                        contactSection={contactSection}
+                        renderLeftAvatar={renderLeftAvatar}
+                        renderSection={(sec, columnContext, isContinuation = false) => (
+                          renderSection(sec, style, handleSectionContentUpdate, columnContext, selectedLayout, isContinuation, handleMultipleStyleChange, handleOpenCropModal)
+                        )}
+                        wrapSection={(sec, node) => (
+                          <SortableItem key={sec.sectionCode} id={sec.sectionCode}>
+                            {node}
+                          </SortableItem>
+                        )}
+                      />
+                    </SortableContext>
                   </SortableContext>
                 </SortableContext>
-              </SortableContext>
+              </BuilderContext.Provider>
             </div>
           </div>
                 </DndContext>

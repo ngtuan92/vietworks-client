@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import JobCard from '../../../components/jobseeker/jobs/JobCard';
 import { Search, MapPin } from 'lucide-react';
+import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import {
   getCareerGroups,
   getCareersByGroup,
   getCareerPositions,
-  getExperienceLevels,
   getJobLevels,
   getPublicJobs,
-  getSalaryRanges,
 } from '../../../services/jobService';
 import { useSearchStore } from '../../../store/searchStore';
 import companyLocationService from '../../../services/companyLocationService';
@@ -19,6 +18,17 @@ const saturdayOptions = [
   { value: 'NOT_SPECIFIED', label: 'Không đề cập' },
   { value: 'WORKING_SATURDAY', label: 'Có làm Thứ 7' },
   { value: 'OFF_SATURDAY', label: 'Nghỉ Thứ 7' },
+];
+
+const STATIC_SALARY_RANGES = [
+  { value: '', label: 'Chọn khoảng lương...', min: '', max: '' },
+  { value: '0-10', label: 'Dưới 10 triệu', min: 0, max: 10 },
+  { value: '10-15', label: '10 - 15 triệu', min: 10, max: 15 },
+  { value: '15-20', label: '15 - 20 triệu', min: 15, max: 20 },
+  { value: '20-25', label: '20 - 25 triệu', min: 20, max: 25 },
+  { value: '25-30', label: '25 - 30 triệu', min: 25, max: 30 },
+  { value: '30-50', label: '30 - 50 triệu', min: 30, max: 50 },
+  { value: '50-999', label: 'Trên 50 triệu', min: 50, max: 999 },
 ];
 
 const DEFAULT_LOGO =
@@ -68,12 +78,10 @@ const getTags = (job) => {
   const tags = [];
 
   if (job.isUrgent) tags.push('Tuyển gấp');
-  if (job.premium?.isActive) tags.push('Nổi bật');
-  if (job.saturdayPolicy === 'OFF_SATURDAY') tags.push('Nghỉ Thứ 7');
+  if (job.experience) tags.push(job.experience);
   if (job.jobLevelId?.name) tags.push(job.jobLevelId.name);
-  if (job.experienceLevelId?.name) tags.push(job.experienceLevelId.name);
 
-  return tags.slice(0, 4);
+  return tags.slice(0, 3);
 };
 
 const mapJobToCard = (job) => ({
@@ -101,7 +109,7 @@ const Jobs = () => {
   const [careerGroupId, setCareerGroupId] = useState('');
   const [careerId, setCareerId] = useState('');
   const [careerPositionId, setCareerPositionId] = useState('');
-  const [experienceLevelId, setExperienceLevelId] = useState('');
+  const [experience, setExperience] = useState('');
   const [jobLevelId, setJobLevelId] = useState('');
   const [salaryRangeCode, setSalaryRangeCode] = useState('');
   const [salaryMin, setSalaryMin] = useState('');
@@ -118,10 +126,9 @@ const Jobs = () => {
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [careerPositions, setCareerPositions] = useState([]);
-  const [experienceLevels, setExperienceLevels] = useState([]);
+
   const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
-  const [salaryRanges, setSalaryRanges] = useState([]);
   const [provinces, setProvinces] = useState([]);
 
   const page = Number(getParam(searchParams, 'page', '1')) || 1;
@@ -136,7 +143,7 @@ const Jobs = () => {
     setCareerGroupId(getParam(searchParams, 'careerGroupId'));
     setCareerId(getParam(searchParams, 'careerId'));
     setCareerPositionId(getParam(searchParams, 'careerPositionId'));
-    setExperienceLevelId(getParam(searchParams, 'experienceLevelId'));
+    setExperience(getParam(searchParams, 'experience'));
     setJobLevelId(getParam(searchParams, 'jobLevelId'));
     setSalaryRangeCode(getParam(searchParams, 'salaryRangeCode'));
     setSalaryMin(getParam(searchParams, 'salaryMin'));
@@ -149,19 +156,15 @@ const Jobs = () => {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const [groupsRes, expRes, levelsRes, salaryRes, provincesRes] = await Promise.all([
+        const [groupsRes, levelsRes, provincesRes] = await Promise.all([
           getCareerGroups(),
-          getExperienceLevels(),
           getJobLevels(),
-          getSalaryRanges(),
           companyLocationService.getProvinces(),
         ]);
 
         setCareerGroups(groupsRes.data || []);
-        setExperienceLevels(expRes.data || []);
         setGlobalJobLevels(levelsRes.data || []);
         setJobLevels(levelsRes.data || []);
-        setSalaryRanges(salaryRes.data || []);
         setProvinces(provincesRes || []);
       } catch (err) {
         console.error('Load public job filters error:', err);
@@ -239,7 +242,7 @@ const Jobs = () => {
       careerGroupId: getParam(searchParams, 'careerGroupId'),
       careerId: getParam(searchParams, 'careerId'),
       careerPositionId: getParam(searchParams, 'careerPositionId'),
-      experienceLevelId: getParam(searchParams, 'experienceLevelId'),
+      experience: getParam(searchParams, 'experience'),
       jobLevelId: getParam(searchParams, 'jobLevelId'),
       salaryMin: getParam(searchParams, 'salaryMin'),
       salaryMax: getParam(searchParams, 'salaryMax'),
@@ -306,7 +309,7 @@ const Jobs = () => {
       careerGroupId,
       careerId,
       careerPositionId,
-      experienceLevelId,
+      experience,
       jobLevelId,
       salaryMin,
       salaryMax,
@@ -319,7 +322,7 @@ const Jobs = () => {
     setCareerGroupId('');
     setCareerId('');
     setCareerPositionId('');
-    setExperienceLevelId('');
+    setExperience('');
     setJobLevelId('');
     setSalaryRangeCode('');
     setSalaryMin('');
@@ -330,7 +333,7 @@ const Jobs = () => {
       careerGroupId: '',
       careerId: '',
       careerPositionId: '',
-      experienceLevelId: '',
+      experience: '',
       jobLevelId: '',
       salaryRangeCode: '',
       salaryMin: '',
@@ -377,7 +380,7 @@ const Jobs = () => {
                   <Search className="w-5 h-5 text-slate-400" />
                   <input
                     className="w-full py-2 bg-transparent border-none focus:ring-0 text-gray-700 outline-none"
-                    placeholder="Chức danh, từ khóa..."
+                    placeholder="Chức danh, mô tả, yêu cầu..."
                     type="text"
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
@@ -467,9 +470,9 @@ const Jobs = () => {
 
               <SelectFilter
                 label="Kinh nghiệm"
-                value={experienceLevelId}
-                onChange={setExperienceLevelId}
-                options={experienceLevels.map((item) => ({ value: item._id, label: item.name }))}
+                value={experience}
+                onChange={setExperience}
+                options={EXPERIENCE_LEVELS.map((item) => ({ value: item, label: item }))}
               />
 
               <div>
@@ -481,26 +484,21 @@ const Jobs = () => {
                   onChange={(event) => {
                     const code = event.target.value;
                     setSalaryRangeCode(code);
-                    if (code) {
-                      const matched = salaryRanges.find((r) => r.code === code);
-                      if (matched) {
-                        setSalaryMin(matched.minMillion != null ? String(matched.minMillion) : '');
-                        setSalaryMax(matched.maxMillion != null ? String(matched.maxMillion) : '');
-                      }
+                    const matched = STATIC_SALARY_RANGES.find((r) => r.value === code);
+                    if (matched) {
+                      setSalaryMin(matched.min !== '' ? String(matched.min) : '');
+                      setSalaryMax(matched.max !== '' ? String(matched.max) : '');
                     }
                   }}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary mb-2"
                 >
-                  <option value="">Chọn khoảng lương...</option>
-                  {salaryRanges
-                    .filter((r) => r.code !== 'NEGOTIABLE')
-                    .map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.name}
-                      </option>
-                    ))}
+                  {STATIC_SALARY_RANGES.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
                 </select>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 mt-2">
                   <input
                     type="number"
                     min="0"

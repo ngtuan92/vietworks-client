@@ -42,12 +42,9 @@ const navItems = [
   },
   {
     icon: <CreditCard className={iconClass} />,
-    label: 'Giao dịch & Hóa đơn',
+    label: 'Giao dịch',
     children: [
       { label: 'Tất cả giao dịch', to: '/admin/transactions' },
-      { label: 'Yêu cầu nạp tiền', to: '#', badge: 8 },
-      { label: 'Lịch sử thanh toán', to: '/admin/transactions' },
-      { label: 'Hóa đơn', to: '/admin/invoices' },
     ],
   },
   {
@@ -67,17 +64,17 @@ const navItems = [
     icon: <BarChart2 className={iconClass} />,
     label: 'Báo cáo',
     children: [
-      { label: 'Thống kê hệ thống', to: '/admin/analytics/charts' },
-      { label: 'Thống kê người dùng', to: '/admin/analytics/user-growth' },
-      { label: 'Thống kê tuyển dụng', to: '/admin/analytics/charts' },
-      { label: 'Thống kê doanh thu', to: '/admin/revenue-report' },
+      { label: 'Tăng trưởng người dùng', to: '/admin/analytics/user-growth' },
+      { label: 'Job & Tuyển dụng', to: '/admin/analytics/charts' },
+      { label: 'Doanh thu', to: '/admin/revenue-report' },
     ],
   },
-  {
-    icon: <Receipt className={iconClass} />,
-    label: 'Yêu cầu hóa đơn',
-    to: '/admin/invoices',
-  },
+  // Menu "Yêu cầu hóa đơn" đã bị ẩn — người dùng tự tải phiếu thu trực tiếp.
+  // {
+  //   icon: <Receipt className={iconClass} />,
+  //   label: 'Yêu cầu hóa đơn',
+  //   to: '/admin/invoices',
+  // },
   {
     icon: <Settings className={iconClass} />,
     label: 'Tài khoản',

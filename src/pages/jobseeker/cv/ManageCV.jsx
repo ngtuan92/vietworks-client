@@ -20,6 +20,7 @@ const ManageCV = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [showPublicSuccessModal, setShowPublicSuccessModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const getFileIcon = (fileName) => {
@@ -174,6 +175,46 @@ const ManageCV = () => {
     }
   };
 
+  const handleTogglePublic = async (id, currentPublicState) => {
+    try {
+      const newState = !currentPublicState;
+      const res = await cvService.updateUploadedCv(id, { isPublic: newState });
+      if (res.success) {
+        setUploadedCvs(prev => prev.map(cv => cv._id === id ? { ...cv, isPublic: newState } : cv));
+        if (newState) {
+          setShowPublicSuccessModal(true);
+        } else {
+          success('Đã tắt công khai, CV sẽ bị ẩn khỏi NTD!');
+        }
+      } else {
+        error(res.message || 'Cập nhật trạng thái thất bại!');
+      }
+    } catch (err) {
+      console.error('Toggle public CV failed:', err);
+      error('Đã xảy ra lỗi khi cập nhật trạng thái CV!');
+    }
+  };
+
+  const handleToggleTemplateCvPublic = async (id, currentPublicState) => {
+    try {
+      const newState = !currentPublicState;
+      const res = await cvService.updateCv(id, { isPublic: newState });
+      if (res.success) {
+        setCvs(prev => prev.map(cv => cv._id === id ? { ...cv, isPublic: newState } : cv));
+        if (newState) {
+          setShowPublicSuccessModal(true);
+        } else {
+          success('Đã tắt công khai, CV sẽ bị ẩn khỏi NTD!');
+        }
+      } else {
+        error(res.message || 'Cập nhật trạng thái thất bại!');
+      }
+    } catch (err) {
+      console.error('Toggle template CV public failed:', err);
+      error('Đã xảy ra lỗi khi cập nhật trạng thái CV!');
+    }
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -242,11 +283,13 @@ const ManageCV = () => {
                         title={cv.title}
                         date={new Date(cv.updatedAt).toLocaleDateString('vi-VN')}
                         isMain={cv.isMain}
+                        isPublic={cv.isPublic}
                         image={cv.previewImageUrl || cv.templateId?.previewImageUrl || cv.templateId?.thumbnailUrl || "https://via.placeholder.com/300x400?text=No+Preview"}
                         onDelete={handleDeleteCv}
                         onDownload={handleDownloadPdf}
                         onRename={handleRenameCv}
                         onSetMain={handleSetMain}
+                        onTogglePublic={handleToggleTemplateCvPublic}
                       />
                     ))}
                     {filter !== 'active' && cvs.length < 5 && <CVPlaceholderCard />}
@@ -277,9 +320,11 @@ const ManageCV = () => {
                     fileSize={cv.fileSize}
                     fileUrl={cv.fileUrl}
                     fileType={cv.fileType}
+                    isPublic={cv.isPublic}
                     onDelete={handleDeleteUploadedCv}
                     onDownload={handleDownloadUploadedCv}
                     onRename={handleRenameUploadedCv}
+                    onTogglePublic={handleTogglePublic}
                   />
                 ))}
                 {uploadedCvs.length < 5 ? (
@@ -377,6 +422,43 @@ const ManageCV = () => {
                       Tải lên
                     </>
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Public Success Modal */}
+      {showPublicSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-center">
+            <div className="bg-emerald-500 text-white px-6 py-6 flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                <FileBox className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-bold text-xl">Đã bật công khai CV!</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-slate-600 mb-6">
+                Tuyệt vời! CV của bạn đã sẵn sàng để các Nhà tuyển dụng hàng đầu tìm thấy. 
+                Để tăng cơ hội nhận được lời mời phỏng vấn phù hợp nhất, hãy cập nhật <strong className="text-primary">Nhu cầu việc làm</strong> của bạn (Ngành nghề, Cấp bậc, Mức lương).
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPublicSuccessModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Để sau
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPublicSuccessModal(false);
+                    navigate('/job-preferences');
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Cập nhật ngay
                 </button>
               </div>
             </div>

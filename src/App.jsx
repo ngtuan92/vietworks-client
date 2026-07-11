@@ -51,6 +51,7 @@ import ApplicationDetail from './pages/employer/ats/ApplicationDetail';
 import CVSearch from './pages/employer/talent-pool/CVSearch';
 import CandidateDetail from './pages/employer/talent-pool/CandidateDetail';
 import UnlockedCandidates from './pages/employer/talent-pool/UnlockedCandidates';
+import EmployerCvPreview from './pages/employer/talent-pool/EmployerCvPreview';
 import BuyPackages from './pages/employer/billing/BuyPackages';
 import TopUp from './pages/employer/billing/TopUp';
 import PaymentResult from './pages/employer/billing/PaymentResult';
@@ -159,6 +160,8 @@ function App() {
 
           {/* Protected Employer routes */}
           <Route element={<ProtectedRoute allowedRoles={['EMPLOYER']} />}>
+            <Route path="/employer/talent-pool/cv-preview/:cvId" element={<EmployerCvPreview />} />
+            
             <Route path="/employer" element={<EmployerLayout />}>
               <Route path="dashboard" element={<EmployerDashboard />} />
               <Route path="company-profile" element={<CompanyProfile />} />
@@ -214,8 +217,8 @@ function App() {
               {/* Transaction management routes */}
               <Route path="transactions" element={<AdminTransactions />} />
 
-              {/* Invoice management routes */}
-              <Route path="invoices" element={<AdminInvoices />} />
+              {/* Invoice management routes (Deprecated) */}
+              {/* <Route path="invoices" element={<AdminInvoices />} /> */}
 
               {/* Package management routes */}
               <Route path="packages" element={<AdminPackages />} />

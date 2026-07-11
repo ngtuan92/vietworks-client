@@ -20,14 +20,14 @@ const CompanyCard = ({ company }) => {
         <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
           <p className="text-label-md text-blue-600/70 uppercase tracking-wider mb-1">Quy mô</p>
           <p className="font-bold text-blue-900">
-            {company?.sizeId?.name || company?.size?.name || '-'}
+            {company?.size || '-'}
           </p>
         </div>
 
         <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
           <p className="text-label-md text-blue-600/70 uppercase tracking-wider mb-1">Ngành</p>
           <p className="font-bold text-blue-900">
-            {company?.industryId?.name || company?.industry?.name || '-'}
+            {company?.industryIds?.[0]?.name || company?.industries?.[0]?.name || '-'}
           </p>
         </div>
 

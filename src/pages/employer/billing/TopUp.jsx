@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createDeposit } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
@@ -15,8 +15,6 @@ const formatPrice = (price) => `${new Intl.NumberFormat('vi-VN').format(price ||
 const TopUp = () => {
   const navigate = useNavigate();
   const [amount, setAmount] = useState(500000);
-  const [method, setMethod] = useState('SePay');
-  const [needInvoice, setNeedInvoice] = useState(false);
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -89,49 +87,23 @@ const TopUp = () => {
               <label className="mb-2 block text-sm font-semibold text-slate-600">Hoặc nhập số tiền khác (VNĐ)</label>
               <input
                 type="number"
-                min={50000}
-                step={10000}
-                value={amount}
-                onChange={(event) => setAmount(Number(event.target.value))}
+                min={1000}
+                step={1000}
+                value={amount || ''}
+                onChange={(event) => setAmount(event.target.value ? Number(event.target.value) : '')}
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-lg font-bold text-slate-900 outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10"
                 placeholder="Nhập số tiền..."
               />
             </div>
-
-            <hr className="border-slate-100" />
-
-            <div>
-              <label className="mb-3 block text-base font-bold text-slate-900">2. Phương thức thanh toán</label>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <RadioCard
-                  checked={method === 'SePay'}
-                  onClick={() => setMethod('SePay')}
-                  title="Thanh toán QR SePay"
-                  desc="Quét mã QR qua ứng dụng ngân hàng."
-                  icon="qr_code_scanner"
-                />
-                <RadioCard
-                  checked={method === 'BANK_TRANSFER'}
-                  onClick={() => setMethod('BANK_TRANSFER')}
-                  title="Chuyển khoản ngân hàng"
-                  desc="Sử dụng thông tin chuyển khoản được tạo tự động."
-                  icon="account_balance"
-                />
-              </div>
+            <div className="mt-8">
+              <button
+                type="submit"
+                disabled={loading || !amount || amount <= 0}
+                className="w-full rounded-xl bg-primary py-3.5 font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? 'Đang tạo mã thanh toán...' : 'Tạo mã thanh toán'}
+              </button>
             </div>
-
-            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
-              <input type="checkbox" checked={needInvoice} onChange={(event) => setNeedInvoice(event.target.checked)} />
-              Tôi cần xuất hóa đơn cho giao dịch này
-            </label>
-
-            <button
-              type="submit"
-              disabled={loading || !amount || amount < 50000}
-              className="w-full rounded-xl bg-primary py-3.5 font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? 'Đang tạo mã thanh toán...' : 'Tạo mã thanh toán'}
-            </button>
           </form>
         </div>
 
@@ -139,8 +111,7 @@ const TopUp = () => {
           <h2 className="text-lg font-bold text-slate-900">Tóm tắt giao dịch</h2>
           <div className="mt-5 space-y-3 text-sm">
             <InfoRow label="Số tiền nạp" value={formatPrice(amount)} highlight />
-            <InfoRow label="Phương thức" value={method === 'SePay' ? 'QR SePay' : 'Chuyển khoản'} />
-            <InfoRow label="Hóa đơn" value={needInvoice ? 'Có yêu cầu' : 'Không'} />
+            <InfoRow label="Phương thức" value="Chuyển khoản QR (SePay)" />
           </div>
         </aside>
       </div>
@@ -171,6 +142,7 @@ const TopUp = () => {
                 <InfoRow label="Số tiền" value={formatPrice(qrData.amount)} highlight />
                 <InfoRow label="Ngân hàng" value={qrData.bankName} />
                 <InfoRow label="Số tài khoản" value={qrData.bankAccount} />
+                <InfoRow label="Chủ tài khoản" value={qrData.bankOwner} />
                 <InfoRow label="Nội dung chuyển khoản" value={qrData.transferContent} primary />
               </div>
 
@@ -179,12 +151,6 @@ const TopUp = () => {
                   <span className="material-symbols-outlined text-[40px] text-emerald-600">check_circle</span>
                   <p className="mt-1 font-black text-emerald-700">Nạp tiền thành công!</p>
                   <p className="mb-3 text-sm text-emerald-600">Đang chuyển sang trang xác nhận...</p>
-                  <button
-                    onClick={() => navigate(`/employer/wallet/payment-result?orderCode=${qrData.orderCode}`)}
-                    className="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white transition-all hover:bg-emerald-700"
-                  >
-                    Xem chi tiết giao dịch
-                  </button>
                 </div>
               ) : (
                 <>
@@ -205,30 +171,7 @@ const TopUp = () => {
   );
 };
 
-const RadioCard = ({ checked, onClick, title, desc, icon }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`w-full rounded-2xl border p-4 text-left transition-all ${
-      checked ? 'border-primary bg-blue-50/50 shadow-sm ring-1 ring-primary/20' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-    }`}
-  >
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${checked ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
-          <span className="material-symbols-outlined">{icon}</span>
-        </div>
-        <div>
-          <div className="font-bold text-slate-900">{title}</div>
-          <div className="mt-0.5 text-sm leading-relaxed text-slate-500">{desc}</div>
-        </div>
-      </div>
-      <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${checked ? 'border-primary' : 'border-slate-300'}`}>
-        {checked ? <div className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
-      </div>
-    </div>
-  </button>
-);
+
 
 const InfoRow = ({ label, value, highlight, primary }) => (
   <div className="flex justify-between gap-4 text-sm">

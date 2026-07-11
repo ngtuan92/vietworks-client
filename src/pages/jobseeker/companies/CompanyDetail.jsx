@@ -230,8 +230,8 @@ const CompanyDetail = () => {
     );
   }
 
-  const industryName = company.industryId?.name;
-  const sizeName = company.sizeId?.name;
+  const industryName = company.industryIds?.[0]?.name || company.industries?.[0]?.name;
+  const sizeName = company.size;
   const hasAbout = company.description && company.description.trim().length > 0;
   const hasBenefits = Array.isArray(company.benefits) && company.benefits.length > 0;
   const primaryLocation = company.locations?.[0];

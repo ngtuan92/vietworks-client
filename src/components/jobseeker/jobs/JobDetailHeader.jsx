@@ -172,11 +172,6 @@ const JobDetailHeader = ({
                 </span>
               ) : null}
 
-              {job?.premium?.isActive ? (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-label-md">
-                  Nổi bật
-                </span>
-              ) : null}
             </div>
 
             <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">

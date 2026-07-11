@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { createBoostJobPayment } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
+import Toast from '../../../components/shared/Toast';
 
 // Lấy danh sách gói tin nổi bật (PREMIUM_JOB) từ API — admin quản lý,
 // employer mua sẽ thấy đúng cùng danh sách. Mặc định hạn 1 tháng.
@@ -22,6 +23,7 @@ const BuyFeaturedPackage = () => {
   const [buying, setBuying] = useState(false);
   const [qrData, setQrData] = useState(null);
   const [walletResult, setWalletResult] = useState(null); // Kết quả thanh toán qua ví
+  const [toastMsg, setToastMsg] = useState('');
   const [upgradeInfo, setUpgradeInfo] = useState(null);
 
   useEffect(() => {
@@ -102,17 +104,31 @@ const BuyFeaturedPackage = () => {
     } catch (e) {
       const errData = e.response?.data;
       if (errData?.code === 'ALREADY_HAS_ACTIVE_PACKAGE') {
+        const newPkg = packages.find(p => String(p._id) === String(pkgIdParam));
         setUpgradeInfo({
           currentPackage: errData.data?.currentPackage,
+          upgradePrice: errData.data?.upgradePrice,
+          downgrade: errData.data?.downgrade,
+          jobId: jobIdParam,
+          packageId: pkgIdParam,
+          newPackageName: newPkg?.name,
+          newPackagePrice: newPkg?.price,
+          jobTitle: jobs.find(j => String(j._id) === String(jobIdParam))?.title
+        });
+      } else if (errData?.code === 'DOWNGRADE_NOT_ALLOWED') {
+        setUpgradeInfo({
+          downgrade: true,
+          currentPackage: errData.data?.currentPackage,
+          newPackage: errData.data?.newPackage,
           jobId: jobIdParam,
           packageId: pkgIdParam
         });
       } else if (errData?.code === 'INSUFFICIENT_BALANCE') {
-        alert(errData.message || 'Số dư ví không đủ.');
+        setToastMsg(errData.message || 'Số dư ví không đủ.');
         // Auto-fallback về SEPAY để user không bị kẹt
         setPaymentMethod('SEPAY');
       } else {
-        alert(errData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+        setToastMsg(errData?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
       }
     } finally {
       setBuying(false);
@@ -152,6 +168,7 @@ const BuyFeaturedPackage = () => {
   if (packages.length === 0) {
     return (
       <div className="space-y-4">
+        <Toast message={toastMsg} onClose={() => setToastMsg('')} />
         <h1 className="text-2xl font-bold text-slate-900">Mua gói tin nổi bật</h1>
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
           <span className="material-symbols-outlined text-[48px] text-slate-300">inventory_2</span>
@@ -169,6 +186,7 @@ const BuyFeaturedPackage = () => {
 
   return (
     <div className="space-y-6">
+      <Toast message={toastMsg} onClose={() => setToastMsg('')} />
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Mua gói tin nổi bật</h1>
         <p className="text-slate-600 mt-1">Gắn gói premium cho một Job cụ thể. Tất cả gói đều có hạn 1 tháng.</p>
@@ -361,6 +379,7 @@ const BuyFeaturedPackage = () => {
                 <div className="flex justify-between"><span className="text-slate-500">Số tiền:</span><span className="font-black text-emerald-600">{formatVND(qrData.amount)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Ngân hàng:</span><span className="font-bold text-slate-900">{qrData.bankName}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Số TK:</span><span className="font-bold text-slate-900">{qrData.bankAccount}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Chủ tài khoản:</span><span className="font-bold text-slate-900 uppercase">{qrData.bankOwner}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Nội dung CK:</span><span className="font-black text-[#003f87]">{qrData.transferContent}</span></div>
               </div>
               {paid ? (
@@ -421,34 +440,75 @@ const BuyFeaturedPackage = () => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-                <span className="material-symbols-outlined text-3xl">upgrade</span>
+              <div className={`mx-auto w-14 h-14 rounded-2xl flex items-center justify-center ${upgradeInfo.downgrade ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
+                <span className="material-symbols-outlined text-3xl">{upgradeInfo.downgrade ? 'block' : 'upgrade'}</span>
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mt-4">Tin tuyển dụng đang có gói active</h2>
+              <h2 className="text-xl font-bold text-slate-900 mt-4">
+                {upgradeInfo.downgrade ? 'Không thể nâng cấp' : 'Xác nhận nâng cấp'}
+              </h2>
               <p className="text-slate-600 mt-2 text-sm">
                 Job này đang dùng gói <b className="text-slate-900">{upgradeInfo.currentPackage?.name}</b>
                 {upgradeInfo.currentPackage?.daysRemaining != null && (
                   <> (còn <b>{upgradeInfo.currentPackage.daysRemaining}</b> ngày).</>
                 )}
               </p>
-              <p className="text-amber-600 mt-2 text-xs">
-                ⚠️ Nâng cấp sẽ <b>huỷ gói cũ</b> và bắt đầu gói mới ngay. Phần thời gian còn lại không được hoàn lại.
-              </p>
             </div>
+
+            {/* Bảng breakdown giá nâng cấp */}
+            {!upgradeInfo.downgrade ? (
+              <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">Chi tiết nâng cấp</p>
+                <div className="mt-2 space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Giá gói mới ({upgradeInfo.newPackageName})</span>
+                    <span className="font-bold text-slate-900">{formatVND(upgradeInfo.newPackagePrice)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">− Giá trị còn lại của gói cũ</span>
+                    <span className="font-bold text-emerald-700">−{formatVND(upgradeInfo.currentPackage?.remainingValue || 0)}</span>
+                  </div>
+                  <div className="my-2 border-t border-emerald-200"></div>
+                  <div className="flex justify-between text-base">
+                    <span className="font-bold text-slate-900">Phải trả thêm</span>
+                    <span className="font-black text-emerald-700">{formatVND(upgradeInfo.upgradePrice)}</span>
+                  </div>
+                </div>
+                <p className="mt-3 rounded-xl bg-white/70 p-2 text-[11px] font-semibold text-slate-600">
+                  ⓘ Giá trị còn lại = giá gốc × (ngày còn / tổng ngày). Phần chưa dùng hết được tính theo ngày.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+                <p className="font-bold">Lý do:</p>
+                <p className="mt-1">
+                  Gói hiện tại còn giá trị <b>{formatVND(upgradeInfo.currentPackage?.remainingValue || 0)}</b>,
+                  cao hơn giá gói mới <b>{formatVND(upgradeInfo.newPackage?.price || 0)}</b>.
+                  Không thể nâng cấp lên gói rẻ hơn khi gói cũ còn hạn.
+                </p>
+                <p className="mt-2 text-xs">Vui lòng chọn gói cao hơn hoặc đợi gói hiện tại hết hạn.</p>
+              </div>
+            )}
+
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setUpgradeInfo(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50"
               >
-                Huỷ
+                {upgradeInfo.downgrade ? 'Đóng' : 'Huỷ'}
               </button>
-              <button
-                onClick={handleConfirmUpgrade}
-                disabled={buying}
-                className="flex-1 py-2.5 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] disabled:opacity-50"
-              >
-                {buying ? 'Đang xử lý...' : 'Nâng cấp ngay'}
-              </button>
+              {!upgradeInfo.downgrade && (
+                <button
+                  onClick={handleConfirmUpgrade}
+                  disabled={buying}
+                  className="flex-1 py-2.5 rounded-xl bg-[#003f87] text-white font-bold hover:bg-[#0b4e9f] disabled:opacity-50"
+                >
+                  {buying
+                    ? 'Đang xử lý...'
+                    : paymentMethod === 'WALLET'
+                      ? `Trả ${formatVND(upgradeInfo.upgradePrice)} qua ví`
+                      : `Nâng cấp ${formatVND(upgradeInfo.upgradePrice)}`}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -58,23 +58,74 @@ const JobReview = () => {
   const isAllChecked = checks.every((item) => checked[item]);
 
   const handleApprove = async () => {
-    if (!isAllChecked) return;
+    if (!isAllChecked) {
+      notifyError('Vui lòng xác nhận tất cả các mục trong danh sách kiểm duyệt!');
+      return;
+    }
+
     try {
       setSubmitting(true);
+      
+      // Kiểm tra dữ liệu job trước khi duyệt
+      if (!job || !job.experience) {
+        notifyError('Tin tuyển dụng thiếu thông tin kinh nghiệm. Vui lòng yêu cầu nhà tuyển dụng cập nhật!');
+        return;
+      }
+
       const response = await jobAdminService.approveJob(jobId, 'Đạt yêu cầu qua bảng danh sách kiểm duyệt hệ thống.');
+      
       if (response.success) {
         success('Phê duyệt tin tuyển dụng thành công!');
         navigate('/admin/jobs');
+      } else {
+        notifyError(response?.message || 'Phê duyệt thất bại!');
       }
     } catch (err) {
-      notifyError('Lỗi phê duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
+      console.error('Approve error:', err);
+      
+      // Xử lý lỗi validation từ mongoose
+      let errorMessage = 'Lỗi phê duyệt: ';
+      if (err?.response?.data?.message) {
+        errorMessage += err.response.data.message;
+      } else if (err?.message) {
+        if (err.message.includes('validation failed')) {
+          // Parse lỗi validation
+          const match = err.message.match(/Path `(\w+)` is required/);
+          if (match) {
+            const field = match[1];
+            const fieldMap = {
+              'experience': 'Kinh nghiệm',
+              'title': 'Tiêu đề',
+              'description': 'Mô tả công việc',
+              'requirements': 'Yêu cầu',
+              'benefits': 'Quyền lợi',
+              'workingTime': 'Thời gian làm việc',
+              'applyInstruction': 'Hướng dẫn ứng tuyển',
+              'deadline': 'Hạn nộp'
+            };
+            errorMessage += `Thiếu trường bắt buộc: ${fieldMap[field] || field}. Vui lòng yêu cầu nhà tuyển dụng cập nhật!`;
+          } else {
+            errorMessage += 'Dữ liệu tin tuyển dụng không đầy đủ. Vui lòng kiểm tra lại!';
+          }
+        } else {
+          errorMessage += err.message;
+        }
+      } else {
+        errorMessage += 'Hệ thống trục trặc. Vui lòng thử lại sau!';
+      }
+      
+      notifyError(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleRejectSubmit = async () => {
-    if (!reason) return;
+    if (!reason) {
+      notifyError('Vui lòng nhập lý do từ chối!');
+      return;
+    }
+    
     try {
       setSubmitting(true);
       const response = await jobAdminService.rejectJob(jobId, reason, reviewNote || reason);
@@ -82,16 +133,23 @@ const JobReview = () => {
         success('Đã từ chối duyệt tin. Tin tuyển dụng chuyển về dạng bản nháp!');
         setRejectOpen(false);
         navigate('/admin/jobs');
+      } else {
+        notifyError(response?.message || 'Từ chối thất bại!');
       }
     } catch (err) {
-      notifyError('Lỗi từ chối duyệt: ' + (err?.message || 'Hệ thống trục trặc.'));
+      console.error('Reject error:', err);
+      notifyError('Lỗi từ chối duyệt: ' + (err?.response?.data?.message || err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleBanSubmit = async () => {
-    if (!reason) return;
+    if (!reason) {
+      notifyError('Vui lòng nhập lý do khóa tin!');
+      return;
+    }
+    
     try {
       setSubmitting(true);
       const response = await jobAdminService.banJob(jobId, reason);
@@ -99,9 +157,12 @@ const JobReview = () => {
         success('Đã khóa tin tuyển dụng thành công do vi phạm điều khoản!');
         setBanOpen(false);
         navigate('/admin/jobs');
+      } else {
+        notifyError(response?.message || 'Khóa tin thất bại!');
       }
     } catch (err) {
-      notifyError('Lỗi khi khóa tin: ' + (err?.message || 'Hệ thống trục trặc.'));
+      console.error('Ban error:', err);
+      notifyError('Lỗi khi khóa tin: ' + (err?.response?.data?.message || err?.message || 'Hệ thống trục trặc.'));
     } finally {
       setSubmitting(false);
     }
@@ -131,6 +192,28 @@ const JobReview = () => {
         } 
       />
       
+      {/* Hiển thị cảnh báo nếu thiếu thông tin */}
+      {(!job.experience || !job.description || !job.requirements) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-800">
+          <div className="flex items-start gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="font-semibold">Tin tuyển dụng thiếu thông tin bắt buộc!</p>
+              <ul className="text-sm mt-1 list-disc list-inside">
+                {!job.experience && <li>Thiếu kinh nghiệm</li>}
+                {!job.description && <li>Thiếu mô tả công việc</li>}
+                {!job.requirements && <li>Thiếu yêu cầu công việc</li>}
+                {!job.benefits && <li>Thiếu quyền lợi</li>}
+                {!job.workingTime && <li>Thiếu thời gian làm việc</li>}
+                {!job.applyInstruction && <li>Thiếu hướng dẫn ứng tuyển</li>}
+                {!job.deadline && <li>Thiếu hạn nộp</li>}
+              </ul>
+              <p className="text-sm mt-2">Vui lòng yêu cầu nhà tuyển dụng cập nhật đầy đủ thông tin trước khi phê duyệt.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         
         <SectionCard title="Xem trước giao diện Ứng viên">
@@ -148,27 +231,41 @@ const JobReview = () => {
 
             <div className="text-sm text-slate-600 space-y-1">
               <div><b>Công ty:</b> {job.companyId?.name || 'N/A'}</div>
-              <div><b>Cấp bậc:</b> {job.jobLevelId?.name || 'N/A'} • <b>Kinh nghiệm:</b> {job.experienceLevelId?.name || 'Không yêu cầu'}</div>
+              <div><b>Cấp bậc:</b> {job.jobLevelId?.name || 'N/A'} • <b>Kinh nghiệm:</b> {job.experience || 'Không yêu cầu'}</div>
               <div><b>Hạn nộp:</b> {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A'}</div>
             </div>
 
             <hr className="border-slate-100" />
 
-            <div>
-              <h4 className="mb-2 font-semibold text-slate-900 text-sm">Mô tả công việc</h4>
-              <div 
-                className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
-                dangerouslySetInnerHTML={{ __html: job.description || 'Không có mô tả chi tiết' }}
-              />
-            </div>
+            {job.description && (
+              <div>
+                <h4 className="mb-2 font-semibold text-slate-900 text-sm">Mô tả công việc</h4>
+                <div 
+                  className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  dangerouslySetInnerHTML={{ __html: job.description }}
+                />
+              </div>
+            )}
 
-            <div>
-              <h4 className="mb-2 font-semibold text-slate-900 text-sm">Yêu cầu ứng viên</h4>
-              <div 
-                className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
-                dangerouslySetInnerHTML={{ __html: job.requirements || 'Không có yêu cầu cụ thể' }}
-              />
-            </div>
+            {job.requirements && (
+              <div>
+                <h4 className="mb-2 font-semibold text-slate-900 text-sm">Yêu cầu ứng viên</h4>
+                <div 
+                  className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  dangerouslySetInnerHTML={{ __html: job.requirements }}
+                />
+              </div>
+            )}
+
+            {job.benefits && (
+              <div>
+                <h4 className="mb-2 font-semibold text-slate-900 text-sm">Quyền lợi</h4>
+                <div 
+                  className="text-sm text-slate-700 whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  dangerouslySetInnerHTML={{ __html: job.benefits }}
+                />
+              </div>
+            )}
           </div>
         </SectionCard>
 
@@ -191,8 +288,13 @@ const JobReview = () => {
           <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-slate-100">
             <ActionButton 
               tone="primary" 
-              disabled={!isAllChecked || submitting} 
+              disabled={!isAllChecked || submitting || !job.experience || !job.description || !job.requirements} 
               onClick={handleApprove}
+              title={
+                !job.experience || !job.description || !job.requirements 
+                  ? 'Tin tuyển dụng thiếu thông tin bắt buộc' 
+                  : ''
+              }
             >
               {submitting ? 'Đang xử lý...' : 'Phê duyệt'}
             </ActionButton>
@@ -213,6 +315,13 @@ const JobReview = () => {
               Khóa tin vi phạm
             </ActionButton>
           </div>
+
+          {/* Hiển thị lý do không thể duyệt */}
+          {(!job.experience || !job.description || !job.requirements) && (
+            <div className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-200">
+              ⚠️ Không thể phê duyệt vì tin tuyển dụng thiếu thông tin bắt buộc. Vui lòng từ chối hoặc yêu cầu cập nhật.
+            </div>
+          )}
         </SectionCard>
       </div>
 

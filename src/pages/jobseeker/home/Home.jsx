@@ -36,7 +36,7 @@ const Home = () => {
   const [featuredCompanies, setFeaturedCompanies] = useState([]);
 
   useEffect(() => {
-    getPublicJobs({ limit: 3, sortBy: 'publishedAt', sortOrder: 'desc', isUrgent: 'true', isPremium: 'true' })
+    getPublicJobs({ limit: 1000, sortBy: 'publishedAt', sortOrder: 'desc', isUrgent: 'true' })
       .then((res) => setFeaturedJobs(res.data || []))
       .catch(() => setFeaturedJobs([]));
 
@@ -101,9 +101,10 @@ const Home = () => {
                     location={formatJobLocation(job)}
                     salary={formatSalary(job.salary)}
                     updatedTime={new Date(job.publishedAt || job.createdAt).toLocaleDateString('vi-VN')}
-                    tags={[job.isUrgent ? 'Tuyển gấp' : null, job.jobLevel, job.workType].filter(Boolean)}
+                    tags={[job.isUrgent ? 'Tuyển gấp' : null, job.experience, job.jobLevelId?.name].filter(Boolean).slice(0, 3)}
                     skills={job.skills?.map(s => s.name || s) || []}
-                    neededCount={job.neededCount}
+                    neededCount={job.neededCount || job.headcount || 1}
+                    isHiringFull={Boolean(job.isHiringFull)}
                   />
                 ))}
               </div>
