@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Send, Trash2, Plus, X, RefreshCw } from 'lucide-react';
+import { Eye, Send, Trash2, Plus, X, RefreshCw,AlertTriangle } from 'lucide-react';
 import jobService from '../../../services/jobService';
 import companyLocationService from '../../../services/companyLocationService';
 import JobDetailModal from './JobDetailModal';
@@ -223,6 +223,32 @@ const JobList = () => {
         {meta.label}
       </span>
     );
+  };
+
+  const renderReasonText = (job) => {
+    if (job.status === 'REJECTED' && job.rejectedReason) {
+      return (
+        <div className="flex items-start gap-1 text-xs text-red-600 mt-1.5 max-w-[200px] whitespace-normal bg-red-50 p-2 rounded-lg border border-red-100">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
+          <span className="leading-relaxed">
+            <strong>Lý do từ chối:</strong> {job.rejectedReason}
+          </span>
+        </div>
+      );
+    }
+    
+    if ((job.status === 'BANNED' || job.status === 'LOCKED') && job.bannedReason) {
+      return (
+        <div className="flex items-start gap-1 text-xs text-red-600 mt-1.5 max-w-[200px] whitespace-normal bg-red-50 p-2 rounded-lg border border-red-100">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
+          <span className="leading-relaxed">
+            <strong>Lý do khóa:</strong> {job.bannedReason}
+          </span>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   // Render job tags (badges)
@@ -502,6 +528,7 @@ const JobList = () => {
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
                         {renderStatusBadge(job.status)}
+                        {renderReasonText(job)}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-700">
                         {formatSalary(job.salary)}
