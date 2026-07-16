@@ -8,6 +8,7 @@ import {
   getJobseekerTransactions
 } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
+import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPreviewModal';
 
 const typeConfig = {
   WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
@@ -31,6 +32,7 @@ const JobseekerWallet = () => {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -235,6 +237,19 @@ const JobseekerWallet = () => {
                   <p className="text-xs text-slate-500">Tất cả giao dịch</p>
                 </div>
               </Link>
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 transition-all text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                  <FiCreditCard />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900">Yêu cầu xuất hóa đơn</p>
+                  <p className="text-xs text-slate-500">VAT cho gói Boost CV</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -419,6 +434,13 @@ const JobseekerWallet = () => {
           </div>
         </>
       )}
+
+      {/* Receipt Preview Modal — xem/tải phiếu thu cho giao dịch SUCCESS */}
+      <ReceiptPreviewModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        transactions={transactions}
+      />
     </div>
   );
 };

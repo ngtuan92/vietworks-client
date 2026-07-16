@@ -6,8 +6,6 @@ import Toast from '../../../components/shared/Toast';
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + ' đ';
 
-
-
 const BuyPackages = () => {
   const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
