@@ -61,6 +61,30 @@ const MySubscriptions = () => {
 
   return (
     <div className="space-y-6">
+      {unlockCredits.length > 0 && (
+        <div className="bg-gradient-to-r from-indigo-50 to-white border border-indigo-200 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="material-symbols-outlined text-indigo-600">lock_open</span>
+            <h2 className="font-bold text-slate-900">Lượt mở khóa CV còn lại</h2>
+            <span className="ml-auto text-2xl font-black text-indigo-600">
+              {unlockCredits.reduce((s, c) => s + c.remainingCredits, 0)} lượt
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {unlockCredits.map((c) => (
+              <div key={c._id} className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">{c.packageName}</span>
+                <span className="text-slate-500">
+                  còn <b className="text-indigo-700">{c.remainingCredits}/{c.totalCredits}</b> · HSD {new Date(c.expiredAt).toLocaleDateString('vi-VN')}
+                </span>
+              </div>
+            ))}
+          </div>
+          <Link to="/employer/talent-pool" className="mt-3 inline-block text-sm text-indigo-700 font-semibold hover:underline">
+            Dùng ngay ở Tìm ứng viên →
+          </Link>
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-6">
         <div className="flex items-start justify-between flex-wrap gap-3">
