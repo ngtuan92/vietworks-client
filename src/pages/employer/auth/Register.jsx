@@ -26,6 +26,7 @@ const EmployerRegister = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // sub-vn dropdown states
   const [provinces, setProvinces] = useState([]);
@@ -117,6 +118,7 @@ const EmployerRegister = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       const dObj = districts.find(d => d.code === selectedDistrictCode);
       const districtName = dObj?.name || '';
@@ -148,6 +150,8 @@ const EmployerRegister = () => {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -284,8 +288,12 @@ const EmployerRegister = () => {
                 <span>Tôi đồng ý với Chính sách dữ liệu cá nhân.</span>
               </label>
 
-              <button type="submit" className="w-full rounded-xl bg-primary text-white py-3 font-semibold hover:bg-primary/95">
-                Tạo tài khoản Nhà tuyển dụng
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className={`w-full rounded-xl bg-primary text-white py-3 font-semibold ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-primary/95'}`}
+              >
+                {isLoading ? 'Đang xử lý...' : 'Tạo tài khoản Nhà tuyển dụng'}
               </button>
 
               <p className="text-center text-sm text-slate-600">
