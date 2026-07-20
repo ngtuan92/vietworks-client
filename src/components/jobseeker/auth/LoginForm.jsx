@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import authService from '../../../services/authService';
@@ -11,6 +11,17 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const isRemembered = localStorage.getItem('remember_login') === '1';
+    if (isRemembered) {
+      setRemember(true);
+      const savedEmail = localStorage.getItem('saved_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -30,7 +41,13 @@ const LoginForm = () => {
         return;
       }
 
-      localStorage.setItem('remember_login', remember ? '1' : '0');
+      if (remember) {
+        localStorage.setItem('remember_login', '1');
+        localStorage.setItem('saved_email', normalizedEmail);
+      } else {
+        localStorage.setItem('remember_login', '0');
+        localStorage.removeItem('saved_email');
+      }
 
       if (data.user.role === 'EMPLOYER') {
         navigate('/employer/dashboard');
