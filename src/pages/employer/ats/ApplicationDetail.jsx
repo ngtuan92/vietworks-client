@@ -52,10 +52,22 @@ const ApplicationDetail = () => {
   const [markingViewed, setMarkingViewed] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [cvBlobUrl, setCvBlobUrl] = useState('');
-  const [cvPreviewLoading, setCvPreviewLoading] = useState(false);
+
+  const [cvPreviewLoading, setCvPreviewLoading] = useState(true);
+  const [cvBlobUrl, setCvBlobUrl] = useState(null);
+  const [iframeHeight, setIframeHeight] = useState(1150);
   const cvBlobUrlRef = useRef('');
   const iframeRef = useRef(null);
+
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'SYNC_CV_HEIGHT' && e.data.height) {
+        setIframeHeight(e.data.height);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -65,10 +77,10 @@ const ApplicationDetail = () => {
   const [phoneError, setPhoneError] = useState('');
 
   const handlePhoneChange = (e) => {
-    const val = e.target.value.replace(/[^0-9+ \-]/g, '');
+    const val = e.target.value.replace(/[^0-9+ -]/g, '');
     setInterviewData({ ...interviewData, contactPhone: val });
 
-    if (val && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(val.replace(/[\s\-]/g, ''))) {
+    if (val && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(val.replace(/[\s-]/g, ''))) {
       setPhoneError('SĐT không hợp lệ');
     } else {
       setPhoneError('');
@@ -308,8 +320,12 @@ const ApplicationDetail = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <section className="xl:col-span-1 bg-white border border-slate-200/60 premium-shadow rounded-2xl p-5 space-y-5">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-primary font-black text-xl flex items-center justify-center">
-              {application.avatar}
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-primary text-xl font-bold flex items-center justify-center shrink-0 border border-blue-100/50 shadow-sm overflow-hidden">
+              {application.avatar?.startsWith('http') ? (
+                <img src={application.avatar} alt={application.candidateName} className="w-full h-full object-cover" />
+              ) : (
+                application.avatar
+              )}
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">{application.candidateName}</h2>
@@ -370,8 +386,14 @@ const ApplicationDetail = () => {
                 ref={iframeRef}
                 src={`/employer/talent-pool/cv-preview/${cvPreview.id}`} 
                 title="CV Preview"
-                className="w-[820px] h-[1150px] bg-white rounded shadow-sm border-0"
-                style={{ transform: 'scale(0.85)', transformOrigin: 'top center', marginBottom: '-170px' }}
+                scrolling="no"
+                className="w-[820px] bg-white rounded shadow-sm border-0"
+                style={{ 
+                  height: `${iframeHeight}px`,
+                  transform: 'scale(0.85)', 
+                  transformOrigin: 'top center', 
+                  marginBottom: `-${iframeHeight * 0.15}px` 
+                }}
               />
             </div>
           ) : cvPreview?.mode === 'file' ? (

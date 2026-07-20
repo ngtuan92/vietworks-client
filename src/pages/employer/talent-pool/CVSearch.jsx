@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText } from 'lucide-react';
 import api from '../../../services/api';
@@ -23,7 +23,7 @@ const CVSearch = () => {
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [experience, setExperience] = useState('');
-  const [skills, setSkills] = useState('');
+  const [skills] = useState('');
   const [industry, setIndustry] = useState('');
   const [salary, setSalary] = useState('');
   const [level, setLevel] = useState('');
@@ -63,7 +63,26 @@ const CVSearch = () => {
   const [provinces, setProvinces] = useState([]);
   const [careerGroups, setCareerGroups] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
-  const [allSkills, setAllSkills] = useState([]);
+
+  const fetchCandidates = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (keyword) params.search = keyword;
+      if (skills) params.skills = skills;
+      if (location) params.location = location;
+      if (experience) params.experience = experience;
+      if (industry) params.industry = industry;
+      if (salary) params.salary = salary;
+      if (level) params.level = level;
+      const res = await api.get('/employer/talent-pool', { params });
+      if (res.data.success) setCandidates(res.data.data);
+    } catch (error) {
+      console.error('Fetch candidates error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [experience, industry, keyword, level, location, salary, skills]);
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -82,14 +101,12 @@ const CVSearch = () => {
 
     const fetchInitialMasterData = async () => {
       try {
-        const [resGroups, resLevels, resSkills] = await Promise.all([
+        const [resGroups, resLevels] = await Promise.all([
           jobApi.getCareerGroups(),
-          jobApi.getJobLevels(),
-          jobApi.getAllSkills()
+          jobApi.getJobLevels()
         ]);
         if (resGroups.success) setCareerGroups(resGroups.data);
         if (resLevels.success) setJobLevels(resLevels.data);
-        if (resSkills.success) setAllSkills(resSkills.data);
       } catch (e) {
         console.error('Failed to fetch master data', e);
       }
@@ -103,28 +120,8 @@ const CVSearch = () => {
         setUnlockCredits(total);
       }
     }).catch(console.error);
-    fetchCandidates();
-  }, []);
-
-  const fetchCandidates = async () => {
-    setLoading(true);
-    try {
-      const params = {};
-      if (keyword) params.search = keyword;
-      if (skills) params.skills = skills;
-      if (location) params.location = location;
-      if (experience) params.experience = experience;
-      if (industry) params.industry = industry;
-      if (salary) params.salary = salary;
-      if (level) params.level = level;
-      const res = await api.get('/employer/talent-pool', { params });
-      if (res.data.success) setCandidates(res.data.data);
-    } catch (error) {
-      console.error('Fetch candidates error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    queueMicrotask(() => fetchCandidates());
+  }, [fetchCandidates]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -226,28 +223,16 @@ const CVSearch = () => {
           <div className="col-span-2 text-center py-12 text-slate-500">Không tìm thấy ứng viên nào.</div>
         ) : (
           groupedCandidates.map((candidate) => {
-            const { isUnlocked, isBoosted } = candidate;
+            const { isUnlocked } = candidate;
             return (
               <div
                 key={candidate._id}
-                className={`bg-white border rounded-2xl p-5 transition-all ${
-                  isBoosted
-                    ? 'border-amber-300 ring-2 ring-amber-100 shadow-md shadow-amber-100/50'
-                    : 'border-slate-200'
-                }`}
+                className="bg-white border border-slate-200 rounded-2xl p-5 transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-bold text-slate-900">{candidate.fullName}</h3>
-                      {isBoosted && (
-                        <span
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm"
-                          title="Ứng viên này đang dùng gói Boost CV - ưu tiên hiển thị"
-                        >
-                          ⚡ Boosted
-                        </span>
-                      )}
                     </div>
                   </div>
                   {candidate.experienceYears ? (
@@ -271,7 +256,6 @@ const CVSearch = () => {
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <FileText className="w-4 h-4 text-slate-400 shrink-0" />
                         <span className="text-sm font-medium text-slate-700 truncate">{cv.title || 'Hồ sơ'}</span>
-                        {cv.isBoosted && <span className="text-[10px] text-amber-600 font-bold border border-amber-200 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">Boosted</span>}
                       </div>
                       {isUnlocked && (
                         <button 
@@ -351,6 +335,7 @@ const CVSearch = () => {
           credits={unlockCredits}
           onClose={closeUnlock}
           onConfirm={confirmUnlock}
+          loading={unlocking}
           onBuyPackage={() => navigate('/employer/packages')}
         />
       ) : null}
@@ -386,9 +371,20 @@ const CVSearch = () => {
 };
 
 const CVPreviewModal = ({ candidate, onClose }) => {
-  const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [iframeHeight, setIframeHeight] = useState(1150);
+
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'SYNC_CV_HEIGHT' && e.data.height) {
+        setIframeHeight(e.data.height);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   useEffect(() => {
     let objectUrl = '';
@@ -453,7 +449,7 @@ const CVPreviewModal = ({ candidate, onClose }) => {
             <button onClick={onClose} className="text-slate-500 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200">✕</button>
           </div>
         </div>
-        <div className="flex-1 p-5 bg-slate-100 overflow-hidden relative">
+        <div className="flex-1 p-5 bg-slate-100 overflow-y-auto custom-scrollbar relative flex flex-col items-center">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -466,7 +462,9 @@ const CVPreviewModal = ({ candidate, onClose }) => {
             <iframe
               id="cv-preview-iframe"
               src={previewUrl}
-              className="w-full h-full border-none rounded-xl bg-white"
+              scrolling="no"
+              className="w-[820px] border-none rounded-xl bg-white shadow-sm"
+              style={{ height: `${iframeHeight}px`, flexShrink: 0 }}
               title="CV Preview"
             />
           ) : (
@@ -480,7 +478,7 @@ const CVPreviewModal = ({ candidate, onClose }) => {
   );
 };
 
-const UnlockCVModal = ({ candidate, credits, onClose, onConfirm, onBuyPackage }) => {
+const UnlockCVModal = ({ candidate, credits, loading, onClose, onConfirm, onBuyPackage }) => {
   const insufficient = credits <= 0;
 
   return (
@@ -509,8 +507,8 @@ const UnlockCVModal = ({ candidate, credits, onClose, onConfirm, onBuyPackage })
               Mua gói mở khóa CV
             </button>
           ) : (
-            <button onClick={onConfirm} className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold">
-              Xác nhận mở khóa (-1 lượt)
+            <button onClick={onConfirm} disabled={loading} className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
+              {loading ? 'Đang mở khóa...' : 'Xác nhận mở khóa (-1 lượt)'}
             </button>
           )}
         </div>
@@ -747,3 +745,5 @@ export const TalentPoolInterviewModal = ({ candidate, onClose, onSuccess }) => {
 };
 
 export default CVSearch;
+
+

@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
+﻿import { useCallback, useEffect, useState, useRef } from 'react';
+import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { renderSection, BuilderContext } from '../../../components/jobseeker/cv/builder/SectionRenderer';
+import { CVTemplateRenderer } from '../../../components/cv/CVTemplateRenderer';
+import { paginateSectionsWithItemRanges } from '../../../utils/cvPagination';
 
 const EmployerCvPreview = () => {
   const { cvId } = useParams();
@@ -13,83 +15,146 @@ const EmployerCvPreview = () => {
   const [error, setError] = useState(null);
   const [style, setStyle] = useState(null);
   const [sections, setSections] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
   const cvRef = useRef(null);
 
-  const handleExportPDF = async () => {
+  useEffect(() => {
     if (!cvRef.current) return;
 
-    // Workaround for html2canvas oklab/oklch bug
-    const originalGetComputedStyle = window.getComputedStyle;
-    const colorCanvas = document.createElement('canvas');
-    colorCanvas.width = 1;
-    colorCanvas.height = 1;
-    const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
-    const colorCache = {};
+    const reportHeight = () => {
+      const height = cvRef.current.getBoundingClientRect().height + 40;
+      window.parent.postMessage({ type: 'SYNC_CV_HEIGHT', height }, '*');
+    };
 
-    function processValue(value) {
-      if (typeof value === 'string' && (value.includes('oklab') || value.includes('oklch') || value.includes('color('))) {
+    const resizeObserver = new ResizeObserver(() => {
+      reportHeight();
+    });
+
+    resizeObserver.observe(cvRef.current);
+    
+    setTimeout(reportHeight, 500);
+
+    return () => resizeObserver.disconnect();
+  }, [cvData]);
+
+  const handleExportPDF = useCallback(async () => {
+    if (!cvRef.current) return;
+    setSaving(true);
+
+    try {
+      // A4 at 96dpi: 210mm = 793.7px. We render at 2x for crisp output.
+      const A4_PX_WIDTH = 794;
+      const RENDER_SCALE = 2;
+
+      // --- Step 1: Build an off-screen container at EXACTLY A4 width ---
+      const offscreen = document.createElement('div');
+      offscreen.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: ${A4_PX_WIDTH}px;
+        zoom: 1;
+        transform: none;
+        background: white;
+        box-sizing: border-box;
+        overflow: hidden;
+        z-index: -9999;
+        opacity: 0;
+        pointer-events: none;
+      `;
+      document.body.appendChild(offscreen);
+      offscreen.appendChild(cvRef.current.cloneNode(true));
+
+      // --- Step 2: Clone all stylesheets from parent page into offscreen's scope ---
+      // html2canvas needs to resolve classes correctly. We forcibly reset any scaling.
+      const cloneEl = offscreen.firstChild;
+      cloneEl.style.cssText = `
+        width: ${A4_PX_WIDTH}px !important;
+        min-height: auto;
+        transform: none !important;
+        zoom: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        display: flex;
+        flex-direction: column;
+      `;
+
+      // --- Step 3: Wait for fonts ---
+      await document.fonts.ready;
+      // Extra delay to let browser finish compositing
+      await new Promise(r => setTimeout(r, 400));
+
+      // --- Step 4: oklab/oklch color patch ---
+      const originalGetComputedStyle = window.getComputedStyle;
+      const colorCanvas = document.createElement('canvas');
+      colorCanvas.width = 1; colorCanvas.height = 1;
+      const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+      const colorCache = {};
+      function processColor(value) {
+        if (typeof value !== 'string') return value;
+        if (!value.includes('oklab') && !value.includes('oklch') && !value.includes('color(')) return value;
         return value.replace(/(?:oklab|oklch|color)\([^)]+\)/g, match => {
           if (colorCache[match]) return colorCache[match];
           colorCtx.clearRect(0, 0, 1, 1);
           colorCtx.fillStyle = match;
           colorCtx.fillRect(0, 0, 1, 1);
-          const data = colorCtx.getImageData(0, 0, 1, 1).data;
-          const rgba = `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
+          const d = colorCtx.getImageData(0, 0, 1, 1).data;
+          const rgba = `rgba(${d[0]},${d[1]},${d[2]},${(d[3]/255).toFixed(3)})`;
           colorCache[match] = rgba;
           return rgba;
         });
       }
-      return value;
-    }
-
-    window.getComputedStyle = function(el, pseudoElt) {
-      const style = originalGetComputedStyle.call(this, el, pseudoElt);
-      return new Proxy(style, {
-        get: function(target, prop) {
-          if (prop === 'getPropertyValue') {
-            return function(property) {
-              return processValue(target.getPropertyValue(property));
-            };
+      window.getComputedStyle = function(el, pseudo) {
+        const s = originalGetComputedStyle.call(this, el, pseudo);
+        return new Proxy(s, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') return (p) => processColor(target.getPropertyValue(p));
+            const v = target[prop];
+            return processColor(typeof v === 'function' ? v.bind(target) : v);
           }
-          const value = target[prop];
-          return processValue(typeof value === 'function' ? value.bind(target) : value);
-        }
-      });
-    };
+        });
+      };
 
-    try {
-      setSaving(true);
-      await document.fonts.ready; // Ensure fonts are fully loaded
-      const canvas = await html2canvas(cvRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-          return clonedDoc.fonts.ready;
-        }
-      });
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      // --- Step 5: Render per .cv-page ---
+      const pages = cloneEl.querySelectorAll('.cv-page');
+      if (pages.length === 0) throw new Error('Không tìm thấy trang CV nào để xuất');
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+
+      const originalScrollY = window.scrollY;
+      window.scrollTo(0, 0);
+
+      for (let i = 0; i < pages.length; i++) {
+        const pageEl = pages[i];
+        const canvas = await html2canvas(pageEl, {
+          scale: RENDER_SCALE,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          onclone: (clonedDoc) => clonedDoc.fonts.ready,
+        });
+
+        const pageImg = canvas.toDataURL('image/png');
+        if (i > 0) pdf.addPage();
+        pdf.addImage(pageImg, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+
+      window.getComputedStyle = originalGetComputedStyle;
+      document.body.removeChild(offscreen);
+      window.scrollTo(0, originalScrollY);
       pdf.save(`CV_${cvData.title || 'Template'}.pdf`);
+
     } catch (err) {
       console.error('Lỗi khi xuất PDF:', err);
     } finally {
-      window.getComputedStyle = originalGetComputedStyle;
       setSaving(false);
     }
-  };
+  }, [cvData]);
+
 
   useEffect(() => {
     if (!loading && cvData && cvRef.current) {
@@ -105,7 +170,7 @@ const EmployerCvPreview = () => {
         triggerExport();
       }
     }
-  }, [loading, cvData]);
+  }, [loading, cvData, handleExportPDF]);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -115,7 +180,7 @@ const EmployerCvPreview = () => {
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [cvData]);
+  }, [handleExportPDF]);
 
 
   useEffect(() => {
@@ -204,7 +269,7 @@ const EmployerCvPreview = () => {
     'Fira Code': 'monospace'
   };
 
-  const selectedLayout = cvData.templateId?.templateCode || 'left-col';
+  const selectedLayout = cvData?.templateSnapshot?.templateCode || cvData?.templateCode || cvData?.templateId?.templateCode || 'left-col';
   const profileSection = sections.find(s => s.sectionCode === 'PROFILE');
   const leftSections = sections.filter(s => s.column === 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
   const rightSections = sections.filter(s => s.column !== 'left' && s.sectionCode !== 'PROFILE' && s.isVisible !== false);
@@ -212,211 +277,128 @@ const EmployerCvPreview = () => {
   const headerLeftSections = sections.filter(s => s.sectionCode !== 'PROFILE' && s.sectionCode !== 'CONTACT' && s.isVisible !== false);
   const contactSection = sections.find(s => s.sectionCode === 'CONTACT');
 
+  const PAGE_CONTENT_MAX_HEIGHT = 1040;
+
+  // 1. left-col pagination
+  const leftPages = paginateSectionsWithItemRanges(leftSections, style, 90, PAGE_CONTENT_MAX_HEIGHT);
+  const rightPages = paginateSectionsWithItemRanges(rightSections, style, 110, PAGE_CONTENT_MAX_HEIGHT);
+
+  // 2. header-left pagination
+  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
+
+  // 3. two-col-equal pagination
+  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
+  const equalRightPages = paginateSectionsWithItemRanges(rightSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
+
+  // 4. full-width pagination
+  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, style, 130, PAGE_CONTENT_MAX_HEIGHT);
+
+  // 5. harvard-classic pagination
+  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
+
+  // 6. harvard-gsas pagination
+  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, style, 90, PAGE_CONTENT_MAX_HEIGHT);
+
+  let totalPages = 1;
+  if (selectedLayout === 'left-col') {
+    totalPages = Math.max(leftPages.length, rightPages.length);
+  } else if (selectedLayout === 'header-left') {
+    totalPages = headerLeftPages.length;
+  } else if (selectedLayout === 'two-col-equal') {
+    totalPages = Math.max(equalLeftPages.length, equalRightPages.length);
+  } else if (selectedLayout === 'full-width') {
+    totalPages = fullWidthPages.length;
+  } else if (selectedLayout === 'harvard-classic') {
+    totalPages = harvardClassicPages.length;
+  } else if (selectedLayout === 'harvard-gsas') {
+    totalPages = harvardGsasPages.length;
+  }
+  totalPages = Math.max(totalPages, 1);
+
+  const isSectionContinuation = (secCode, pageIndex, pagesArray) => {
+    for (let p = 0; p < pageIndex; p++) {
+      if (pagesArray[p]?.some(s => s.sectionCode === secCode)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const renderLeftAvatar = () => (
+    style.avatarShape !== 'hidden' && (
+      <div className="px-5 pt-4 pb-2 text-center shrink-0">
+        <div
+          className={`relative group/avatar w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shadow-inner ${style.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'}`}
+        >
+          {profileSection?.items?.[0]?.avatar ? (
+            <img
+              src={profileSection.items[0].avatar}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
+          )}
+        </div>
+      </div>
+    )
+  );
+
   return (
-    <div className="min-h-screen bg-transparent py-4 px-4 cv-preview-mode">
+    <div className="min-h-screen bg-transparent py-4 px-4 cv-preview-mode overflow-hidden">
       <style>{`
         .cv-preview-mode [data-html2canvas-ignore="true"] {
           display: none !important;
         }
-        body {
+        body, html {
           background: transparent !important;
+          overflow: hidden !important;
+          height: auto !important;
+          margin: 0;
+          padding: 0;
         }
       `}</style>
-      {/* CV Canvas */}
-      <div className="flex justify-center pb-20 drop-shadow-xl">
-        <BuilderContext.Provider value={{ isReadOnly: true }}>
+      <div className="flex-grow flex justify-center bg-transparent relative py-2">
         <div
           ref={cvRef}
-          className="bg-white"
+          className="flex flex-col gap-6 origin-top"
           style={{
-            width: '210mm',
-            minHeight: '297mm',
             fontFamily: fontMapping[style?.fontId] || 'Inter, sans-serif',
             color: '#374151'
           }}
         >
-          {/* Left Column Layout */}
-          {selectedLayout === 'left-col' && (
-            <div className="flex w-full overflow-hidden">
-              {/* Left Sidebar */}
-              <div
-                style={{ backgroundColor: style?.themeColorId || '#0056b3' }}
-                className="w-[35%] p-6 text-white flex flex-col gap-6"
-              >
-                {profileSection && style?.avatarShape !== 'hidden' && (
-                  <div className="px-5 pt-4 pb-2 text-center shrink-0">
-                    <div
-                      className={`w-20 h-20 mx-auto bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden ${
-                        style?.avatarShape === 'circle' ? 'rounded-full' : 'rounded-xl'
-                      }`}
-                    >
-                      {profileSection.items?.[0]?.avatar ? (
-                        <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="material-symbols-outlined text-[36px] text-white/70">person</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {leftSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'left', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-
-              {/* Right Main area */}
-              <div className="flex-1 p-6 bg-white flex flex-col gap-6">
-                {profileSection && (
-                  <div className="border-b pb-4" style={{ borderColor: `${style?.themeColorId}20` }}>
-                    {renderSection(profileSection, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                )}
-                <div className="space-y-6">
-                  {rightSections.map(sec => (
-                    <div key={sec.sectionCode} className="w-full">
-                      {renderSection(sec, style, () => {}, 'right', selectedLayout, false)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Header Left Layout */}
-          {selectedLayout === 'header-left' && (
-            <div className="p-8 bg-white flex flex-col gap-6 w-full overflow-hidden">
-              <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: `${style?.themeColorId}30` }}>
-                {profileSection && (
-                  <div className="flex-1">
-                    {renderSection(profileSection, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-6">
-                {headerLeftSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Two Column Equal Layout */}
-          {selectedLayout === 'two-col-equal' && (
-            <div className="flex w-full overflow-hidden">
-              <div className="flex-1 p-6 flex flex-col gap-6">
-                {leftSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'left', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-              <div className="flex-1 p-6 flex flex-col gap-6 bg-gray-50">
-                {rightSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Full Width Layout */}
-          {selectedLayout === 'full-width' && (
-            <div className="p-8 bg-white flex flex-col gap-6 w-full overflow-hidden">
-              {profileSection && (
-                <div className="border-b pb-4 mb-4" style={{ borderColor: `${style?.themeColorId}30` }}>
-                  {renderSection(profileSection, style, () => {}, 'right', selectedLayout, false)}
-                </div>
+          <BuilderContext.Provider value={{ isReadOnly: true }}>
+            <CVTemplateRenderer
+              selectedLayout={selectedLayout}
+              style={style}
+              totalPages={totalPages}
+              pages={{
+                left: leftPages,
+                right: rightPages,
+                headerLeft: headerLeftPages,
+                equalLeft: equalLeftPages,
+                equalRight: equalRightPages,
+                fullWidth: fullWidthPages,
+                harvardClassic: harvardClassicPages,
+                harvardGsas: harvardGsasPages,
+                isSectionContinuation
+              }}
+              profileSection={profileSection}
+              contactSection={contactSection}
+              renderLeftAvatar={renderLeftAvatar}
+              renderSection={(sec, columnContext, isContinuation = false) => (
+                renderSection(sec, style, () => {}, columnContext, selectedLayout, isContinuation, null, null)
               )}
-              <div className="space-y-6">
-                {headerLeftSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Harvard Classic Layout */}
-          {selectedLayout === 'harvard-classic' && (
-            <div className="flex w-full overflow-hidden">
-              <div className="w-[30%] bg-gray-900 text-white p-6 flex flex-col gap-4">
-                {profileSection && (
-                  <div className="mb-4 pb-4 border-b border-white/20">
-                    <div className="w-16 h-16 mb-3 rounded-full bg-white/20 flex items-center justify-center mx-auto">
-                      {profileSection.items?.[0]?.avatar ? (
-                        <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-                      ) : (
-                        <span className="material-symbols-outlined text-2xl text-white/70">person</span>
-                      )}
-                    </div>
-                    {renderSection(profileSection, style, () => {}, 'left', selectedLayout, false)}
-                  </div>
-                )}
-                {leftSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'left', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-              <div className="flex-1 p-6 bg-white flex flex-col gap-6">
-                {rightSections.map(sec => (
-                  <div key={sec.sectionCode} className="w-full">
-                    {renderSection(sec, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Harvard GSAS Layout */}
-          {selectedLayout === 'harvard-gsas' && (
-            <div className="p-0 bg-white flex flex-col w-full">
-              <div className="bg-gray-100 p-6 border-b" style={{ borderColor: '#e5e7eb' }}>
-                <div className="flex items-center gap-6">
-                  {profileSection && (
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 shrink-0">
-                      {profileSection.items?.[0]?.avatar ? (
-                        <img src={profileSection.items[0].avatar} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-3xl text-gray-400">person</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    {profileSection && renderSection(profileSection, style, () => {}, 'right', selectedLayout, false)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-1">
-                <div className="flex-1 p-6 flex flex-col gap-6">
-                  {leftSections.map(sec => (
-                    <div key={sec.sectionCode} className="w-full">
-                      {renderSection(sec, style, () => {}, 'left', selectedLayout, false)}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex-1 p-6 bg-gray-50 flex flex-col gap-6">
-                  {rightSections.map(sec => (
-                    <div key={sec.sectionCode} className="w-full">
-                      {renderSection(sec, style, () => {}, 'right', selectedLayout, false)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+            />
+          </BuilderContext.Provider>
         </div>
-        </BuilderContext.Provider>
       </div>
     </div>
   );
 };
 
 export default EmployerCvPreview;
+
+
+
+
