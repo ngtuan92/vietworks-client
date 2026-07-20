@@ -18,13 +18,57 @@ const EmployerCvPreview = () => {
 
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
+
+    // Workaround for html2canvas oklab/oklch bug
+    const originalGetComputedStyle = window.getComputedStyle;
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = 1;
+    colorCanvas.height = 1;
+    const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+    const colorCache = {};
+
+    function processValue(value) {
+      if (typeof value === 'string' && (value.includes('oklab') || value.includes('oklch') || value.includes('color('))) {
+        return value.replace(/(?:oklab|oklch|color)\([^)]+\)/g, match => {
+          if (colorCache[match]) return colorCache[match];
+          colorCtx.clearRect(0, 0, 1, 1);
+          colorCtx.fillStyle = match;
+          colorCtx.fillRect(0, 0, 1, 1);
+          const data = colorCtx.getImageData(0, 0, 1, 1).data;
+          const rgba = `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
+          colorCache[match] = rgba;
+          return rgba;
+        });
+      }
+      return value;
+    }
+
+    window.getComputedStyle = function(el, pseudoElt) {
+      const style = originalGetComputedStyle.call(this, el, pseudoElt);
+      return new Proxy(style, {
+        get: function(target, prop) {
+          if (prop === 'getPropertyValue') {
+            return function(property) {
+              return processValue(target.getPropertyValue(property));
+            };
+          }
+          const value = target[prop];
+          return processValue(typeof value === 'function' ? value.bind(target) : value);
+        }
+      });
+    };
+
     try {
       setSaving(true);
+      await document.fonts.ready; // Ensure fonts are fully loaded
       const canvas = await html2canvas(cvRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        onclone: (clonedDoc) => {
+          return clonedDoc.fonts.ready;
+        }
       });
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
@@ -42,6 +86,7 @@ const EmployerCvPreview = () => {
     } catch (err) {
       console.error('Lỗi khi xuất PDF:', err);
     } finally {
+      window.getComputedStyle = originalGetComputedStyle;
       setSaving(false);
     }
   };
@@ -70,7 +115,7 @@ const EmployerCvPreview = () => {
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [cvData]);
 
 
   useEffect(() => {
@@ -102,6 +147,21 @@ const EmployerCvPreview = () => {
     };
     fetchPreview();
   }, [cvId]);
+
+  // Load font dynamically
+  useEffect(() => {
+    if (style?.fontId) {
+      const fontName = style.fontId.replace(/ /g, '+');
+      const linkId = `cv-font-${fontName}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${fontName}:wght@300;400;500;600;700&display=swap`;
+        document.head.appendChild(link);
+      }
+    }
+  }, [style?.fontId]);
 
   if (loading) {
     return (
@@ -163,11 +223,11 @@ const EmployerCvPreview = () => {
         }
       `}</style>
       {/* CV Canvas */}
-      <div className="flex justify-center">
+      <div className="flex justify-center pb-20 drop-shadow-xl">
         <BuilderContext.Provider value={{ isReadOnly: true }}>
         <div
           ref={cvRef}
-          className="bg-white shadow-xl"
+          className="bg-white"
           style={{
             width: '210mm',
             minHeight: '297mm',

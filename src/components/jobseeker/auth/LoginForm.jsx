@@ -17,8 +17,16 @@ const LoginForm = () => {
     if (isRemembered) {
       setRemember(true);
       const savedEmail = localStorage.getItem('saved_email');
+      const savedPwd = localStorage.getItem('saved_pwd');
       if (savedEmail) {
         setEmail(savedEmail);
+      }
+      if (savedPwd) {
+        try {
+          setPassword(atob(savedPwd));
+        } catch (e) {
+          console.warn('Lỗi giải mã mật khẩu đã lưu');
+        }
       }
     }
   }, []);
@@ -44,9 +52,11 @@ const LoginForm = () => {
       if (remember) {
         localStorage.setItem('remember_login', '1');
         localStorage.setItem('saved_email', normalizedEmail);
+        localStorage.setItem('saved_pwd', btoa(password));
       } else {
         localStorage.setItem('remember_login', '0');
         localStorage.removeItem('saved_email');
+        localStorage.removeItem('saved_pwd');
       }
 
       if (data.user.role === 'EMPLOYER') {

@@ -172,6 +172,21 @@ const CVBuilder = () => {
     }
   }, [loading, cvData, id, navigate]);
 
+  // Load font dynamically
+  useEffect(() => {
+    if (style?.fontId) {
+      const fontName = style.fontId.replace(/ /g, '+');
+      const linkId = `cv-font-${fontName}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${fontName}:wght@300;400;500;600;700&display=swap`;
+        document.head.appendChild(link);
+      }
+    }
+  }, [style?.fontId]);
+
   // Handle Drag End
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -381,9 +396,50 @@ const CVBuilder = () => {
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
     let restoreCvDisplay = () => {};
+
+    const originalGetComputedStyle = window.getComputedStyle;
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = 1;
+    colorCanvas.height = 1;
+    const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+    const colorCache = {};
+
+    function processValue(value) {
+      if (typeof value === 'string' && (value.includes('oklab') || value.includes('oklch') || value.includes('color('))) {
+        return value.replace(/(?:oklab|oklch|color)\([^)]+\)/g, match => {
+          if (colorCache[match]) return colorCache[match];
+          colorCtx.clearRect(0, 0, 1, 1);
+          colorCtx.fillStyle = match;
+          colorCtx.fillRect(0, 0, 1, 1);
+          const data = colorCtx.getImageData(0, 0, 1, 1).data;
+          const rgba = `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
+          colorCache[match] = rgba;
+          return rgba;
+        });
+      }
+      return value;
+    }
+
+    window.getComputedStyle = function(el, pseudoElt) {
+      const style = originalGetComputedStyle.call(this, el, pseudoElt);
+      return new Proxy(style, {
+        get: function(target, prop) {
+          if (prop === 'getPropertyValue') {
+            return function(property) {
+              return processValue(target.getPropertyValue(property));
+            };
+          }
+          const value = target[prop];
+          return processValue(typeof value === 'function' ? value.bind(target) : value);
+        }
+      });
+    };
+
     try {
       setSaving(true);
       restoreCvDisplay = await prepareCvCapture();
+      await document.fonts.ready; // Ensure dynamic fonts are loaded
+
       const pages = cvRef.current.querySelectorAll('.cv-page');
 
       const pdf = new jsPDF({
@@ -404,6 +460,7 @@ const CVBuilder = () => {
           useCORS: true,
           allowTaint: true,
           logging: false,
+          onclone: (clonedDoc) => clonedDoc.fonts.ready
         });
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
         const singlePdfHeight = (canvas.height * pdfWidth) / canvas.width;
@@ -430,6 +487,7 @@ const CVBuilder = () => {
             useCORS: true,
             allowTaint: true,
             logging: false,
+            onclone: (clonedDoc) => clonedDoc.fonts.ready
           });
           const imgData = canvas.toDataURL('image/jpeg', 1.0);
           pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
@@ -464,6 +522,9 @@ const CVBuilder = () => {
       showError('Có lỗi khi xuất PDF');
       console.error(err);
     } finally {
+      if (typeof originalGetComputedStyle !== 'undefined') {
+        window.getComputedStyle = originalGetComputedStyle;
+      }
       restoreCvDisplay();
       setSaving(false);
     }
