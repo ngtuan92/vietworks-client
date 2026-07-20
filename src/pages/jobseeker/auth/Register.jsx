@@ -17,6 +17,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const passwordChecks = useMemo(
     () => ({
@@ -34,6 +35,7 @@ const Register = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isLoading) return;
     setError('');
     setSuccess('');
 
@@ -54,6 +56,7 @@ const Register = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       const data = await authService.registerJobseeker({
         fullName: formData.fullName,
@@ -62,10 +65,14 @@ const Register = () => {
       });
       if (data.success) {
         setSuccess('Đăng ký thành công. Vui lòng đăng nhập.');
-        setTimeout(() => navigate('/login'), 600);
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      setError(err.response?.data?.message || 'Đăng ký thất bại.');
+    } finally {
+      setIsLoading(false);
     }
   };
 

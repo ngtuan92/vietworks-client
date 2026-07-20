@@ -6,9 +6,20 @@ import { Eye, MessageCircle, Download, CalendarPlus, FileText } from 'lucide-rea
 import { TalentPoolInterviewModal } from './CVSearch';
 
 const CVPreviewModal = ({ candidate, onClose }) => {
-  const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [iframeHeight, setIframeHeight] = useState(1150);
+
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'SYNC_CV_HEIGHT' && e.data.height) {
+        setIframeHeight(e.data.height);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   useEffect(() => {
     let objectUrl = '';
@@ -72,7 +83,7 @@ const CVPreviewModal = ({ candidate, onClose }) => {
             <button onClick={onClose} className="text-slate-500 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200">✕</button>
           </div>
         </div>
-        <div className="flex-1 p-5 bg-slate-100 overflow-hidden relative">
+        <div className="flex-1 p-5 bg-slate-100 overflow-y-auto custom-scrollbar relative flex flex-col items-center">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -85,7 +96,9 @@ const CVPreviewModal = ({ candidate, onClose }) => {
             <iframe
               id="cv-preview-iframe"
               src={previewUrl}
-              className="w-full h-full border-none rounded-xl bg-white"
+              scrolling="no"
+              className="w-[820px] border-none rounded-xl bg-white shadow-sm"
+              style={{ height: `${iframeHeight}px`, flexShrink: 0 }}
               title="CV Preview"
             />
           ) : (

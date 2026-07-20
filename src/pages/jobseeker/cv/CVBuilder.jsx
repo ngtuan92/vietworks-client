@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -12,6 +12,7 @@ import { BuilderLeftSidebar } from '../../../components/jobseeker/cv/builder/Bui
 import { BuilderRightSidebar } from '../../../components/jobseeker/cv/builder/BuilderRightSidebar';
 import { renderSection, BuilderContext } from '../../../components/jobseeker/cv/builder/SectionRenderer';
 import { AvatarCropModal } from '../../../components/jobseeker/cv/builder/AvatarCropModal';
+import { paginateSectionsWithItemRanges } from '../../../utils/cvPagination';
 import uploadService from '../../../services/uploadService';
 import { ArrowLeft, User, UploadCloud } from 'lucide-react';
 import { CVTemplateRenderer } from '../../../components/cv/CVTemplateRenderer';
@@ -156,21 +157,23 @@ const CVBuilder = () => {
       }
     };
     fetchCv();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate]);
 
+  // Load font dynamically
   useEffect(() => {
-    if (!loading && cvData && cvRef.current) {
-      const queryParams = new URLSearchParams(window.location.search);
-      if (queryParams.get('download') === 'true') {
-        const triggerExport = async () => {
-          await new Promise(resolve => setTimeout(resolve, 800));
-          await handleExportPDF();
-          navigate('/manage-cv');
-        };
-        triggerExport();
+    if (style?.fontId) {
+      const fontName = style.fontId.replace(/ /g, '+');
+      const linkId = `cv-font-${fontName}`;
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${fontName}:wght@300;400;500;600;700&display=swap`;
+        document.head.appendChild(link);
       }
     }
-  }, [loading, cvData, id, navigate]);
+  }, [style?.fontId]);
 
   // Handle Drag End
   const handleDragEnd = (event) => {
@@ -381,74 +384,135 @@ const CVBuilder = () => {
   const handleExportPDF = async () => {
     if (!cvRef.current) return;
     let restoreCvDisplay = () => {};
+    setSaving(true);
+
     try {
-      setSaving(true);
       restoreCvDisplay = await prepareCvCapture();
-      const pages = cvRef.current.querySelectorAll('.cv-page');
 
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+      // A4 at 96dpi: 210mm = 793.7px
+      const A4_PX_WIDTH = 794;
+      const RENDER_SCALE = 2;
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      // --- Step 1: Build off-screen container at EXACTLY A4 width ---
+      const offscreen = document.createElement('div');
+      offscreen.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: ${A4_PX_WIDTH}px;
+        zoom: 1;
+        transform: none;
+        background: white;
+        box-sizing: border-box;
+        overflow: hidden;
+        z-index: -9999;
+        opacity: 0;
+        pointer-events: none;
+      `;
+      document.body.appendChild(offscreen);
+      offscreen.appendChild(cvRef.current.cloneNode(true));
+
+      // --- Step 2: Reset scaling on cloned CV element ---
+      const cloneEl = offscreen.firstChild;
+      cloneEl.style.cssText = `
+        width: ${A4_PX_WIDTH}px !important;
+        min-height: auto;
+        transform: none !important;
+        zoom: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        display: flex;
+        flex-direction: column;
+      `;
+
+      // --- Step 3: Wait for fonts ---
+      await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 400));
+
+      // --- Step 4: oklab/oklch color patch ---
+      const originalGetComputedStyle = window.getComputedStyle;
+      const colorCanvas = document.createElement('canvas');
+      colorCanvas.width = 1; colorCanvas.height = 1;
+      const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+      const colorCache = {};
+      function processColor(value) {
+        if (typeof value !== 'string') return value;
+        if (!value.includes('oklab') && !value.includes('oklch') && !value.includes('color(')) return value;
+        return value.replace(/(?:oklab|oklch|color)\([^)]+\)/g, match => {
+          if (colorCache[match]) return colorCache[match];
+          colorCtx.clearRect(0, 0, 1, 1);
+          colorCtx.fillStyle = match;
+          colorCtx.fillRect(0, 0, 1, 1);
+          const d = colorCtx.getImageData(0, 0, 1, 1).data;
+          const rgba = `rgba(${d[0]},${d[1]},${d[2]},${(d[3]/255).toFixed(3)})`;
+          colorCache[match] = rgba;
+          return rgba;
+        });
+      }
+      window.getComputedStyle = function(el, pseudo) {
+        const s = originalGetComputedStyle.call(this, el, pseudo);
+        return new Proxy(s, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') return (p) => processColor(target.getPropertyValue(p));
+            const v = target[prop];
+            return processColor(typeof v === 'function' ? v.bind(target) : v);
+          }
+        });
+      };
+
+      // --- Step 5: Render per .cv-page ---
+      const pages = cloneEl.querySelectorAll('.cv-page');
+      if (pages.length === 0) throw new Error('Không tìm thấy trang CV nào để xuất');
 
       let previewUrl = null;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
 
-      if (pages.length === 0) {
-        // Fallback for single page
-        const canvas = await html2canvas(cvRef.current, {
-          scale: 2,
+      const originalScrollY = window.scrollY;
+      window.scrollTo(0, 0);
+
+      for (let i = 0; i < pages.length; i++) {
+        const pageEl = pages[i];
+        const canvas = await html2canvas(pageEl, {
+          scale: RENDER_SCALE,
           useCORS: true,
           allowTaint: true,
           logging: false,
+          backgroundColor: '#ffffff',
+          onclone: (clonedDoc) => clonedDoc.fonts.ready,
         });
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const singlePdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, singlePdfHeight);
 
-        // Upload first page snapshot
-        await new Promise((resolve) => {
-          canvas.toBlob(async (blob) => {
-            if (blob) {
-              const file = new File([blob], `cv-preview-${id}.jpg`, { type: 'image/jpeg' });
-              const res = await uploadService.uploadAvatar(file).catch(() => null);
-              if (res?.success) previewUrl = res.data.fileUrl;
-            }
-            resolve();
-          }, 'image/jpeg', 0.85);
-        });
-      } else {
-        for (let i = 0; i < pages.length; i++) {
-          if (i > 0) {
-            pdf.addPage();
-          }
-          const canvas = await html2canvas(pages[i], {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            logging: false,
+        const pageImg = canvas.toDataURL('image/png');
+        if (i > 0) pdf.addPage();
+        pdf.addImage(pageImg, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        // Upload first page for preview
+        if (i === 0) {
+          const previewCanvas = document.createElement('canvas');
+          previewCanvas.width = canvas.width;
+          previewCanvas.height = canvas.height;
+          const previewCtx = previewCanvas.getContext('2d');
+          previewCtx.fillStyle = '#ffffff';
+          previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+          previewCtx.drawImage(canvas, 0, 0);
+          await new Promise((resolve) => {
+            previewCanvas.toBlob(async (blob) => {
+              if (blob) {
+                const file = new File([blob], `cv-preview-${id}.jpg`, { type: 'image/jpeg' });
+                const res = await uploadService.uploadAvatar(file).catch(() => null);
+                if (res?.success) previewUrl = res.data.fileUrl;
+              }
+              resolve();
+            }, 'image/jpeg', 0.85);
           });
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-          if (i === 0) {
-            // Upload first page snapshot
-            await new Promise((resolve) => {
-              canvas.toBlob(async (blob) => {
-                if (blob) {
-                  const file = new File([blob], `cv-preview-${id}.jpg`, { type: 'image/jpeg' });
-                  const res = await uploadService.uploadAvatar(file).catch(() => null);
-                  if (res?.success) previewUrl = res.data.fileUrl;
-                }
-                resolve();
-              }, 'image/jpeg', 0.85);
-            });
-          }
         }
       }
+
+      window.getComputedStyle = originalGetComputedStyle;
+      document.body.removeChild(offscreen);
+      window.scrollTo(0, originalScrollY);
 
       // Save preview URL to DB
       if (previewUrl) {
@@ -468,6 +532,21 @@ const CVBuilder = () => {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!loading && cvData && cvRef.current) {
+      const queryParams = new URLSearchParams(window.location.search);
+      if (queryParams.get('download') === 'true') {
+        const triggerExport = async () => {
+          await new Promise(resolve => setTimeout(resolve, 800));
+          await handleExportPDF();
+          navigate('/manage-cv');
+        };
+        triggerExport();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, cvData, id, navigate]);
 
   if (loading) return <div className="h-screen flex items-center justify-center font-body-md bg-surface">Đang tải Canvas CV...</div>;
 
@@ -495,181 +574,27 @@ const CVBuilder = () => {
     'Fira Code': 'monospace'
   };
 
-  const paginateSectionsWithItemRanges = (secs, initialHeight = 0, maxHeight = 1250) => {
-    const pages = [];
-    let currentPageSecs = [];
-    let currentHeight = initialHeight;
-
-    const fontScale = style.fontSize === 'small' ? 0.85 : style.fontSize === 'large' ? 1.15 : 1.0;
-    const headerHeight = style.density === 'compact' ? 26 : style.density === 'comfortable' ? 44 : 34;
-    const gapBetweenSections = style.density === 'compact' ? 8 : style.density === 'comfortable' ? 24 : 16;
-
-    const getItemHeight = (sectionCode, item) => {
-      let h = 40;
-      if (sectionCode === 'OBJECTIVE' || sectionCode === 'ADDITIONAL_INFO') {
-        h = style.density === 'compact' ? 35 : style.density === 'comfortable' ? 65 : 50;
-      } else if (sectionCode === 'CONTACT') {
-        h = style.density === 'compact' ? 40 : style.density === 'comfortable' ? 70 : 55;
-      } else if (sectionCode === 'SKILLS' || sectionCode === 'INTERESTS') {
-        h = style.density === 'compact' ? 18 : style.density === 'comfortable' ? 32 : 24;
-      } else if (sectionCode === 'CERTIFICATES' || sectionCode === 'AWARDS') {
-        h = style.density === 'compact' ? 18 : style.density === 'comfortable' ? 30 : 22;
-      } else if (sectionCode === 'EDUCATION') {
-        h = style.density === 'compact' ? 30 : style.density === 'comfortable' ? 50 : 40;
-      } else if (item) {
-        const baseH = style.density === 'compact' ? 32 : style.density === 'comfortable' ? 50 : 40;
-        let descLines = 0;
-        if (item.description) {
-          const text = item.description.replace(/<[^>]*>/g, '');
-          descLines = Math.max(Math.ceil(text.length / 60), 1);
-        }
-        const descH = descLines * (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 15);
-        h = baseH + descH;
-      }
-      return h * fontScale;
-    };
-
-    for (let i = 0; i < secs.length; i++) {
-      const sec = secs[i];
-      const items = sec.items || [];
-      const isObjective = sec.sectionCode === 'OBJECTIVE';
-      const isContact = sec.sectionCode === 'CONTACT';
-
-      let secHeaderHeight = headerHeight * fontScale;
-      const gap = currentPageSecs.length > 0 ? gapBetweenSections : 0;
-
-      if (isObjective || isContact || sec.sectionCode === 'ADDITIONAL_INFO') {
-        const itemH = getItemHeight(sec.sectionCode);
-        const totalSecHeight = secHeaderHeight + itemH;
-
-        if (currentPageSecs.length > 0 && currentHeight + gap + totalSecHeight > maxHeight) {
-          pages.push(currentPageSecs);
-          currentPageSecs = [{ ...sec, renderItemRange: [0, 1] }];
-          currentHeight = totalSecHeight;
-        } else {
-          currentHeight += gap + totalSecHeight;
-          currentPageSecs.push({ ...sec, renderItemRange: [0, 1] });
-        }
-        continue;
-      }
-
-      if (sec.sectionCode === 'SKILLS' || sec.sectionCode === 'INTERESTS') {
-        const itemH = getItemHeight(sec.sectionCode);
-        const rows = Math.max(Math.ceil(items.length / 5), 1);
-        const addButtonH = (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 16) * fontScale;
-        const totalSecHeight = secHeaderHeight + rows * itemH + addButtonH;
-
-        if (currentPageSecs.length > 0 && currentHeight + gap + totalSecHeight > maxHeight) {
-          pages.push(currentPageSecs);
-          currentPageSecs = [{ ...sec, renderItemRange: [0, items.length] }];
-          currentHeight = totalSecHeight;
-        } else {
-          currentHeight += gap + totalSecHeight;
-          currentPageSecs.push({ ...sec, renderItemRange: [0, items.length] });
-        }
-        continue;
-      }
-
-      // Xử lý khi section danh sách rỗng (items.length === 0)
-      if (items.length === 0) {
-        const addButtonH = (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 16) * fontScale;
-        const emptySecHeight = secHeaderHeight + addButtonH;
-        if (currentPageSecs.length > 0 && currentHeight + gap + emptySecHeight > maxHeight) {
-          pages.push(currentPageSecs);
-          currentPageSecs = [{ ...sec, renderItemRange: [0, 0] }];
-          currentHeight = emptySecHeight;
-        } else {
-          currentHeight += gap + emptySecHeight;
-          currentPageSecs.push({ ...sec, renderItemRange: [0, 0] });
-        }
-        continue;
-      }
-
-      // For multi-item sections
-      let itemIdx = 0;
-      let pageStartIdx = 0;
-      let headerAdded = false;
-      const addButtonH = (style.density === 'compact' ? 12 : style.density === 'comfortable' ? 20 : 16) * fontScale;
-
-      while (itemIdx < items.length) {
-        const item = items[itemIdx];
-        if (!item) {
-          itemIdx++;
-          continue;
-        }
-        const itemH = getItemHeight(sec.sectionCode, item);
-        const currentGap = (currentPageSecs.length > 0 || headerAdded) ? gapBetweenSections : 0;
-
-        let heightNeeded = itemH;
-        if (!headerAdded) {
-          heightNeeded += secHeaderHeight;
-        }
-        if (itemIdx === items.length - 1) {
-          heightNeeded += addButtonH;
-        }
-
-        if (currentHeight + currentGap + heightNeeded > maxHeight) {
-          // If we are on a completely blank page, we must force this item to fit
-          if (currentHeight === 0 && itemIdx === pageStartIdx) {
-            itemIdx++;
-            currentHeight += heightNeeded;
-            headerAdded = true;
-          } else {
-            // Push the items that fit on the current page
-            if (itemIdx > pageStartIdx) {
-              currentPageSecs.push({ ...sec, renderItemRange: [pageStartIdx, itemIdx] });
-            }
-            if (currentPageSecs.length > 0) {
-              pages.push(currentPageSecs);
-            }
-            currentPageSecs = [];
-            currentHeight = 0;
-            pageStartIdx = itemIdx;
-            headerAdded = false;
-          }
-        } else {
-          itemIdx++;
-          currentHeight += currentGap + heightNeeded;
-          headerAdded = true;
-        }
-      }
-
-      // Push remaining items of this section
-      if (itemIdx > pageStartIdx) {
-        currentPageSecs.push({ ...sec, renderItemRange: [pageStartIdx, itemIdx] });
-      }
-    }
-
-    if (currentPageSecs.length > 0) {
-      pages.push(currentPageSecs);
-    }
-
-    if (pages.length === 0) {
-      pages.push([]);
-    }
-
-    return pages;
-  };
+  // Pagination utility is imported from utils/cvPagination.js
 
   // 1. left-col pagination
-  const leftPages = paginateSectionsWithItemRanges(leftSections, 90, PAGE_CONTENT_MAX_HEIGHT);
-  const rightPages = paginateSectionsWithItemRanges(rightSections, 110, PAGE_CONTENT_MAX_HEIGHT);
+  const leftPages = paginateSectionsWithItemRanges(leftSections, style, 90, PAGE_CONTENT_MAX_HEIGHT);
+  const rightPages = paginateSectionsWithItemRanges(rightSections, style, 110, PAGE_CONTENT_MAX_HEIGHT);
 
   // 2. header-left pagination
-  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, 100, PAGE_CONTENT_MAX_HEIGHT);
+  const headerLeftPages = paginateSectionsWithItemRanges(headerLeftSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
 
   // 3. two-col-equal pagination
-  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, 100, PAGE_CONTENT_MAX_HEIGHT);
-  const equalRightPages = paginateSectionsWithItemRanges(rightSections, 100, PAGE_CONTENT_MAX_HEIGHT);
+  const equalLeftPages = paginateSectionsWithItemRanges(leftSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
+  const equalRightPages = paginateSectionsWithItemRanges(rightSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
 
   // 4. full-width pagination
-  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, 130, PAGE_CONTENT_MAX_HEIGHT);
+  const fullWidthPages = paginateSectionsWithItemRanges(headerLeftSections, style, 130, PAGE_CONTENT_MAX_HEIGHT);
 
   // 5. harvard-classic pagination
-  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, 100, PAGE_CONTENT_MAX_HEIGHT);
+  const harvardClassicPages = paginateSectionsWithItemRanges(headerLeftSections, style, 100, PAGE_CONTENT_MAX_HEIGHT);
 
   // 6. harvard-gsas pagination
-  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, 90, PAGE_CONTENT_MAX_HEIGHT);
+  const harvardGsasPages = paginateSectionsWithItemRanges(headerLeftSections, style, 90, PAGE_CONTENT_MAX_HEIGHT);
 
   // Determine total pages depending on selected layout
   let totalPages = 1;

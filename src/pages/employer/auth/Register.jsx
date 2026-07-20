@@ -95,6 +95,7 @@ const EmployerRegister = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isLoading) return;
     setError('');
     setSuccess('');
 

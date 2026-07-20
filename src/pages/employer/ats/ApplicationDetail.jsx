@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Eye, FileText, Loader2, Mail, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Eye, FileText, Loader2, Mail, MapPin, Phone, MessageCircle, Download } from 'lucide-react';
 import ReactQuill, { Quill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import atsService from '../../../services/atsService';
@@ -41,6 +41,8 @@ const QUILL_MODULES = {
   ]
 };
 
+
+
 const ApplicationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -50,9 +52,22 @@ const ApplicationDetail = () => {
   const [markingViewed, setMarkingViewed] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [cvBlobUrl, setCvBlobUrl] = useState('');
-  const [cvPreviewLoading, setCvPreviewLoading] = useState(false);
+
+  const [cvPreviewLoading, setCvPreviewLoading] = useState(true);
+  const [cvBlobUrl, setCvBlobUrl] = useState(null);
+  const [iframeHeight, setIframeHeight] = useState(1150);
   const cvBlobUrlRef = useRef('');
+  const iframeRef = useRef(null);
+
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'SYNC_CV_HEIGHT' && e.data.height) {
+        setIframeHeight(e.data.height);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -62,10 +77,10 @@ const ApplicationDetail = () => {
   const [phoneError, setPhoneError] = useState('');
 
   const handlePhoneChange = (e) => {
-    const val = e.target.value.replace(/[^0-9+ \-]/g, '');
+    const val = e.target.value.replace(/[^0-9+ -]/g, '');
     setInterviewData({ ...interviewData, contactPhone: val });
 
-    if (val && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(val.replace(/[\s\-]/g, ''))) {
+    if (val && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(val.replace(/[\s-]/g, ''))) {
       setPhoneError('SĐT không hợp lệ');
     } else {
       setPhoneError('');
@@ -229,6 +244,7 @@ const ApplicationDetail = () => {
     }
 
     return {
+      id: application.cv.id,
       title: application.cv.title,
       mode: 'online',
       sections: application.cv.sections || []
@@ -304,8 +320,12 @@ const ApplicationDetail = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <section className="xl:col-span-1 bg-white border border-slate-200/60 premium-shadow rounded-2xl p-5 space-y-5">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-primary font-black text-xl flex items-center justify-center">
-              {application.avatar}
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-primary text-xl font-bold flex items-center justify-center shrink-0 border border-blue-100/50 shadow-sm overflow-hidden">
+              {application.avatar?.startsWith('http') ? (
+                <img src={application.avatar} alt={application.candidateName} className="w-full h-full object-cover" />
+              ) : (
+                application.avatar
+              )}
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">{application.candidateName}</h2>
@@ -334,25 +354,47 @@ const ApplicationDetail = () => {
               <h3 className="text-lg font-bold text-slate-900">Xem nhanh CV</h3>
               <p className="text-sm text-slate-500 mt-1">Hiển thị CV ứng viên đã dùng để ứng tuyển job này.</p>
             </div>
-            {cvPreview?.mode === 'file' && cvPreview.fileUrl ? (
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-primary font-bold border border-blue-100">
-                <Eye className="w-4 h-4" /> Đang preview trực tiếp
-              </span>
-            ) : null}
+            <div className="flex gap-2">
+              {cvPreview?.mode === 'file' && cvPreview.fileUrl ? (
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-primary font-bold border border-blue-100">
+                  <Eye className="w-4 h-4" /> Đang preview trực tiếp
+                </span>
+              ) : null}
+              {cvPreview?.mode === 'online' && (
+                <button
+                  onClick={() => iframeRef.current?.contentWindow?.postMessage('DOWNLOAD_TEMPLATE_CV', '*')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-bold border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                >
+                  <Download className="w-4 h-4" /> Tải CV
+                </button>
+              )}
+              {cvPreview?.mode === 'file' && cvBlobUrl && (
+                <a
+                  href={cvBlobUrl}
+                  download={cvPreview.fileName || 'cv.pdf'}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-bold border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                >
+                  <Download className="w-4 h-4" /> Tải CV
+                </a>
+              )}
+            </div>
           </div>
 
           {cvPreview?.mode === 'online' ? (
-            <div className="space-y-4">
-              {(cvPreview.sections || []).length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-500">CV online chưa có section để hiển thị nhanh.</div>
-              ) : (
-                (cvPreview.sections || []).map((section, index) => (
-                  <div key={`${section.type || 'section'}-${index}`} className="rounded-2xl border border-slate-200 p-4">
-                    <h4 className="font-bold text-slate-900 mb-2">{section.title || section.type || `Mục ${index + 1}`}</h4>
-                    <pre className="whitespace-pre-wrap text-sm text-slate-600 font-sans">{JSON.stringify(section.content || section.items || section, null, 2)}</pre>
-                  </div>
-                ))
-              )}
+            <div className="w-full bg-slate-100/50 rounded-2xl overflow-hidden border border-slate-200 flex justify-center py-6">
+              <iframe 
+                ref={iframeRef}
+                src={`/employer/talent-pool/cv-preview/${cvPreview.id}`} 
+                title="CV Preview"
+                scrolling="no"
+                className="w-[820px] bg-white rounded shadow-sm border-0"
+                style={{ 
+                  height: `${iframeHeight}px`,
+                  transform: 'scale(0.85)', 
+                  transformOrigin: 'top center', 
+                  marginBottom: `-${iframeHeight * 0.15}px` 
+                }}
+              />
             </div>
           ) : cvPreview?.mode === 'file' ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">

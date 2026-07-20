@@ -76,12 +76,20 @@ const JobApplications = () => {
           }
         }
 
-        const blob = await atsService.getApplicationCvBlob(previewItem.id);
-        if (!active) return;
-        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-        const objectUrl = URL.createObjectURL(blob);
-        previewUrlRef.current = objectUrl;
-        setPreviewUrl(objectUrl);
+        if (previewItem.cv?.type === 'ONLINE') {
+          if (previewUrlRef.current) {
+            URL.revokeObjectURL(previewUrlRef.current);
+            previewUrlRef.current = '';
+          }
+          setPreviewUrl(`/employer/talent-pool/cv-preview/${previewItem.cv.id}`);
+        } else {
+          const blob = await atsService.getApplicationCvBlob(previewItem.id);
+          if (!active) return;
+          if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+          const objectUrl = URL.createObjectURL(blob);
+          previewUrlRef.current = objectUrl;
+          setPreviewUrl(objectUrl);
+        }
       } catch (err) {
         if (!active) return;
         setError(err.response?.data?.message || 'Không thể tải CV để xem trước');
@@ -95,6 +103,17 @@ const JobApplications = () => {
     };
   }, [previewItem]);
 
+
+  const openCvPreview = (candidate) => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = '';
+    }
+    setPreviewUrl('');
+    setPreviewNotice('');
+    setPreviewLoading(true);
+    setPreviewItem(candidate);
+  };
   const candidates = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
     if (!normalized) return applications;
@@ -156,8 +175,12 @@ const JobApplications = () => {
           <div key={candidate.id} className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5 hover:-translate-y-0.5 hover:shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-primary font-bold flex items-center justify-center shrink-0">
-                  {candidate.avatar}
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-primary font-bold flex items-center justify-center shrink-0 overflow-hidden">
+                  {candidate.avatar?.startsWith('http') ? (
+                    <img src={candidate.avatar} alt={candidate.candidateName} className="w-full h-full object-cover" />
+                  ) : (
+                    candidate.avatar
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="font-semibold text-slate-900 truncate">{candidate.candidateName}</div>
@@ -177,7 +200,7 @@ const JobApplications = () => {
                 <div className="mt-1 flex items-center justify-between gap-3">
                   <p className="font-semibold text-slate-800 truncate">{candidate.cvName || '--'}</p>
                   <button
-                    onClick={() => setPreviewItem(candidate)}
+                    onClick={() => openCvPreview(candidate)}
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 text-primary font-semibold hover:bg-blue-100 transition-colors shrink-0"
                   >
                     <Eye className="w-4 h-4" /> Xem CV
@@ -195,12 +218,27 @@ const JobApplications = () => {
         ))}
       </section>
 
-      {previewItem ? <CvPreviewModal item={previewItem} onClose={() => { if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = ''; setPreviewUrl(''); setPreviewNotice(''); setPreviewItem(null); }} previewUrl={previewUrl} loading={previewLoading} notice={previewNotice} /> : null}
+      {previewItem ? <CvPreviewModal item={previewItem} onClose={() => { if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = ''; setPreviewUrl(''); setPreviewNotice(''); setPreviewLoading(false); setPreviewItem(null); }} previewUrl={previewUrl} loading={previewLoading} notice={previewNotice} /> : null}
     </div>
   );
 };
 
-const CvPreviewModal = ({ item, onClose, previewUrl, loading, notice }) => (
+const CvPreviewModal = ({ item, onClose, previewUrl, loading, notice }) => {
+  const [iframeHeight, setIframeHeight] = useState(1150);
+  const [iframeReady, setIframeReady] = useState(false);
+  useEffect(() => {
+    queueMicrotask(() => setIframeReady(false));
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'SYNC_CV_HEIGHT' && e.data.height) {
+        setIframeHeight(e.data.height);
+        setIframeReady(true);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [previewUrl, item?.cv?.type]);
+
+  return (
   <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
     <div className="w-full max-w-5xl h-full max-h-[90vh] bg-white rounded-[2rem] shadow-2xl border border-slate-200/60 overflow-hidden flex flex-col transform scale-100 animate-in zoom-in-95 duration-200">
       
@@ -228,31 +266,53 @@ const CvPreviewModal = ({ item, onClose, previewUrl, loading, notice }) => (
 
       {/* Body */}
       <div className="flex-1 overflow-hidden bg-slate-100/50 p-4 md:p-6 relative">
-        {loading ? (
-          <div className="w-full h-full rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-sm shadow-sm flex flex-col items-center justify-center text-slate-500 gap-4">
+        {previewUrl ? (
+          <div className="w-full h-full rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-y-auto custom-scrollbar relative flex flex-col items-center">
+            {item.cv?.type === 'ONLINE' ? (
+              <iframe
+                id="cv-preview-iframe"
+                src={previewUrl}
+                scrolling="no"
+                className={`w-[820px] border-none bg-white shadow-sm transition-opacity duration-200 ${iframeReady ? 'opacity-100' : 'opacity-0'}`}
+                style={{ height: `${iframeHeight}px`, flexShrink: 0 }}
+                title="CV Preview"
+              />
+            ) : (
+              <object data={previewUrl} type="application/pdf" className="w-full h-full">
+                <embed src={previewUrl} type="application/pdf" className="w-full h-full" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-50">
+                  <div className="w-20 h-20 rounded-full bg-slate-200/50 flex items-center justify-center mb-4">
+                    <FileText className="w-10 h-10 text-slate-400" />
+                  </div>
+                  <p className="font-bold text-slate-700 text-lg">Không thể xem trực tiếp CV</p>
+                  <p className="text-sm text-slate-500 mt-2 max-w-md">Trình duyệt của bạn không hỗ trợ xem PDF trực tiếp hoặc file bị lỗi. Bạn có thể mở sang một tab mới để xem.</p>
+                  <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="mt-6 px-6 py-3 rounded-xl bg-primary text-white font-semibold shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                    Mở trong thẻ mới
+                  </a>
+                </div>
+              </object>
+            )}
+            {(loading || (item.cv?.type === 'ONLINE' && !iframeReady)) ? (
+              <div className="absolute inset-0 z-10 rounded-2xl bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center text-slate-500 gap-4 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-primary shadow-inner">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-700 text-lg">Đang tải CV</p>
+                  <p className="text-sm text-slate-500 mt-1">Vui lòng đợi giây lát...</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : loading ? (
+          <div className="absolute inset-4 md:inset-6 rounded-2xl border border-slate-200/60 bg-white/90 backdrop-blur-sm shadow-sm flex flex-col items-center justify-center text-slate-500 gap-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-primary shadow-inner">
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
-            <div className="text-center">
+            <div>
               <p className="font-bold text-slate-700 text-lg">Đang tải CV</p>
-              <p className="text-sm text-slate-500 mt-1">Vui lòng chờ trong giây lát...</p>
+              <p className="text-sm text-slate-500 mt-1">Vui lòng đợi giây lát...</p>
             </div>
-          </div>
-        ) : previewUrl ? (
-          <div className="w-full h-full rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden relative">
-            <object data={previewUrl} type="application/pdf" className="w-full h-full">
-              <embed src={previewUrl} type="application/pdf" className="w-full h-full" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-                <div className="w-20 h-20 rounded-full bg-slate-200/50 flex items-center justify-center mb-4">
-                  <FileText className="w-10 h-10 text-slate-400" />
-                </div>
-                <p className="font-bold text-slate-700 text-lg">Không thể xem trực tiếp CV</p>
-                <p className="text-sm text-slate-500 mt-2 max-w-md">Trình duyệt của bạn không hỗ trợ xem PDF trực tiếp hoặc file bị lỗi. Bạn có thể mở sang một tab mới để xem.</p>
-                <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="mt-6 px-6 py-3 rounded-xl bg-primary text-white font-semibold shadow-md shadow-blue-200 hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-                  Mở trong thẻ mới
-                </a>
-              </div>
-            </object>
           </div>
         ) : (
           <div className="w-full h-full rounded-2xl border border-slate-200/60 bg-white shadow-sm flex items-center justify-center flex-col gap-3">
@@ -266,7 +326,8 @@ const CvPreviewModal = ({ item, onClose, previewUrl, loading, notice }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const Info = ({ label, value }) => (
   <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
@@ -281,3 +342,8 @@ const formatDateTime = (value) => {
 };
 
 export default JobApplications;
+
+
+
+
+
