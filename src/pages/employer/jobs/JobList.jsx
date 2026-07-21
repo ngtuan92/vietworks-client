@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Send, Trash2, Plus, X, RefreshCw,AlertTriangle } from 'lucide-react';
+import { Eye, Send, Trash2, Plus, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import jobService from '../../../services/jobService';
 import companyLocationService from '../../../services/companyLocationService';
 import JobDetailModal from './JobDetailModal';
@@ -236,7 +236,7 @@ const JobList = () => {
         </div>
       );
     }
-    
+
     if ((job.status === 'BANNED' || job.status === 'LOCKED') && job.bannedReason) {
       return (
         <div className="flex items-start gap-1 text-xs text-red-600 mt-1.5 max-w-[200px] whitespace-normal bg-red-50 p-2 rounded-lg border border-red-100">
@@ -251,53 +251,36 @@ const JobList = () => {
     return null;
   };
 
-  // Render job tags (badges)
-  const renderJobTags = (job) => {
-    const tags = [];
+  // Render job tags and package info
+  const renderJobTagsAndInfo = (job) => {
+    const items = [];
 
-    // 1. Premium badge
-    if (job.activeBoost) {
-      tags.push(
-        <span
-          key="premium"
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm shrink-0"
-          title={`${job.activeBoost.packageName} - còn ${job.activeBoost.daysRemaining} ngày`}
-        >
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 1L12.5 7.5L19 8.5L14.5 13.5L16 20L10 16.5L4 20L5.5 13.5L1 8.5L7.5 7.5L10 1Z" clipRule="evenodd" />
-          </svg>
-          Premium
-        </span>
-      );
-    }
-
-    // 2. Urgent badge
+    // Urgent badge
     if (job.isUrgent) {
-      tags.push(
+      items.push(
         <span
           key="urgent"
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-sm shrink-0 animate-pulse"
         >
-          🔥 Gấp
+          Gấp
         </span>
       );
     }
 
-    return tags.length > 0 ? (
-      <div className="flex items-center gap-1.5 flex-wrap mt-1">
-        {tags}
+    // Package info
+    if (job.activeBoost) {
+      items.push(
+        <span key="package" className="text-[11px] text-amber-700 font-semibold shrink-0">
+          {job.activeBoost.packageName} • Còn {job.activeBoost.daysRemaining} ngày
+        </span>
+      );
+    }
+
+    return items.length > 0 ? (
+      <div className="flex items-center gap-2 flex-wrap mt-1">
+        {items}
       </div>
     ) : null;
-  };
-
-  // Render premium info
-  const renderPremiumInfo = (job) => {
-    if (!job.activeBoost) return null;
-    return (
-      <div className="text-[11px] text-amber-700 mt-0.5 font-semibold">
-        🎯 {job.activeBoost.packageName} • Còn {job.activeBoost.daysRemaining} ngày
-      </div>
-    );
   };
 
   // Render pagination
@@ -356,11 +339,10 @@ const JobList = () => {
               <button
                 key={pageNum}
                 onClick={() => handlePageChange(pageNum)}
-                className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                  page === pageNum
-                    ? 'bg-primary text-white shadow-md shadow-primary/20'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
+                className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${page === pageNum
+                  ? 'bg-primary text-white shadow-md shadow-primary/20'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
               >
                 {pageNum}
               </button>
@@ -517,13 +499,8 @@ const JobList = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-slate-900">{job.title}</span>
                           </div>
-                          {/* Tags */}
-                          {renderJobTags(job)}
-                          {/* Premium info */}
-                          {renderPremiumInfo(job)}
-                          <div className="text-xs text-slate-400 mt-0.5">
-                            ID: {job._id.slice(-6).toUpperCase()}
-                          </div>
+                          {/* Tags and Package info */}
+                          {renderJobTagsAndInfo(job)}
                         </div>
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">

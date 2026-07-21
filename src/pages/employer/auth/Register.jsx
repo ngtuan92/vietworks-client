@@ -1,10 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  getProvinces,
-  getDistrictsByProvinceCode,
-  getWardsByDistrictCode
-} from 'sub-vn';
+import companyLocationService from '../../../services/companyLocationService';
 import authService from '../../../services/authService';
 
 const EmployerRegister = () => {
@@ -24,52 +20,56 @@ const EmployerRegister = () => {
     agreedTerms: false,
     agreedPersonalData: false,
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // sub-vn dropdown states
+  // API dropdown states
   const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
 
   const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
-  const [selectedDistrictCode, setSelectedDistrictCode] = useState('');
   const [selectedWardCode, setSelectedWardCode] = useState('');
 
   useEffect(() => {
-    setProvinces(getProvinces());
+    companyLocationService.getProvinces()
+      .then(data => setProvinces(data))
+      .catch(console.error);
   }, []);
 
   const handleProvinceChange = (e) => {
     const code = e.target.value;
     setSelectedProvinceCode(code);
-    setSelectedDistrictCode('');
     setSelectedWardCode('');
     
-    const provObj = provinces.find(p => p.code === code);
-    setDistricts(code ? getDistrictsByProvinceCode(code) : []);
-    setWards([]);
+    const provObj = provinces.find(p => String(p.code) === String(code));
+    
+    if (code) {
+      companyLocationService.getCommunes(code)
+        .then(data => setWards(data))
+        .catch(console.error);
+    } else {
+      setWards([]);
+    }
 
     setFormData(prev => ({
       ...prev,
       city: provObj?.name || '',
       ward: ''
     }));
+    if (fieldErrors.selectedProvinceCode) {
+      setFieldErrors(prev => ({ ...prev, selectedProvinceCode: '' }));
+    }
   };
 
-  const handleDistrictChange = (e) => {
-    const code = e.target.value;
-    setSelectedDistrictCode(code);
-    setSelectedWardCode('');
-    setWards(code ? getWardsByDistrictCode(code) : []);
-  };
+
 
   const handleWardChange = (e) => {
     const code = e.target.value;
     setSelectedWardCode(code);
 
-    const wardObj = wards.find(w => w.code === code);
+    const wardObj = wards.find(w => String(w.code) === String(code));
     setFormData(prev => ({
       ...prev,
       ward: wardObj?.name || ''
@@ -91,6 +91,9 @@ const EmployerRegister = () => {
       ...prev,
       [id]: type === 'checkbox' ? checked : value,
     }));
+    if (fieldErrors[id]) {
+      setFieldErrors(prev => ({ ...prev, [id]: '' }));
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -99,31 +102,54 @@ const EmployerRegister = () => {
     setError('');
     setSuccess('');
 
-    if (formData.password.length < 8) {
-      setError('Mật khẩu phải có tối thiểu 8 ký tự.');
-      return;
+    const errors = {};
+
+    if (!formData.email.trim()) {
+      errors.email = 'Vui lòng nhập email.';
+    } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/.test(formData.email.trim())) {
+      errors.email = 'Email không hợp lệ.';
+    }
+
+    if (!passwordChecks.minLength || !passwordChecks.hasLetter || !passwordChecks.hasNumber) {
+      errors.password = 'Mật khẩu quá yếu (ít nhất 8 ký tự, gồm chữ và số).';
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
-      return;
+      errors.confirmPassword = 'Mật khẩu xác nhận không khớp.';
     }
 
-    if (!formData.agreedTerms) {
-      setError('Bạn cần đồng ý điều khoản để tiếp tục.');
-      return;
+    if (!formData.representativeName.trim()) {
+      errors.representativeName = 'Vui lòng nhập họ tên người đại diện.';
     }
 
-    if (!formData.agreedPersonalData) {
-      setError('Bạn cần đồng ý chính sách dữ liệu để tiếp tục.');
+    const phone = formData.phone.trim();
+    if (!phone) {
+      errors.phone = 'Vui lòng nhập số điện thoại.';
+    } else {
+      const phoneDigits = phone.replace(/[^\d]/g, '');
+      if (phoneDigits.length < 10 || phoneDigits.length > 11 || !/^[+\d][\d\s-]+$/.test(phone)) {
+        errors.phone = 'Số điện thoại không hợp lệ (cần 10-11 chữ số).';
+      }
+    }
+
+    if (!formData.companyName.trim()) {
+      errors.companyName = 'Vui lòng nhập tên công ty.';
+    }
+
+    if (!selectedProvinceCode) {
+      errors.selectedProvinceCode = 'Vui lòng chọn Tỉnh/Thành phố.';
+    }
+
+    if (!formData.agreedTerms) errors.agreedTerms = 'Bạn cần đồng ý Điều khoản sử dụng.';
+    if (!formData.agreedPersonalData) errors.agreedPersonalData = 'Bạn cần đồng ý Chính sách dữ liệu cá nhân.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
     setIsLoading(true);
     try {
-      const dObj = districts.find(d => d.code === selectedDistrictCode);
-      const districtName = dObj?.name || '';
-
       const payload = {
         fullName: formData.representativeName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -138,7 +164,14 @@ const EmployerRegister = () => {
           size: import.meta.env.VITE_DEFAULT_COMPANY_SIZE || '1 - 10 nhân viên',
           email: formData.email.trim().toLowerCase(),
           phone: formData.phone.trim(),
-          description: `${formData.companyName.trim()} - ${formData.city || ''} ${districtName} ${formData.ward || ''} ${formData.address || ''}`.trim(),
+          description: formData.companyName.trim(),
+          locationData: {
+            provinceCode: selectedProvinceCode,
+            provinceName: formData.city,
+            wardCode: selectedWardCode,
+            wardName: formData.ward,
+            addressLine: formData.address
+          }
         }
       };
 
@@ -173,7 +206,7 @@ const EmployerRegister = () => {
               <div className="rounded-2xl border border-slate-200 p-6">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin bảo mật</h2>
                 <div className="space-y-4">
-                  <Field label="Email" id="email" type="email" value={formData.email} onChange={handleChange} placeholder="hr@company.com" required />
+                  <Field label="Email" id="email" type="email" value={formData.email} onChange={handleChange} placeholder="hr@company.com" error={fieldErrors.email} />
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <PasswordField
@@ -184,6 +217,7 @@ const EmployerRegister = () => {
                       placeholder="Nhập mật khẩu"
                       showPassword={showPassword}
                       setShowPassword={setShowPassword}
+                      error={fieldErrors.password}
                     />
                     <PasswordField
                       id="confirmPassword"
@@ -193,6 +227,7 @@ const EmployerRegister = () => {
                       placeholder="Nhập lại mật khẩu"
                       showPassword={showPassword}
                       setShowPassword={setShowPassword}
+                      error={fieldErrors.confirmPassword}
                     />
                   </div>
                 </div>
@@ -201,8 +236,8 @@ const EmployerRegister = () => {
               <div className="rounded-2xl border border-slate-200 p-6">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin người đại diện</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Họ tên người đại diện" id="representativeName" value={formData.representativeName} onChange={handleChange} placeholder="Nguyễn Văn A" required />
-                  <Field label="Số điện thoại" id="phone" value={formData.phone} onChange={handleChange} placeholder="09xx xxx xxx" required />
+                  <Field label="Họ tên người đại diện" id="representativeName" value={formData.representativeName} onChange={handleChange} placeholder="Nguyễn Văn A" error={fieldErrors.representativeName} />
+                  <Field label="Số điện thoại" id="phone" value={formData.phone} onChange={handleChange} placeholder="09xx xxx xxx" error={fieldErrors.phone} />
                   <SelectField label="Giới tính" id="gender" value={formData.gender} onChange={handleChange} options={[{ value: 'MALE', label: 'Nam' }, { value: 'FEMALE', label: 'Nữ' }, { value: 'OTHER', label: 'Khác' }]} />
                 </div>
               </div>
@@ -210,7 +245,9 @@ const EmployerRegister = () => {
               <div className="rounded-2xl border border-slate-200 p-6">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin công ty</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Tên công ty" id="companyName" value={formData.companyName} onChange={handleChange} placeholder="Tên doanh nghiệp" required />
+                  <div className="sm:col-span-2">
+                    <Field label="Tên công ty" id="companyName" value={formData.companyName} onChange={handleChange} placeholder="Tên doanh nghiệp" error={fieldErrors.companyName} />
+                  </div>
                   
                   {/* Tỉnh/Thành phố select */}
                   <div>
@@ -220,8 +257,7 @@ const EmployerRegister = () => {
                     <select
                       value={selectedProvinceCode}
                       onChange={handleProvinceChange}
-                      required
-                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary bg-white text-slate-700"
+                      className={`w-full rounded-xl border px-5 py-4 text-base outline-none transition-colors ${fieldErrors.selectedProvinceCode ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'} bg-white text-slate-700`}
                     >
                       <option value="">Chọn Tỉnh/Thành phố...</option>
                       {provinces.map((p) => (
@@ -230,27 +266,10 @@ const EmployerRegister = () => {
                         </option>
                       ))}
                     </select>
+                    {fieldErrors.selectedProvinceCode && <p className="text-red-500 text-xs mt-1.5 ml-1">{fieldErrors.selectedProvinceCode}</p>}
                   </div>
 
-                  {/* Quận/Huyện select */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Quận/Huyện
-                    </label>
-                    <select
-                      value={selectedDistrictCode}
-                      onChange={handleDistrictChange}
-                      disabled={!selectedProvinceCode}
-                      className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Chọn Quận/Huyện...</option>
-                      {districts.map((d) => (
-                        <option key={d.code} value={d.code}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+
 
                   {/* Phường/Xã select */}
                   <div>
@@ -260,7 +279,7 @@ const EmployerRegister = () => {
                     <select
                       value={selectedWardCode}
                       onChange={handleWardChange}
-                      disabled={!selectedDistrictCode}
+                      disabled={!selectedProvinceCode}
                       className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary bg-white text-slate-700 disabled:bg-slate-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Chọn Phường/Xã...</option>
@@ -279,15 +298,21 @@ const EmployerRegister = () => {
                   </div>
               </div>
 
-              <label className="flex items-start gap-3 text-sm text-slate-600">
-                <input id="agreedTerms" type="checkbox" checked={formData.agreedTerms} onChange={handleChange} className="mt-1" />
-                <span>Tôi đồng ý với Điều khoản sử dụng.</span>
-              </label>
+              <div className="flex flex-col gap-1">
+                <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
+                  <input id="agreedTerms" type="checkbox" checked={formData.agreedTerms} onChange={handleChange} className="mt-1" />
+                  <span className={fieldErrors.agreedTerms ? 'text-red-600' : ''}>Tôi đồng ý với Điều khoản sử dụng.</span>
+                </label>
+                {fieldErrors.agreedTerms && <p className="text-red-500 text-xs ml-7">{fieldErrors.agreedTerms}</p>}
+              </div>
 
-              <label className="flex items-start gap-3 text-sm text-slate-600">
-                <input id="agreedPersonalData" type="checkbox" checked={formData.agreedPersonalData} onChange={handleChange} className="mt-1" />
-                <span>Tôi đồng ý với Chính sách dữ liệu cá nhân.</span>
-              </label>
+              <div className="flex flex-col gap-1">
+                <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
+                  <input id="agreedPersonalData" type="checkbox" checked={formData.agreedPersonalData} onChange={handleChange} className="mt-1" />
+                  <span className={fieldErrors.agreedPersonalData ? 'text-red-600' : ''}>Tôi đồng ý với Chính sách dữ liệu cá nhân.</span>
+                </label>
+                {fieldErrors.agreedPersonalData && <p className="text-red-500 text-xs ml-7">{fieldErrors.agreedPersonalData}</p>}
+              </div>
 
               <button 
                 type="submit" 
@@ -315,26 +340,28 @@ const EmployerRegister = () => {
   );
 };
 
-const Field = ({ label, id, ...props }) => (
+const Field = ({ label, id, error, ...props }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-2">{label}</label>
-    <input id={id} {...props} className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary" />
+    <input id={id} {...props} className={`w-full rounded-xl border px-5 py-4 text-base outline-none transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`} />
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1">{error}</p>}
   </div>
 );
 
-const SelectField = ({ label, id, value, onChange, options }) => (
+const SelectField = ({ label, id, value, onChange, options, error }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-2">{label}</label>
-    <select id={id} value={value} onChange={onChange} className="w-full rounded-xl border border-slate-200 px-5 py-4 text-base outline-none focus:border-primary">
+    <select id={id} value={value} onChange={onChange} className={`w-full rounded-xl border px-5 py-4 text-base outline-none transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`}>
       <option value="">Chọn</option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>{option.label}</option>
       ))}
     </select>
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1">{error}</p>}
   </div>
 );
 
-const PasswordField = ({ id, label, value, onChange, placeholder, showPassword, setShowPassword }) => (
+const PasswordField = ({ id, label, value, onChange, placeholder, showPassword, setShowPassword, error }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-slate-700 mb-2">{label}</label>
     <div className="relative">
@@ -344,13 +371,13 @@ const PasswordField = ({ id, label, value, onChange, placeholder, showPassword, 
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        required
-        className="w-full rounded-xl border border-slate-200 px-5 py-4 pr-12 text-base outline-none focus:border-primary"
+        className={`w-full rounded-xl border px-5 py-4 pr-12 text-base outline-none transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`}
       />
       <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-3.5 text-slate-500">
         <span className="material-symbols-outlined">{showPassword ? 'visibility' : 'visibility_off'}</span>
       </button>
     </div>
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1">{error}</p>}
   </div>
 );
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
+﻿import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText } from 'lucide-react';
 import api from '../../../services/api';
@@ -47,7 +47,9 @@ const CVSearch = () => {
         cvId: c.cvId,
         title: c.title,
         fileUrl: c.fileUrl,
-        isBoosted: c.isBoosted
+        isBoosted: c.isBoosted,
+        searchable: c.searchable,
+        textExtractStatus: c.textExtractStatus
       });
       if (c.isBoosted) {
         groups[uId].isBoosted = true;
@@ -180,7 +182,7 @@ const CVSearch = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Tìm kiếm ứng viên</h1>
-          <p className="text-slate-600 mt-1">Tìm ứng viên chủ động trong danh sách hồ sơ public.</p>
+          <p className="text-slate-600 mt-1">Chỉ tìm theo nội dung CV có thể chuyển thành văn bản như CV online, PDF text-based hoặc DOCX text-based.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700">
@@ -194,7 +196,7 @@ const CVSearch = () => {
 
       <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Field label="Từ khóa" value={keyword} onChange={setKeyword} placeholder="Vị trí, kỹ năng..." />
+          <Field label="Từ khóa" value={keyword} onChange={setKeyword} placeholder="Nhập từ có trong nội dung CV, ví dụ: Node.js" />
           <Select label="Địa điểm" value={location} onChange={setLocation} options={provinces.map(p => ({ value: p.code, label: p.name }))} />
           <Select label="Kinh nghiệm" value={experience} onChange={setExperience} options={[{value: '', label: 'Tất cả kinh nghiệm'}, ...EXPERIENCE_LEVELS.map(e => ({ value: e, label: e }))]} />
           <Select label="Ngành nghề" value={industry} onChange={setIndustry} options={careerGroups.map(c => ({ value: c._id, label: c.name }))} />
@@ -745,5 +747,6 @@ export const TalentPoolInterviewModal = ({ candidate, onClose, onSuccess }) => {
 };
 
 export default CVSearch;
+
 
 

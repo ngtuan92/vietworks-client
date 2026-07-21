@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import EmployerLayout from './components/layout/EmployerLayout';
 import JobseekerLayout from './components/layout/JobseekerLayout';
 import AdminLayout from './components/layout/AdminLayout';
@@ -19,7 +19,7 @@ import JobseekerWallet from './pages/jobseeker/wallet/JobseekerWallet';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
-import RoleSelection from './pages/jobseeker/auth/RoleSelection';
+
 import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
 import ResetPassword from './pages/jobseeker/auth/ResetPassword';
 import VerifyEmail from './pages/jobseeker/auth/VerifyEmail';
@@ -139,7 +139,7 @@ function App() {
 
           {/* Public authentication and helper routes */}
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<RoleSelection />} />
+
           <Route path="/register-candidate" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -163,6 +163,7 @@ function App() {
             <Route path="/employer/talent-pool/cv-preview/:cvId" element={<EmployerCvPreview />} />
             
             <Route path="/employer" element={<EmployerLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<EmployerDashboard />} />
               <Route path="company-profile" element={<CompanyProfile />} />
               <Route path="jobs" element={<JobList />} />
@@ -191,6 +192,7 @@ function App() {
           {/* Protected Admin routes */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
 
               {/* User management routes */}

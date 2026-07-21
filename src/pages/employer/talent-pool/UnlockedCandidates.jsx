@@ -169,14 +169,14 @@ const UnlockedCandidates = () => {
       <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl transition-all overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-[#003f87] text-white uppercase text-[11px] font-bold tracking-wider">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Ứng viên</th>
-                <th className="text-center px-4 py-3 font-semibold whitespace-nowrap">Mời phỏng vấn</th>
-                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Ngày mở khóa</th>
-                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Gói dịch vụ</th>
-                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap border-l border-slate-200">Tên Hồ Sơ (CV)</th>
-                <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Thao tác CV</th>
+                <th className="text-left px-4 py-4 whitespace-nowrap">Ứng viên</th>
+                <th className="text-center px-4 py-4 whitespace-nowrap">Mời phỏng vấn</th>
+                <th className="text-left px-4 py-4 whitespace-nowrap">Ngày mở khóa</th>
+                <th className="text-left px-4 py-4 whitespace-nowrap">Gói dịch vụ</th>
+                <th className="text-left px-4 py-4 whitespace-nowrap border-l border-blue-100/50">Tên Hồ Sơ (CV)</th>
+                <th className="text-left px-4 py-4 whitespace-nowrap">Thao tác CV</th>
               </tr>
             </thead>
             <tbody>
@@ -189,19 +189,21 @@ const UnlockedCandidates = () => {
                   <td colSpan={6} className="px-4 py-10 text-center text-slate-500">Chưa có ứng viên nào được mở khóa.</td>
                 </tr>
               ) : (
-                rows.flatMap((r) => {
+                rows.flatMap((r, candidateIndex) => {
                   const candidate = r.candidateId || {};
                   const cvs = (r.allCvs && r.allCvs.length > 0) ? r.allCvs : [{}];
+                  const bgClass = candidateIndex % 2 === 0 ? 'bg-white' : 'bg-blue-50/20';
+
                   return cvs.map((cv, index) => (
-                    <tr key={`${r._id}-${cv._id || index}`} className="border-t border-slate-200 hover:bg-slate-50 transition-colors">
+                    <tr key={`${r._id}-${cv._id || index}`} className={`border-t ${index === 0 ? 'border-slate-200' : 'border-slate-100 border-dashed'} transition-colors ${bgClass}`}>
                       {index === 0 && (
                         <>
-                          <td rowSpan={cvs.length} className="px-4 py-4 font-semibold text-slate-900 align-top bg-white">
+                          <td rowSpan={cvs.length} className="px-4 py-4 font-semibold text-slate-900 align-top border-r border-slate-100/50">
                             {candidate.fullName || '—'}
                             <div className="text-sm font-medium text-slate-600 mt-1">{candidate.email || '—'}</div>
                             <div className="text-xs font-normal text-slate-500">{candidate.phone || '—'}</div>
                           </td>
-                          <td rowSpan={cvs.length} className="px-4 py-4 align-top bg-white border-l border-slate-50">
+                          <td rowSpan={cvs.length} className="px-4 py-4 align-top border-r border-slate-100/50">
                             <div className="flex flex-col gap-2 items-center w-40">
                               <button 
                                 onClick={() => setInviteTarget({ ...candidate, applications: r.applications, cvId: cvs[0]?._id })}
@@ -230,19 +232,19 @@ const UnlockedCandidates = () => {
                               )}
                             </div>
                           </td>
-                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top bg-white">
+                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top border-r border-slate-100/50">
                             {r.unlockedAt ? new Date(r.unlockedAt).toLocaleDateString('vi-VN') : '—'}
                           </td>
-                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top bg-white">
+                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top border-r border-slate-100/50">
                             {r.packageName ? r.packageName : (r.amountCharged ? 'Mở khóa lẻ' : 'Gói mở khóa (Trừ lượt)')}
                           </td>
                         </>
                       )}
                       
-                      <td className={`px-4 py-4 font-medium text-[#003f87] border-l border-slate-100 ${index > 0 ? 'bg-slate-50/50' : ''}`}>
+                      <td className={`px-4 py-4 font-medium text-[#003f87]`}>
                         {cv.title || '—'}
                       </td>
-                      <td className={`px-4 py-4 ${index > 0 ? 'bg-slate-50/50' : ''}`}>
+                      <td className={`px-4 py-4`}>
                         <div className="flex flex-wrap items-center gap-2">
                           <button 
                             onClick={() => handleChat(candidate._id)}
