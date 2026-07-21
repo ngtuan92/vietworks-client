@@ -193,6 +193,17 @@ const Overview = ({ profile, setProfile }) => {
   const handleSave = async () => {
     setSubmitting(true);
     setStatusMsg({ text: '', type: '' });
+
+    if (profile.phone) {
+      const phoneDigits = profile.phone.replace(/[^\d]/g, '');
+      if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+        setStatusMsg({ text: 'Số điện thoại không hợp lệ (phải từ 10 - 11 số)', type: 'error' });
+        setSubmitting(false);
+        setTimeout(() => setStatusMsg({ text: '', type: '' }), 3500);
+        return;
+      }
+    }
+
     try {
       const res = await jobseekerProfileService.updateMyProfile({
         fullName: profile.fullName,

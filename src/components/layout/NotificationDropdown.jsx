@@ -211,6 +211,13 @@ const NotificationDropdown = () => {
 
   const handleNotificationClick = async (item) => {
     if (isDeleteMode) return;
+    
+    if (item.isSystemFake) {
+      setIsOpen(false);
+      navigate('/profile');
+      return;
+    }
+
     if (item.status === 'UNREAD') {
       await handleMarkAsRead(item._id);
     }

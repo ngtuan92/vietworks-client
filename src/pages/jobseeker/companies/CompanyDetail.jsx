@@ -437,50 +437,58 @@ const CompanyDetail = () => {
                     </div>
                   </li>
                 )}
-
               </ul>
             </section>
 
-            {/* Location */}
-            {primaryLocation && (
+            {/* Locations */}
+            {company.locations?.length > 0 && (
               <section className="bg-white rounded-2xl border border-slate-200 p-6">
                 <h2 className="text-lg font-black text-slate-900 mb-4">Địa điểm công ty</h2>
-                {(primaryLocation.addressLine || primaryLocation.ward || primaryLocation.district || primaryLocation.province) && (
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    {[
-                      primaryLocation.addressLine,
-                      primaryLocation.ward,
-                      primaryLocation.district,
-                      primaryLocation.province
-                    ]
-                      .filter(Boolean)
-                      .join(', ')}
-                  </p>
-                )}
-                {primaryLocation.latitude && primaryLocation.longitude && VIETMAP_KEY && (
-                  <a
-                    href={`https://maps.vietmap.vn/?q=${primaryLocation.latitude},${primaryLocation.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block mt-3 rounded-xl overflow-hidden border border-slate-200 relative group"
-                  >
-                    <img
-                      src={STATIC_MAP(primaryLocation.latitude, primaryLocation.longitude)}
-                      alt="Bản đồ"
-                      className="w-full h-48 object-cover group-hover:opacity-90 transition"
-                      loading="lazy"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                    <span className="absolute top-2 left-2 bg-white text-xs font-semibold text-slate-700 px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> Mở bản đồ
-                    </span>
-                  </a>
-                )}
-                {company.locations?.length > 1 && (
-                  <button className="mt-3 text-sm text-primary font-semibold hover:underline">
-                    Xem thêm {company.locations.length - 1} địa điểm khác
-                  </button>
-                )}
+                <div className="space-y-6">
+                  {company.locations.map((loc, index) => (
+                    <div key={loc._id || index} className="pb-6 border-b border-slate-100 last:border-0 last:pb-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        {loc.isPrimary && (
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary text-[11px] uppercase tracking-wide font-bold rounded">
+                            Trụ sở chính
+                          </span>
+                        )}
+                        {loc.name && <span className="text-sm font-semibold text-slate-800">{loc.name}</span>}
+                      </div>
+                      {(loc.addressLine || loc.ward || loc.district || loc.province) && (
+                        <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                          {[
+                            loc.addressLine,
+                            loc.ward,
+                            loc.district,
+                            loc.province
+                          ]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </p>
+                      )}
+                      {loc.latitude && loc.longitude && VIETMAP_KEY && (
+                        <a
+                          href={`https://maps.vietmap.vn/?q=${loc.latitude},${loc.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded-xl overflow-hidden border border-slate-200 relative group"
+                        >
+                          <img
+                            src={STATIC_MAP(loc.latitude, loc.longitude)}
+                            alt="Bản đồ"
+                            className="w-full h-36 object-cover group-hover:opacity-90 transition"
+                            loading="lazy"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <span className="absolute top-2 left-2 bg-white text-xs font-semibold text-slate-700 px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> Mở bản đồ
+                          </span>
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </section>
             )}
 
