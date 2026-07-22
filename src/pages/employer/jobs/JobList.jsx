@@ -469,7 +469,7 @@ const JobList = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
               <tr>
-                {['Tên tin tuyển dụng', 'Trạng thái', 'Mức lương', 'Hạn nộp', 'Ngày tạo', 'Hành động'].map((head) => (
+                {['Tên tin tuyển dụng', 'Trạng thái', 'Tiến độ tuyển', 'Mức lương', 'Hạn nộp', 'Ngày tạo', 'Hành động'].map((head) => (
                   <th key={head} className="text-left px-5 py-3.5 font-semibold whitespace-nowrap">{head}</th>
                 ))}
               </tr>
@@ -477,7 +477,7 @@ const JobList = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-8 text-slate-500">
+                  <td colSpan="7" className="text-center py-8 text-slate-500">
                     <div className="flex items-center justify-center gap-2">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                       <span>Đang tải dữ liệu...</span>
@@ -486,7 +486,7 @@ const JobList = () => {
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-8 text-slate-500">
+                  <td colSpan="7" className="text-center py-8 text-slate-500">
                     Không tìm thấy tin tuyển dụng nào phù hợp.
                   </td>
                 </tr>
@@ -506,6 +506,14 @@ const JobList = () => {
                       <td className="px-5 py-4 whitespace-nowrap">
                         {renderStatusBadge(job.status)}
                         {renderReasonText(job)}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-slate-700 font-medium">{job.hiredCount || 0} / {job.neededCount || job.headcount || 1} đã nhận</span>
+                          {job.isHiringFull && (
+                            <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded w-fit">Đã tuyển đủ</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-700">
                         {formatSalary(job.salary)}

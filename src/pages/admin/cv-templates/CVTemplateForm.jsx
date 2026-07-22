@@ -246,7 +246,6 @@ const CVTemplateForm = () => {
 
   const isEditMode = !!id;
   const editingTemplate = location.state;
-  const isTemplateInUse = isEditMode && Number(editingTemplate?.usersCount || 0) > 0;
 
   // Scaling state for fixed width A4 preview canvas (794px design)
   const containerRef = useRef(null);
@@ -1193,7 +1192,7 @@ const CVTemplateForm = () => {
     try {
       setSaving(true);
       
-      const shouldSaveLayout = !isTemplateInUse;
+      const shouldSaveLayout = true;
       const finalPreviewFile = shouldSaveLayout ? await generateTemplatePreview() : null;
 
       const payload = {
@@ -1293,15 +1292,6 @@ const CVTemplateForm = () => {
         </div>
       </div>
 
-      {isTemplateInUse && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm">
-          <div className="font-bold">Mẫu CV này đã có ứng viên sử dụng</div>
-          <div className="mt-1 leading-relaxed">
-            Bạn chỉ nên chỉnh thông tin hiển thị như tên, trạng thái hoặc ngành nghề. Bố cục, nội dung mẫu, style và ảnh preview sẽ không được cập nhật để tránh làm thay đổi CV mà jobseeker đã tạo.
-          </div>
-        </div>
-      )}
-
       {/* Main Form Layout: Left settings sidebar, Right A4 preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column (Settings & Config) */}
@@ -1364,16 +1354,8 @@ const CVTemplateForm = () => {
 
           {/* Card 2: Cấu hình thiết kế */}
           <fieldset
-            disabled={isTemplateInUse}
-            className={`relative bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6 ${isTemplateInUse ? 'opacity-70' : ''}`}
+            className="relative bg-white border border-[#e5e7eb] rounded-xl p-6 shadow-sm space-y-6"
           >
-            {isTemplateInUse && (
-              <div className="absolute inset-0 z-20 rounded-xl bg-white/70 backdrop-blur-[1px] flex items-center justify-center p-6">
-                <div className="max-w-sm rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900 shadow-sm">
-                  Mẫu đã có ứng viên sử dụng nên không thể đổi layout, font, màu, khoảng cách, kiểu tiêu đề hoặc ảnh đại diện.
-                </div>
-              </div>
-            )}
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#0056b3] text-[22px]">palette</span>
               Cấu hình thiết kế

@@ -1,8 +1,13 @@
+import { Link } from 'react-router-dom';
+
 const CompanyCard = ({ company }) => {
   return (
     <div className="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant">
-      <h2 className="font-headline-md text-headline-md mb-6">
-        Về {company?.name || 'công ty'}
+      <h2 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
+        Về
+        <Link to={`/companies/${company?._id || ''}`} className="text-primary hover:underline">
+          {company?.name || 'công ty'}
+        </Link>
       </h2>
 
       {company?.description ? (
@@ -27,7 +32,10 @@ const CompanyCard = ({ company }) => {
         <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hover:shadow-sm transition-all">
           <p className="text-label-md text-blue-600/70 uppercase tracking-wider mb-1">Ngành</p>
           <p className="font-bold text-blue-900">
-            {company?.industryIds?.[0]?.name || company?.industries?.[0]?.name || '-'}
+            {(company?.industryIds || company?.industries || [])
+              .map(i => i?.name)
+              .filter(Boolean)
+              .join(', ') || '-'}
           </p>
         </div>
 

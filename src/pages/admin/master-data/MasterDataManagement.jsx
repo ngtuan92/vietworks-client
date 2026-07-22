@@ -1,5 +1,6 @@
 // components/admin/MasterDataManagement.jsx
 import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
+import { Edit2, Eye, EyeOff } from 'lucide-react';
 import careerGroupService from '../../../services/careerGroupService';
 import careerService from '../../../services/careerService';
 import careerPositionService from '../../../services/careerPositionService';
@@ -462,50 +463,6 @@ const MasterDataManagement = () => {
     }
   };
 
-  const handleHardDelete = async (type, id, name) => {
-    if (!window.confirm(`Bạn có chắc muốn XÓA CỨNG "${name}"? Hành động này không thể hoàn tác!`)) return;
-    
-    try {
-      let response;
-      switch (type) {
-        case 'SKILL':
-          response = await skillService.hardDeleteSkill(id);
-          break;
-        case 'POSITION':
-          response = await careerPositionService.hardDeleteCareerPosition(id);
-          break;
-        case 'CAREER':
-          response = await careerService.hardDeleteCareer(id);
-          break;
-        case 'GROUP':
-          response = await careerGroupService.hardDeleteCareerGroup(id);
-          break;
-        case 'LEVEL':
-          response = await jobLevelService.hardDeleteJobLevel(id);
-          break;
-        default:
-          break;
-      }
-      
-      if (response?.success) {
-        if (type === 'SKILL') {
-          await loadSkills();
-        } else if (type === 'POSITION') {
-          await loadPositions();
-        } else if (type === 'CAREER') {
-          await loadCareers();
-        } else if (type === 'LEVEL') {
-          await loadJobLevels();
-        } else {
-          await loadCareerGroups();
-        }
-        alert('Xóa thành công!');
-      }
-    } catch (err) {
-      console.error('Hard delete error:', err);
-      alert(err?.message || 'Không thể xóa vì đang có dữ liệu liên quan!');
-    }
-  };
 
   // --- 9. Render Functions ---
   const renderStatusBadge = (status) => {
@@ -534,23 +491,19 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm font-bold text-slate-900">{g.code || g._id.slice(-6).toUpperCase()}</td>
           <td className="px-6 py-4 text-sm font-bold text-slate-900">{g.name}</td>
           <td className="px-6 py-4 text-sm text-slate-600">{g.description || '--'}</td>
-          <td className="px-6 py-4">{renderStatusBadge(g.status)}</td>
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ActionButton tone="soft" onClick={() => openEditModal('GROUP', g)}>Sửa</ActionButton>
-              <ActionButton 
-                tone={g.status === 'ACTIVE' ? 'danger' : 'success'} 
+          <td className="px-6 py-4 whitespace-nowrap">{renderStatusBadge(g.status)}</td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center gap-2 flex-nowrap">
+              <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" onClick={() => openEditModal('GROUP', g)} title="Sửa">
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-1.5 rounded transition-colors ${g.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                 onClick={() => handleToggleHide('GROUP', g._id, g.name, g.status)}
+                title={g.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
               >
-                {g.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
-              </ActionButton>
-              <ActionButton 
-                tone="danger" 
-                onClick={() => handleHardDelete('GROUP', g._id, g.name)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Xóa cứng
-              </ActionButton>
+                {g.status === 'ACTIVE' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </td>
         </tr>
@@ -570,23 +523,19 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm text-slate-600">
             {c.careerGroupId?.name || '--'}
           </td>
-          <td className="px-6 py-4">{renderStatusBadge(c.status)}</td>
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ActionButton tone="soft" onClick={() => openEditModal('CAREER', c)}>Sửa</ActionButton>
-              <ActionButton 
-                tone={c.status === 'ACTIVE' ? 'danger' : 'success'} 
+          <td className="px-6 py-4 whitespace-nowrap">{renderStatusBadge(c.status)}</td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center gap-2 flex-nowrap">
+              <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" onClick={() => openEditModal('CAREER', c)} title="Sửa">
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-1.5 rounded transition-colors ${c.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                 onClick={() => handleToggleHide('CAREER', c._id, c.name, c.status)}
+                title={c.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
               >
-                {c.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
-              </ActionButton>
-              <ActionButton 
-                tone="danger" 
-                onClick={() => handleHardDelete('CAREER', c._id, c.name)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Xóa cứng
-              </ActionButton>
+                {c.status === 'ACTIVE' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </td>
         </tr>
@@ -609,23 +558,19 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm text-slate-600">
             {p.careerId?.name || '--'}
           </td>
-          <td className="px-6 py-4">{renderStatusBadge(p.status)}</td>
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ActionButton tone="soft" onClick={() => openEditModal('POSITION', p)}>Sửa</ActionButton>
-              <ActionButton 
-                tone={p.status === 'ACTIVE' ? 'danger' : 'success'} 
+          <td className="px-6 py-4 whitespace-nowrap">{renderStatusBadge(p.status)}</td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center gap-2 flex-nowrap">
+              <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" onClick={() => openEditModal('POSITION', p)} title="Sửa">
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-1.5 rounded transition-colors ${p.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                 onClick={() => handleToggleHide('POSITION', p._id, p.name, p.status)}
+                title={p.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
               >
-                {p.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
-              </ActionButton>
-              <ActionButton 
-                tone="danger" 
-                onClick={() => handleHardDelete('POSITION', p._id, p.name)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Xóa cứng
-              </ActionButton>
+                {p.status === 'ACTIVE' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </td>
         </tr>
@@ -643,23 +588,19 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm font-bold text-slate-900">{l.code || l._id.slice(-6).toUpperCase()}</td>
           <td className="px-6 py-4 text-sm font-bold text-slate-900">{l.name}</td>
           <td className="px-6 py-4 text-sm text-slate-600">{l.levelOrder || 0}</td>
-          <td className="px-6 py-4">{renderStatusBadge(l.status)}</td>
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ActionButton tone="soft" onClick={() => openEditModal('LEVEL', l)}>Sửa</ActionButton>
-              <ActionButton 
-                tone={l.status === 'ACTIVE' ? 'danger' : 'success'} 
+          <td className="px-6 py-4 whitespace-nowrap">{renderStatusBadge(l.status)}</td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center gap-2 flex-nowrap">
+              <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" onClick={() => openEditModal('LEVEL', l)} title="Sửa">
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-1.5 rounded transition-colors ${l.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                 onClick={() => handleToggleHide('LEVEL', l._id, l.name, l.status)}
+                title={l.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
               >
-                {l.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
-              </ActionButton>
-              <ActionButton 
-                tone="danger" 
-                onClick={() => handleHardDelete('LEVEL', l._id, l.name)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Xóa cứng
-              </ActionButton>
+                {l.status === 'ACTIVE' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </td>
         </tr>
@@ -682,23 +623,19 @@ const MasterDataManagement = () => {
           <td className="px-6 py-4 text-sm text-slate-600">
             {s.careerGroupIds?.map(g => g.name).join(', ') || '--'}
           </td>
-          <td className="px-6 py-4">{renderStatusBadge(s.status)}</td>
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ActionButton tone="soft" onClick={() => openEditModal('SKILL', s)}>Sửa</ActionButton>
-              <ActionButton 
-                tone={s.status === 'ACTIVE' ? 'danger' : 'success'} 
+          <td className="px-6 py-4 whitespace-nowrap">{renderStatusBadge(s.status)}</td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center gap-2 flex-nowrap">
+              <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" onClick={() => openEditModal('SKILL', s)} title="Sửa">
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-1.5 rounded transition-colors ${s.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                 onClick={() => handleToggleHide('SKILL', s._id, s.name, s.status)}
+                title={s.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
               >
-                {s.status === 'ACTIVE' ? 'Ẩn' : 'Kích hoạt'}
-              </ActionButton>
-              <ActionButton 
-                tone="danger" 
-                onClick={() => handleHardDelete('SKILL', s._id, s.name)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Xóa cứng
-              </ActionButton>
+                {s.status === 'ACTIVE' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </td>
         </tr>

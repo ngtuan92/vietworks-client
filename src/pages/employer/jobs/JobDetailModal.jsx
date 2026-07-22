@@ -127,6 +127,7 @@ console.log('🔍 STEP 3: xong');
         console.log('🔍 STEP 4: setFormData bắt đầu...');
         setFormData({
           title: loadedJob.title || '',
+          headcount: loadedJob.headcount || 1,
           careerGroupId: initGroupId,
           careerId: initCareerId,
           careerPositionId: getId(loadedJob.careerPositionId),
@@ -402,6 +403,14 @@ workLocations: Array.isArray(loadedJob.workLocations)
               }`}>
                 Trạng thái: {job?.status}
               </span>
+              <span className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                Tiến độ: {job?.hiredCount || 0}/{job?.neededCount || job?.headcount || 1} đã nhận
+              </span>
+              {job?.isHiringFull && (
+                <span className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-green-100 text-green-800">
+                  Đã tuyển đủ
+                </span>
+              )}
               {formData.isUrgent && (
                 <span className="text-xs font-semibold inline-block px-2 py-0.5 rounded bg-red-100 text-red-800 animate-pulse">
                   🔥 Tuyển gấp
@@ -424,6 +433,17 @@ workLocations: Array.isArray(loadedJob.workLocations)
                 disabled={!isEditable}
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Số lượng cần tuyển</label>
+              <input
+                type="number"
+                min="1"
+                disabled={!isEditable}
+                value={formData.headcount}
+                onChange={(e) => handleInputChange('headcount', parseInt(e.target.value) || 1)}
                 className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50"
               />
             </div>

@@ -72,20 +72,24 @@ const NotificationDropdown = () => {
   useEffect(() => {
     if (!socket) return undefined;
 
-    const handleNewNotification = (notification) => {
+    const upsertNotification = (notification) => {
       setItems((prev) => {
-        if (prev.some((item) => String(item._id) === String(notification._id))) return prev;
-        return [notification, ...prev].slice(0, 50);
+        const exists = prev.some((item) => String(item._id) === String(notification._id));
+        const nextItems = exists
+          ? prev.map((item) => String(item._id) === String(notification._id) ? notification : item)
+          : [notification, ...prev];
+
+        setUnreadCount(nextItems.filter((item) => item.status === 'UNREAD').length);
+        return nextItems.slice(0, 50);
       });
-      if (notification.status === 'UNREAD') {
-        setUnreadCount((prev) => prev + 1);
-      }
     };
 
-    socket.on('new_notification', handleNewNotification);
+    socket.on('new_notification', upsertNotification);
+    socket.on('notification_upsert', upsertNotification);
 
     return () => {
-      socket.off('new_notification', handleNewNotification);
+      socket.off('new_notification', upsertNotification);
+      socket.off('notification_upsert', upsertNotification);
     };
   }, [socket]);
 
@@ -222,7 +226,7 @@ const NotificationDropdown = () => {
       await handleMarkAsRead(item._id);
     }
     
-    if (item.typeCode === 'SYSTEM_UPDATE') {
+    if (item.typeCode === 'SYSTEM_UPDATE' && !item.metadata?.actionUrl) {
       setDetailModalItem(item);
       setIsOpen(false);
       return;

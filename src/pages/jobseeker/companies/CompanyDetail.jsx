@@ -131,7 +131,10 @@ const CompanyDetail = () => {
       setJobsLoading(true);
       try {
         const data = await getCompanyOpenJobs(id, { limit: 50 });
-        setJobs(data.data || []);
+        const allJobs = data.data || [];
+        // Lọc bỏ các job đã tuyển đủ
+        const openJobs = allJobs.filter(job => !job.isHiringFull);
+        setJobs(openJobs);
       } catch {
         // silent
       } finally {
@@ -230,7 +233,10 @@ const CompanyDetail = () => {
     );
   }
 
-  const industryName = company.industryIds?.[0]?.name || company.industries?.[0]?.name;
+  const industryName = (company.industryIds || company.industries || [])
+    .map(i => i?.name)
+    .filter(Boolean)
+    .join(', ');
   const sizeName = company.size;
   const hasAbout = company.description && company.description.trim().length > 0;
   const hasBenefits = Array.isArray(company.benefits) && company.benefits.length > 0;

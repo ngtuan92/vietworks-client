@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import ApplyJobModal from './ApplyJobModal';
 import useJobseekerAuth from '../../../hooks/useJobseekerAuth';
 import JobseekerAuthModal from '../../common/JobseekerAuthModal';
@@ -178,9 +179,9 @@ const JobDetailHeader = ({
               {job?.title}
             </h1>
 
-            <p className="font-headline-md text-headline-md text-primary mb-4">
+            <Link to={`/companies/${company?._id || ''}`} className="font-headline-md text-headline-md text-primary hover:underline hover:text-primary-800 mb-4 block w-fit">
               {companyName}
-            </p>
+            </Link>
 
             <div className="flex flex-wrap gap-6 text-on-surface-variant font-body-sm text-body-sm">
               <div className="flex items-center gap-2">

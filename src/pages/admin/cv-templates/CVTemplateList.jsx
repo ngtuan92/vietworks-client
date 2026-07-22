@@ -17,7 +17,6 @@ const CVTemplateList = () => {
   const [previewImage, setPreviewImage] = useState(null);
   
   // Filters
-  const [statusFilter, setStatusFilter] = useState('');
   const [industryFilter, setIndustryFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -33,7 +32,7 @@ const CVTemplateList = () => {
         page,
         limit: 10,
         search: searchQuery,
-        status: statusFilter,
+        status: 'ACTIVE',
         careerGroupId: industryFilter
       });
       if (data.success) {
@@ -68,27 +67,15 @@ const CVTemplateList = () => {
       fetchTemplates();
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [page, statusFilter, industryFilter, searchQuery]);
+  }, [page, industryFilter, searchQuery]);
 
-  const toggleStatus = async (id) => {
-    try {
-      const res = await adminService.toggleTemplateStatus(id);
-      if (res.success) {
-        setTemplates(templates.map(tpl => 
-          tpl._id === id ? { ...tpl, status: res.data.status } : tpl
-        ));
-      }
-    } catch (err) {
-      error('Thay đổi trạng thái thất bại!');
-    }
-  };
 
   const handleEdit = (tpl) => {
     navigate(`/admin/cv-templates/edit/${tpl._id}`, { state: tpl });
   };
 
   const handleDelete = async (id) => {
-    confirm('Bạn có chắc chắn muốn xóa mẫu CV này? Hành động này không thể hoàn tác.', async () => {
+    confirm('Bạn có chắc chắn muốn xóa mẫu CV này? Nếu mẫu đã được ứng viên sử dụng, hệ thống sẽ chuyển sang trạng thái ngừng hoạt động để bảo toàn dữ liệu lịch sử.', async () => {
       try {
         const res = await adminService.deleteTemplate(id);
         if (res.success) {
@@ -153,13 +140,6 @@ const CVTemplateList = () => {
               placeholder="Tên, mã mẫu CV..." 
               value={searchQuery} 
               onChange={setSearchQuery} 
-            />
-            <SelectField 
-              label="Trạng thái" 
-              value={statusFilter} 
-              onChange={setStatusFilter} 
-              options={[['ACTIVE', 'Đang hoạt động'], ['INACTIVE', 'Ngừng hoạt động']]} 
-              placeholder="Tất cả trạng thái" 
             />
             <SelectField 
               label="Ngành nghề" 
@@ -265,27 +245,7 @@ const CVTemplateList = () => {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      {/* Status Toggle Switch */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleStatus(tpl._id)}
-                          type="button"
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            tpl.status === 'ACTIVE' ? 'bg-primary' : 'bg-slate-200'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              tpl.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${
-                          tpl.status === 'ACTIVE' ? 'text-primary' : 'text-slate-400'
-                        }`}>
-                          {tpl.status === 'ACTIVE' ? 'Bật' : 'Tắt'}
-                        </span>
-                      </div>
+                      <StatusBadge value={tpl.status} />
 
                       <ActionButton tone="soft" onClick={() => handleEdit(tpl)} className="!py-1 px-3">
                         <span className="flex items-center gap-1"><Edit className="w-3 h-3" /> Sửa</span>
@@ -335,26 +295,7 @@ const CVTemplateList = () => {
                     {tpl.usersCount?.toLocaleString() || 0}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleStatus(tpl._id)}
-                        type="button"
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          tpl.status === 'ACTIVE' ? 'bg-primary' : 'bg-slate-200'
-                        }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            tpl.status === 'ACTIVE' ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                      <span className={`text-[10px] font-black uppercase tracking-wider ${
-                        tpl.status === 'ACTIVE' ? 'text-primary' : 'text-slate-400'
-                      }`}>
-                        {tpl.status === 'ACTIVE' ? 'Bật' : 'Tắt'}
-                      </span>
-                    </div>
+                    <StatusBadge value={tpl.status} />
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
