@@ -131,7 +131,7 @@ const AdminSidebar = () => {
         return item.label;
       }
     }
-    return 'Người dùng';
+    return null;
   });
 
   const toggle = (label) => {

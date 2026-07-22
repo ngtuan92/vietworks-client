@@ -18,6 +18,9 @@ const CandidateList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -36,11 +39,25 @@ const CandidateList = () => {
     loadJobs();
   }, []);
 
+
   const filteredJobs = useMemo(() => {
+    let result = jobs;
+    if (statusFilter !== 'ALL') {
+      result = result.filter(job => job.status === statusFilter);
+    }
     const normalized = keyword.trim().toLowerCase();
-    if (!normalized) return jobs;
-    return jobs.filter((job) => job.title?.toLowerCase().includes(normalized));
-  }, [jobs, keyword]);
+    if (normalized) {
+      result = result.filter((job) => job.title?.toLowerCase().includes(normalized));
+    }
+    return result;
+  }, [jobs, keyword, statusFilter]);
+
+  const paginatedJobs = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredJobs.slice(start, start + limit);
+  }, [filteredJobs, page]);
+
+  const totalPages = Math.ceil(filteredJobs.length / limit);
 
   const totals = useMemo(() => jobs.reduce((sum, job) => ({
     jobs: sum.jobs + 1,
@@ -56,13 +73,25 @@ const CandidateList = () => {
           <h1 className="text-2xl font-bold text-slate-900">ATS - Quản lý hồ sơ ứng tuyển</h1>
           <p className="text-slate-600 mt-1">Chọn một tin tuyển dụng để xem danh sách ứng viên đã nộp hồ sơ.</p>
         </div>
-        <div className="relative w-full lg:w-80">
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Tìm theo tên job..."
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-blue-50"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-blue-50 font-medium text-slate-700"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            {['PUBLISHED', 'EXPIRED', 'CLOSED'].map((key) => (
+              <option key={key} value={key}>{STATUS_LABEL[key]}</option>
+            ))}
+          </select>
+          <div className="relative w-full lg:w-80">
+            <input
+              value={keyword}
+              onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
+              placeholder="Tìm theo tên job..."
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-blue-50"
+            />
+          </div>
         </div>
       </div>
 
@@ -80,11 +109,11 @@ const CandidateList = () => {
           <div className="flex items-center justify-center gap-2 py-16 text-slate-500">
             <Loader2 className="w-5 h-5 animate-spin" /> Đang tải dữ liệu ATS...
           </div>
-        ) : filteredJobs.length === 0 ? (
+        ) : paginatedJobs.length === 0 ? (
           <div className="py-16 text-center text-slate-500">Chưa có job hoặc hồ sơ ứng tuyển phù hợp.</div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredJobs.map((job) => (
+            {paginatedJobs.map((job) => (
               <div key={job.id} className="p-5 hover:bg-blue-50/30 transition-colors">
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -114,6 +143,63 @@ const CandidateList = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        
+        {/* Pagination */
+        totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 bg-slate-50/50 px-5 py-4">
+            <p className="text-sm text-slate-500 text-center sm:text-left">
+              Hiển thị <span className="font-semibold text-slate-900">{(page - 1) * limit + 1}</span> - <span className="font-semibold text-slate-900">{Math.min(page * limit, filteredJobs.length)}</span> trong tổng số <span className="font-semibold text-slate-900">{filteredJobs.length}</span> tin tuyển dụng
+            </p>
+            <div className="flex gap-1.5 flex-wrap justify-center">
+              {page > 1 && (
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-2 rounded-xl text-sm font-medium transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                >
+                  Trước
+                </button>
+              )}
+              
+              {(() => {
+                const pages = [];
+                const maxVisible = 5;
+                if (totalPages <= maxVisible) {
+                  for (let i = 1; i <= totalPages; i++) pages.push(i);
+                } else {
+                  if (page <= 3) {
+                    for (let i = 1; i <= 5; i++) pages.push(i);
+                  } else if (page >= totalPages - 2) {
+                    for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    for (let i = page - 2; i <= page + 2; i++) pages.push(i);
+                  }
+                }
+                return pages.map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                      page === pageNum
+                        ? 'bg-primary text-white shadow-md shadow-primary/20'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ));
+              })()}
+
+              {page < totalPages && (
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-3 py-2 rounded-xl text-sm font-medium transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                >
+                  Sau
+                </button>
+              )}
+            </div>
           </div>
         )}
       </section>

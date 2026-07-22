@@ -10,11 +10,13 @@ const Register = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     agreedTerms: false,
     agreedPersonalData: false,
   });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +33,9 @@ const Register = () => {
   const handleChange = (event) => {
     const { id, value, type, checked } = event.target;
     setFormData((prev) => ({ ...prev, [id]: type === 'checkbox' ? checked : value }));
+    if (fieldErrors[id]) {
+      setFieldErrors((prev) => ({ ...prev, [id]: '' }));
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -39,20 +44,40 @@ const Register = () => {
     setError('');
     setSuccess('');
 
+    const errors = {};
+
+    if (!formData.fullName.trim()) errors.fullName = 'Vui lòng nhập họ tên.';
+
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
+    if (!formData.email.trim()) {
+      errors.email = 'Vui lòng nhập email.';
+    } else if (!emailRegex.test(formData.email.trim())) {
+      errors.email = 'Email không hợp lệ.';
+    }
+
+    const phone = formData.phone.trim();
+    if (!phone) {
+      errors.phone = 'Vui lòng nhập số điện thoại.';
+    } else {
+      const phoneDigits = phone.replace(/[^\d]/g, '');
+      if (phoneDigits.length < 10 || phoneDigits.length > 11 || !/^[+\d][\d\s-]+$/.test(phone)) {
+        errors.phone = 'Số điện thoại không hợp lệ (cần 10-11 chữ số).';
+      }
+    }
+
     if (!passwordChecks.minLength || !passwordChecks.hasLetter || !passwordChecks.hasNumber) {
-      setError('Mật khẩu quá yếu. Vui lòng dùng ít nhất 8 ký tự, gồm chữ và số.');
-      return;
+      errors.password = 'Mật khẩu quá yếu (ít nhất 8 ký tự, gồm chữ và số).';
     }
+
     if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
-      return;
+      errors.confirmPassword = 'Mật khẩu xác nhận không khớp.';
     }
-    if (!formData.agreedTerms) {
-      setError('Bạn cần đồng ý điều khoản sử dụng để tiếp tục.');
-      return;
-    }
-    if (!formData.agreedPersonalData) {
-      setError('Bạn cần đồng ý chính sách dữ liệu cá nhân để tiếp tục.');
+
+    if (!formData.agreedTerms) errors.agreedTerms = 'Bạn cần đồng ý Điều khoản sử dụng.';
+    if (!formData.agreedPersonalData) errors.agreedPersonalData = 'Bạn cần đồng ý Chính sách dữ liệu cá nhân.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -61,6 +86,7 @@ const Register = () => {
       const data = await authService.registerJobseeker({
         fullName: formData.fullName,
         email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
         password: formData.password,
       });
       if (data.success) {
@@ -92,38 +118,54 @@ const Register = () => {
 
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 mb-2">Họ tên</label>
-              <input id="fullName" value={formData.fullName} onChange={handleChange} required placeholder="Nguyễn Văn A" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary" />
+              <input id="fullName" value={formData.fullName} onChange={handleChange} placeholder="Nguyễn Văn A" className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${fieldErrors.fullName ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`} />
+              {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1.5 ml-1">{fieldErrors.fullName}</p>}
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-              <input id="email" type="email" value={formData.email} onChange={handleChange} required placeholder="ví dụ: ban@gmail.com" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary" />
+              <input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="ví dụ: ban@gmail.com" className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`} />
+              {fieldErrors.email && <p className="text-red-500 text-xs mt-1.5 ml-1">{fieldErrors.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">Số điện thoại</label>
+              <input id="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="Ví dụ: 0912345678" className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${fieldErrors.phone ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`} />
+              {fieldErrors.phone && <p className="text-red-500 text-xs mt-1.5 ml-1">{fieldErrors.phone}</p>}
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">Mật khẩu</label>
               <div className="relative">
-                <input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} required placeholder="Ít nhất 8 ký tự" className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-11 outline-none focus:border-primary" />
+                <input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} placeholder="Ít nhất 8 ký tự" className={`w-full rounded-xl border px-4 py-3 pr-11 outline-none transition-colors ${fieldErrors.password ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`} />
                 <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-4 top-3.5 text-slate-500 hover:text-primary transition-colors">
                   {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                 </button>
               </div>
+              {fieldErrors.password && <p className="text-red-500 text-xs mt-1.5 ml-1">{fieldErrors.password}</p>}
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">Xác nhận mật khẩu</label>
-              <input id="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange} required placeholder="Nhập lại mật khẩu" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary" />
+              <input id="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={handleChange} placeholder="Nhập lại mật khẩu" className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${fieldErrors.confirmPassword ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`} />
+              {fieldErrors.confirmPassword && <p className="text-red-500 text-xs mt-1.5 ml-1">{fieldErrors.confirmPassword}</p>}
             </div>
 
-            <label className="flex items-start gap-3 text-sm text-slate-600">
-              <input id="agreedTerms" type="checkbox" checked={formData.agreedTerms} onChange={handleChange} className="mt-1" />
-              <span>Tôi đồng ý với Điều khoản sử dụng.</span>
-            </label>
+            <div className="flex flex-col gap-1">
+              <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
+                <input id="agreedTerms" type="checkbox" checked={formData.agreedTerms} onChange={handleChange} className="mt-1" />
+                <span className={fieldErrors.agreedTerms ? 'text-red-600' : ''}>Tôi đồng ý với Điều khoản sử dụng.</span>
+              </label>
+              {fieldErrors.agreedTerms && <p className="text-red-500 text-xs ml-7">{fieldErrors.agreedTerms}</p>}
+            </div>
 
-            <label className="flex items-start gap-3 text-sm text-slate-600">
-              <input id="agreedPersonalData" type="checkbox" checked={formData.agreedPersonalData} onChange={handleChange} className="mt-1" />
-              <span>Tôi đồng ý với Chính sách dữ liệu cá nhân.</span>
-            </label>
+            <div className="flex flex-col gap-1">
+              <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
+                <input id="agreedPersonalData" type="checkbox" checked={formData.agreedPersonalData} onChange={handleChange} className="mt-1" />
+                <span className={fieldErrors.agreedPersonalData ? 'text-red-600' : ''}>Tôi đồng ý với Chính sách dữ liệu cá nhân.</span>
+              </label>
+              {fieldErrors.agreedPersonalData && <p className="text-red-500 text-xs ml-7">{fieldErrors.agreedPersonalData}</p>}
+            </div>
 
             <button type="submit" className="w-full rounded-xl bg-primary text-white py-3 font-semibold hover:bg-primary/90 transition-colors">Đăng ký</button>
           </form>

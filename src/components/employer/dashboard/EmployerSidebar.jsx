@@ -90,7 +90,7 @@ const EmployerSidebar = () => {
         }
       }
     }
-    return 'Tin tuyển dụng';
+    return null;
   });
 
   const toggle = (label) => {

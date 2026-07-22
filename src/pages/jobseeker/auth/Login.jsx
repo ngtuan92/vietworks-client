@@ -44,7 +44,7 @@ const Login = () => {
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                to="/register"
+                to="/register-candidate"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 whitespace-nowrap shadow-sm"
               >
                 Đăng ký ứng viên

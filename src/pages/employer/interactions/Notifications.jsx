@@ -212,6 +212,11 @@ const Notifications = () => {
   };
 
   const handleNotificationClick = async (item) => {
+    if (item.isSystemFake) {
+      navigate('/profile');
+      return;
+    }
+
     if (item.status === 'UNREAD') {
       await handleMarkAsRead(item._id);
     }
