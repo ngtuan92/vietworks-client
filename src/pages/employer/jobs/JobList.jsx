@@ -36,10 +36,7 @@ const statusMeta = {
     label: 'Vi phạm/Khóa',
     className: 'bg-red-50 text-red-700 border border-red-200'
   },
-  LOCKED: {
-    label: 'Đã khóa',
-    className: 'bg-red-50 text-red-700 border border-red-200'
-  },
+
   REJECTED: {
     label: 'Từ chối',
     className: 'bg-red-50 text-red-700 border border-red-200'
@@ -237,7 +234,7 @@ const JobList = () => {
       );
     }
 
-    if ((job.status === 'BANNED' || job.status === 'LOCKED') && job.bannedReason) {
+    if (job.status === 'BANNED' && job.bannedReason) {
       return (
         <div className="flex items-start gap-1 text-xs text-red-600 mt-1.5 max-w-[200px] whitespace-normal bg-red-50 p-2 rounded-lg border border-red-100">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-500" />
