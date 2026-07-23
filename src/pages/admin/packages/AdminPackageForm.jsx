@@ -30,12 +30,12 @@ const defaultEmployerForm = {
   durationDays: 30,
   targetRole: 'EMPLOYER',
   packageType: 'PREMIUM_JOB',
-  unit: 'CV',
-  jobPostsAllowed: 1,
+  unit: 'JOB',
+  jobPostsAllowed: 0,
   featuredDays: 0,
   cvAccessLimit: 0,
   benefits: {
-    jobPostsAllowed: 1,
+    jobPostsAllowed: 0,
     featuredDays: 0,
     cvAccessLimit: 0,
     aiPremiumAccess: false,
@@ -159,6 +159,25 @@ const AdminPackageForm = () => {
       if (field === 'name' && !isEdit) {
         next.code = generateCode(value);
       }
+      if (field === 'packageType') {
+        if (value === 'PREMIUM_JOB') {
+          next.unit = 'JOB';
+          next.jobPostsAllowed = 0;
+          next.featuredDays = prev.featuredDays || prev.durationDays || 7;
+          next.cvAccessLimit = 0;
+        }
+        if (value === 'CV_UNLOCK') {
+          next.unit = 'CV';
+          next.jobPostsAllowed = 0;
+          next.featuredDays = 0;
+        }
+        if (value === 'CV_BOOST') {
+          next.unit = 'CV';
+          next.jobPostsAllowed = 0;
+          next.featuredDays = 0;
+          next.cvAccessLimit = 0;
+        }
+      }
       return next;
     });
   };
@@ -168,8 +187,8 @@ const AdminPackageForm = () => {
     setSaving(true);
     setError(null);
 
-    if (form.packageType === 'CV_UNLOCK' && Number(form.cvAccessLimit || 0) < 2) {
-      setError('Gói mở khóa CV phải có ít nhất 2 lượt. Không còn hỗ trợ gói mở khóa CV lẻ.');
+    if (form.packageType === 'CV_UNLOCK' && Number(form.cvAccessLimit || 0) < 1) {
+      setError('Gói mở khóa CV phải có ít nhất 1 lượt.');
       setSaving(false);
       return;
     }
@@ -190,11 +209,11 @@ const AdminPackageForm = () => {
         unit: form.unit,
         description: form.description,
         benefits: {
-          jobPostsAllowed: form.jobPostsAllowed || 0,
-          featuredDays: form.featuredDays || 0,
-          cvAccessLimit: form.cvAccessLimit || 0,
+          jobPostsAllowed: form.packageType === 'PREMIUM_JOB' ? (form.jobPostsAllowed || 0) : 0,
+          featuredDays: form.packageType === 'PREMIUM_JOB' ? (form.featuredDays || 0) : 0,
+          cvAccessLimit: form.packageType === 'CV_UNLOCK' ? (form.cvAccessLimit || 0) : 0,
           aiPremiumAccess: form.benefits?.aiPremiumAccess || false,
-          priorityDisplay: form.benefits?.priorityDisplay || false,
+          priorityDisplay: form.packageType === 'CV_BOOST' || form.packageType === 'PREMIUM_JOB',
         },
         status: form.isActive ? 'ACTIVE' : 'INACTIVE',
         sortOrder: form.sortOrder || 0,
@@ -392,18 +411,8 @@ const AdminPackageForm = () => {
         </div>
 
         {/* Employer-specific fields */}
-        {targetRole === 'EMPLOYER' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-500 mb-2">Số tin được đăng</label>
-              <input
-                type="number"
-                value={form.jobPostsAllowed}
-                onChange={(e) => handleChange('jobPostsAllowed', Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
-                min={form.packageType === 'CV_UNLOCK' ? '2' : '0'}
-              />
-            </div>
+        {targetRole === 'EMPLOYER' && form.packageType === 'PREMIUM_JOB' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-slate-500 mb-2">Ngày nổi bật</label>
               <input
@@ -411,9 +420,17 @@ const AdminPackageForm = () => {
                 value={form.featuredDays}
                 onChange={(e) => handleChange('featuredDays', Number(e.target.value))}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
-                min="0"
+                min="1"
               />
             </div>
+            <div className="flex items-center rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
+              Gói này áp dụng cho 1 job cụ thể và dùng để đẩy tin nổi bật / gấp.
+            </div>
+          </div>
+        )}
+
+        {targetRole === 'EMPLOYER' && form.packageType === 'CV_UNLOCK' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-slate-500 mb-2">Số CV được xem</label>
               <input
@@ -421,8 +438,11 @@ const AdminPackageForm = () => {
                 value={form.cvAccessLimit}
                 onChange={(e) => handleChange('cvAccessLimit', Number(e.target.value))}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
-                min="0"
+                min="1"
               />
+            </div>
+            <div className="flex items-center rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-500">
+              Gói này dùng cho talent pool, không dùng số tin đăng hoặc ngày nổi bật.
             </div>
           </div>
         )}
@@ -442,17 +462,8 @@ const AdminPackageForm = () => {
                 Kèm AI Premium (review CV bằng AI)
               </label>
             </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200">
-              <input
-                id="priorityDisplay"
-                type="checkbox"
-                checked={form.benefits?.priorityDisplay || false}
-                onChange={(e) => setForm((prev) => ({ ...prev, benefits: { ...prev.benefits, priorityDisplay: e.target.checked } }))}
-                className="w-4 h-4"
-              />
-              <label htmlFor="priorityDisplay" className="text-sm font-bold text-slate-500 cursor-pointer">
-                Ưu tiên hiển thị (priority display)
-              </label>
+            <div className="flex items-center rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-primary">
+              Boost CV mặc định được ưu tiên hiển thị trong Talent Pool.
             </div>
           </div>
         )}

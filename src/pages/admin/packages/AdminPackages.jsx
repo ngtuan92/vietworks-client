@@ -18,8 +18,32 @@ const packageTypeLabels = {
   CV_UNLOCK: 'Mở khóa CV',
 };
 
+const getEmployerPackageStats = (pkg) => {
+  if (pkg.packageType === 'PREMIUM_JOB') {
+    return [
+      {
+        label: 'Ngày nổi bật',
+        value: pkg.featuredDays ?? pkg.benefits?.featuredDays ?? pkg.durationDays ?? 0,
+      },
+    ];
+  }
+
+  if (pkg.packageType === 'CV_UNLOCK') {
+    return [
+      {
+        label: 'Lượt CV',
+        value: pkg.cvAccessLimit ?? pkg.benefits?.cvAccessLimit ?? 0,
+      },
+    ];
+  }
+
+  return [];
+};
+
 // PackageCard cho Employer - hiển thị fields của Employer
 const EmployerPackageCard = ({ pkg, onEdit, onToggleStatus }) => {
+  const stats = getEmployerPackageStats(pkg);
+
   return (
     <div className={`bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md hover:-translate-y-1 flex flex-col h-full ${pkg.status === 'ACTIVE' ? 'border-emerald-200/50' : 'border-rose-600/30 bg-[#ffdad6]/10'}`}>
       <div className="p-5 flex flex-col flex-1">
@@ -65,20 +89,16 @@ const EmployerPackageCard = ({ pkg, onEdit, onToggleStatus }) => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-slate-50 rounded-xl p-2.5 text-center">
-            <p className="text-lg font-black text-slate-900">{pkg.jobPostsAllowed ?? pkg.benefits?.jobPostsAllowed ?? 0}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Tin đăng</p>
+        {stats.length > 0 && (
+          <div className="grid grid-cols-1 gap-2 mb-4">
+            {stats.map((stat) => (
+              <div key={stat.label} className="bg-slate-50 rounded-xl p-2.5 text-center">
+                <p className="text-lg font-black text-slate-900">{stat.value}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">{stat.label}</p>
+              </div>
+            ))}
           </div>
-          <div className="bg-slate-50 rounded-xl p-2.5 text-center">
-            <p className="text-lg font-black text-slate-900">{pkg.featuredDays ?? pkg.benefits?.featuredDays ?? 0}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Nổi bật</p>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-2.5 text-center">
-            <p className="text-lg font-black text-slate-900">{pkg.cvAccessLimit ?? pkg.benefits?.cvAccessLimit ?? 0}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Lượt CV</p>
-          </div>
-        </div>
+        )}
 
         {/* Description */}
         <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed mb-4 min-h-[60px]">{pkg.description}</p>
@@ -189,9 +209,8 @@ const AdminPackages = () => {
           ...pkg,
           // Map benefits to features array
           features: pkg.benefits ? [
-            pkg.benefits.jobPostsAllowed > 0 ? `Đăng ${pkg.benefits.jobPostsAllowed} tin tuyển dụng` : null,
-            pkg.durationDays > 0 ? `Hiển thị trong ${pkg.durationDays} ngày` : null,
-            pkg.benefits.cvAccessLimit > 0 ? `Xem ${pkg.benefits.cvAccessLimit} CV` : null,
+            pkg.packageType === 'PREMIUM_JOB' && pkg.durationDays > 0 ? `Hiển thị trong ${pkg.durationDays} ngày` : null,
+            pkg.packageType === 'CV_UNLOCK' && pkg.benefits.cvAccessLimit > 0 ? `Xem ${pkg.benefits.cvAccessLimit} CV` : null,
             pkg.benefits.aiPremiumAccess ? 'Truy cập AI Premium' : null,
             pkg.benefits.priorityDisplay ? 'Hiển thị ưu tiên' : null,
           ].filter(Boolean) : [],
