@@ -15,6 +15,12 @@ const TABS = [
   { key: 'topup',   label: 'Nạp tiền' }
 ];
 
+const STATUS_FILTERS = [
+  { value: 'SUCCESS', label: 'Thành công' },
+  { value: 'PENDING', label: 'Đang chờ' },
+  { value: 'FAILED', label: 'Thất bại' },
+];
+
 // Tooltip giải thích trạng thái (hover vào StatusPill để xem).
 // - SUCCESS  → đã cộng / đã thanh toán
 // - PENDING  → đang chờ SePay; nếu >10p thì cảnh báo timeout
@@ -42,6 +48,7 @@ const describeTransaction = (tx) => {
 const JobseekerTransactions = () => {
   const [active, setActive] = useState('all');
   const [keyword, setKeyword] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -69,13 +76,14 @@ const JobseekerTransactions = () => {
     return rows.filter((r) => {
       if (active === 'package' && !PACKAGE_TYPES.includes(r.type)) return false;
       if (active === 'topup' && r.type !== 'WALLET_DEPOSIT') return false;
+      if (statusFilter && r.status !== statusFilter) return false;
       if (keyword) {
         const blob = `${r._id} ${r.description} ${r.status}`.toLowerCase();
         if (!blob.includes(keyword.toLowerCase())) return false;
       }
       return true;
     });
-  }, [active, keyword, rows]);
+  }, [active, keyword, rows, statusFilter]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
@@ -97,7 +105,7 @@ const JobseekerTransactions = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-slate-700 mb-2">Từ khóa</label>
             <input
@@ -106,6 +114,19 @@ const JobseekerTransactions = () => {
               className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
               placeholder="Mã giao dịch, ghi chú..."
             />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Trạng thái</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
+            >
+              <option value="">Tất cả trạng thái</option>
+              {STATUS_FILTERS.map((status) => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
           </div>
           <div className="flex items-end">
             <button className="w-full px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all">
