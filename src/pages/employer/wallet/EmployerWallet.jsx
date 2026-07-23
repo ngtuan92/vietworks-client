@@ -30,10 +30,7 @@ const describeTransaction = (tx) => {
 const typeConfig = {
   WALLET_DEPOSIT:       { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
   PACKAGE_PURCHASE:     { label: 'Mua gói',         bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: 'payments' },
-  CV_UNLOCK_SINGLE:     { label: 'Mở khóa CV',      bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
   CV_UNLOCK_BY_PACKAGE: { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100', text: 'text-violet-700',  icon: 'lock_open' },
-  REFUND:               { label: 'Hoàn tiền',       bg: 'bg-violet-100',   text: 'text-amber-700',   icon: 'replay' },
-  ADMIN_ADJUSTMENT:     { label: 'Điều chỉnh',      bg: 'bg-slate-100',   text: 'text-slate-700',   icon: 'tune' },
 };
 
 const statusConfig = {
@@ -123,7 +120,6 @@ const EmployerWallet = () => {
     .filter((tx) => tx.type === 'WALLET_DEPOSIT' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + tx.amount, 0);
   const totalSpent = transactions
-    .filter((tx) => tx.type !== 'WALLET_DEPOSIT' && tx.type !== 'REFUND' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
   const handleDeposit = async () => {
