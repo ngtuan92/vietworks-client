@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { FiArrowUpRight, FiCreditCard, FiTrendingDown, FiZap } from 'react-icons/fi';
+import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiZap } from 'react-icons/fi';
 import {
   getJobseekerWallet,
-  createJobseekerWallet,
   createJobseekerDeposit,
   getJobseekerTransactions
 } from '../../../services/paymentService';
 import useSepayPolling from '../../../hooks/useSepayPolling';
-import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPreviewModal';
 
 const typeConfig = {
   WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
@@ -29,7 +27,7 @@ const JobseekerWallet = () => {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
   const [depositAmount, setDepositAmount] = useState('');
   const [depositData, setDepositData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,25 +54,26 @@ const JobseekerWallet = () => {
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
-      showNotification({ type: 'success', message: 'Nạp tiền thành công!' });
+      setTimeout(() => showNotification({ type: 'success', message: 'Nạp tiền thành công!' }), 0);
       fetchWallet();
       fetchTransactions();
     } else if (paymentStatus === 'error') {
       const reason = searchParams.get('reason');
-      showNotification({
-        type: 'error',
-        message: reason
-          ? `Nạp tiền thất bại: ${decodeURIComponent(reason)}`
-          : 'Nạp tiền thất bại. Vui lòng kiểm tra giao dịch và thử lại.'
-      });
+      setTimeout(() => {
+        showNotification({
+          type: 'error',
+          message: reason
+            ? `Nạp tiền thất bại: ${decodeURIComponent(reason)}`
+            : 'Nạp tiền thất bại. Vui lòng kiểm tra giao dịch và thử lại.'
+        });
+      }, 0);
       fetchTransactions();
     } else if (paymentStatus === 'cancel') {
-      showNotification({ type: 'info', message: 'Đã hủy nạp tiền.' });
+      setTimeout(() => showNotification({ type: 'info', message: 'Đã hủy nạp tiền.' }), 0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const fetchWallet = async () => {
+  async function fetchWallet() {
     try {
       const data = await getJobseekerWallet();
       setWallet(data);
@@ -83,9 +82,9 @@ const JobseekerWallet = () => {
     } catch (err) {
       console.error('Fetch wallet error:', err);
     }
-  };
+  }
 
-  const fetchTransactions = async () => {
+  async function fetchTransactions() {
     try {
       const res = await getJobseekerTransactions();
       setTransactions(res?.data || []);
@@ -95,7 +94,7 @@ const JobseekerWallet = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const totalDeposits = transactions
     .filter((tx) => tx.type === 'WALLET_DEPOSIT' && tx.status === 'SUCCESS')
@@ -233,19 +232,6 @@ const JobseekerWallet = () => {
                   <p className="text-xs text-slate-500">Tất cả giao dịch</p>
                 </div>
               </Link>
-              <button
-                type="button"
-                onClick={() => setShowInvoiceModal(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 transition-all text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                  <FiCreditCard />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-900">Yêu cầu xuất hóa đơn</p>
-                  <p className="text-xs text-slate-500">VAT cho gói Boost CV</p>
-                </div>
-              </button>
             </div>
           </div>
         </div>
@@ -431,12 +417,7 @@ const JobseekerWallet = () => {
         </>
       )}
 
-      {/* Receipt Preview Modal — xem/tải phiếu thu cho giao dịch SUCCESS */}
-      <ReceiptPreviewModal
-        isOpen={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        transactions={transactions}
-      />
+
     </div>
   );
 };
