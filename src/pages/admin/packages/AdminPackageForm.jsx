@@ -168,6 +168,12 @@ const AdminPackageForm = () => {
     setSaving(true);
     setError(null);
 
+    if (form.packageType === 'CV_UNLOCK' && Number(form.cvAccessLimit || 0) < 2) {
+      setError('Gói mở khóa CV phải có ít nhất 2 lượt. Không còn hỗ trợ gói mở khóa CV lẻ.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const url = isEdit ? `/admin/packages/${id}` : '/admin/packages';
 
@@ -395,7 +401,7 @@ const AdminPackageForm = () => {
                 value={form.jobPostsAllowed}
                 onChange={(e) => handleChange('jobPostsAllowed', Number(e.target.value))}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#003f87] outline-none"
-                min="0"
+                min={form.packageType === 'CV_UNLOCK' ? '2' : '0'}
               />
             </div>
             <div>

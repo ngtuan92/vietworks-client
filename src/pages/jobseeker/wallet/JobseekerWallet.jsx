@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { FiArrowUpRight, FiCreditCard, FiTrendingUp, FiTrendingDown, FiZap } from 'react-icons/fi';
+import { FiArrowUpRight, FiCreditCard, FiTrendingDown, FiZap } from 'react-icons/fi';
 import {
   getJobseekerWallet,
   createJobseekerWallet,
@@ -13,10 +13,7 @@ import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPre
 const typeConfig = {
   WALLET_DEPOSIT:        { label: 'Nạp tiền',       bg: 'bg-emerald-100', text: 'text-emerald-700', icon: <FiArrowUpRight/> },
   PACKAGE_PURCHASE:      { label: 'Mua gói',         bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: <FiZap/> },
-  CV_UNLOCK_SINGLE:      { label: 'Mở khóa CV',      bg: 'bg-violet-100',  text: 'text-violet-700',  icon: <FiCreditCard/> },
   CV_UNLOCK_BY_PACKAGE:  { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100', text: 'text-violet-700',  icon: <FiCreditCard/> },
-  REFUND:                { label: 'Hoàn tiền',       bg: 'bg-amber-100',   text: 'text-amber-700',   icon: <FiTrendingDown/> },
-  ADMIN_ADJUSTMENT:      { label: 'Điều chỉnh',      bg: 'bg-slate-100',   text: 'text-slate-700',   icon: <FiTrendingUp/> }
 };
 
 const statusConfig = {
@@ -104,7 +101,6 @@ const JobseekerWallet = () => {
     .filter((tx) => tx.type === 'WALLET_DEPOSIT' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + tx.amount, 0);
   const totalSpent = transactions
-    .filter((tx) => tx.type !== 'WALLET_DEPOSIT' && tx.type !== 'REFUND' && tx.status === 'SUCCESS')
     .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
   const handleDeposit = async () => {

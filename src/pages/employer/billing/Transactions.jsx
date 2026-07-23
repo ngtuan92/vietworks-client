@@ -7,7 +7,7 @@ import ReceiptPreviewModal from '../../../components/employer/billing/ReceiptPre
 // - 'all'     → tất cả giao dịch
 // - 'package' → các giao dịch mua gói (PACKAGE_PURCHASE, CV_UNLOCK_SINGLE, CV_UNLOCK_BY_PACKAGE)
 // - 'topup'   → nạp tiền vào ví (WALLET_DEPOSIT)
-const PACKAGE_TYPES = ['PACKAGE_PURCHASE', 'CV_UNLOCK_SINGLE', 'CV_UNLOCK_BY_PACKAGE'];
+const PACKAGE_TYPES = ['PACKAGE_PURCHASE', 'CV_UNLOCK_BY_PACKAGE'];
 
 const TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -216,8 +216,7 @@ const InvoiceActionButton = ({ tx, onRequest }) => {
 const typeLabel = (t) => {
   if (t === 'WALLET_DEPOSIT') return 'Nạp tiền';
   if (t === 'PACKAGE_PURCHASE') return 'Mua dịch vụ';
-  if (t === 'CV_UNLOCK_SINGLE' || t === 'CV_UNLOCK_BY_PACKAGE') return 'Mở khóa CV';
-  if (t === 'REFUND') return 'Hoàn tiền';
+  if (t === 'CV_UNLOCK_BY_PACKAGE') return 'Mở khóa CV';
   return 'Khác';
 };
 

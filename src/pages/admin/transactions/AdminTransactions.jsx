@@ -6,17 +6,13 @@ import { Receipt, CheckCircle2, CreditCard, Eye, SearchX } from 'lucide-react';
 const typeConfig = {
   WALLET_DEPOSIT:       { label: 'Nạp tiền',         bg: 'bg-emerald-100', text: 'text-emerald-700', icon: 'add_card' },
   PACKAGE_PURCHASE:     { label: 'Mua gói',           bg: 'bg-indigo-100',  text: 'text-indigo-700',  icon: 'payments' },
-  CV_UNLOCK_SINGLE:     { label: 'Mở khóa CV',        bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
   CV_UNLOCK_BY_PACKAGE: { label: 'Mở khóa CV (gói)', bg: 'bg-violet-100',  text: 'text-violet-700',  icon: 'lock_open' },
-  REFUND:               { label: 'Hoàn tiền',         bg: 'bg-amber-100',   text: 'text-amber-700',   icon: 'replay' },
-  ADMIN_ADJUSTMENT:     { label: 'Điều chỉnh',        bg: 'bg-slate-100',   text: 'text-slate-700',   icon: 'tune' },
 };
 
 const statusConfig = {
   SUCCESS: { label: 'Thành công', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/60' },
   PENDING: { label: 'Đang chờ', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/60' },
   FAILED: { label: 'Thất bại', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/60' },
-  CANCELLED: { label: 'Đã hủy', bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
 };
 
 const formatPrice = (price) => {
@@ -97,8 +93,7 @@ const AdminTransactions = () => {
         <div className="mb-6">
           <FilterGrid>
             <InputField label="Tìm kiếm" value={search} onChange={setSearch} placeholder="Tên, email, mô tả..." />
-            <SelectField label="Loại giao dịch" value={filterType} onChange={setFilterType} options={[['WALLET_DEPOSIT', 'Nạp tiền'], ['PACKAGE_PURCHASE', 'Mua gói'], ['CV_UNLOCK_SINGLE', 'Mở khóa CV'], ['CV_UNLOCK_BY_PACKAGE', 'Mở khóa CV (gói)'], ['REFUND', 'Hoàn tiền'], ['ADMIN_ADJUSTMENT', 'Điều chỉnh']]} placeholder="Tất cả loại" />
-            <SelectField label="Trạng thái" value={filterStatus} onChange={setFilterStatus} options={[['SUCCESS', 'Thành công'], ['PENDING', 'Đang chờ'], ['FAILED', 'Thất bại'], ['CANCELLED', 'Đã hủy']]} placeholder="Tất cả trạng thái" />
+            <SelectField label="Trạng thái" value={filterStatus} onChange={setFilterStatus} options={[['SUCCESS', 'Thành công'], ['PENDING', 'Đang chờ'], ['FAILED', 'Thất bại']]} placeholder="Tất cả trạng thái" />
           </FilterGrid>
         </div>
 
