@@ -197,7 +197,7 @@ const SalaryInsight = () => {
         const jobParams = { limit: 6 };
         if (careerGroupId) jobParams.careerGroupId = careerGroupId;
         if (careerId) jobParams.careerId = careerId;
-        if (experienceLevelId) jobParams.experienceLevelId = experienceLevelId;
+        if (experience) jobParams.experience = experience;
         if (location.trim()) jobParams.location = location.trim();
         const jobRes = await getPublicJobs(jobParams);
         setSuggestedJobs(jobRes?.data || []);
@@ -209,7 +209,7 @@ const SalaryInsight = () => {
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-          'Có lỗi xảy ra khi tra cứu. Vui lòng thử lại sau.'
+        'Có lỗi xảy ra khi tra cứu. Vui lòng thử lại sau.'
       );
     } finally {
       setLoading(false);
@@ -818,12 +818,11 @@ const SalaryInsight = () => {
                         className="group flex items-center gap-4 p-3 rounded-xl border border-slate-100 bg-white hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-sm transition-all"
                       >
                         {/* Rank badge */}
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
-                          idx === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm' :
-                          idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white' :
-                          idx === 2 ? 'bg-gradient-to-br from-amber-700 to-amber-800 text-white' :
-                          'bg-slate-100 text-slate-400'
-                        }`}>
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${idx === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm' :
+                            idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white' :
+                              idx === 2 ? 'bg-gradient-to-br from-amber-700 to-amber-800 text-white' :
+                                'bg-slate-100 text-slate-400'
+                          }`}>
                           {idx + 1}
                         </div>
 

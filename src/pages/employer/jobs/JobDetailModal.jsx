@@ -176,16 +176,14 @@ const [companyLocations, setCompanyLocations] = useState([]);
         ]);
         
 console.log('🔍 STEP 2: Parse jobRes. success=', jobRes?.success, 'data type=', typeof jobRes?.data);
-let loadedJob = null;
-if (jobRes.success) {
-  console.log('🔍 STEP 2b: JSON.parse bắt đầu...');
-  loadedJob = JSON.parse(JSON.stringify(jobRes.data));
-  console.log('🔍 STEP 2c: JSON.parse xong. salary=', loadedJob?.salary, ' workLocations length=', loadedJob?.workLocations?.length);
-  setJob(loadedJob);
-} else {
-  throw new Error("Không thể lấy thông tin chi tiết công việc");
-}
-
+        let loadedJob = null;
+        if (jobRes.success) {
+          loadedJob = jobRes.data;
+          setJob(loadedJob);
+        } else {
+          throw new Error("Không thể lấy thông tin chi tiết công việc");
+        }
+        
         setMasterData(prev => ({
           ...prev,
           careerGroups: groupRes.success ? groupRes.data : []
@@ -453,7 +451,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
   };
 
   if (loading) return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-2xl shadow-xl">Đang liên kết dữ liệu danh mục hệ thống...</div>
     </div>
   );
@@ -464,7 +462,7 @@ workLocations: Array.isArray(loadedJob.workLocations)
   const isDraft = job?.status === 'DRAFT';
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
         
         {/* Header Modal */}

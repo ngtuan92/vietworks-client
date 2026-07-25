@@ -19,6 +19,7 @@ import JobseekerWallet from './pages/jobseeker/wallet/JobseekerWallet';
 
 import Login from './pages/jobseeker/auth/Login';
 import Register from './pages/jobseeker/auth/Register';
+import RegisterSelection from './pages/auth/RegisterSelection';
 
 import ForgotPassword from './pages/jobseeker/auth/ForgotPassword';
 import ResetPassword from './pages/jobseeker/auth/ResetPassword';
@@ -139,6 +140,7 @@ function App() {
 
           {/* Public authentication and helper routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<RegisterSelection />} />
 
           <Route path="/register-candidate" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -190,7 +190,7 @@ const Navbar = () => {
 
             <button
               className={`text-sm font-bold transition-all duration-300 px-3 lg:px-4 py-2 whitespace-nowrap relative cursor-pointer ${isActive('/salary-insight') ? 'text-primary after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-[60%] after:h-[3px] after:bg-primary after:rounded-full' : 'text-slate-600 hover:text-primary hover:bg-slate-50/80 rounded-xl active:scale-95'}`}
-              onClick={() => handleProtectedNavigation('/salary-insight')}
+              onClick={() => navigate('/salary-insight')}
             >
               Tra cứu lương
             </button>
