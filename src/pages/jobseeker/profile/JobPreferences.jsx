@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, Check, Briefcase, DollarSign, MapPin, Award, Loader2, X, Sliders, Heart, Target, ChevronRight
+  ArrowLeft, ArrowRight, Check, Briefcase, DollarSign, MapPin, Award, Loader2, X, Heart, Target, ChevronRight
 } from 'lucide-react';
 import {
   updateJobPreferences,
@@ -24,10 +24,34 @@ const STEPS = [
   { num: 4, key: 'location', label: 'Địa điểm', icon: MapPin },
 ];
 
+// Validate a step and return an object of field errors
+const validateStep = (stepNum, formData) => {
+  const errors = {};
+  if (stepNum === 1) {
+    if (!formData.careerGroupId) errors.careerGroupId = 'Vui lòng chọn nhóm ngành nghề.';
+    if (!formData.careerId) errors.careerId = 'Vui lòng chọn ngành nghề cụ thể.';
+    if (!formData.careerPositionId) errors.careerPositionId = 'Vui lòng chọn vị trí chuyên môn.';
+    if (!formData.jobLevelId) errors.jobLevelId = 'Vui lòng chọn cấp bậc.';
+  }
+  if (stepNum === 2) {
+    if (!formData.experience) errors.experience = 'Vui lòng chọn mức kinh nghiệm.';
+  }
+  // Step 3 (salary) and step 4 (location) are optional — no required errors
+  return errors;
+};
+
+const isStepComplete = (stepNum, formData) => {
+  return Object.keys(validateStep(stepNum, formData)).length === 0;
+};
+
 const JobPreferences = () => {
   const navigate = useNavigate();
   const { success, error: showError } = useNotification();
   const [step, setStep] = useState(1);
+  // Track which steps have been "touched" (attempted to navigate away from)
+  const [touched, setTouched] = useState({});
+  // Per-field errors only shown after touch
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     careerGroupId: '',
@@ -43,11 +67,11 @@ const JobPreferences = () => {
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
+  const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
 
   const [loadingMaster, setLoadingMaster] = useState(true);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
-
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -59,6 +83,7 @@ const JobPreferences = () => {
           getJobPreferences()
         ]);
         setCareerGroups(cgRes.data || []);
+        setGlobalJobLevels(jlRes.data || []);
         setJobLevels(jlRes.data || []);
 
         const data = prefsRes.data;
@@ -103,12 +128,41 @@ const JobPreferences = () => {
   }, [formData.careerId, preferencesLoaded]);
 
   useEffect(() => {
+    if (!preferencesLoaded) return;
+
     if (!formData.careerGroupId) {
-      setFormData((prev) => (prev.careerId || prev.careerPositionId
-        ? { ...prev, careerId: '', careerPositionId: '' }
+      setJobLevels(globalJobLevels);
+      return;
+    }
+
+    const selectedGroup = careerGroups.find((g) => g._id === formData.careerGroupId);
+    if (selectedGroup && selectedGroup.slug !== 'cong-nghe-thong-tin') {
+      const itLevels = [
+        'Thực tập sinh (IT)', 'Fresher', 'Junior', 'Senior',
+        'Technical Leader', 'IT Manager / Project Manager',
+        'Giám đốc công nghệ (CTO) / Director'
+      ];
+      setJobLevels(globalJobLevels.filter((lvl) => !itLevels.includes(lvl.name)));
+    } else {
+      setJobLevels(globalJobLevels);
+    }
+  }, [formData.careerGroupId, preferencesLoaded, careerGroups, globalJobLevels]);
+
+  useEffect(() => {
+    if (!formData.careerGroupId) {
+      setFormData((prev) => (prev.careerId || prev.careerPositionId || prev.jobLevelId
+        ? { ...prev, careerId: '', careerPositionId: '', jobLevelId: '' }
         : prev));
     }
   }, [formData.careerGroupId]);
+
+  useEffect(() => {
+    if (!preferencesLoaded || !formData.jobLevelId || !jobLevels.length) return;
+    const isValidJobLevel = jobLevels.some((level) => level._id === formData.jobLevelId);
+    if (!isValidJobLevel) {
+      setFormData((prev) => ({ ...prev, jobLevelId: '' }));
+    }
+  }, [formData.jobLevelId, jobLevels, preferencesLoaded]);
 
   useEffect(() => {
     if (!formData.careerId) {
@@ -118,8 +172,60 @@ const JobPreferences = () => {
     }
   }, [formData.careerId]);
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, STEPS.length));
-  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+  // Re-validate current step errors in real-time when user fills in data (only if already touched)
+  useEffect(() => {
+    if (touched[step]) {
+      setFieldErrors(validateStep(step, formData));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, step]);
+
+  // Compute completion state for each step
+  const stepsCompletion = STEPS.reduce((acc, s) => {
+    acc[s.num] = isStepComplete(s.num, formData);
+    return acc;
+  }, {});
+  const allStepsComplete = STEPS.every((s) => stepsCompletion[s.num]);
+
+  const goToStep = (targetStep) => {
+    // Mark current step as touched before leaving
+    setTouched((prev) => ({ ...prev, [step]: true }));
+    setFieldErrors(validateStep(step, formData));
+
+    if (allStepsComplete) {
+      // All steps done: free navigation
+      setStep(targetStep);
+      setFieldErrors(validateStep(targetStep, formData));
+      return;
+    }
+
+    // Otherwise, only allow going back or to the next step if current is valid
+    const errors = validateStep(step, formData);
+    if (targetStep < step) {
+      setStep(targetStep);
+      setFieldErrors({});
+      return;
+    }
+    if (Object.keys(errors).length === 0 && targetStep === step + 1) {
+      setStep(targetStep);
+      setFieldErrors({});
+    }
+  };
+
+  const nextStep = () => {
+    // Mark as touched and show errors
+    setTouched((prev) => ({ ...prev, [step]: true }));
+    const errors = validateStep(step, formData);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    setStep((s) => Math.min(s + 1, STEPS.length));
+    setFieldErrors({});
+  };
+
+  const prevStep = () => {
+    setStep((s) => Math.max(s - 1, 1));
+    setFieldErrors({});
+  };
 
   const addLocation = (loc) => {
     if (!loc || !loc.provinceName) return;
@@ -156,6 +262,23 @@ const JobPreferences = () => {
   };
 
   const handleSave = async () => {
+    // Validate all required steps before saving
+    const allErrors = {};
+    STEPS.forEach((s) => {
+      const errs = validateStep(s.num, formData);
+      Object.assign(allErrors, errs);
+    });
+    if (Object.keys(allErrors).length > 0) {
+      // Jump to first invalid step
+      const firstInvalid = STEPS.find((s) => !stepsCompletion[s.num]);
+      if (firstInvalid) {
+        setStep(firstInvalid.num);
+        setTouched((prev) => ({ ...prev, [firstInvalid.num]: true }));
+        setFieldErrors(validateStep(firstInvalid.num, formData));
+      }
+      return;
+    }
+
     setSaving(true);
     try {
       await updateJobPreferences({
@@ -238,28 +361,32 @@ const JobPreferences = () => {
             <nav className="space-y-1">
               {STEPS.map((s) => {
                 const active = step === s.num;
-                const completed = step > s.num;
+                const completed = stepsCompletion[s.num];
                 const Icon = s.icon;
+                // Can click if: all done (free nav), or it's the current or previous step
+                const clickable = allStepsComplete || s.num <= step;
                 return (
-                  <div
+                  <button
                     key={s.num}
-                    aria-disabled
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left select-none ${
-                      active
+                    type="button"
+                    onClick={() => clickable && goToStep(s.num)}
+                    disabled={!clickable}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left select-none transition-colors ${active
                         ? 'bg-primary text-white'
                         : completed
-                        ? 'text-slate-700 bg-emerald-50'
-                        : 'text-slate-400 bg-transparent'
-                    }`}
+                          ? 'text-slate-700 bg-emerald-50 hover:bg-emerald-100'
+                          : clickable
+                            ? 'text-slate-500 bg-transparent hover:bg-slate-50'
+                            : 'text-slate-300 bg-transparent cursor-not-allowed'
+                      }`}
                   >
-                    <span className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
-                      active ? 'bg-white/20 text-white' : completed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      {completed ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4 h-4" />}
+                    <span className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${active ? 'bg-white/20 text-white' : completed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                      {completed && !active ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4 h-4" />}
                     </span>
                     <span className="text-sm font-bold">{s.label}</span>
                     {active && <ChevronRight className="w-4 h-4 ml-auto" />}
-                  </div>
+                  </button>
                 );
               })}
             </nav>
@@ -302,9 +429,11 @@ const JobPreferences = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 text-center">
-              Vui lòng hoàn thành lần lượt các bước.
+              {allStepsComplete
+                ? '✅ Tất cả bước hoàn thành!'
+                : 'Vui lòng hoàn thành lần lượt các bước.'}
             </div>
           </aside>
 
@@ -336,9 +465,10 @@ const JobPreferences = () => {
                       label="Nhóm ngành nghề"
                       required
                       value={formData.careerGroupId}
-                      onChange={(v) => setFormData((p) => ({ ...p, careerGroupId: v, careerId: '', careerPositionId: '' }))}
+                      onChange={(v) => setFormData((p) => ({ ...p, careerGroupId: v, careerId: '', careerPositionId: '', jobLevelId: '' }))}
                       placeholder="-- Chọn nhóm ngành --"
                       options={careerGroups}
+                      error={fieldErrors.careerGroupId}
                     />
                     <SelectField
                       label="Ngành nghề cụ thể"
@@ -348,6 +478,7 @@ const JobPreferences = () => {
                       placeholder="-- Chọn ngành nghề --"
                       options={careers}
                       disabled={!formData.careerGroupId}
+                      error={fieldErrors.careerId}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -359,6 +490,7 @@ const JobPreferences = () => {
                       placeholder="-- Chọn vị trí --"
                       options={positions}
                       disabled={!formData.careerId}
+                      error={fieldErrors.careerPositionId}
                     />
                     <SelectField
                       label="Cấp bậc"
@@ -367,6 +499,7 @@ const JobPreferences = () => {
                       onChange={(v) => setFormData((p) => ({ ...p, jobLevelId: v }))}
                       placeholder="-- Chọn cấp bậc --"
                       options={jobLevels}
+                      error={fieldErrors.jobLevelId}
                     />
                   </div>
                 </div>
@@ -376,11 +509,13 @@ const JobPreferences = () => {
                 <div className="space-y-5">
                   <DatalistSelectField
                     label="Mức kinh nghiệm mong muốn"
+                    required
                     value={formData.experience}
                     onChange={(v) => setFormData((p) => ({ ...p, experience: v }))}
                     placeholder="-- Chọn mức kinh nghiệm --"
                     options={EXPERIENCE_LEVELS}
                     hint="Hệ thống sẽ ưu tiên hiển thị các job có yêu cầu kinh nghiệm phù hợp."
+                    error={fieldErrors.experience}
                   />
 
                   <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-xs text-blue-700">
@@ -532,7 +667,7 @@ const SectionTitle = ({ title, description }) => (
   </div>
 );
 
-const SelectField = ({ label, value, onChange, placeholder, options, disabled = false, required = false, hint }) => (
+const SelectField = ({ label, value, onChange, placeholder, options, disabled = false, required = false, hint, error }) => (
   <label className={`block ${disabled ? 'opacity-60' : ''}`}>
     <span className="block text-xs font-bold text-slate-700 mb-2">
       {label} {required && <span className="text-red-500">*</span>}
@@ -541,18 +676,24 @@ const SelectField = ({ label, value, onChange, placeholder, options, disabled = 
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary transition-all cursor-pointer disabled:cursor-not-allowed"
+      className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all cursor-pointer disabled:cursor-not-allowed bg-white ${error ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-primary'
+        }`}
     >
       <option value="">{placeholder}</option>
       {options.map((opt) => (
         <option key={opt._id} value={opt._id}>{opt.name}</option>
       ))}
     </select>
-    {hint && <p className="text-xs text-slate-500 mt-2">{hint}</p>}
+    {error && (
+      <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
+        <span>⚠</span> {error}
+      </p>
+    )}
+    {hint && !error && <p className="text-xs text-slate-500 mt-2">{hint}</p>}
   </label>
 );
 
-const DatalistSelectField = ({ label, id = 'datalist', value, onChange, placeholder, options, disabled = false, required = false, hint }) => (
+const DatalistSelectField = ({ label, id = 'datalist', value, onChange, placeholder, options, disabled = false, required = false, hint, error }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-2">
       {label} {required && <span className="text-red-500">*</span>}
@@ -564,14 +705,20 @@ const DatalistSelectField = ({ label, id = 'datalist', value, onChange, placehol
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       placeholder={placeholder}
-      className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none disabled:bg-slate-50 transition-colors"
+      className={`w-full text-sm rounded-xl border p-3 bg-white outline-none disabled:bg-slate-50 transition-colors ${error ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary'
+        }`}
     />
     <datalist id={`${id}-list`}>
       {options.map((opt) => (
         <option key={opt} value={opt} />
       ))}
     </datalist>
-    {hint && <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{hint}</p>}
+    {error && (
+      <p className="mt-1.5 text-xs font-semibold text-red-500 flex items-center gap-1">
+        <span>⚠</span> {error}
+      </p>
+    )}
+    {hint && !error && <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{hint}</p>}
   </div>
 );
 

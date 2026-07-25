@@ -1,4 +1,4 @@
-﻿import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText } from 'lucide-react';
 import api from '../../../services/api';
@@ -123,7 +123,8 @@ const CVSearch = () => {
       }
     }).catch(console.error);
     queueMicrotask(() => fetchCandidates());
-  }, [fetchCandidates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();

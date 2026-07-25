@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ActionButton, PageHeader, SectionCard, SimpleTable, Tabs, StatusBadge } from '../shared/AdminPrimitives';
 import jobAdminService from '../../../services/jobAdminService'; 
 
-const tabs = ['Nội dung tin', 'Công ty', 'Ứng viên', 'Gói dịch vụ', 'Lịch sử duyệt', 'Báo cáo vi phạm'];
+const tabs = ['Nội dung tin', 'Công ty'];
 
 // Cấu hình màu sắc đồng bộ với key PENDING_APPROVAL trong DB
 const statusMap = {
@@ -200,16 +200,16 @@ const JobDetailAdmin = () => {
         <SectionCard title="Thông tin công ty đối tác">
           {job.companyId ? (
             <div className="flex flex-col md:flex-row gap-6">
-              {job.companyId.logo && (
+              {job.companyId.avatarUrl && (
                 <img 
-                  src={job.companyId.logo} 
+                  src={job.companyId.avatarUrl} 
                   alt={job.companyId.name} 
                   className="w-24 h-24 rounded-2xl object-cover border border-slate-200 shadow-sm"
                 />
               )}
               <div className="space-y-2 text-sm text-slate-700 flex-1">
                 <div className="text-lg font-bold text-slate-900">{job.companyId.name}</div>
-                <div><b>Quy mô doanh nghiệp:</b> {job.companyId.scale || 'N/A'}</div>
+                <div><b>Quy mô doanh nghiệp:</b> {job.companyId.size || 'N/A'}</div>
                 <div>
                   <b>Website: </b> 
                   {job.companyId.website ? (
@@ -229,38 +229,6 @@ const JobDetailAdmin = () => {
           ) : (
             <div className="text-slate-400 italic py-4 text-center">Tin tuyển dụng này không liên kết với thông tin công ty hệ thống.</div>
           )}
-        </SectionCard>
-      )}
-
-      {/* TAB 5: LỊCH SỬ KIỂM DUYỆT TIN */}
-      {active === 'Lịch sử duyệt' && (
-        <SectionCard title="Lịch sử phê duyệt hệ thống">
-          <SimpleTable headers={['Admin thực hiện', 'Email liên hệ', 'Trạng thái sau duyệt']}>
-            {job.reviewedBy ? (
-              <tr className="border-t border-slate-100">
-                <td className="px-4 py-3 font-semibold text-slate-900">{job.reviewedBy.fullName}</td>
-                <td className="px-4 py-3 text-slate-600">{job.reviewedBy.email}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge value={job.status} map={statusMap} />
-                </td>
-              </tr>
-            ) : (
-              <tr>
-                <td colSpan="3" className="text-center py-6 text-slate-400 italic">
-                  Tin này đang ở trạng thái sơ khai (Chưa từng có dữ liệu xử lý log của Admin trước đó).
-                </td>
-              </tr>
-            )}
-          </SimpleTable>
-        </SectionCard>
-      )}
-
-      {/* CÁC TAB KHÁC CHỜ GHÉP API THÊM */}
-      {active !== 'Nội dung tin' && active !== 'Công ty' && active !== 'Lịch sử duyệt' && (
-        <SectionCard title={active}>
-          <div className="text-slate-500 italic py-4">
-            Dữ liệu của mục <b>{active}</b> cần được populate hoặc gọi từ API truy vấn riêng biệt (Ví dụ: dữ liệu Applicants từ `Application` model).
-          </div>
         </SectionCard>
       )}
     </div>

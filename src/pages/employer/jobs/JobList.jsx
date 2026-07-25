@@ -4,6 +4,7 @@ import { Eye, Send, Trash2, Plus, X, RefreshCw, AlertTriangle } from 'lucide-rea
 import jobService from '../../../services/jobService';
 import companyLocationService from '../../../services/companyLocationService';
 import JobDetailModal from './JobDetailModal';
+import employerCompanyService from '../../../services/employerCompanyService';
 import { useNotification } from '../../../contexts/NotificationContext';
 
 // Ánh xạ màu sắc và text hiển thị tiếng Việt tương ứng cho từng trạng thái
@@ -56,6 +57,7 @@ const JobList = () => {
   const [loading, setLoading] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState(null);
 
   // State lưu bộ lọc tìm kiếm
   const [filters, setFilters] = useState({
@@ -77,6 +79,16 @@ const JobList = () => {
     }, 400);
     return () => clearTimeout(handler);
   }, [searchTerm]);
+
+  useEffect(() => {
+    employerCompanyService.getMyCompanyProfile()
+      .then(res => {
+        if (res?.data) {
+          setVerificationStatus(res.data.verificationStatus);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const formatSalary = (salaryField) => {
     if (!salaryField) return 'Thỏa thuận';
@@ -367,7 +379,13 @@ const JobList = () => {
           <p className="text-slate-600 mt-1">Quản lý toàn bộ Job của công ty theo trạng thái và hiệu quả tuyển dụng.</p>
         </div>
         <button
-          onClick={() => navigate('/employer/jobs/create')}
+          onClick={() => {
+            if (verificationStatus !== 'VERIFIED') {
+              error('Tài khoản công ty chưa được xác thực. Vui lòng xác thực công ty trước khi tạo tin tuyển dụng.');
+              return;
+            }
+            navigate('/employer/jobs/create');
+          }}
           className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all"
         >
           <Plus className="w-5 h-5" />

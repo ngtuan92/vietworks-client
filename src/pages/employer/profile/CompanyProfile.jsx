@@ -51,6 +51,7 @@ const [industries, setIndustries] = useState([]);
 
 const [savingCompany, setSavingCompany] = useState(false);
 const [submittingVerification, setSubmittingVerification] = useState(false);
+const [fieldErrors, setFieldErrors] = useState({});
 const [logoPreview, setLogoPreview] = useState('');
 const [coverPreview, setCoverPreview] = useState('');
 
@@ -267,8 +268,12 @@ const handleLegalFileChange = (event) => {
     }));
     setLegalPreview((res.data.businessLicenseFile || businessLicenseFile)?.fileUrl || '');
 
-    setBanner({ type: 'success', message: 'Đã cập nhật hồ sơ công ty.' });
-    setTimeout(() => setBanner(null), 2500);
+    if (res.data.verificationStatus) {
+      setVerificationStatus(res.data.verificationStatus);
+    }
+
+    setBanner({ type: 'success', message: res.message || 'Đã cập nhật hồ sơ công ty.' });
+    setTimeout(() => setBanner(null), 3500);
   } catch (error) {
     setBanner({
       type: 'error',
@@ -280,28 +285,60 @@ const handleLegalFileChange = (event) => {
 };
 
   const handleSubmitForApproval = async () => {
-  try {
-    setSubmittingVerification(true);
+    const errors = {};
+    if (!general.taxCode?.trim()) errors.taxCode = 'Vui lòng nhập mã số thuế.';
+    if (!general.companyName?.trim()) errors.companyName = 'Vui lòng nhập tên công ty.';
+    if (!general.industryIds || general.industryIds.length === 0) {
+      errors.industryIds = 'Vui lòng chọn ít nhất 1 lĩnh vực hoạt động.';
+    }
+    if (!legal.businessLicenseFile?.fileUrl && !legal.file && !legalPreview) {
+      errors.businessLicenseFile = 'Giấy phép kinh doanh là bắt buộc trước khi gửi xác thực.';
+    }
 
-    const res = await employerCompanyService.submitMyCompanyForVerification();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setBanner({
+        type: 'error',
+        message: 'Vui lòng bổ sung đầy đủ thông tin bắt buộc trước khi gửi xác thực.'
+      });
+      return;
+    }
 
-    setVerificationStatus(res.data?.verificationStatus || 'PENDING');
+    try {
+      setSubmittingVerification(true);
+      setFieldErrors({});
 
-    setBanner({
-      type: 'success',
-      message: res.message || 'Đã gửi hồ sơ để Admin kiểm duyệt.'
-    });
+      const res = await employerCompanyService.submitMyCompanyForVerification();
 
-    setTimeout(() => setBanner(null), 2500);
-  } catch (error) {
-    setBanner({
-      type: 'error',
-      message: error.response?.data?.message || 'Gửi duyệt hồ sơ công ty thất bại.'
-    });
-  } finally {
-    setSubmittingVerification(false);
-  }
-};
+      setVerificationStatus(res.data?.verificationStatus || 'PENDING');
+
+      setBanner({
+        type: 'success',
+        message: res.message || 'Đã gửi hồ sơ để Admin kiểm duyệt.'
+      });
+
+      setTimeout(() => setBanner(null), 2500);
+    } catch (error) {
+      const respData = error.response?.data;
+      if (respData?.missingFields) {
+        const errMap = {};
+        respData.missingFields.forEach(f => {
+          if (f.includes('Mã số thuế')) errMap.taxCode = 'Vui lòng nhập mã số thuế.';
+          if (f.includes('Tên công ty')) errMap.companyName = 'Vui lòng nhập tên công ty.';
+          if (f.includes('Ngành nghề')) errMap.industryIds = 'Vui lòng chọn ít nhất 1 lĩnh vực hoạt động.';
+
+          if (f.includes('Giấy phép')) errMap.businessLicenseFile = 'Giấy phép kinh doanh là bắt buộc trước khi gửi xác thực.';
+        });
+        setFieldErrors(errMap);
+      }
+      setBanner({
+        type: 'error',
+        message: respData?.message || 'Gửi duyệt hồ sơ công ty thất bại.'
+      });
+    } finally {
+      setSubmittingVerification(false);
+    }
+  };
 
   const openCreateLocation = () => setLocationModal({ open: true, mode: 'create', data: null });
   const openEditLocation = (loc) => setLocationModal({ open: true, mode: 'edit', data: loc });
@@ -423,8 +460,8 @@ useEffect(() => {
           <h2 className="text-lg font-bold text-slate-900">Thông tin chung</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Field label="Mã số thuế" id="taxCode" value={general.taxCode} onChange={handleGeneralChange} required placeholder="VD: 0312345678" />
-            <Field label="Tên công ty" id="companyName" value={general.companyName} onChange={handleGeneralChange} required placeholder="VD: Công ty TNHH ABC" />
+            <Field label="Mã số thuế" id="taxCode" value={general.taxCode} onChange={handleGeneralChange} required placeholder="VD: 0312345678" error={fieldErrors.taxCode} />
+            <Field label="Tên công ty" id="companyName" value={general.companyName} onChange={handleGeneralChange} required placeholder="VD: Công ty TNHH ABC" error={fieldErrors.companyName} />
             <Field label="Website" id="website" value={general.website} onChange={handleGeneralChange} placeholder="https://company.com" type="url" />
             <MultiSelect
   label="Lĩnh vực hoạt động"
@@ -436,6 +473,7 @@ useEffect(() => {
     value: item._id,
     label: item.name
   }))}
+  error={fieldErrors.industryIds}
 />
             <DatalistSelect
   label="Quy mô công ty"
@@ -616,6 +654,7 @@ useEffect(() => {
               accept=".pdf,application/pdf,image/*"
               onChange={handleLegalFileChange}
               hint="PDF hoặc ảnh"
+              error={fieldErrors.businessLicenseFile}
             />
 {legal.file ? (
   <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -695,7 +734,7 @@ useEffect(() => {
   );
 };
 
-const Field = ({ label, id, value, onChange, placeholder, required = false, type = 'text' }) => (
+const Field = ({ label, id, value, onChange, placeholder, required = false, type = 'text', error = '' }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor={id}>
       {label} {required ? <span className="text-red-600">*</span> : null}
@@ -706,13 +745,16 @@ const Field = ({ label, id, value, onChange, placeholder, required = false, type
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
+      className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors ${
+        error ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 focus:border-primary'
+      }`}
       required={required}
     />
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
   </div>
 );
 
-const Select = ({ label, id, value, onChange, options, required = false }) => (
+const Select = ({ label, id, value, onChange, options, required = false, error = '' }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor={id}>
       {label} {required ? <span className="text-red-600">*</span> : null}
@@ -721,7 +763,9 @@ const Select = ({ label, id, value, onChange, options, required = false }) => (
       id={id}
       value={value}
       onChange={onChange}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
+      className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors bg-white ${
+        error ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 focus:border-primary'
+      }`}
       required={required}
     >
       <option value="">Chọn...</option>
@@ -731,10 +775,11 @@ const Select = ({ label, id, value, onChange, options, required = false }) => (
         </option>
       ))}
     </select>
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
   </div>
 );
 
-const DatalistSelect = ({ label, id, value, onChange, options, required = false, placeholder = '' }) => (
+const DatalistSelect = ({ label, id, value, onChange, options, required = false, placeholder = '', error = '' }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor={id}>
       {label} {required ? <span className="text-red-600">*</span> : null}
@@ -746,7 +791,9 @@ const DatalistSelect = ({ label, id, value, onChange, options, required = false,
       value={value}
       onChange={onChange}
       placeholder={placeholder || 'Chọn hoặc nhập...'}
-      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary bg-white"
+      className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors bg-white ${
+        error ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20' : 'border-slate-200 focus:border-primary'
+      }`}
       required={required}
     />
     <datalist id={`${id}-list`}>
@@ -754,10 +801,11 @@ const DatalistSelect = ({ label, id, value, onChange, options, required = false,
         <option key={opt.value || opt} value={opt.value || opt} />
       ))}
     </datalist>
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
   </div>
 );
 
-const MultiSelect = ({ label, value = [], onChange, options, required = false }) => {
+const MultiSelect = ({ label, value = [], onChange, options, required = false, error = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleSelection = (optValue) => {
     if (value.includes(optValue)) {
@@ -773,13 +821,16 @@ const MultiSelect = ({ label, value = [], onChange, options, required = false })
       </label>
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 bg-white flex justify-between items-center cursor-pointer min-h-[50px]"
+        className={`w-full rounded-xl border px-4 py-3 bg-white flex justify-between items-center cursor-pointer min-h-[50px] ${
+          error ? 'border-red-500 ring-1 ring-red-500/20' : 'border-slate-200'
+        }`}
       >
         <span className="text-slate-700">
           {value.length > 0 ? `Đã chọn ${value.length}` : 'Chọn...'}
         </span>
         <span className="text-slate-500">▼</span>
       </div>
+      {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
@@ -802,12 +853,14 @@ const MultiSelect = ({ label, value = [], onChange, options, required = false })
   );
 };
 
-const FileField = ({ label, id, onChange, accept, hint }) => (
+const FileField = ({ label, id, onChange, accept, hint, error = '' }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-2">
       {label}
     </label>
-    <div className="relative rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all p-8 flex flex-col items-center justify-center gap-3 text-center cursor-pointer group">
+    <div className={`relative rounded-2xl border-2 border-dashed bg-slate-50 hover:bg-slate-100 transition-all p-8 flex flex-col items-center justify-center gap-3 text-center cursor-pointer group ${
+      error ? 'border-red-500 bg-red-50/20' : 'border-slate-300 hover:border-primary'
+    }`}>
       <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
         <span className="material-symbols-outlined text-2xl">cloud_upload</span>
       </div>
@@ -817,6 +870,7 @@ const FileField = ({ label, id, onChange, accept, hint }) => (
       </div>
       <input id={id} type="file" accept={accept} onChange={onChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
     </div>
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
   </div>
 );
 
