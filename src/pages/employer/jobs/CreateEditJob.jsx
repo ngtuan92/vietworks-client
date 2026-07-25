@@ -151,9 +151,11 @@ const CreateEditJob = () => {
   // --- Xử lý Load danh mục phụ thuộc (Dependent Dropdowns) ---
   useEffect(() => {
     if (!form.careerGroupId) {
-      setCareers([]);
-      setJobLevels([]);
-      setSkills([]);
+      Promise.resolve().then(() => {
+        setCareers([]);
+        setJobLevels([]);
+        setSkills([]);
+      });
       return;
     }
     
@@ -187,7 +189,9 @@ const CreateEditJob = () => {
 
   useEffect(() => {
     if (!form.careerId) {
-      setPositions([]);
+      Promise.resolve().then(() => {
+        setPositions([]);
+      });
       return;
     }
     const fetchPositions = async () => {
@@ -883,7 +887,7 @@ const StepLocationDeadline = ({ form, setField, companyLocations }) => {
 
 // ==================== REUSABLE ATOM COMPONENT UI ELEMENTS ====================
 
-const Field = ({ label, value, onChange, placeholder = '', required = false, type = 'text' }) => (
+const Field = ({ label, value, onChange, placeholder = '', required = false, type = 'text', error = '' }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
       {label} {required && <span className="text-red-500">*</span>}
@@ -893,12 +897,15 @@ const Field = ({ label, value, onChange, placeholder = '', required = false, typ
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none font-medium text-slate-800 transition-all text-sm focus:border-primary focus:ring-1 focus:ring-[#003f87]"
+      className={`w-full rounded-xl border px-4 py-2.5 outline-none font-medium text-slate-800 transition-all text-sm focus:ring-1 ${
+        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-primary focus:ring-[#003f87]'
+      }`}
     />
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
   </div>
 );
 
-const Select = ({ label, value, onChange, options, required = false, disabled = false }) => (
+const Select = ({ label, value, onChange, options, required = false, disabled = false, error = '' }) => (
   <div>
     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
       {label} {required && <span className="text-red-500">*</span>}
@@ -907,13 +914,16 @@ const Select = ({ label, value, onChange, options, required = false, disabled = 
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-primary bg-white disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
+      className={`w-full rounded-xl border px-4 py-2.5 text-sm font-medium text-slate-800 outline-none transition-all bg-white disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer ${
+        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-primary'
+      }`}
     >
       <option value="">-- Vui lòng click chọn --</option>
       {options.map((opt) => (
         <option key={opt.value} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
       ))}
     </select>
+    {error && <p className="text-red-500 text-xs mt-1.5 ml-1 font-medium">{error}</p>}
   </div>
 );
 

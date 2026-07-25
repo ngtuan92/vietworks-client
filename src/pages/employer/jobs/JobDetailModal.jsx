@@ -1,10 +1,84 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import jobService from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
 import { useNotification } from '../../../contexts/NotificationContext';
+
+const RichTextEditor = ({ value, onChange, placeholder, disabled }) => {
+  const editorRef = useRef(null);
+  const [fontSize, setFontSize] = useState('3');
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
+
+  const apply = (command, commandValue = null) => {
+    if (disabled) return;
+    editorRef.current?.focus();
+    try {
+      document.execCommand(command, false, commandValue);
+    } catch {
+      // no-op
+    }
+    onChange(editorRef.current?.innerHTML || '');
+  };
+
+  const handleInput = () => {
+    if (disabled) return;
+    onChange(editorRef.current?.innerHTML || '');
+  };
+
+  return (
+    <div className={`rounded-xl border border-slate-200 overflow-hidden ${disabled ? 'bg-slate-50 opacity-90' : 'bg-white'}`}>
+      {!disabled && (
+        <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border-b border-slate-200">
+          <button type="button" onClick={() => apply('bold')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">B</button>
+          <button type="button" onClick={() => apply('italic')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold italic">I</button>
+          <button type="button" onClick={() => apply('underline')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold underline">U</button>
+          <span className="w-px h-6 bg-slate-200 mx-1" />
+          <button type="button" onClick={() => apply('insertUnorderedList')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">• List</button>
+          <button type="button" onClick={() => apply('insertOrderedList')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">1. List</button>
+          <span className="w-px h-6 bg-slate-200 mx-1" />
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer" title="Màu chữ">
+            <input type="color" className="w-6 h-6 p-0 border-0 rounded cursor-pointer" onChange={(e) => apply('foreColor', e.target.value)} />
+          </label>
+          <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer" title="Màu nền chữ">
+            <input type="color" className="w-6 h-6 p-0 border-0 rounded cursor-pointer" onChange={(e) => apply('hiliteColor', e.target.value)} />
+          </label>
+          <span className="w-px h-6 bg-slate-200 mx-1" />
+          <button
+            type="button"
+            onClick={() => {
+              if (disabled) return;
+              const url = window.prompt('Nhập link (URL):');
+              if (!url) return;
+              apply('createLink', url);
+            }}
+            className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold"
+          >
+            Link
+          </button>
+          <button type="button" onClick={() => apply('removeFormat')} className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold">
+            Xóa format
+          </button>
+        </div>
+      )}
+      <div
+        ref={editorRef}
+        contentEditable={!disabled}
+        onInput={handleInput}
+        className="min-h-[100px] px-4 py-3 outline-none prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:ml-4 text-sm"
+        data-placeholder={placeholder}
+        style={{ whiteSpace: 'pre-wrap' }}
+        suppressContentEditableWarning
+      />
+    </div>
+  );
+};
 const formatSalaryText = (salaryField) => {
   if (!salaryField) return 'Thỏa thuận';
   if (typeof salaryField === 'object') {
@@ -745,33 +819,33 @@ key={`${loc.provinceCode || ''}_${loc.detailAddress || ''}_${index}`}           
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Mô tả công việc</label>
-            <textarea
-              rows="3" disabled={!isEditable}
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Mô tả công việc</label>
+            <RichTextEditor
+              disabled={!isEditable}
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
-            ></textarea>
+              onChange={(v) => handleInputChange('description', v)}
+              placeholder="Nhập mô tả công việc..."
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Yêu cầu ứng viên</label>
-            <textarea
-              rows="3" disabled={!isEditable}
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Yêu cầu ứng viên</label>
+            <RichTextEditor
+              disabled={!isEditable}
               value={formData.requirements}
-              onChange={(e) => handleInputChange('requirements', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
-            ></textarea>
+              onChange={(v) => handleInputChange('requirements', v)}
+              placeholder="Nhập yêu cầu ứng viên..."
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Quyền lợi được hưởng</label>
-            <textarea
-              rows="3" disabled={!isEditable}
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Quyền lợi được hưởng</label>
+            <RichTextEditor
+              disabled={!isEditable}
               value={formData.benefits}
-              onChange={(e) => handleInputChange('benefits', e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary disabled:bg-slate-50 text-sm"
-            ></textarea>
+              onChange={(v) => handleInputChange('benefits', v)}
+              placeholder="Nhập quyền lợi được hưởng..."
+            />
           </div>
 
           <div>

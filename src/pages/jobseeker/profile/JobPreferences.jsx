@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Check, Briefcase, DollarSign, MapPin, Award, Loader2, X, Sliders, Heart, Target, ChevronRight
@@ -18,10 +18,10 @@ import { EXPERIENCE_LEVELS } from '../../../constants/masterDataConstants';
 import { useNotification } from '../../../contexts/NotificationContext';
 
 const STEPS = [
-  { num: 1, key: 'position', label: 'Vị trí', icon: Briefcase },
-  { num: 2, key: 'experience', label: 'Kinh nghiệm', icon: Award },
-  { num: 3, key: 'salary', label: 'Mức lương', icon: DollarSign },
-  { num: 4, key: 'location', label: 'Địa điểm', icon: MapPin },
+  { num: 1, key: 'position', label: 'Vá»‹ trÃ­', icon: Briefcase },
+  { num: 2, key: 'experience', label: 'Kinh nghiá»‡m', icon: Award },
+  { num: 3, key: 'salary', label: 'Má»©c lÆ°Æ¡ng', icon: DollarSign },
+  { num: 4, key: 'location', label: 'Äá»‹a Ä‘iá»ƒm', icon: MapPin },
 ];
 
 const JobPreferences = () => {
@@ -43,6 +43,7 @@ const JobPreferences = () => {
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
   const [positions, setPositions] = useState([]);
+  const [globalJobLevels, setGlobalJobLevels] = useState([]);
   const [jobLevels, setJobLevels] = useState([]);
 
   const [loadingMaster, setLoadingMaster] = useState(true);
@@ -59,6 +60,7 @@ const JobPreferences = () => {
           getJobPreferences()
         ]);
         setCareerGroups(cgRes.data || []);
+        setGlobalJobLevels(jlRes.data || []);
         setJobLevels(jlRes.data || []);
 
         const data = prefsRes.data;
@@ -76,7 +78,7 @@ const JobPreferences = () => {
           });
         }
       } catch {
-        showError('Không thể tải dữ liệu. Vui lòng thử lại.', 'Lỗi tải dữ liệu');
+        showError('KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u. Vui lÃ²ng thá»­ láº¡i.', 'Lá»—i táº£i dá»¯ liá»‡u');
       } finally {
         setLoadingMaster(false);
         setPreferencesLoaded(true);
@@ -103,12 +105,41 @@ const JobPreferences = () => {
   }, [formData.careerId, preferencesLoaded]);
 
   useEffect(() => {
+    if (!preferencesLoaded) return;
+
     if (!formData.careerGroupId) {
-      setFormData((prev) => (prev.careerId || prev.careerPositionId
-        ? { ...prev, careerId: '', careerPositionId: '' }
+      setJobLevels(globalJobLevels);
+      return;
+    }
+
+    const selectedGroup = careerGroups.find((g) => g._id === formData.careerGroupId);
+    if (selectedGroup && selectedGroup.slug !== 'cong-nghe-thong-tin') {
+      const itLevels = [
+        'Thực tập sinh (IT)', 'Fresher', 'Junior', 'Senior',
+        'Technical Leader', 'IT Manager / Project Manager',
+        'Giám đốc công nghệ (CTO) / Director'
+      ];
+      setJobLevels(globalJobLevels.filter((lvl) => !itLevels.includes(lvl.name)));
+    } else {
+      setJobLevels(globalJobLevels);
+    }
+  }, [formData.careerGroupId, preferencesLoaded, careerGroups, globalJobLevels]);
+
+  useEffect(() => {
+    if (!formData.careerGroupId) {
+      setFormData((prev) => (prev.careerId || prev.careerPositionId || prev.jobLevelId
+        ? { ...prev, careerId: '', careerPositionId: '', jobLevelId: '' }
         : prev));
     }
   }, [formData.careerGroupId]);
+
+  useEffect(() => {
+    if (!preferencesLoaded || !formData.jobLevelId || !jobLevels.length) return;
+    const isValidJobLevel = jobLevels.some((level) => level._id === formData.jobLevelId);
+    if (!isValidJobLevel) {
+      setFormData((prev) => ({ ...prev, jobLevelId: '' }));
+    }
+  }, [formData.jobLevelId, jobLevels, preferencesLoaded]);
 
   useEffect(() => {
     if (!formData.careerId) {
@@ -169,14 +200,14 @@ const JobPreferences = () => {
         workLocations: formData.workLocations.length > 0 ? formData.workLocations : undefined
       });
       success(
-        'Hệ thống đã ghi nhận nhu cầu việc làm của bạn. Bạn sẽ được chuyển đến trang gợi ý việc làm phù hợp.',
-        'Lưu nhu cầu thành công!',
+        'Há»‡ thá»‘ng Ä‘Ã£ ghi nháº­n nhu cáº§u viá»‡c lÃ m cá»§a báº¡n. Báº¡n sáº½ Ä‘Æ°á»£c chuyá»ƒn Ä‘áº¿n trang gá»£i Ã½ viá»‡c lÃ m phÃ¹ há»£p.',
+        'LÆ°u nhu cáº§u thÃ nh cÃ´ng!',
         () => navigate('/matched-jobs')
       );
     } catch (err) {
       showError(
-        err?.response?.data?.message || 'Không thể lưu nhu cầu. Vui lòng thử lại.',
-        'Lưu thất bại'
+        err?.response?.data?.message || 'KhÃ´ng thá»ƒ lÆ°u nhu cáº§u. Vui lÃ²ng thá»­ láº¡i.',
+        'LÆ°u tháº¥t báº¡i'
       );
     } finally {
       setSaving(false);
@@ -208,10 +239,10 @@ const JobPreferences = () => {
                 <Target className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-white/75">Thiết lập nhu cầu</p>
-                <h1 className="text-2xl md:text-3xl font-black">Mô tả công việc mong muốn</h1>
+                <p className="text-sm text-white/75">Thiáº¿t láº­p nhu cáº§u</p>
+                <h1 className="text-2xl md:text-3xl font-black">MÃ´ táº£ cÃ´ng viá»‡c mong muá»‘n</h1>
                 <p className="text-white/80 mt-1 text-sm">
-                  Hệ thống sẽ gợi ý cơ hội tốt nhất dựa trên các tiêu chí bạn thiết lập.
+                  Há»‡ thá»‘ng sáº½ gá»£i Ã½ cÆ¡ há»™i tá»‘t nháº¥t dá»±a trÃªn cÃ¡c tiÃªu chÃ­ báº¡n thiáº¿t láº­p.
                 </p>
               </div>
             </div>
@@ -221,7 +252,7 @@ const JobPreferences = () => {
                 className="px-4 py-2 rounded-xl bg-white text-[#003f87] font-bold text-sm hover:bg-slate-100 transition flex items-center gap-2 cursor-pointer"
               >
                 <Heart className="w-4 h-4" />
-                Xem việc phù hợp
+                Xem viá»‡c phÃ¹ há»£p
               </button>
             </div>
           </div>
@@ -233,7 +264,7 @@ const JobPreferences = () => {
           {/* Sidebar stepper */}
           <aside className="rounded-2xl bg-white border border-slate-200 p-3 h-fit">
             <div className="px-3 py-2 mb-2">
-              <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Các bước</p>
+              <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">CÃ¡c bÆ°á»›c</p>
             </div>
             <nav className="space-y-1">
               {STEPS.map((s) => {
@@ -267,36 +298,36 @@ const JobPreferences = () => {
             {/* Current selection summary */}
             {(selectedCareerGroup || selectedCareer) && (
               <div className="mt-4 pt-4 border-t border-slate-100 px-3 pb-1">
-                <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">Đã chọn</p>
+                <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">ÄÃ£ chá»n</p>
                 <div className="space-y-1.5 text-xs">
                   {selectedCareerGroup && (
                     <div className="flex items-start gap-1.5">
-                      <span className="text-slate-400 shrink-0">Nhóm:</span>
+                      <span className="text-slate-400 shrink-0">NhÃ³m:</span>
                       <span className="font-semibold text-slate-700 line-clamp-2">{selectedCareerGroup.name}</span>
                     </div>
                   )}
                   {selectedCareer && (
                     <div className="flex items-start gap-1.5">
-                      <span className="text-slate-400 shrink-0">Nghề:</span>
+                      <span className="text-slate-400 shrink-0">Nghá»:</span>
                       <span className="font-semibold text-slate-700 line-clamp-2">{selectedCareer.name}</span>
                     </div>
                   )}
                   {selectedPosition && (
                     <div className="flex items-start gap-1.5">
-                      <span className="text-slate-400 shrink-0">Vị trí:</span>
+                      <span className="text-slate-400 shrink-0">Vá»‹ trÃ­:</span>
                       <span className="font-semibold text-slate-700 line-clamp-2">{selectedPosition.name}</span>
                     </div>
                   )}
                   {selectedJobLevel && (
                     <div className="flex items-start gap-1.5">
-                      <span className="text-slate-400 shrink-0">Cấp bậc:</span>
+                      <span className="text-slate-400 shrink-0">Cáº¥p báº­c:</span>
                       <span className="font-semibold text-slate-700 line-clamp-2">{selectedJobLevel.name}</span>
                     </div>
                   )}
                   {formData.workLocations.length > 0 && (
                     <div className="flex items-start gap-1.5">
-                      <span className="text-slate-400 shrink-0">Địa điểm:</span>
-                      <span className="font-semibold text-slate-700">{formData.workLocations.length} nơi</span>
+                      <span className="text-slate-400 shrink-0">Äá»‹a Ä‘iá»ƒm:</span>
+                      <span className="font-semibold text-slate-700">{formData.workLocations.length} nÆ¡i</span>
                     </div>
                   )}
                 </div>
@@ -304,7 +335,7 @@ const JobPreferences = () => {
             )}
             
             <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 text-center">
-              Vui lòng hoàn thành lần lượt các bước.
+              Vui lÃ²ng hoÃ n thÃ nh láº§n lÆ°á»£t cÃ¡c bÆ°á»›c.
             </div>
           </aside>
 
@@ -318,7 +349,7 @@ const JobPreferences = () => {
                   {step}
                 </span>
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Bước {step} / {STEPS.length}
+                  BÆ°á»›c {step} / {STEPS.length}
                 </span>
               </div>
               <SectionTitle
@@ -333,39 +364,39 @@ const JobPreferences = () => {
                 <div className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <SelectField
-                      label="Nhóm ngành nghề"
+                      label="NhÃ³m ngÃ nh nghá»"
                       required
                       value={formData.careerGroupId}
-                      onChange={(v) => setFormData((p) => ({ ...p, careerGroupId: v, careerId: '', careerPositionId: '' }))}
-                      placeholder="-- Chọn nhóm ngành --"
+                      onChange={(v) => setFormData((p) => ({ ...p, careerGroupId: v, careerId: '', careerPositionId: '', jobLevelId: '' }))}
+                      placeholder="-- Chá»n nhÃ³m ngÃ nh --"
                       options={careerGroups}
                     />
                     <SelectField
-                      label="Ngành nghề cụ thể"
+                      label="NgÃ nh nghá» cá»¥ thá»ƒ"
                       required
                       value={formData.careerId}
                       onChange={(v) => setFormData((p) => ({ ...p, careerId: v, careerPositionId: '' }))}
-                      placeholder="-- Chọn ngành nghề --"
+                      placeholder="-- Chá»n ngÃ nh nghá» --"
                       options={careers}
                       disabled={!formData.careerGroupId}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <SelectField
-                      label="Vị trí chuyên môn"
+                      label="Vá»‹ trÃ­ chuyÃªn mÃ´n"
                       required
                       value={formData.careerPositionId}
                       onChange={(v) => setFormData((p) => ({ ...p, careerPositionId: v }))}
-                      placeholder="-- Chọn vị trí --"
+                      placeholder="-- Chá»n vá»‹ trÃ­ --"
                       options={positions}
                       disabled={!formData.careerId}
                     />
                     <SelectField
-                      label="Cấp bậc"
+                      label="Cáº¥p báº­c"
                       required
                       value={formData.jobLevelId}
                       onChange={(v) => setFormData((p) => ({ ...p, jobLevelId: v }))}
-                      placeholder="-- Chọn cấp bậc --"
+                      placeholder="-- Chá»n cáº¥p báº­c --"
                       options={jobLevels}
                     />
                   </div>
@@ -375,17 +406,17 @@ const JobPreferences = () => {
               {step === 2 && (
                 <div className="space-y-5">
                   <DatalistSelectField
-                    label="Mức kinh nghiệm mong muốn"
+                    label="Má»©c kinh nghiá»‡m mong muá»‘n"
                     value={formData.experience}
                     onChange={(v) => setFormData((p) => ({ ...p, experience: v }))}
-                    placeholder="-- Chọn mức kinh nghiệm --"
+                    placeholder="-- Chá»n má»©c kinh nghiá»‡m --"
                     options={EXPERIENCE_LEVELS}
-                    hint="Hệ thống sẽ ưu tiên hiển thị các job có yêu cầu kinh nghiệm phù hợp."
+                    hint="Há»‡ thá»‘ng sáº½ Æ°u tiÃªn hiá»ƒn thá»‹ cÃ¡c job cÃ³ yÃªu cáº§u kinh nghiá»‡m phÃ¹ há»£p."
                   />
 
                   <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-xs text-blue-700">
-                    <p className="font-bold mb-1">Mẹo tìm việc hiệu quả</p>
-                    <p>Chọn đúng mức kinh nghiệm giúp hệ thống gợi ý các vị trí phù hợp nhất, tăng cơ hội được nhà tuyển dụng chú ý.</p>
+                    <p className="font-bold mb-1">Máº¹o tÃ¬m viá»‡c hiá»‡u quáº£</p>
+                    <p>Chá»n Ä‘Ãºng má»©c kinh nghiá»‡m giÃºp há»‡ thá»‘ng gá»£i Ã½ cÃ¡c vá»‹ trÃ­ phÃ¹ há»£p nháº¥t, tÄƒng cÆ¡ há»™i Ä‘Æ°á»£c nhÃ  tuyá»ƒn dá»¥ng chÃº Ã½.</p>
                   </div>
                 </div>
               )}
@@ -393,10 +424,10 @@ const JobPreferences = () => {
               {step === 3 && (
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <span className="block text-xs font-bold text-slate-700">Khoảng lương mong muốn (Triệu VNĐ)</span>
+                    <span className="block text-xs font-bold text-slate-700">Khoáº£ng lÆ°Æ¡ng mong muá»‘n (Triá»‡u VNÄ)</span>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">Từ</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">Tá»«</span>
                         <input
                           type="number"
                           value={formData.salaryMin}
@@ -407,34 +438,34 @@ const JobPreferences = () => {
                         />
                       </div>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">Đến</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">Äáº¿n</span>
                         <input
                           type="number"
                           value={formData.salaryMax}
                           onChange={(e) => setFormData((p) => ({ ...p, salaryMax: e.target.value }))}
-                          placeholder="Không giới hạn"
+                          placeholder="KhÃ´ng giá»›i háº¡n"
                           min="0"
                           className="w-full rounded-xl border border-slate-200 px-4 py-3 pl-12 text-sm font-semibold outline-none focus:border-primary transition-all"
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">Bỏ trống nếu bạn chưa có yêu cầu cụ thể về mức lương.</p>
+                    <p className="text-xs text-slate-500 mt-2">Bá» trá»‘ng náº¿u báº¡n chÆ°a cÃ³ yÃªu cáº§u cá»¥ thá»ƒ vá» má»©c lÆ°Æ¡ng.</p>
                   </div>
 
                   <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-xs text-emerald-700">
-                    <p className="font-bold mb-1">Về khoảng lương</p>
-                    <p>Hệ thống sẽ ưu tiên các job có mức lương nằm trong khoảng bạn mong muốn. Bạn có thể cập nhật lại bất kỳ lúc nào.</p>
+                    <p className="font-bold mb-1">Vá» khoáº£ng lÆ°Æ¡ng</p>
+                    <p>Há»‡ thá»‘ng sáº½ Æ°u tiÃªn cÃ¡c job cÃ³ má»©c lÆ°Æ¡ng náº±m trong khoáº£ng báº¡n mong muá»‘n. Báº¡n cÃ³ thá»ƒ cáº­p nháº­t láº¡i báº¥t ká»³ lÃºc nÃ o.</p>
                   </div>
                 </div>
               )}
 
               {step === 4 && (
                 <div className="space-y-5">
-                  <p className="text-xs text-slate-500">Chọn nhiều địa điểm nếu bạn sẵn sàng làm việc ở nhiều nơi.</p>
+                  <p className="text-xs text-slate-500">Chá»n nhiá»u Ä‘á»‹a Ä‘iá»ƒm náº¿u báº¡n sáºµn sÃ ng lÃ m viá»‡c á»Ÿ nhiá»u nÆ¡i.</p>
 
                   {formData.workLocations.length > 0 && (
                     <div className="space-y-2">
-                      <span className="block text-xs font-bold text-slate-700">Đã chọn ({formData.workLocations.length})</span>
+                      <span className="block text-xs font-bold text-slate-700">ÄÃ£ chá»n ({formData.workLocations.length})</span>
                       <div className="space-y-2">
                         {formData.workLocations.map((loc, idx) => (
                           <div
@@ -456,7 +487,7 @@ const JobPreferences = () => {
                               type="button"
                               onClick={() => removeLocation(idx)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition shrink-0 cursor-pointer"
-                              title="Xóa"
+                              title="XÃ³a"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -468,7 +499,7 @@ const JobPreferences = () => {
 
                   <div className="rounded-2xl border border-slate-200 overflow-hidden">
                     <div className="bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-200">
-                      Thêm địa điểm
+                      ThÃªm Ä‘á»‹a Ä‘iá»ƒm
                     </div>
                     <div className="p-2">
                       <HierarchicalLocationPicker onLocationSelect={addLocation} />
@@ -485,7 +516,7 @@ const JobPreferences = () => {
                 disabled={step === 1}
                 className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-primary transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                <ArrowLeft className="w-4 h-4" /> Quay lại
+                <ArrowLeft className="w-4 h-4" /> Quay láº¡i
               </button>
               <button
                 onClick={step === STEPS.length ? handleSave : nextStep}
@@ -493,14 +524,14 @@ const JobPreferences = () => {
                 className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/95 transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-70"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {step === STEPS.length ? (saving ? 'Đang lưu...' : 'Hoàn thành') : 'Tiếp tục'}
+                {step === STEPS.length ? (saving ? 'Äang lÆ°u...' : 'HoÃ n thÃ nh') : 'Tiáº¿p tá»¥c'}
                 {step !== STEPS.length && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
           </div>
         </section>
 
-        <p className="text-center text-slate-400 text-xs">© 2026 VietWorks - Nền tảng kết nối cơ hội sự nghiệp hàng đầu Việt Nam.</p>
+        <p className="text-center text-slate-400 text-xs">Â© 2026 VietWorks - Ná»n táº£ng káº¿t ná»‘i cÆ¡ há»™i sá»± nghiá»‡p hÃ ng Ä‘áº§u Viá»‡t Nam.</p>
       </main>
     </div>
   );
@@ -508,20 +539,20 @@ const JobPreferences = () => {
 
 const stepContent = {
   1: {
-    title: 'Vị trí chuyên môn mong muốn',
-    description: 'Chọn nhóm ngành, ngành cụ thể và vị trí bạn muốn ứng tuyển.',
+    title: 'Vá»‹ trÃ­ chuyÃªn mÃ´n mong muá»‘n',
+    description: 'Chá»n nhÃ³m ngÃ nh, ngÃ nh cá»¥ thá»ƒ vÃ  vá»‹ trÃ­ báº¡n muá»‘n á»©ng tuyá»ƒn.',
   },
   2: {
-    title: 'Mức kinh nghiệm',
-    description: 'Chọn mức kinh nghiệm phù hợp với khả năng hiện tại của bạn.',
+    title: 'Má»©c kinh nghiá»‡m',
+    description: 'Chá»n má»©c kinh nghiá»‡m phÃ¹ há»£p vá»›i kháº£ nÄƒng hiá»‡n táº¡i cá»§a báº¡n.',
   },
   3: {
-    title: 'Khoảng lương mong muốn',
-    description: 'Thiết lập khoảng lương bạn mong muốn để hệ thống ưu tiên gợi ý.',
+    title: 'Khoáº£ng lÆ°Æ¡ng mong muá»‘n',
+    description: 'Thiáº¿t láº­p khoáº£ng lÆ°Æ¡ng báº¡n mong muá»‘n Ä‘á»ƒ há»‡ thá»‘ng Æ°u tiÃªn gá»£i Ã½.',
   },
   4: {
-    title: 'Địa điểm làm việc',
-    description: 'Chọn các tỉnh/thành phố nơi bạn sẵn sàng làm việc.',
+    title: 'Äá»‹a Ä‘iá»ƒm lÃ m viá»‡c',
+    description: 'Chá»n cÃ¡c tá»‰nh/thÃ nh phá»‘ nÆ¡i báº¡n sáºµn sÃ ng lÃ m viá»‡c.',
   },
 };
 
@@ -576,3 +607,4 @@ const DatalistSelectField = ({ label, id = 'datalist', value, onChange, placehol
 );
 
 export default JobPreferences;
+

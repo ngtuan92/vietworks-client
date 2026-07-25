@@ -116,10 +116,9 @@ const Jobs = () => {
   const [salaryMax, setSalaryMax] = useState('');
   const [saturdayPolicy, setSaturdayPolicy] = useState('');
   const [sortBy, setSortBy] = useState('publishedAt');
-  const [sortOrder, setSortOrder] = useState('desc');
 
   const [jobs, setJobs] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -134,24 +133,25 @@ const Jobs = () => {
   const page = Number(getParam(searchParams, 'page', '1')) || 1;
 
   useEffect(() => {
-    if (searchParams.has('keyword') || searchParams.has('q')) {
-      setKeyword(getParam(searchParams, 'keyword') || getParam(searchParams, 'q'));
-    }
-    if (searchParams.has('location')) {
-      setLocation(getParam(searchParams, 'location'));
-    }
-    setCareerGroupId(getParam(searchParams, 'careerGroupId'));
-    setCareerId(getParam(searchParams, 'careerId'));
-    setCareerPositionId(getParam(searchParams, 'careerPositionId'));
-    setExperience(getParam(searchParams, 'experience'));
-    setJobLevelId(getParam(searchParams, 'jobLevelId'));
-    setSalaryRangeCode(getParam(searchParams, 'salaryRangeCode'));
-    setSalaryMin(getParam(searchParams, 'salaryMin'));
-    setSalaryMax(getParam(searchParams, 'salaryMax'));
-    setSaturdayPolicy(getParam(searchParams, 'saturdayPolicy'));
-    setSortBy(getParam(searchParams, 'sortBy', 'publishedAt'));
-    setSortOrder(getParam(searchParams, 'sortOrder', 'desc'));
-  }, [searchParams]);
+    Promise.resolve().then(() => {
+      if (searchParams.has('keyword') || searchParams.has('q')) {
+        setKeyword(getParam(searchParams, 'keyword') || getParam(searchParams, 'q'));
+      }
+      if (searchParams.has('location')) {
+        setLocation(getParam(searchParams, 'location'));
+      }
+      setCareerGroupId(getParam(searchParams, 'careerGroupId'));
+      setCareerId(getParam(searchParams, 'careerId'));
+      setCareerPositionId(getParam(searchParams, 'careerPositionId'));
+      setExperience(getParam(searchParams, 'experience'));
+      setJobLevelId(getParam(searchParams, 'jobLevelId'));
+      setSalaryRangeCode(getParam(searchParams, 'salaryRangeCode'));
+      setSalaryMin(getParam(searchParams, 'salaryMin'));
+      setSalaryMax(getParam(searchParams, 'salaryMax'));
+      setSaturdayPolicy(getParam(searchParams, 'saturdayPolicy'));
+      setSortBy(getParam(searchParams, 'sortBy', 'publishedAt'));
+    });
+  }, [searchParams, setKeyword, setLocation]);
 
   useEffect(() => {
     const fetchMasterData = async () => {
@@ -248,7 +248,7 @@ const Jobs = () => {
       salaryMax: getParam(searchParams, 'salaryMax'),
       saturdayPolicy: getParam(searchParams, 'saturdayPolicy'),
       page,
-      limit: 12,
+      limit: 10,
       sortBy: getParam(searchParams, 'sortBy', 'publishedAt'),
       sortOrder: getParam(searchParams, 'sortOrder', 'desc'),
     }),
@@ -268,7 +268,7 @@ const Jobs = () => {
         const res = await getPublicJobs(cleanParams);
 
         setJobs(res.data || []);
-        setPagination(res.pagination || { page: 1, limit: 12, total: 0, pages: 1 });
+        setPagination(res.pagination || { page: 1, limit: 10, total: 0, pages: 1 });
       } catch (err) {
         console.error('Load public jobs error:', err);
         setJobs([]);

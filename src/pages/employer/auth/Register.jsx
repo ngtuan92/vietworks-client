@@ -14,6 +14,7 @@ const EmployerRegister = () => {
     gender: '',
     phone: '',
     companyName: '',
+    taxCode: '',
     city: '',
     ward: '',
     address: '',
@@ -136,6 +137,10 @@ const EmployerRegister = () => {
       errors.companyName = 'Vui lòng nhập tên công ty.';
     }
 
+    if (!formData.taxCode.trim()) {
+      errors.taxCode = 'Vui lòng nhập mã số thuế.';
+    }
+
     if (!selectedProvinceCode) {
       errors.selectedProvinceCode = 'Vui lòng chọn Tỉnh/Thành phố.';
     }
@@ -159,7 +164,7 @@ const EmployerRegister = () => {
         gender: formData.gender || 'OTHER',
         company: {
           name: formData.companyName.trim(),
-          taxCode: `TEMP${Date.now()}`,
+          taxCode: formData.taxCode.trim(),
           industryIds: [import.meta.env.VITE_DEFAULT_COMPANY_INDUSTRY_ID || '000000000000000000000001'],
           size: import.meta.env.VITE_DEFAULT_COMPANY_SIZE || '1 - 10 nhân viên',
           email: formData.email.trim().toLowerCase(),
@@ -245,8 +250,11 @@ const EmployerRegister = () => {
               <div className="rounded-2xl border border-slate-200 p-6">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">Thông tin công ty</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-1">
                     <Field label="Tên công ty" id="companyName" value={formData.companyName} onChange={handleChange} placeholder="Tên doanh nghiệp" error={fieldErrors.companyName} />
+                  </div>
+                  <div className="sm:col-span-1">
+                    <Field label="Mã số thuế" id="taxCode" value={formData.taxCode} onChange={handleChange} placeholder="Ví dụ: 0312345678" error={fieldErrors.taxCode} />
                   </div>
                   
                   {/* Tỉnh/Thành phố select */}
