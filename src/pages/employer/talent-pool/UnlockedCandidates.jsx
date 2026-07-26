@@ -58,7 +58,8 @@ const CVPreviewModal = ({ candidate, onClose }) => {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl h-[90vh] bg-white border border-slate-200/60 premium-shadow rounded-2xl flex flex-col overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
-          <h3 className="font-bold text-slate-900">Chi tiết CV: {candidate.fullName}</h3>          <div className="flex items-center gap-3">
+          <h3 className="font-bold text-slate-900">Chi tiết CV: {candidate.fullName}</h3>
+          <div className="flex items-center gap-3">
             {previewUrl && (
               candidate?.fileUrl ? (
                 <a 
@@ -174,7 +175,6 @@ const UnlockedCandidates = () => {
                 <th className="text-left px-4 py-4 whitespace-nowrap">Ứng viên</th>
                 <th className="text-center px-4 py-4 whitespace-nowrap">Mời phỏng vấn</th>
                 <th className="text-left px-4 py-4 whitespace-nowrap">Ngày mở khóa</th>
-                <th className="text-left px-4 py-4 whitespace-nowrap">Gói dịch vụ</th>
                 <th className="text-left px-4 py-4 whitespace-nowrap border-l border-blue-100/50">Tên Hồ Sơ (CV)</th>
                 <th className="text-left px-4 py-4 whitespace-nowrap">Thao tác CV</th>
               </tr>
@@ -182,11 +182,11 @@ const UnlockedCandidates = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">Đang tải...</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">Đang tải...</td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">Chưa có ứng viên nào được mở khóa.</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">Chưa có ứng viên nào được mở khóa.</td>
                 </tr>
               ) : (
                 rows.flatMap((r, candidateIndex) => {
@@ -234,9 +234,6 @@ const UnlockedCandidates = () => {
                           </td>
                           <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top border-r border-slate-100/50">
                             {r.unlockedAt ? new Date(r.unlockedAt).toLocaleDateString('vi-VN') : '—'}
-                          </td>
-                          <td rowSpan={cvs.length} className="px-4 py-4 whitespace-nowrap align-top border-r border-slate-100/50">
-                            {r.packageName ? r.packageName : (r.amountCharged ? 'Mở khóa lẻ' : 'Gói mở khóa (Trừ lượt)')}
                           </td>
                         </>
                       )}
