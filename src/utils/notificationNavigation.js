@@ -27,7 +27,6 @@ export const getNotificationTarget = (item, user) => {
     case 'JOB_APPROVED':
     case 'JOB_REJECTED':
     case 'JOB_BANNED':
-      if (metadata.jobId) return { path: `/employer/jobs/${metadata.jobId}/applications` };
       return { path: '/employer/jobs' };
 
     case 'COMPANY_VERIFIED':

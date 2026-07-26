@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Send, Trash2, Plus, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import jobService from '../../../services/jobService';
@@ -12,10 +12,6 @@ const statusMeta = {
   DRAFT: {
     label: 'Bản nháp',
     className: 'bg-slate-100 text-slate-700 border border-slate-200'
-  },
-  PENDING: {
-    label: 'Chờ duyệt',
-    className: 'bg-amber-50 text-amber-700 border border-amber-200'
   },
   PENDING_APPROVAL: {
     label: 'Chờ duyệt',
@@ -44,6 +40,8 @@ const statusMeta = {
   }
 };
 
+
+const visibleStatusFilters = ['DRAFT', 'PENDING_APPROVAL', 'PUBLISHED', 'EXPIRED', 'CLOSED', 'REJECTED'];
 const JobList = () => {
   const navigate = useNavigate();
   const { confirm, success, error } = useNotification();
@@ -94,7 +92,7 @@ const JobList = () => {
     if (!salaryField) return 'Thỏa thuận';
 
     if (typeof salaryField === 'object') {
-      const { type, minMillion, maxMillion, currency } = salaryField;
+      const { minMillion, maxMillion, currency } = salaryField;
 
       if (minMillion && maxMillion) {
         return `${minMillion} - ${maxMillion} triệu ${currency || 'VND'}`;
@@ -147,7 +145,7 @@ const JobList = () => {
   }, [filters, error]);
 
   useEffect(() => {
-    fetchJobs();
+    Promise.resolve().then(fetchJobs);
   }, [fetchJobs]);
 
   // Fetch provinces
@@ -415,7 +413,7 @@ const JobList = () => {
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white text-slate-800"
             >
               <option value="">Tất cả trạng thái</option>
-              {Object.keys(statusMeta).map(st => (
+              {visibleStatusFilters.map(st => (
                 <option key={st} value={st}>{statusMeta[st].label}</option>
               ))}
             </select>

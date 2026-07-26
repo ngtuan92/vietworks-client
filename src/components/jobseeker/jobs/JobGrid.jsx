@@ -74,7 +74,7 @@ const JobGrid = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Việc làm mới nhất</h2>
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Việc làm đề xuất</h2>
             </div>
             <p className="text-slate-500 mt-2 text-base">Những cơ hội việc làm vừa được đăng tuyển trên nền tảng</p>
           </div>
