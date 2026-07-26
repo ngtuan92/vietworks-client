@@ -10,7 +10,6 @@ import companyLocationService from '../../../services/companyLocationService.js'
 import employerCompanyService from '../../../services/employerCompanyService.js';
 import uploadService from '../../../services/uploadService.js';
 import companyMasterDataService from '../../../services/companyMasterDataService.js';
-import { getProvinces, getWardsByProvinceCode } from 'sub-vn';
 import { useNotification } from '../../../contexts/NotificationContext';
 import useAuth from '../../../hooks/useAuth';
 import { COMPANY_SIZES } from '../../../constants/masterDataConstants';
@@ -1005,8 +1004,8 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
   const { warning, error } = useNotification();
   const [saving, setSaving] = useState(false);
   
-  // 1. Khởi tạo danh sách địa lý từ sub-vn
-  const [provinces] = useState(() => getProvinces() || []);
+  // 1. Danh sách địa lý tải động từ API
+  const [provinces, setProvinces] = useState([]);
   const [wards, setWards] = useState([]);
 
   // 2. Cấu trúc State Form đầy đủ
@@ -1021,6 +1020,13 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
     isPrimary: Boolean(initial?.isPrimary),
   });
 
+  // Tải danh sách Tỉnh/Thành khi mở modal
+  useEffect(() => {
+    companyLocationService.getProvinces()
+      .then(res => setProvinces(res || []))
+      .catch(console.error);
+  }, []);
+
   // 3. Tự động đổ lại dữ liệu cũ khi Mở Modal để Sửa địa điểm (Nếu có)
   useEffect(() => {
     if (initial && provinces.length > 0) {
@@ -1028,12 +1034,15 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
       const foundProv = provinces.find(p => String(p.name).trim() === String(initial.province).trim());
       if (foundProv) {
         const provCode = String(foundProv.code);
-        setWards(getWardsByProvinceCode(provCode) || []);
-
-        setData(prev => ({
-          ...prev,
-          provinceCode: provCode
-        }));
+        companyLocationService.getCommunes(provCode)
+          .then(nextWards => {
+            setWards(nextWards || []);
+            setData(prev => ({
+              ...prev,
+              provinceCode: provCode
+            }));
+          })
+          .catch(console.error);
       }
     }
   }, [initial, provinces]);
@@ -1043,16 +1052,27 @@ const LocationModal = ({ title, initial, onClose, onSubmit }) => {
     const code = e.target.value;
     const matched = provinces.find((p) => String(p.code) === String(code));
 
-    // Lấy ngay danh sách Phường/Xã của Tỉnh
-    const nextWards = code ? getWardsByProvinceCode(code) : [];
-    setWards(nextWards);
-
-    setData((prev) => ({
-      ...prev,
-      provinceCode: code ? String(code) : '',
-      province: matched ? matched.name : '',
-      ward: '', 
-    }));
+    if (code) {
+      companyLocationService.getCommunes(code)
+        .then(nextWards => {
+          setWards(nextWards || []);
+          setData((prev) => ({
+            ...prev,
+            provinceCode: code ? String(code) : '',
+            province: matched ? matched.name : '',
+            ward: '', 
+          }));
+        })
+        .catch(console.error);
+    } else {
+      setWards([]);
+      setData((prev) => ({
+        ...prev,
+        provinceCode: '',
+        province: '',
+        ward: '',
+      }));
+    }
   };
 
   // 6. Xử lý thay đổi các ô nhập liệu thông thường công thức chung

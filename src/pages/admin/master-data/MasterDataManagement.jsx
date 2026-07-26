@@ -1,5 +1,5 @@
 // components/admin/MasterDataManagement.jsx
-import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Edit2, Eye, EyeOff } from 'lucide-react';
 import careerGroupService from '../../../services/careerGroupService';
 import careerService from '../../../services/careerService';
@@ -17,11 +17,8 @@ import {
   ActionButton,
   StatusBadge
 } from '../shared/AdminPrimitives';
-import { useNotification } from '../../../contexts/NotificationContext';
 
 const MasterDataManagement = () => {
-  const { confirm } = useNotification();
-  
   // --- 1. Quản lý Tabs ---
   const [tab, setTab] = useState('Danh mục');
   const tabs = ['Danh mục', 'Nghề nghiệp', 'Vị trí', 'Cấp bậc', 'Kỹ năng'];
@@ -195,29 +192,34 @@ const MasterDataManagement = () => {
   }, [page, selectedCareerGroupId, statusFilter, searchKeyword]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCareerGroups();
-  }, []);
+  }, [loadCareerGroups]);
 
   useEffect(() => {
     if (tab === 'Nghề nghiệp' || tab === 'Vị trí') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadCareers();
     }
   }, [tab, selectedCareerGroupId, statusFilter, loadCareers]);
 
   useEffect(() => {
     if (tab === 'Vị trí') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadPositions();
     }
   }, [tab, loadPositions]);
 
   useEffect(() => {
     if (tab === 'Cấp bậc') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadJobLevels();
     }
   }, [tab, loadJobLevels]);
 
   useEffect(() => {
     if (tab === 'Kỹ năng') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadSkills();
     }
   }, [tab, loadSkills]);
@@ -253,10 +255,26 @@ const MasterDataManagement = () => {
       .replace(/ý|ỳ|ỷ|ỹ|ỵ/gi, 'y')
       .replace(/đ/gi, 'd')
       .replace(/\s+/g, '-')
-      .replace(/[^\w\-]+/g, '')
-      .replace(/\-\-+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
       .replace(/^-+/, '')
       .replace(/-+$/, '');
+  };
+
+  const generateCode = (str) => {
+    const code = (str || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\u0111/gi, 'd')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_')
+      .slice(0, 20)
+      .replace(/^_+|_+$/g, '');
+
+    return code.length >= 2 ? code : 'MD';
   };
 
   // --- 8. CRUD Operations ---
@@ -314,6 +332,10 @@ const MasterDataManagement = () => {
         ...formData,
         slug: formData.slug || generateSlug(formData.name)
       };
+
+      if (['GROUP', 'CAREER', 'POSITION'].includes(targetType)) {
+        payload.code = generateCode(formData.name);
+      }
 
       if (targetType === 'SKILL') {
         payload.aliases = formData.aliases 
@@ -450,10 +472,13 @@ const MasterDataManagement = () => {
           await loadPositions();
         } else if (type === 'CAREER') {
           await loadCareers();
+          await loadPositions();
         } else if (type === 'LEVEL') {
           await loadJobLevels();
         } else {
           await loadCareerGroups();
+          await loadCareers();
+          await loadPositions();
         }
         alert(`${action} thành công!`);
       }
@@ -685,7 +710,7 @@ const MasterDataManagement = () => {
       <form onSubmit={handleFormSubmit} className="space-y-4">
         <div>
           <InputField
-            label="Tên *"
+            label="Tên"
             value={formData.name || ''}
             onChange={(v) => setFormData({ 
               ...formData, 
@@ -703,10 +728,10 @@ const MasterDataManagement = () => {
           />
         </div>
 
-        {!isSkill && (
+        {isLevel && (
           <div>
             <InputField
-              label="Mã code *"
+              label="Mã code"
               value={formData.code || ''}
               onChange={(v) => setFormData({ ...formData, code: v.toUpperCase() })}
               placeholder={
@@ -727,7 +752,7 @@ const MasterDataManagement = () => {
         {isLevel && (
           <div>
             <InputField
-              label="Thứ tự cấp bậc *"
+              label="Thứ tự cấp bậc"
               type="number"
               value={formData.levelOrder || 1}
               onChange={(v) => setFormData({ ...formData, levelOrder: parseInt(v) || 1 })}
@@ -758,7 +783,7 @@ const MasterDataManagement = () => {
                 onChange={(v) => setFormData({ ...formData, careerGroupIds: v })}
                 options={careerGroups
                   .filter(g => g.status === 'ACTIVE') // Chỉ hiển thị nhóm đang hoạt động
-                  .map(g => [g._id, `${g.code} - ${g.name}`])}
+                  .map(g => [g._id, g.code ? `${g.code} - ${g.name}` : (g.name || 'Chưa có tên')])}
                 placeholder="-- Chọn nhóm nghề --"
                 multiple
               />
@@ -771,7 +796,7 @@ const MasterDataManagement = () => {
           <>
             <div>
               <SelectField
-                label="Nhóm nghề *"
+                label="Nhóm nghề"
                 value={formData.careerGroupId || ''}
                 onChange={(v) => {
                   setFormData({ ...formData, careerGroupId: v, careerId: '' });
@@ -794,7 +819,7 @@ const MasterDataManagement = () => {
                 }}
                 options={careerGroups
                   .filter(g => g.status === 'ACTIVE')
-                  .map(g => [g._id, `${g.code} - ${g.name}`])}
+                  .map(g => [g._id, g.code ? `${g.code} - ${g.name}` : (g.name || 'Chưa có tên')])}
                 placeholder="-- Chọn nhóm nghề --"
                 required
                 disabled={editMode}
@@ -803,12 +828,12 @@ const MasterDataManagement = () => {
 
             <div>
               <SelectField
-                label="Nghề *"
+                label="Nghề"
                 value={formData.careerId || ''}
                 onChange={(v) => setFormData({ ...formData, careerId: v })}
                 options={careers
                   .filter(c => c.status === 'ACTIVE')
-                  .map(c => [c._id, `${c.code} - ${c.name}`])}
+                  .map(c => [c._id, c.name || 'Chưa có tên'])}
                 placeholder="-- Chọn nghề --"
                 required
                 disabled={editMode}
@@ -820,12 +845,12 @@ const MasterDataManagement = () => {
         {isCareer && (
           <div>
             <SelectField
-              label="Nhóm nghề *"
+              label="Nh?m ngh?"
               value={formData.careerGroupId || ''}
               onChange={(v) => setFormData({ ...formData, careerGroupId: v })}
               options={careerGroups
                 .filter(g => g.status === 'ACTIVE')
-                .map(g => [g._id, `${g.code} - ${g.name}`])}
+                .map(g => [g._id, g.code ? `${g.code} - ${g.name}` : (g.name || 'Chưa có tên')])}
               placeholder="-- Chọn nhóm nghề --"
               required
               disabled={editMode}

@@ -783,8 +783,7 @@ key={`${loc.provinceCode || ''}_${loc.detailAddress || ''}_${index}`}           
 {loc.detailAddress || [loc.wardName, loc.districtName, loc.provinceName].filter(Boolean).join(', ')}
               </p>
               <p className="text-xs text-slate-400">
-                Tỉnh/Thành: {loc.provinceName || 'N/A'} | Quận/Huyện:{' '}
-                {loc.districtName || 'N/A'} | Phường/Xã: {loc.wardName || 'N/A'}
+                Tỉnh/Thành: {loc.provinceName || 'N/A'} | Phường/Xã: {loc.wardName || 'N/A'}
               </p>
             </div>
 

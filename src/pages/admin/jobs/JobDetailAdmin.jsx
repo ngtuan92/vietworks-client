@@ -220,9 +220,10 @@ const JobDetailAdmin = () => {
                 </div>
                 <div className="pt-2">
                   <b>Giới thiệu ngắn về công ty:</b>
-                  <p className="mt-1 text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-line">
-                    {job.companyId.description || 'Chưa cập nhật nội dung giới thiệu.'}
-                  </p>
+                  <div 
+                    className="mt-1 text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 prose max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: job.companyId.description || 'Chưa cập nhật nội dung giới thiệu.' }}
+                  />
                 </div>
               </div>
             </div>

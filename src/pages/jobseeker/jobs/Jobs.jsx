@@ -116,6 +116,7 @@ const Jobs = () => {
   const [salaryMax, setSalaryMax] = useState('');
   const [saturdayPolicy, setSaturdayPolicy] = useState('');
   const [sortBy, setSortBy] = useState('publishedAt');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const [jobs, setJobs] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
@@ -150,6 +151,7 @@ const Jobs = () => {
       setSalaryMax(getParam(searchParams, 'salaryMax'));
       setSaturdayPolicy(getParam(searchParams, 'saturdayPolicy'));
       setSortBy(getParam(searchParams, 'sortBy', 'publishedAt'));
+      setSortOrder(getParam(searchParams, 'sortOrder', 'desc'));
     });
   }, [searchParams, setKeyword, setLocation]);
 
@@ -343,13 +345,13 @@ const Jobs = () => {
     });
   };
 
-  const handleSort = (field) => {
+  const handleSort = (field, order = 'desc') => {
     if (field === 'salary.minMillion') {
       updateQuery({ sortBy: 'salary.minMillion', sortOrder: 'desc', page: 1 });
       return;
     }
 
-    updateQuery({ sortBy: 'publishedAt', sortOrder: 'desc', page: 1 });
+    updateQuery({ sortBy: 'publishedAt', sortOrder: order, page: 1 });
   };
 
   const handlePageChange = (nextPage) => {
@@ -561,9 +563,9 @@ const Jobs = () => {
 
               <div className="flex items-center gap-2 bg-[#f5f3f3] p-1 rounded-lg">
                 <button
-                  onClick={() => handleSort('publishedAt')}
+                  onClick={() => handleSort('publishedAt', 'desc')}
                   className={`px-4 py-2 text-sm font-semibold rounded-md ${
-                    sortBy === 'publishedAt'
+                    sortBy === 'publishedAt' && sortOrder === 'desc'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-gray-500 hover:text-primary'
                   }`}
@@ -571,7 +573,17 @@ const Jobs = () => {
                   Mới nhất
                 </button>
                 <button
-                  onClick={() => handleSort('salary.minMillion')}
+                  onClick={() => handleSort('publishedAt', 'asc')}
+                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                    sortBy === 'publishedAt' && sortOrder === 'asc'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-gray-500 hover:text-primary'
+                  }`}
+                >
+                  Cũ nhất
+                </button>
+                <button
+                  onClick={() => handleSort('salary.minMillion', 'desc')}
                   className={`px-4 py-2 text-sm font-semibold rounded-md ${
                     sortBy === 'salary.minMillion'
                       ? 'bg-white text-primary shadow-sm'

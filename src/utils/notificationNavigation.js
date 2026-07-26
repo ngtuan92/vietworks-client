@@ -11,7 +11,6 @@ export const getNotificationTarget = (item, user) => {
         : { path: '/applied-jobs' };
 
     case 'MATCHING_JOB':
-      if (metadata.jobs?.[0]?.jobId) return { path: `/jobs/${metadata.jobs[0].jobId}` };
       return { path: '/matched-jobs' };
 
     case 'NEW_CV_TEMPLATE':
@@ -27,7 +26,6 @@ export const getNotificationTarget = (item, user) => {
     case 'JOB_APPROVED':
     case 'JOB_REJECTED':
     case 'JOB_BANNED':
-      if (metadata.jobId) return { path: `/employer/jobs/${metadata.jobId}/applications` };
       return { path: '/employer/jobs' };
 
     case 'COMPANY_VERIFIED':
