@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+﻿import { useMemo, useState, useEffect, useRef } from 'react';
 // Import các hàm API từ file quản lý API của bạn
 import jobApi from '../../../services/jobService'; 
 import companyLocationService from '../../../services/companyLocationService';
@@ -72,7 +72,7 @@ const INITIAL_FORM = {
   jobLevelId: '',
   experience: 'Không yêu cầu', // Mặc định là không yêu cầu
   skills: [],
-  salaryType: 'RANGE', // 'NEGOTIABLE', 'RANGE', 'FROM', 'TO'
+  salaryType: 'RANGE', // Backend chỉ hỗ trợ 'NEGOTIABLE' hoặc 'RANGE'
   salaryFrom: '',
   salaryTo: '',
   workLocations: [], // Lưu danh sách các object địa điểm snapshot chi tiết
@@ -263,12 +263,12 @@ const CreateEditJob = () => {
   const canNext = useMemo(() => {
     if (step === 1) {
       return Boolean(
-        form.title && 
-        form.careerGroupId && 
-        form.careerId && 
-        form.careerPositionId && 
-        form.jobLevelId && 
-        form.experience // Đã có giá trị mặc định
+        form.title &&
+        form.careerGroupId &&
+        form.careerId &&
+        form.careerPositionId &&
+        form.jobLevelId &&
+        form.experience
       );
     }
     if (step === 2) {
@@ -276,8 +276,7 @@ const CreateEditJob = () => {
       if (form.salaryType === 'RANGE') {
         return Boolean(form.salaryFrom && form.salaryTo && Number(form.salaryFrom) <= Number(form.salaryTo));
       }
-      if (form.salaryType === 'FROM') return Boolean(form.salaryFrom);
-      if (form.salaryType === 'TO') return Boolean(form.salaryTo);
+      return false;
     }
     if (step === 3) {
       return Boolean(
@@ -308,29 +307,25 @@ const CreateEditJob = () => {
   // --- Chuẩn hóa Payload chuẩn cấu trúc Model trước khi API Call ---
   const preparePayload = () => {
     const payload = { ...form };
-    
-    // Xử lý salary
-    if (form.salaryType === 'NEGOTIABLE') {
-      payload.salary = {
-        type: 'NEGOTIABLE',
-        minMillion: null,
-        maxMillion: null,
-        currency: 'VND',
-      };
-    } else {
-      payload.salary = {
-        type: form.salaryType,
-        minMillion: form.salaryFrom ? Number(form.salaryFrom) : null,
-        maxMillion: form.salaryTo ? Number(form.salaryTo) : null,
-        currency: 'VND',
-      };
-    }
+
+    payload.salary = form.salaryType === 'NEGOTIABLE'
+      ? {
+          type: 'NEGOTIABLE',
+          minMillion: null,
+          maxMillion: null,
+          currency: 'VND',
+        }
+      : {
+          type: 'RANGE',
+          minMillion: form.salaryFrom ? Number(form.salaryFrom) : null,
+          maxMillion: form.salaryTo ? Number(form.salaryTo) : null,
+          currency: 'VND',
+        };
 
     delete payload.salaryType;
     delete payload.salaryFrom;
     delete payload.salaryTo;
 
-    // Xử lý workingTime
     payload.workingTime = formatWorkingSchedule(
       form.workingDays,
       form.workingTimeFrom,
@@ -340,7 +335,6 @@ const CreateEditJob = () => {
     delete payload.workingTimeFrom;
     delete payload.workingTimeTo;
 
-    // Đảm bảo experience luôn có giá trị
     if (!payload.experience) {
       payload.experience = 'Không yêu cầu';
     }
@@ -350,6 +344,10 @@ const CreateEditJob = () => {
 
   // --- Chức năng 1: Lưu Nháp (DRAFT) ---
   const handleSaveDraft = async () => {
+    if (!isCompanyVerified) {
+      showToast('error', 'Công ty cần được xác thực trước khi tạo tin tuyển dụng.');
+      return;
+    }
     setIsLoading(true);
     try {
       const payload = preparePayload();
@@ -370,7 +368,10 @@ const CreateEditJob = () => {
 
   // --- Chức năng 2: Gửi Duyệt thẳng (DRAFT -> PENDING_APPROVAL) ---
   const handlePublishJob = async () => {
-    if (!isCompanyVerified) return;
+    if (!isCompanyVerified) {
+      showToast('error', 'Công ty cần được xác thực trước khi gửi tin tuyển dụng.');
+      return;
+    }
     setIsLoading(true);
     try {
       const payload = preparePayload();
@@ -601,18 +602,16 @@ const StepSalary = ({ form, setField }) => {
           options={[
             { value: 'NEGOTIABLE', label: 'Thỏa thuận trực tiếp' },
             { value: 'RANGE', label: 'Cố định trong khoảng (Từ - Đến)' },
-            { value: 'FROM', label: 'Chỉ định mức tối thiểu (Từ...' },
-            { value: 'TO', label: 'Chỉ định mức tối đa (...Đến)' }
           ]} 
         />
       </div>
       
       {form.salaryType !== 'NEGOTIABLE' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 max-w-2xl">
-          {['RANGE', 'FROM'].includes(form.salaryType) && (
+          {form.salaryType === 'RANGE' && (
             <Field label="Mức lương tối thiểu (Triệu VNĐ)" required type="number" value={form.salaryFrom} onChange={(v) => setField('salaryFrom', v)} placeholder="15" />
           )}
-          {['RANGE', 'TO'].includes(form.salaryType) && (
+          {form.salaryType === 'RANGE' && (
             <Field label="Mức lương tối đa (Triệu VNĐ)" required type="number" value={form.salaryTo} onChange={(v) => setField('salaryTo', v)} placeholder="25" />
           )}
         </div>
