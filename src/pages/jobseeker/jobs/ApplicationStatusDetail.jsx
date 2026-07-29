@@ -21,6 +21,29 @@ const ApplicationStatusDetail = () => {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [declining, setDeclining] = useState(false);
+
+  const handleDeclineInterview = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn từ chối lời mời phỏng vấn này không?')) {
+      return;
+    }
+    setDeclining(true);
+    try {
+      const res = await jobService.declineInterview(id);
+      if (res.success) {
+        // Refresh application details
+        const result = await jobService.getApplicationStatus(id);
+        if (result.success) {
+          setApplication(result.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error declining interview:', err);
+      alert(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối phỏng vấn.');
+    } finally {
+      setDeclining(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -299,9 +322,21 @@ const ApplicationStatusDetail = () => {
                   {application.interviewInvitation.note && (
                     <div className="sm:col-span-2">
                       <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Ghi chú thêm</p>
-                      <div className="font-semibold text-blue-900 mt-1 break-words [&>p]:mb-2 [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5" dangerouslySetInnerHTML={{ __html: application.interviewInvitation.note }} />
+                      <div className="font-semibold text-blue-900 mt-1 break-words [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5" dangerouslySetInnerHTML={{ __html: application.interviewInvitation.note }} />
                     </div>
                   )}
+                </div>
+
+                {/* Decline Button inside the card */}
+                <div className="mt-6 pt-4 border-t border-blue-200/60 flex justify-end">
+                  <button
+                    onClick={handleDeclineInterview}
+                    disabled={declining}
+                    className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-60"
+                  >
+                    <span className="material-symbols-outlined text-base">cancel</span>
+                    {declining ? 'Đang từ chối...' : 'Từ chối phỏng vấn'}
+                  </button>
                 </div>
               </div>
             )}

@@ -30,7 +30,8 @@ const CVSearch = () => {
   const [walletBalance, setWalletBalance] = useState(0);
   const [unlockCredits, setUnlockCredits] = useState(0);
   const [candidates, setCandidates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [unlockTarget, setUnlockTarget] = useState(null);
 
   const groupedCandidates = useMemo(() => {
@@ -67,6 +68,7 @@ const CVSearch = () => {
   const [jobLevels, setJobLevels] = useState([]);
 
   const fetchCandidates = useCallback(async () => {
+    setHasSearched(true);
     setLoading(true);
     try {
       const params = {};
@@ -122,7 +124,6 @@ const CVSearch = () => {
         setUnlockCredits(total);
       }
     }).catch(console.error);
-    queueMicrotask(() => fetchCandidates());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -218,12 +219,19 @@ const CVSearch = () => {
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {loading ? (
+        {!hasSearched ? (
+          <div className="col-span-2 text-center py-16 bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+              <span className="material-symbols-outlined text-3xl">search</span>
+            </div>
+            <p className="text-slate-600 font-medium">Nhập thông tin tìm kiếm và ấn nút "Tìm kiếm" để quét danh sách ứng viên.</p>
+          </div>
+        ) : loading ? (
           <div className="col-span-2 flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-[#003f87] border-t-transparent rounded-full"></div>
           </div>
         ) : candidates.length === 0 ? (
-          <div className="col-span-2 text-center py-12 text-slate-500">Không tìm thấy ứng viên nào.</div>
+          <div className="col-span-2 text-center py-12 text-slate-500">Không tìm thấy ứng viên nào phù hợp.</div>
         ) : (
           groupedCandidates.map((candidate) => {
             const { isUnlocked } = candidate;

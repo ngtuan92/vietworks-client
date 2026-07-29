@@ -31,6 +31,26 @@ const STATUS_COLOR = {
   HIRED: 'bg-emerald-50 text-emerald-700 border border-emerald-100'
 };
 
+const getStatusLabel = (app) => {
+  if (app.status === 'REJECTED') {
+    const reason = app.rejectionReason || '';
+    if (reason.includes('từ chối phỏng vấn') || reason.includes('Từ chối phỏng vấn')) {
+      return 'Ứng viên từ chối phỏng vấn';
+    }
+  }
+  return STATUS_LABEL[app.status] || app.status;
+};
+
+const getStatusColor = (app) => {
+  if (app.status === 'REJECTED') {
+    const reason = app.rejectionReason || '';
+    if (reason.includes('từ chối phỏng vấn') || reason.includes('Từ chối phỏng vấn')) {
+      return 'bg-amber-50 text-amber-700 border border-amber-200';
+    }
+  }
+  return STATUS_COLOR[app.status] || STATUS_COLOR.VIEWED;
+};
+
 const QUILL_MODULES = {
   toolbar: [
     [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px'] }],
@@ -276,8 +296,8 @@ const ApplicationDetail = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${STATUS_COLOR[application.status] || STATUS_COLOR.VIEWED}`}>
-            {STATUS_LABEL[application.status] || application.status}
+          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${getStatusColor(application)}`}>
+            {getStatusLabel(application)}
           </span>
           <div className="flex gap-2 ml-4">
             {['UNREAD', 'APPLIED', 'VIEWED'].includes(application.status) && (

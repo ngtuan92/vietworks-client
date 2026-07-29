@@ -40,6 +40,14 @@ const atsService = {
   async inviteInterview(id, payload) {
     const response = await api.post(`/employer/applications/${id}/interview-invitation`, payload);
     return response.data;
+  },
+  async evaluateApplicationWithAi(id) {
+    const response = await api.post(`/employer/applications/${id}/ai-evaluate`);
+    return response.data;
+  },
+  async evaluateAllApplicationsWithAi(jobId) {
+    const response = await api.post(`/employer/ats/jobs/${jobId}/ai-evaluate-all`);
+    return response.data;
   }
 };
 
