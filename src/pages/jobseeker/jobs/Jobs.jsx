@@ -12,6 +12,9 @@ import {
 } from '../../../services/jobService';
 import { useSearchStore } from '../../../store/searchStore';
 import companyLocationService from '../../../services/companyLocationService';
+import { useAuthStore } from '../../../store/authStore';
+import cvService from '../../../services/cvService';
+import { getAiMatchingJobs } from '../../../services/jobseekerService';
 
 const saturdayOptions = [
   { value: '', label: 'Tất cả' },
@@ -122,6 +125,136 @@ const Jobs = () => {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // AI Job Recommendation States
+  const { isAuthenticated } = useAuthStore();
+  const [onlineCvs, setOnlineCvs] = useState([]);
+  const [uploadedCvs, setUploadedCvs] = useState([]);
+  const [selectedCv, setSelectedCv] = useState({ id: '', type: '' });
+  const [uploadingCv, setUploadingCv] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiJobs, setAiJobs] = useState(null);
+  const [aiError, setAiError] = useState('');
+
+  // Fetch candidate's CV list
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const fetchCvs = async () => {
+      try {
+        const [onlineRes, uploadedRes] = await Promise.all([
+          cvService.getUserCvs(),
+          cvService.getUserUploadedCvs()
+        ]);
+        const oCvs = onlineRes.data || [];
+        const uCvs = uploadedRes.data || [];
+        setOnlineCvs(oCvs);
+        setUploadedCvs(uCvs);
+
+        // Pre-select first CV if available
+        if (oCvs.length > 0) {
+          setSelectedCv({ id: oCvs[0]._id || oCvs[0].id, type: 'ONLINE' });
+        } else if (uCvs.length > 0) {
+          setSelectedCv({ id: uCvs[0]._id || uCvs[0].id, type: 'UPLOADED' });
+        }
+      } catch (err) {
+        console.error('Fetch CVs for AI matching error:', err);
+      }
+    };
+    fetchCvs();
+  }, [isAuthenticated]);
+
+  const handleUploadCv = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
+
+    setUploadingCv(true);
+    setAiError('');
+    try {
+      const res = await cvService.uploadCv(formData);
+      if (res.success && res.data) {
+        const newUploaded = res.data;
+        setUploadedCvs(prev => [newUploaded, ...prev]);
+        setSelectedCv({ id: newUploaded._id || newUploaded.id, type: 'UPLOADED' });
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Không thể tải lên CV.');
+    } finally {
+      setUploadingCv(false);
+    }
+  };
+
+  const handleAiMatching = async () => {
+    if (!selectedCv.id || !selectedCv.type) {
+      setAiError('Vui lòng chọn hoặc tải lên một CV.');
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await getAiMatchingJobs({
+        cvId: selectedCv.id,
+        cvType: selectedCv.type
+      });
+      if (res.success) {
+        setAiJobs(res.data || []);
+      } else {
+        setAiError(res.message || 'Lỗi khi tìm việc làm phù hợp bằng AI.');
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Lỗi hệ thống khi đối sánh AI.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleClearAiJobs = () => {
+    setAiJobs(null);
+  };
+
+  const filteredAiJobs = useMemo(() => {
+    if (aiJobs === null) return null;
+
+    return aiJobs.filter(job => {
+      // 1. Filter by careerGroupId
+      if (careerGroupId && String(job.careerGroupId?._id || job.careerGroupId) !== careerGroupId) {
+        return false;
+      }
+      // 2. Filter by careerId
+      if (careerId && String(job.careerId?._id || job.careerId) !== careerId) {
+        return false;
+      }
+      // 3. Filter by careerPositionId
+      if (careerPositionId && String(job.careerPositionId?._id || job.careerPositionId) !== careerPositionId) {
+        return false;
+      }
+      // 4. Filter by jobLevelId
+      if (jobLevelId && String(job.jobLevelId?._id || job.jobLevelId) !== jobLevelId) {
+        return false;
+      }
+      // 5. Filter by experience
+      if (experience && job.experience !== experience) {
+        return false;
+      }
+      // 6. Filter by Saturday policy
+      if (saturdayPolicy && job.saturdayPolicy !== saturdayPolicy) {
+        return false;
+      }
+      // 7. Filter by salary range
+      if (salaryMin && job.salary?.minMillion && job.salary.minMillion < Number(salaryMin)) {
+        return false;
+      }
+      if (salaryMax && job.salary?.maxMillion && job.salary.maxMillion > Number(salaryMax)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [aiJobs, careerGroupId, careerId, careerPositionId, jobLevelId, experience, saturdayPolicy, salaryMin, salaryMax]);
 
   const [careerGroups, setCareerGroups] = useState([]);
   const [careers, setCareers] = useState([]);
@@ -423,7 +556,90 @@ const Jobs = () => {
         </section>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="w-full lg:w-80 shrink-0">
+          <aside className="w-full lg:w-80 shrink-0 space-y-6">
+            {/* AI JOB RECOMMENDATION CARD */}
+            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-orange-950">
+                  Tìm việc bằng AI
+                </h3>
+                <p className="text-xs text-orange-800 mt-1">
+                  AI quét toàn bộ nội dung CV của bạn để đề xuất các việc làm tương thích nhất.
+                </p>
+              </div>
+
+              {!isAuthenticated ? (
+                <div className="text-center p-3 bg-white/60 rounded-xl border border-orange-100">
+                  <p className="text-xs text-orange-900 mb-2 font-medium">Vui lòng đăng nhập để sử dụng tính năng AI gợi ý việc làm.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {aiError && (
+                    <div className="p-2.5 bg-red-50 border border-red-100 text-red-700 text-xs font-semibold rounded-xl">
+                      {aiError}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-orange-700 mb-1">Chọn CV hiện có</label>
+                    <select
+                      value={`${selectedCv.type}:${selectedCv.id}`}
+                      onChange={(e) => {
+                        const [type, id] = e.target.value.split(':');
+                        setSelectedCv({ type, id });
+                      }}
+                      disabled={aiLoading || uploadingCv}
+                      className="w-full rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs outline-none focus:border-orange-500 cursor-pointer font-medium text-orange-950"
+                    >
+                      <option value="">-- Chọn CV phù hợp --</option>
+                      {onlineCvs.map(cv => (
+                        <option key={cv._id || cv.id} value={`ONLINE:${cv._id || cv.id}`}>
+                          [Online] {cv.title}
+                        </option>
+                      ))}
+                      {uploadedCvs.map(cv => (
+                        <option key={cv._id || cv.id} value={`UPLOADED:${cv._id || cv.id}`}>
+                          [Tải lên] {cv.title || cv.fileName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="relative">
+                    <div className="text-center py-2.5 px-3 border border-dashed border-orange-200 rounded-xl bg-white hover:bg-orange-100/30 transition-all cursor-pointer">
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleUploadCv}
+                        disabled={aiLoading || uploadingCv}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                      <span className="text-xs font-bold text-orange-800 flex items-center justify-center">
+                        {uploadingCv ? 'Đang tải lên...' : 'Hoặc tải lên CV mới (PDF, DOCX)'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleAiMatching}
+                    disabled={aiLoading || uploadingCv || (!selectedCv.id)}
+                    className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {aiLoading ? 'AI đang phân tích & quét...' : 'Tìm việc bằng AI'}
+                  </button>
+
+                  {aiJobs !== null && (
+                    <button
+                      onClick={handleClearAiJobs}
+                      className="w-full py-2 bg-white/80 hover:bg-white text-orange-800 text-xs font-bold rounded-xl border border-orange-200 transition-all"
+                    >
+                      Quay lại bộ lọc thường
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 sticky top-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Bộ lọc việc làm</h3>
@@ -553,46 +769,59 @@ const Jobs = () => {
           <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div>
-                <h2 className="text-xl font-bold text-black">Việc làm đề xuất</h2>
+                <h2 className="text-xl font-bold text-black flex items-center gap-2">
+                  {aiJobs !== null ? (
+                    <>
+                      <span className="material-symbols-outlined text-violet-600 animate-bounce">psychology</span>
+                      Gợi ý việc làm bằng AI 🤖
+                    </>
+                  ) : 'Việc làm đề xuất'}
+                </h2>
                 <p className="text-sm text-gray-500">
-                  {loading
-                    ? 'Đang tải danh sách việc làm...'
-                    : `Hiển thị ${jobs.length} / ${pagination.total || 0} việc làm phù hợp`}
+                  {filteredAiJobs !== null ? (
+                    `Hiển thị ${filteredAiJobs.length} / ${aiJobs.length} việc làm được gợi ý phù hợp`
+                  ) : loading ? (
+                    'Đang tải danh sách việc làm...'
+                  ) : (
+                    `Hiển thị ${jobs.length} / ${pagination.total || 0} việc làm phù hợp`
+                  )}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 bg-[#f5f3f3] p-1 rounded-lg">
-                <button
-                  onClick={() => handleSort('publishedAt', 'desc')}
-                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
-                    sortBy === 'publishedAt' && sortOrder === 'desc'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-500 hover:text-primary'
-                  }`}
-                >
-                  Mới nhất
-                </button>
-                <button
-                  onClick={() => handleSort('publishedAt', 'asc')}
-                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
-                    sortBy === 'publishedAt' && sortOrder === 'asc'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-500 hover:text-primary'
-                  }`}
-                >
-                  Cũ nhất
-                </button>
-                <button
-                  onClick={() => handleSort('salary.minMillion', 'desc')}
-                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
-                    sortBy === 'salary.minMillion'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-500 hover:text-primary'
-                  }`}
-                >
-                  Lương cao nhất
-                </button>
-              </div>
+              {aiJobs === null && (
+                <div className="flex items-center gap-2 bg-[#f5f3f3] p-1 rounded-lg">
+                  <button
+                    onClick={() => handleSort('publishedAt', 'desc')}
+                    className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                      sortBy === 'publishedAt' && sortOrder === 'desc'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-gray-500 hover:text-primary'
+                    }`}
+                  >
+                    Mới nhất
+                  </button>
+                  <button
+                    onClick={() => handleSort('publishedAt', 'asc')}
+                    className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                      sortBy === 'publishedAt' && sortOrder === 'asc'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-gray-500 hover:text-primary'
+                    }`}
+                  >
+                    Cũ nhất
+                  </button>
+                  <button
+                    onClick={() => handleSort('salary.minMillion', 'desc')}
+                    className={`px-4 py-2 text-sm font-semibold rounded-md ${
+                      sortBy === 'salary.minMillion'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-gray-500 hover:text-primary'
+                    }`}
+                  >
+                    Lương cao nhất
+                  </button>
+                </div>
+              )}
             </div>
 
             {error ? (
@@ -602,7 +831,29 @@ const Jobs = () => {
             ) : null}
 
             <div className="space-y-4">
-              {loading ? (
+              {aiLoading ? (
+                <div className="rounded-2xl bg-white border border-slate-200/60 p-12 text-center flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full border-4 border-violet-100 border-t-violet-600 animate-spin" />
+                  <p className="font-bold text-slate-800 text-lg">AI đang đọc hiểu CV và quét toàn bộ công việc...</p>
+                  <p className="text-sm text-slate-500 max-w-md">Quá trình phân tích ngữ nghĩa CV & đối khớp có thể mất từ 10 - 20 giây. Vui lòng giữ nguyên màn hình.</p>
+                </div>
+              ) : filteredAiJobs !== null ? (
+                filteredAiJobs.length > 0 ? (
+                  filteredAiJobs.map((job) => {
+                    const cardJob = mapJobToCard(job);
+                    return (
+                      <JobCard key={job._id || job.id} {...cardJob} aiMatch={job.aiMatch} />
+                    );
+                  })
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
+                    <p className="font-semibold text-slate-800">Không tìm thấy việc làm phù hợp với bộ lọc hiện tại</p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Hãy thử thay đổi hoặc xóa bớt các tiêu chí lọc để xem thêm kết quả từ AI.
+                    </p>
+                  </div>
+                )
+              ) : loading ? (
                 [1, 2, 3].map((item) => <JobSkeleton key={item} />)
               ) : jobs.length > 0 ? (
                 jobs.map((job) => {
@@ -622,7 +873,7 @@ const Jobs = () => {
               )}
             </div>
 
-            {pagination.pages > 1 ? (
+            {aiJobs === null && pagination.pages > 1 ? (
               <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
                 <PageButton disabled={page <= 1} onClick={() => handlePageChange(page - 1)}>
                   Trước

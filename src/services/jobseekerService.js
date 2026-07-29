@@ -61,3 +61,7 @@ export const getCompanyOpenJobs = (companyId, params = {}) =>
 export const getSearchSuggestions = (keyword = '', limit = 10) =>
   api.get('/jobs/search-suggestions', { params: { keyword, limit } }).then(r => r.data);
 
+// ─── AI Matching Jobs ─────────────────────────────────────
+export const getAiMatchingJobs = (payload) =>
+  api.post('/jobseeker/ai-matching-jobs', payload).then(r => r.data);
+

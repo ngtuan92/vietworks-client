@@ -5,7 +5,7 @@ import AICvReviewEngine from '../../../components/jobseeker/cv/AICvReviewEngine'
 const AICvReview = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 font-body-md text-slate-800 antialiased">
-      <main className="mx-auto max-w-5xl space-y-6">
+      <main className="mx-auto max-w-7xl space-y-6">
         
         {/* Engine Container */}
         <div className="shadow-lg rounded-3xl overflow-hidden">

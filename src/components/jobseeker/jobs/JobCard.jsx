@@ -54,6 +54,7 @@ const JobCard = ({
   neededCount,
   isHiringFull = false,
   showExtra = false,
+  aiMatch = null,
 }) => {
   const navigate = useNavigate();
   const { guard, modalState, closeModal } = useJobseekerAuth();
@@ -123,7 +124,14 @@ const JobCard = ({
         <div className="flex-1">
           <div className="flex justify-between items-start gap-3">
             <div>
-              <h3 className="text-lg font-bold text-black group-hover:text-primary transition-colors line-clamp-1">{title}</h3>
+              <h3 className="text-lg font-bold text-black group-hover:text-primary transition-colors line-clamp-1 flex items-center gap-2">
+                {title}
+                {aiMatch?.score && (
+                  <span className="px-2.5 py-0.5 text-[10px] font-extrabold text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full shadow-sm shrink-0">
+                    Match: {aiMatch.score}%
+                  </span>
+                )}
+              </h3>
               <p className="text-gray-600 font-medium">{company}</p>
             </div>
             <button
@@ -201,10 +209,20 @@ const JobCard = ({
               </span>
             ))}
           </div>
+
+          {aiMatch?.reason && (
+            <div className="mt-4 p-3 bg-violet-50/50 border border-violet-100 rounded-xl">
+              <div className="flex items-center gap-1.5 text-violet-800 font-bold text-xs uppercase tracking-wide">
+                <span className="material-symbols-outlined text-base">psychology</span>
+                Lý do gợi ý từ AI
+              </div>
+              <p className="text-sm text-slate-700 mt-1 leading-relaxed font-normal">{aiMatch.reason}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
-      <JobseekerAuthModal open={modalState.open} action={modalState.action} onClose={closeModal} />
+    <JobseekerAuthModal open={modalState.open} action={modalState.action} onClose={closeModal} />
     </>
   );
 };

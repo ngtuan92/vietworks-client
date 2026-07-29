@@ -184,7 +184,7 @@ const AICvReviewEngine = ({ onClose }) => {
   const analysisData = activeResult?.rawResult || {};
 
   return (
-    <div className="bg-white text-slate-800 rounded-3xl shadow-xl border border-slate-200 w-full h-[88vh] md:h-[800px] flex flex-col overflow-hidden animate-fade-in animate-duration-200 mx-auto">
+    <div className="bg-white text-slate-800 rounded-3xl shadow-xl border border-slate-200 w-full h-[90vh] md:h-[950px] flex flex-col overflow-hidden animate-fade-in animate-duration-200 mx-auto">
       
       {/* Engine Header */}
       <div className="bg-[#003f87] text-white px-8 py-5 flex items-center justify-between shrink-0">
@@ -379,6 +379,71 @@ const AICvReviewEngine = ({ onClose }) => {
                             <div className="flex items-center gap-2 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
                               <span className="material-symbols-outlined text-emerald-600 text-[18px]">check_circle</span>
                               <span className="text-xs text-emerald-800 font-semibold">Tuyệt vời! Không phát hiện điểm đáng ngờ hay Red flags trên CV của bạn.</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Detailed Revision Suggestions Card */}
+                        <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[#003f87] text-[18px]">edit_note</span>
+                            Gợi ý sửa đổi chi tiết trên CV
+                          </h4>
+                          
+                          {analysisData.detailed_suggestions && analysisData.detailed_suggestions.length > 0 ? (
+                            <div className="space-y-4">
+                              {analysisData.detailed_suggestions.map((suggestion, idx) => (
+                                <div key={idx} className="border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-slate-50/20 p-4 space-y-3">
+                                  {/* Section Header */}
+                                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                    <span className="text-xs font-bold px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md">
+                                      {suggestion.section || 'Phần CV'}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Current Text Area (Red bg) */}
+                                  <div className="p-3 bg-rose-50/40 rounded-xl border border-rose-100/50">
+                                    <span className="text-[10px] text-rose-500 font-bold block uppercase mb-1">Nội dung chưa tốt trong CV:</span>
+                                    <p className="text-xs text-slate-700 leading-relaxed font-mono">
+                                      "{suggestion.current_text}"
+                                    </p>
+                                  </div>
+
+                                  {/* Issue / Reason */}
+                                  <div className="flex gap-2 items-start px-2 text-xs text-slate-600">
+                                    <span className="material-symbols-outlined text-rose-500 text-[16px] mt-0.5">report_problem</span>
+                                    <div className="flex-1">
+                                      <span className="text-[10px] text-slate-400 font-bold block uppercase">Vấn đề phát hiện:</span>
+                                      <p className="font-medium text-slate-700 mt-0.5">{suggestion.issue}</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Suggested Rewrite (Green bg) */}
+                                  <div className="p-3 bg-emerald-50/40 rounded-xl border border-emerald-100/50 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-emerald-600 font-bold uppercase">Gợi ý viết lại từ AI:</span>
+                                      <button
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(suggestion.suggested_text);
+                                          success("Đã sao chép nội dung gợi ý viết lại!");
+                                        }}
+                                        className="px-2 py-1 bg-white hover:bg-slate-100 text-[10px] font-bold text-emerald-700 rounded border border-emerald-200 transition-colors flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <span className="material-symbols-outlined text-[12px]">content_copy</span>
+                                        Sao chép
+                                      </button>
+                                    </div>
+                                    <p className="text-xs text-slate-800 font-semibold leading-relaxed">
+                                      {suggestion.suggested_text}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                              <span className="material-symbols-outlined text-emerald-600 text-[18px]">check_circle</span>
+                              <span className="text-xs text-emerald-800 font-semibold">Tuyệt vời! Không tìm thấy lỗi diễn đạt hay vấn đề cần sửa đổi nghiêm trọng trên CV.</span>
                             </div>
                           )}
                         </div>

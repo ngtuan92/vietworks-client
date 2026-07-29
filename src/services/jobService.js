@@ -168,6 +168,11 @@ export const getApplicationStatus = async (applicationId) => {
   return response.data;
 };
 
+export const declineInterview = async (applicationId) => {
+  const response = await api.post(`/jobseeker/applications/${applicationId}/decline-interview`);
+  return response.data;
+};
+
 
 // ==================== ADMIN MASTER DATA MANAGEMENT ====================
 
@@ -277,6 +282,7 @@ export default {
   checkDuplicateApplication,
   getMyApplications,
   getApplicationStatus,
+  declineInterview,
 
   createCareerGroup,
   updateCareerGroup,

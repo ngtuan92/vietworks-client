@@ -15,6 +15,26 @@ const COLOR = {
   HIRED: 'bg-blue-100 text-primary border border-blue-200'
 };
 
+const getStatusLabel = (candidate) => {
+  if (candidate.status === 'REJECTED') {
+    const reason = candidate.rejectionReason || '';
+    if (reason.includes('từ chối phỏng vấn') || reason.includes('Từ chối phỏng vấn')) {
+      return 'Ứng viên từ chối phỏng vấn';
+    }
+  }
+  return LABEL[candidate.status] || candidate.status;
+};
+
+const getStatusColor = (candidate) => {
+  if (candidate.status === 'REJECTED') {
+    const reason = candidate.rejectionReason || '';
+    if (reason.includes('từ chối phỏng vấn') || reason.includes('Từ chối phỏng vấn')) {
+      return 'bg-amber-50 text-amber-700 border border-amber-200';
+    }
+  }
+  return COLOR[candidate.status] || COLOR.VIEWED;
+};
+
 const JobApplications = () => {
   const { id } = useParams();
   const [filter, setFilter] = useState('ALL');
@@ -29,6 +49,9 @@ const JobApplications = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewNotice, setPreviewNotice] = useState('');
   const previewUrlRef = useRef('');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest', 'aiMatch'
+  const [aiLoadingState, setAiLoadingState] = useState({});
+  const [bulkAiLoading, setBulkAiLoading] = useState(false);
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -114,16 +137,65 @@ const JobApplications = () => {
     setPreviewLoading(true);
     setPreviewItem(candidate);
   };
+  const handleBulkAiEvaluate = async () => {
+    try {
+      setBulkAiLoading(true);
+      setError('');
+      const res = await atsService.evaluateAllApplicationsWithAi(id);
+      if (res.success) {
+        const params = filter !== 'ALL' ? { status: filter } : {};
+        const freshRes = await atsService.getApplicationsByJob(id, params);
+        setApplications(freshRes?.data || []);
+        setStats(freshRes?.stats || null);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể đánh giá AI hàng loạt.');
+    } finally {
+      setBulkAiLoading(false);
+    }
+  };
+
+  const handleSingleAiEvaluate = async (candidateId) => {
+    try {
+      setAiLoadingState(prev => ({ ...prev, [candidateId]: true }));
+      setError('');
+      const res = await atsService.evaluateApplicationWithAi(candidateId);
+      if (res.success && res.data) {
+        setApplications(prev => prev.map(app => 
+          app.id === candidateId 
+            ? { ...app, aiMatchScore: res.data.aiMatchScore, aiMatchReason: res.data.aiMatchReason } 
+            : app
+        ));
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi đánh giá AI cho hồ sơ này.');
+    } finally {
+      setAiLoadingState(prev => ({ ...prev, [candidateId]: false }));
+    }
+  };
+
   const candidates = useMemo(() => {
+    let list = applications;
     const normalized = keyword.trim().toLowerCase();
-    if (!normalized) return applications;
-    return applications.filter((candidate) => [
-      candidate.candidateName,
-      candidate.candidateEmail,
-      candidate.cvName,
-      candidate.desiredLocation
-    ].filter(Boolean).some((value) => value.toLowerCase().includes(normalized)));
-  }, [applications, keyword]);
+    if (normalized) {
+      list = list.filter((candidate) => [
+        candidate.candidateName,
+        candidate.candidateEmail,
+        candidate.cvName,
+        candidate.desiredLocation
+      ].filter(Boolean).some((value) => value.toLowerCase().includes(normalized)));
+    }
+
+    if (sortBy === 'aiMatch') {
+      return [...list].sort((a, b) => {
+        const scoreA = a.aiMatchScore !== null && a.aiMatchScore !== undefined ? a.aiMatchScore : -1;
+        const scoreB = b.aiMatchScore !== null && b.aiMatchScore !== undefined ? b.aiMatchScore : -1;
+        return scoreB - scoreA;
+      });
+    } else {
+      return [...list].sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+    }
+  }, [applications, keyword, sortBy]);
 
   return (
     <div className="space-y-6">
@@ -132,9 +204,23 @@ const JobApplications = () => {
           <h1 className="text-2xl font-bold text-slate-900">Hồ sơ ứng tuyển theo từng Job</h1>
           <p className="text-slate-600 mt-1">{job?.title || `Job #${id}`} • {stats?.total || applications.length} hồ sơ</p>
         </div>
-        <Link to="/employer/candidates" className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50">
-          Quay lại ATS
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleBulkAiEvaluate}
+            disabled={bulkAiLoading || loading || applications.length === 0}
+            className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold shadow-md shadow-orange-100 transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+          >
+            {bulkAiLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <span className="material-symbols-outlined text-[18px]">psychology</span>
+            )}
+            Chấm điểm AI hàng loạt
+          </button>
+          <Link to="/employer/candidates" className="px-4 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50 text-sm">
+            Quay lại ATS
+          </Link>
+        </div>
       </div>
 
       <section className="bg-white border border-slate-200/60 premium-shadow rounded-2xl p-5 space-y-4">
@@ -151,14 +237,26 @@ const JobApplications = () => {
             </button>
           ))}
         </div>
-        <div className="relative max-w-xl">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Tìm theo tên ứng viên, email, CV hoặc địa điểm..."
-            className="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-blue-50"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm theo tên ứng viên, email, CV hoặc địa điểm..."
+              className="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-blue-50"
+            />
+          </div>
+          <div className="w-full sm:w-56 shrink-0">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary cursor-pointer font-semibold text-slate-700"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="aiMatch">Điểm AI (Cao - Thấp)</option>
+            </select>
+          </div>
         </div>
       </section>
 
@@ -187,14 +285,53 @@ const JobApplications = () => {
                   <div className="text-sm text-slate-600 truncate">{candidate.candidateEmail || 'Chưa có email'}</div>
                 </div>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${COLOR[candidate.status] || COLOR.VIEWED}`}>
-                {LABEL[candidate.status] || candidate.status}
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusColor(candidate)}`}>
+                {getStatusLabel(candidate)}
               </span>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <Info label="Ngày nộp" value={formatDateTime(candidate.appliedAt)} />
               <Info label="Địa điểm mong muốn" value={candidate.desiredLocation} />
+
+              {/* AI Match rating */}
+              <div className="col-span-2 mt-1">
+                {candidate.aiMatchScore !== null && candidate.aiMatchScore !== undefined ? (
+                  <div className="flex flex-col gap-1.5 p-3.5 bg-orange-50/50 border border-orange-100 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-orange-800 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px] text-orange-500">psychology</span>
+                        Đối khớp AI:
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-orange-500 text-white text-[10px] font-extrabold rounded-lg shadow-sm">
+                        Độ tương thích {candidate.aiMatchScore}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-orange-950 font-medium leading-relaxed italic">
+                      "{candidate.aiMatchReason || 'Chưa có mô tả đánh giá.'}"
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/60 rounded-xl">
+                    <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[16px] text-slate-400 animate-pulse">psychology</span>
+                      Chưa đánh giá tương thích bằng AI
+                    </span>
+                    <button
+                      disabled={aiLoadingState[candidate.id]}
+                      onClick={() => handleSingleAiEvaluate(candidate.id)}
+                      className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-orange-100"
+                    >
+                      {aiLoadingState[candidate.id] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        'Đánh giá AI'
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="col-span-2 rounded-xl bg-slate-50 border border-slate-100 p-3">
                 <p className="text-xs text-slate-500 font-semibold">CV đính kèm</p>
                 <div className="mt-1 flex items-center justify-between gap-3">
